@@ -22,10 +22,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  eslint: {
-    // Lint is run as its own CI step; don't let it block production builds.
-    ignoreDuringBuilds: true,
-  },
   images: {
     // Image optimization stays ON. Remote provider images (R2 public assets)
     // are allowlisted here when a public base URL is configured.

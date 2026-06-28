@@ -9,116 +9,85 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Stethoscope } from "lucide-react"
+import { Logo } from "@/components/brand/logo"
+import type { Dictionary } from "@/lib/i18n"
 
-export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+type AuthDict = Dictionary["auth"]
+
+export function AuthForm({
+  mode,
+  dict,
+  nextPath,
+}: {
+  mode: "sign-in" | "sign-up"
+  dict: AuthDict
+  nextPath?: string
+}) {
   const router = useRouter()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<"patient" | "provider">("patient")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const isSignUp = mode === "sign-up"
+  const destination = nextPath || "/dashboard"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
+    // NOTE: no `role` is ever sent. Public signup always creates a PATIENT;
+    // the server ignores client-provided roles (input:false in auth config).
     const { error } = isSignUp
-      ? await authClient.signUp.email({
-          email,
-          password,
-          name,
-          // additional field
-          // @ts-expect-error additional field defined in auth config
-          role,
-        })
+      ? await authClient.signUp.email({ email, password, name })
       : await authClient.signIn.email({ email, password })
 
     setLoading(false)
 
     if (error) {
-      setError(error.message ?? "حدث خطأ ما، حاول مرة أخرى")
+      setError(translateAuthError(error.message))
       return
     }
 
-    router.push("/")
+    router.push(destination)
     router.refresh()
   }
 
   return (
-    <main className="min-h-svh bg-background flex items-center justify-center px-4 py-12">
+    <main className="flex min-h-svh items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
-        <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Stethoscope className="h-5 w-5" />
-          </span>
-          <span className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
-            MED AURA
-          </span>
+        <Link href="/" className="mb-8 flex items-center justify-center">
+          <Logo />
         </Link>
 
         <Card className="p-6">
           <div className="mb-6 text-center">
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-              {isSignUp ? "إنشاء حساب جديد" : "مرحبًا بعودتك"}
+              {isSignUp ? dict.signUpTitle : dict.signInTitle}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-              {isSignUp
-                ? "سجّل لتبدأ رحلتك العلاجية بثقة"
-                : "سجّل الدخول للمتابعة إلى حسابك"}
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              {isSignUp ? dict.signUpSubtitle : dict.signInSubtitle}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {isSignUp && (
-              <>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="name">الاسم الكامل</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    autoComplete="name"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label>نوع الحساب</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRole("patient")}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                        role === "patient"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      مريض
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRole("provider")}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                        role === "provider"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      مقدّم خدمة
-                    </button>
-                  </div>
-                </div>
-              </>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="name">{dict.name}</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              </div>
             )}
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{dict.email}</Label>
               <Input
                 id="email"
                 type="email"
@@ -130,8 +99,9 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
                 autoComplete="email"
               />
             </div>
+
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="password">{dict.password}</Label>
               <Input
                 id="password"
                 type="password"
@@ -153,24 +123,41 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
             <Button type="submit" disabled={loading} className="w-full">
               {loading
-                ? "يرجى الانتظار..."
+                ? "يرجى الانتظار…"
                 : isSignUp
-                  ? "إنشاء الحساب"
-                  : "تسجيل الدخول"}
+                  ? dict.signUpTitle
+                  : dict.signInTitle}
             </Button>
           </form>
 
+          {isSignUp && (
+            <p className="mt-4 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
+              {dict.providerNote}
+            </p>
+          )}
+
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {isSignUp ? "لديك حساب بالفعل؟ " : "ليس لديك حساب؟ "}
+            {isSignUp ? dict.haveAccount : dict.noAccount}{" "}
             <Link
               href={isSignUp ? "/sign-in" : "/sign-up"}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              {isSignUp ? "تسجيل الدخول" : "إنشاء حساب"}
+              {isSignUp ? dict.signInTitle : dict.signUpTitle}
             </Link>
           </p>
         </Card>
       </div>
     </main>
   )
+}
+
+function translateAuthError(message?: string): string {
+  if (!message) return "حدث خطأ ما، حاول مرة أخرى."
+  const m = message.toLowerCase()
+  if (m.includes("invalid") && m.includes("password"))
+    return "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+  if (m.includes("credential")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+  if (m.includes("exist")) return "هذا البريد الإلكتروني مسجّل بالفعل."
+  if (m.includes("email")) return "يرجى إدخال بريد إلكتروني صحيح."
+  return "تعذّر إتمام العملية، حاول مرة أخرى."
 }

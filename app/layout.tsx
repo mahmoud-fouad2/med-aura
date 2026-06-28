@@ -2,6 +2,8 @@ import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
 import { Cairo, IBM_Plex_Sans_Arabic } from "next/font/google"
 import "./globals.css"
+import { getLocale, dir } from "@/lib/i18n"
+import { appUrl } from "@/lib/env"
 
 const cairo = Cairo({
   variable: "--font-heading",
@@ -16,27 +18,38 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 })
 
 export const metadata: Metadata = {
-  title: "MED AURA | منصة السياحة العلاجية الموثوقة",
+  metadataBase: new URL(appUrl()),
+  title: {
+    default: "Med Aura | منصة التجميل الطبي الموثوقة",
+    template: "%s | Med Aura",
+  },
   description:
-    "MED AURA تربط المرضى بأفضل الأطباء والمراكز الطبية المعتمدة حول العالم. ابحث، قارن، واحجز رحلتك العلاجية بثقة.",
-  generator: "v0.app",
+    "Med Aura منصة متخصصة في التجميل الطبي تربطك بأطباء ومراكز معتمدة، تدير رحلتك من الاستشارة حتى المتابعة بعد الإجراء بأمان وموثوقية.",
+  applicationName: "Med Aura",
+  icons: {
+    icon: "/medaura-mark.svg",
+    apple: "/medaura-mark.svg",
+  },
 }
 
 export const viewport: Viewport = {
   colorScheme: "light",
-  themeColor: "#0e7c7b",
+  themeColor: "#1A1740",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+
   return (
     <html
-      lang="ar"
-      dir="rtl"
+      lang={locale}
+      dir={dir(locale)}
       className={`${cairo.variable} ${plexArabic.variable} bg-background`}
+      suppressHydrationWarning
     >
       <body className="font-sans antialiased">
         {children}

@@ -1,29 +1,26 @@
 import Link from "next/link"
-import { Stethoscope } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getCurrentUser } from "@/lib/session"
+import { getI18n } from "@/lib/i18n"
+import { Logo } from "@/components/brand/logo"
 import { UserMenu } from "@/components/layout/user-menu"
-
-const navLinks = [
-  { href: "/search", label: "ابحث عن علاج" },
-  { href: "/doctors", label: "الأطباء" },
-  { href: "/centers", label: "المراكز الطبية" },
-  { href: "/how-it-works", label: "كيف نعمل" },
-]
+import { LanguageSwitcher } from "@/components/layout/language-switcher"
+import { MobileNav } from "@/components/layout/mobile-nav"
 
 export async function SiteHeader() {
-  const user = await getCurrentUser()
+  const [user, { locale, t }] = await Promise.all([getCurrentUser(), getI18n()])
+
+  // Only link to routes that actually exist (no 404s).
+  const navLinks = [
+    { href: "/search", label: t.nav.doctors },
+    { href: "/how-it-works", label: t.nav.howItWorks },
+  ]
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/65">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Stethoscope className="h-5 w-5" />
-          </span>
-          <span className="font-heading text-xl font-extrabold tracking-tight text-foreground">
-            MED AURA
-          </span>
+        <Link href="/" aria-label="Med Aura">
+          <Logo markClassName="h-9 w-9" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -39,18 +36,35 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {user ? (
-            <UserMenu name={user.name} email={user.email} />
-          ) : (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/sign-in">دخول</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/sign-up">ابدأ الآن</Link>
-              </Button>
-            </>
-          )}
+          <LanguageSwitcher locale={locale} />
+          <div className="hidden md:flex md:items-center md:gap-2">
+            {user ? (
+              <UserMenu name={user.name} email={user.email} />
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  render={<Link href="/sign-in">{t.nav.signIn}</Link>}
+                />
+                <Button
+                  size="sm"
+                  render={
+                    <Link href="/sign-up">{t.nav.startConsultation}</Link>
+                  }
+                />
+              </>
+            )}
+          </div>
+          <MobileNav
+            links={navLinks}
+            isAuthed={Boolean(user)}
+            labels={{
+              signIn: t.nav.signIn,
+              start: t.nav.startConsultation,
+              dashboard: t.nav.dashboard,
+            }}
+          />
         </div>
       </div>
     </header>

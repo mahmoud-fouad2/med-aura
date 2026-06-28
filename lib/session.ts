@@ -1,29 +1,76 @@
-import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { auth } from "@/lib/auth"
+import { unauthorized, forbidden } from "@/lib/errors"
+import {
+  getUserRoles,
+  hasPermission,
+  type RoleKey,
+  type PermissionKey,
+} from "@/lib/rbac"
 
-export type AppRole = "patient" | "provider" | "admin"
+export type SessionUser = {
+  id: string
+  name: string
+  email: string
+  emailVerified: boolean
+  image?: string | null
+  role: string
+  status?: string
+  locale?: string
+}
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() })
 }
 
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const session = await getSession()
+  return (session?.user as SessionUser | undefined) ?? null
+}
+
+/** For server actions / route handlers: throw if not signed in. */
+export async function requireUser(): Promise<SessionUser> {
+  const user = await getCurrentUser()
+  if (!user) throw unauthorized()
+  return user
+}
+
 export async function getUserId(): Promise<string> {
-  const session = await getSession()
-  if (!session?.user) throw new Error("Unauthorized")
-  return session.user.id
+  return (await requireUser()).id
 }
 
-export async function getCurrentUser() {
-  const session = await getSession()
-  return session?.user ?? null
-}
-
-export async function requireRole(role: AppRole) {
-  const session = await getSession()
-  if (!session?.user) throw new Error("Unauthorized")
-  const userRole = (session.user as { role?: string }).role ?? "patient"
-  if (userRole !== role && userRole !== "admin") {
-    throw new Error("Forbidden")
+/** For server components: redirect to sign-in (with return path) if anonymous. */
+export async function requireAuthPage(returnTo?: string): Promise<SessionUser> {
+  const user = await getCurrentUser()
+  if (!user) {
+    redirect(
+      returnTo ? `/sign-in?next=${encodeURIComponent(returnTo)}` : "/sign-in",
+    )
   }
-  return session.user
+  return user
+}
+
+/** Throw FORBIDDEN unless the current user holds the permission. */
+export async function requirePermissionOrThrow(
+  perm: PermissionKey,
+): Promise<SessionUser> {
+  const user = await requireUser()
+  if (!(await hasPermission(user.id, perm))) throw forbidden()
+  return user
+}
+
+/** For server components: gate a page on a permission, redirecting to /403. */
+export async function requirePermissionPage(
+  perm: PermissionKey,
+): Promise<SessionUser> {
+  const user = await requireAuthPage()
+  if (!(await hasPermission(user.id, perm))) redirect("/403")
+  return user
+}
+
+export async function currentUserRoles(): Promise<RoleKey[]> {
+  const user = await getCurrentUser()
+  if (!user) return []
+  return getUserRoles(user.id)
 }

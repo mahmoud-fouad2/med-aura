@@ -1,52 +1,35 @@
-import { Search, ShieldCheck, MessageSquareHeart, Plane } from "lucide-react"
+import { Search, FileLock2, Video, ClipboardList, CalendarCheck } from "lucide-react"
+import type { Dictionary } from "@/lib/i18n"
 
 const steps = [
-  {
-    icon: Search,
-    title: "ابحث وقارن",
-    desc: "تصفّح آلاف العلاجات والأطباء وقارن الأسعار والتقييمات والاعتمادات بسهولة.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "اختر بثقة",
-    desc: "جميع المراكز والأطباء يخضعون للتحقّق اليدوي من الاعتمادات والتراخيص.",
-  },
-  {
-    icon: MessageSquareHeart,
-    title: "تواصل واستشر",
-    desc: "أرسل استفسارك مع تقاريرك الطبية واحصل على رد من المركز خلال وقت قصير.",
-  },
-  {
-    icon: Plane,
-    title: "سافر وتعالج",
-    desc: "نساعدك في تنظيم رحلتك العلاجية من الحجز وحتى المتابعة بعد العلاج.",
-  },
+  { icon: Search, title: "اختر الإجراء والطبيب", desc: "تصفّح إجراءات التجميل وقارن بين أطباء ومراكز معتمدين." },
+  { icon: FileLock2, title: "شارك حالتك بأمان", desc: "أنشئ حالتك وارفع صورك وتقاريرك في مساحة خاصة ومحمية." },
+  { icon: Video, title: "استشر طبيبًا", desc: "احجز استشارة فيديو أو حضورية بعد منح الطبيب صلاحية الاطلاع." },
+  { icon: ClipboardList, title: "استلم الخطة والسعر", desc: "احصل على خطة علاجية وعرض سعر واضح قبل اتخاذ القرار." },
+  { icon: CalendarCheck, title: "أكمل الحجز والمتابعة", desc: "ثبّت موعد الإجراء وتابع تعافيك خطوة بخطوة بعد العملية." },
 ]
 
-export function Features() {
+export function Features({ t }: { t: Dictionary["home"] }) {
   return (
-    <section id="how-it-works" className="border-b border-border bg-background">
+    <section id="how-it-works" className="border-b border-border bg-secondary/30">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
-            كيف تعمل منصة MED AURA؟
+          <h2 className="text-balance font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            {t.howItWorks}
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-pretty">
-            أربع خطوات بسيطة تفصلك عن رعاية طبية موثوقة في الوجهة التي تناسبك.
-          </p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {steps.map((step, i) => (
             <div
               key={step.title}
               className="relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <step.icon className="h-6 w-6" />
+              <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <step.icon className="size-6" />
               </span>
               <div>
-                <span className="text-sm font-semibold text-accent-foreground/70">
+                <span className="text-sm font-semibold text-primary/70">
                   {`٠${i + 1}`}
                 </span>
                 <h3 className="font-heading text-lg font-bold text-foreground">

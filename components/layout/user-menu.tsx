@@ -27,15 +27,17 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col">
@@ -46,15 +48,16 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard">
-            <LayoutDashboard className="h-4 w-4" />
-            لوحة التحكم
-          </Link>
+        <DropdownMenuItem render={<Link href="/dashboard" />}>
+          <LayoutDashboard className="size-4" />
+          لوحة التحكم
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-          <LogOut className="h-4 w-4" />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={handleSignOut}
+        >
+          <LogOut className="size-4" />
           تسجيل الخروج
         </DropdownMenuItem>
       </DropdownMenuContent>
