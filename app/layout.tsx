@@ -1,14 +1,14 @@
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
-import { Cairo, IBM_Plex_Sans_Arabic } from "next/font/google"
+import { Tajawal, IBM_Plex_Sans_Arabic } from "next/font/google"
 import "./globals.css"
 import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
 
-const cairo = Cairo({
+const tajawal = Tajawal({
   variable: "--font-heading",
   subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "700", "800", "900"],
 })
 
 const plexArabic = IBM_Plex_Sans_Arabic({
@@ -48,7 +48,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir(locale)}
-      className={`${cairo.variable} ${plexArabic.variable} bg-background`}
+      className={`${tajawal.variable} ${plexArabic.variable} bg-background`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">

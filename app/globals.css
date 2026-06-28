@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-heading), 'Cairo Fallback';
-  --font-sans: var(--font-body), 'IBM Plex Sans Arabic Fallback';
+  --font-heading: var(--font-heading), 'Tajawal Fallback', system-ui, sans-serif;
+  --font-sans: var(--font-body), 'IBM Plex Sans Arabic Fallback', system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -138,8 +138,134 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv01", "kern";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 22%, transparent);
+    color: var(--foreground);
+  }
+  /* refined scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--primary) 30%, transparent)
+      transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--primary) 26%, transparent);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--primary) 42%, transparent);
+    background-clip: content-box;
+  }
+}
+
+@layer utilities {
+  /* gradient text for refined headlines */
+  .text-gradient {
+    background-image: linear-gradient(
+      105deg,
+      var(--foreground) 0%,
+      oklch(0.47 0.17 292) 55%,
+      oklch(0.6 0.15 320) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .dark .text-gradient {
+    background-image: linear-gradient(
+      105deg,
+      var(--foreground) 0%,
+      oklch(0.78 0.14 296) 60%,
+      oklch(0.7 0.14 330) 100%
+    );
+  }
+
+  /* soft mesh background for hero / feature bands */
+  .bg-mesh {
+    background-image:
+      radial-gradient(
+        40rem 40rem at 85% -10%,
+        color-mix(in oklab, var(--primary) 16%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        32rem 32rem at 0% 10%,
+        color-mix(in oklab, var(--accent) 60%, transparent),
+        transparent 55%
+      );
+  }
+
+  /* elegant, slightly purple-tinted elevation */
+  .shadow-elegant {
+    box-shadow:
+      0 1px 2px -1px color-mix(in oklab, var(--foreground) 8%, transparent),
+      0 14px 34px -16px color-mix(in oklab, oklch(0.47 0.17 292) 32%, transparent);
+  }
+  .shadow-elegant-lg {
+    box-shadow:
+      0 2px 4px -2px color-mix(in oklab, var(--foreground) 10%, transparent),
+      0 28px 60px -22px color-mix(in oklab, oklch(0.47 0.17 292) 36%, transparent);
+  }
+
+  /* restrained glass — used sparingly */
+  .glass {
+    background: color-mix(in oklab, var(--card) 72%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+/* skeleton shimmer */
+@keyframes ma-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--muted) 85%, transparent);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--foreground) 7%, transparent),
+    transparent
+  );
+  animation: ma-shimmer 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
