@@ -1,17 +1,13 @@
+import { env, isRecaptchaConfigured } from "@/lib/env"
+import { logger } from "@/lib/logger"
+
 /**
  * Google reCAPTCHA v3 server-side verification.
  *
- * Env vars:
- *  - RECAPTCHA_SECRET_KEY                  (server, required to enforce)
- *  - NEXT_PUBLIC_RECAPTCHA_SITE_KEY        (client widget)
- *
- * When the secret is missing we run in "fallback" mode: verification is
- * skipped and we log a warning, so development continues without keys.
+ * Enforced on sensitive public forms only when RECAPTCHA_SECRET_KEY is set.
+ * Without it, verification is skipped (fallback) so development continues.
  */
-
-const secretKey = process.env.RECAPTCHA_SECRET_KEY
-
-export const isRecaptchaConfigured = Boolean(secretKey)
+export { isRecaptchaConfigured }
 
 export type RecaptchaResult = {
   success: boolean
@@ -27,8 +23,8 @@ export async function verifyRecaptcha(
   expectedAction?: string,
   threshold = DEFAULT_THRESHOLD,
 ): Promise<RecaptchaResult> {
-  if (!isRecaptchaConfigured) {
-    console.warn("[v0] reCAPTCHA not configured — skipping verification (fallback mode).")
+  if (!isRecaptchaConfigured()) {
+    logger.warn("reCAPTCHA not configured — skipping verification (fallback mode)")
     return { success: true, score: 1, skipped: true, reason: "not_configured" }
   }
 
@@ -40,7 +36,10 @@ export async function verifyRecaptcha(
     const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ secret: secretKey as string, response: token }),
+      body: new URLSearchParams({
+        secret: env.RECAPTCHA_SECRET_KEY as string,
+        response: token,
+      }),
     })
     const data = (await res.json()) as {
       success: boolean
@@ -56,9 +55,16 @@ export async function verifyRecaptcha(
       return { success: false, score: data.score ?? 0, skipped: false, reason: "action_mismatch" }
     }
     const score = data.score ?? 0
-    return { success: score >= threshold, score, skipped: false, reason: score < threshold ? "low_score" : undefined }
+    return {
+      success: score >= threshold,
+      score,
+      skipped: false,
+      reason: score < threshold ? "low_score" : undefined,
+    }
   } catch (err) {
-    console.error("[v0] reCAPTCHA verification error:", err)
+    logger.error("reCAPTCHA verification error", {
+      error: err instanceof Error ? err.message : String(err),
+    })
     return { success: false, score: 0, skipped: false, reason: "request_failed" }
   }
 }

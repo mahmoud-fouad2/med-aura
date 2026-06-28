@@ -156,18 +156,31 @@ export async function getUserRoles(userId: string): Promise<RoleKey[]> {
   return u[0] ? [u[0].role as RoleKey] : []
 }
 
-export async function getUserPermissions(
-  userId: string,
-): Promise<Set<PermissionKey>> {
-  const roles = await getUserRoles(userId)
-  if (roles.includes(ROLES.SUPER_ADMIN)) {
+/** Pure: permissions for a set of role keys (super_admin = wildcard). */
+export function computePermissions(roleKeys: RoleKey[]): Set<PermissionKey> {
+  if (roleKeys.includes(ROLES.SUPER_ADMIN)) {
     return new Set(Object.values(PERMISSIONS))
   }
   const perms = new Set<PermissionKey>()
-  for (const r of roles) {
+  for (const r of roleKeys) {
     for (const p of ROLE_PERMISSIONS[r] ?? []) perms.add(p)
   }
   return perms
+}
+
+/** Pure: does any of these roles grant the permission? */
+export function rolesHavePermission(
+  roleKeys: RoleKey[],
+  perm: PermissionKey,
+): boolean {
+  if (roleKeys.includes(ROLES.SUPER_ADMIN)) return true
+  return roleKeys.some((r) => (ROLE_PERMISSIONS[r] ?? []).includes(perm))
+}
+
+export async function getUserPermissions(
+  userId: string,
+): Promise<Set<PermissionKey>> {
+  return computePermissions(await getUserRoles(userId))
 }
 
 export async function hasRole(userId: string, r: RoleKey): Promise<boolean> {
@@ -178,9 +191,7 @@ export async function hasPermission(
   userId: string,
   perm: PermissionKey,
 ): Promise<boolean> {
-  const roles = await getUserRoles(userId)
-  if (roles.includes(ROLES.SUPER_ADMIN)) return true
-  return roles.some((r) => (ROLE_PERMISSIONS[r] ?? []).includes(perm))
+  return rolesHavePermission(await getUserRoles(userId), perm)
 }
 
 /** Throws ForbiddenError unless the user holds the permission. */

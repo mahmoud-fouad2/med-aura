@@ -3,6 +3,12 @@ import { db } from "@/lib/db"
 import { availabilityRule, appointment } from "@/lib/db/schema"
 
 export type Slot = { startsAt: string; endsAt: string; label: string }
+export type RuleLite = {
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  slotMinutes: number
+}
 
 const CANCELLED = [
   "CANCELLED_BY_PATIENT",
@@ -11,7 +17,7 @@ const CANCELLED = [
 ] as const
 
 // Minimum lead time before a slot can be booked.
-const MIN_LEAD_MS = 60 * 60 * 1000 // 1 hour
+export const MIN_LEAD_MS = 60 * 60 * 1000 // 1 hour
 
 function parseTime(t: string): { h: number; m: number } {
   const [h, m] = t.split(":").map((n) => parseInt(n, 10))
@@ -19,10 +25,57 @@ function parseTime(t: string): { h: number; m: number } {
 }
 
 /**
- * Compute bookable slots for a doctor over the next `days` days from weekly
- * availability rules, excluding slots already taken by non-cancelled
- * appointments and slots inside the lead-time window.
+ * Pure slot generator (no DB). Generates bookable slots from weekly rules over
+ * `days` days, excluding slots already taken (by start-time ms) and slots inside
+ * the lead-time window. Exported for unit testing.
  */
+export function generateSlots(
+  rules: RuleLite[],
+  takenMs: Set<number>,
+  opts: { now: Date; days: number; limit: number },
+): Slot[] {
+  const { now, days, limit } = opts
+  const slots: Slot[] = []
+  if (rules.length === 0) return slots
+
+  for (let d = 0; d < days && slots.length < limit; d++) {
+    const day = new Date(now)
+    day.setDate(now.getDate() + d)
+    const dow = day.getDay() // 0=Sun..6=Sat
+    const dayRules = rules.filter((r) => r.dayOfWeek === dow)
+
+    for (const rule of dayRules) {
+      const { h: sh, m: sm } = parseTime(rule.startTime)
+      const { h: eh, m: em } = parseTime(rule.endTime)
+      const start = new Date(day)
+      start.setHours(sh, sm, 0, 0)
+      const end = new Date(day)
+      end.setHours(eh, em, 0, 0)
+
+      for (
+        let t = new Date(start);
+        t.getTime() + rule.slotMinutes * 60000 <= end.getTime();
+        t = new Date(t.getTime() + rule.slotMinutes * 60000)
+      ) {
+        if (t.getTime() < now.getTime() + MIN_LEAD_MS) continue
+        if (takenMs.has(t.getTime())) continue
+        const endsAt = new Date(t.getTime() + rule.slotMinutes * 60000)
+        slots.push({
+          startsAt: t.toISOString(),
+          endsAt: endsAt.toISOString(),
+          label: formatSlot(t),
+        })
+        if (slots.length >= limit) break
+      }
+      if (slots.length >= limit) break
+    }
+  }
+
+  slots.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+  return slots
+}
+
+/** Compute bookable slots for a doctor from the database. */
 export async function getAvailableSlots(
   doctorId: string,
   opts: { days?: number; type?: string; limit?: number } = {},
@@ -55,42 +108,16 @@ export async function getAvailableSlots(
     )
   const takenSet = new Set(taken.map((t) => new Date(t.startsAt).getTime()))
 
-  const slots: Slot[] = []
-  for (let d = 0; d < days && slots.length < limit; d++) {
-    const day = new Date(now)
-    day.setDate(now.getDate() + d)
-    const dow = day.getDay() // 0=Sun..6=Sat
-    const dayRules = rules.filter((r) => r.dayOfWeek === dow)
-
-    for (const rule of dayRules) {
-      const { h: sh, m: sm } = parseTime(rule.startTime)
-      const { h: eh, m: em } = parseTime(rule.endTime)
-      const start = new Date(day)
-      start.setHours(sh, sm, 0, 0)
-      const end = new Date(day)
-      end.setHours(eh, em, 0, 0)
-
-      for (
-        let t = new Date(start);
-        t.getTime() + rule.slotMinutes * 60000 <= end.getTime();
-        t = new Date(t.getTime() + rule.slotMinutes * 60000)
-      ) {
-        if (t.getTime() < now.getTime() + MIN_LEAD_MS) continue
-        if (takenSet.has(t.getTime())) continue
-        const endsAt = new Date(t.getTime() + rule.slotMinutes * 60000)
-        slots.push({
-          startsAt: t.toISOString(),
-          endsAt: endsAt.toISOString(),
-          label: formatSlot(t),
-        })
-        if (slots.length >= limit) break
-      }
-      if (slots.length >= limit) break
-    }
-  }
-
-  slots.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-  return slots
+  return generateSlots(
+    rules.map((r) => ({
+      dayOfWeek: r.dayOfWeek,
+      startTime: r.startTime,
+      endTime: r.endTime,
+      slotMinutes: r.slotMinutes,
+    })),
+    takenSet,
+    { now, days, limit },
+  )
 }
 
 export async function isSlotAvailable(
