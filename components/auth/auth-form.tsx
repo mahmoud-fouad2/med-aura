@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Logo } from "@/components/brand/logo"
+import { Checkbox } from "@/components/ui/checkbox"
+import { AuthShell } from "@/components/auth/auth-shell"
+import { FadeIn } from "@/components/motion"
 import type { Dictionary } from "@/lib/i18n"
 
 type AuthDict = Dictionary["auth"]
@@ -27,6 +29,7 @@ export function AuthForm({
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -38,36 +41,29 @@ export function AuthForm({
     setError(null)
     setLoading(true)
 
-    // NOTE: no `role` is ever sent. Public signup always creates a PATIENT;
-    // the server ignores client-provided roles (input:false in auth config).
+    // No `role` is ever sent — public signup always creates a PATIENT.
     const { error } = isSignUp
       ? await authClient.signUp.email({ email, password, name })
-      : await authClient.signIn.email({ email, password })
+      : await authClient.signIn.email({ email, password, rememberMe: remember })
 
     setLoading(false)
-
     if (error) {
       setError(translateAuthError(error.message))
       return
     }
-
     router.push(destination)
     router.refresh()
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-sm">
-        <Link href="/" className="mb-8 flex items-center justify-center">
-          <Logo />
-        </Link>
-
-        <Card className="p-6">
+    <AuthShell>
+      <FadeIn>
+        <Card className="p-6 shadow-elegant sm:p-8">
           <div className="mb-6 text-center">
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
               {isSignUp ? dict.signUpTitle : dict.signInTitle}
             </h1>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {isSignUp ? dict.signUpSubtitle : dict.signInSubtitle}
             </p>
           </div>
@@ -101,7 +97,17 @@ export function AuthForm({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">{dict.password}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">{dict.password}</Label>
+                {!isSignUp && (
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    نسيت كلمة المرور؟
+                  </Link>
+                )}
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -115,13 +121,23 @@ export function AuthForm({
               />
             </div>
 
+            {!isSignUp && (
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+                <Checkbox
+                  checked={remember}
+                  onCheckedChange={(c) => setRemember(Boolean(c))}
+                />
+                تذكّرني على هذا الجهاز
+              </label>
+            )}
+
             {error && (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
                 {error}
               </p>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading} className="w-full" size="lg">
               {loading
                 ? "يرجى الانتظار…"
                 : isSignUp
@@ -146,8 +162,8 @@ export function AuthForm({
             </Link>
           </p>
         </Card>
-      </div>
-    </main>
+      </FadeIn>
+    </AuthShell>
   )
 }
 
