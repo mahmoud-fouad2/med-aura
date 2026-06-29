@@ -4,9 +4,11 @@ import { getCurrentUser, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
 import { listDoctorAppointments } from "@/lib/data/appointments"
 import { listDoctorAssignedCases } from "@/lib/data/cases"
+import { FolderOpen } from "lucide-react"
 import { AppointmentList } from "@/components/appointments/appointment-list"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/ui/empty-state"
 import { caseStatusAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
@@ -35,9 +37,11 @@ export default async function DoctorDashboardPage() {
           الحالات المشتركة معك
         </h2>
         {cases.length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">
-            لا توجد حالات بعد.
-          </Card>
+          <EmptyState
+            icon={FolderOpen}
+            title="لا توجد حالات بعد"
+            description="ستظهر هنا الحالات التي يشاركها معك المرضى."
+          />
         ) : (
           <div className="space-y-3">
             {cases.map((c) => (

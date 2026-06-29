@@ -1,8 +1,10 @@
 import { desc, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { providerApplication, user as userT } from "@/lib/db/schema"
+import { Inbox } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/ui/empty-state"
 import { ApplicationReview } from "@/components/admin/application-review"
 
 export const dynamic = "force-dynamic"
@@ -41,9 +43,11 @@ export default async function ApplicationsPage() {
       </h1>
 
       {rows.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">
-          لا توجد طلبات حتى الآن.
-        </Card>
+        <EmptyState
+          icon={Inbox}
+          title="لا توجد طلبات حتى الآن"
+          description="ستظهر هنا طلبات انضمام الأطباء والمراكز عند تقديمها."
+        />
       ) : (
         <div className="space-y-4">
           {rows.map((r) => {

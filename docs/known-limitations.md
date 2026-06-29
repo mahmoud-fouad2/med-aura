@@ -52,3 +52,38 @@ Schemas/enums for several of these already exist; others are listed in the spec
   Next on most platforms).
 - **i18n** is cookie-based (functional switcher, full RTL/LTR). Per-string
   coverage focuses on the shell + slice; deeper coverage continues over time.
+
+## Quality-pass update
+
+Added after the first build-out, in response to review feedback:
+
+- **Design system**: `motion` (Framer Motion) primitives (Reveal/Stagger/FadeIn,
+  reduced-motion aware), elegant shadows/mesh/gradient utilities, Tajawal heading
+  font, vector icons everywhere (no emoji), `SectionHeading`/`EmptyState`/
+  `Skeleton`/`Checkbox` primitives.
+- **Premium homepage** with DB-backed sections; **two-panel auth** with
+  **Remember me**, forgot/reset password, verify-email.
+- **Full legal pages** (Terms, Privacy, Refund, Review, Medical disclaimer) —
+  multi-section, with table of contents (no 2-line stubs).
+- **Info + catalog pages**: about, contact (working form → `contact_message`),
+  faq (DB), trust-and-safety, online-consultation, for-doctors, for-centers,
+  procedures(+detail), centers(+detail). sitemap + robots + JSON-LD.
+
+### Still deferred (honest)
+
+- **Destinations** (`/destinations`) is a full module (table + data) and is NOT
+  built; it is intentionally not linked anywhere, so there is no broken/empty
+  page. To be added when the travel module lands.
+- Care-journey modules (treatment plans, quotes, invoices, travel, follow-up,
+  messaging, reviews, before/after) and the concierge/finance/center dashboards
+  remain pending as previously noted.
+
+### Windows build note
+
+Production builds use Next 16 + Turbopack with many parallel workers. On Windows
+this occasionally crashes with code `0xC0000409` when the `.next` cache is stale
+or memory is tight. Reliable build command:
+
+```bash
+rm -rf .next && NODE_OPTIONS="--max-old-space-size=6144" pnpm build
+```
