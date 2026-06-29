@@ -24,7 +24,7 @@ function toMinorUnits(amount: number): number {
 
 export type CheckoutInput = {
   paymentId: string
-  appointmentId: string
+  appointmentId?: string
   amount: number
   currency: string
   description: string
@@ -33,10 +33,14 @@ export type CheckoutInput = {
   cancelUrl: string
 }
 
-/** Create a Stripe Checkout Session for a consultation fee (test or live). */
+/** Create a Stripe Checkout Session for any payment (consultation/deposit/final). */
 export async function createCheckoutSession(
   input: CheckoutInput,
 ): Promise<{ id: string; url: string }> {
+  // client_reference_id = paymentId is the source of truth the webhook uses.
+  const metadata: Record<string, string> = { paymentId: input.paymentId }
+  if (input.appointmentId) metadata.appointmentId = input.appointmentId
+
   const session = await client().checkout.sessions.create({
     mode: "payment",
     client_reference_id: input.paymentId,
@@ -51,10 +55,8 @@ export async function createCheckoutSession(
         },
       },
     ],
-    payment_intent_data: {
-      metadata: { paymentId: input.paymentId, appointmentId: input.appointmentId },
-    },
-    metadata: { paymentId: input.paymentId, appointmentId: input.appointmentId },
+    payment_intent_data: { metadata },
+    metadata,
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
   })

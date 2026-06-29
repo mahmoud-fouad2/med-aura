@@ -3,7 +3,13 @@ import { notFound } from "next/navigation"
 import { CalendarPlus } from "lucide-react"
 import { getCurrentUser } from "@/lib/session"
 import { getCaseDetailForUser } from "@/lib/data/cases"
-import { getLatestConsultation, getOutcomePublic, isCaseDoctor } from "@/lib/data/care"
+import {
+  getLatestConsultation,
+  getOutcomePublic,
+  isCaseDoctor,
+  getTreatmentPlan,
+  getQuoteForCase,
+} from "@/lib/data/care"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +17,8 @@ import { DocumentUploader } from "@/components/cases/document-uploader"
 import { ConsentManager } from "@/components/cases/consent-manager"
 import { ConsultationPanel } from "@/components/care/consultation-panel"
 import { OutcomeView } from "@/components/care/outcome-view"
+import { DoctorCarePanel } from "@/components/care/doctor-care-panel"
+import { PatientCarePanel } from "@/components/care/patient-care-panel"
 import { caseStatusAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
@@ -25,11 +33,18 @@ export default async function CaseDetailPage({
   const c = await getCaseDetailForUser(user.id, id)
   if (!c) notFound()
 
-  const [isDoctorViewer, consultation, outcome] = await Promise.all([
+  const [isDoctorViewer, consultation, outcome, plan, quote] = await Promise.all([
     isCaseDoctor(user.id, c.doctorId),
     getLatestConsultation(c.id),
     getOutcomePublic(c.id),
+    getTreatmentPlan(c.id),
+    getQuoteForCase(c.id),
   ])
+  const showDoctorCare =
+    isDoctorViewer &&
+    ["CONSULTATION_COMPLETED", "TREATMENT_PLAN_ISSUED"].includes(c.status)
+  const showPatientCare =
+    c.isOwner && (plan?.status === "PUBLISHED" || Boolean(quote))
 
   const answers = c.answers as Record<string, unknown>
 
@@ -74,6 +89,26 @@ export default async function CaseDetailPage({
       {c.isOwner && outcome && (
         <Card className="p-6">
           <OutcomeView outcome={outcome} />
+        </Card>
+      )}
+
+      {showDoctorCare && (
+        <Card className="p-6">
+          <h2 className="mb-4 font-heading text-lg font-bold text-foreground">
+            الخطة العلاجية وعرض السعر
+          </h2>
+          <DoctorCarePanel
+            caseId={c.id}
+            caseStatus={c.status}
+            plan={plan}
+            quote={quote}
+          />
+        </Card>
+      )}
+
+      {showPatientCare && (
+        <Card className="p-6">
+          <PatientCarePanel plan={plan} quote={quote} />
         </Card>
       )}
 
