@@ -3,11 +3,14 @@ import { notFound } from "next/navigation"
 import { CalendarPlus } from "lucide-react"
 import { getCurrentUser } from "@/lib/session"
 import { getCaseDetailForUser } from "@/lib/data/cases"
+import { getLatestConsultation, getOutcomePublic, isCaseDoctor } from "@/lib/data/care"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DocumentUploader } from "@/components/cases/document-uploader"
 import { ConsentManager } from "@/components/cases/consent-manager"
+import { ConsultationPanel } from "@/components/care/consultation-panel"
+import { OutcomeView } from "@/components/care/outcome-view"
 import { caseStatusAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
@@ -21,6 +24,12 @@ export default async function CaseDetailPage({
   const user = (await getCurrentUser())!
   const c = await getCaseDetailForUser(user.id, id)
   if (!c) notFound()
+
+  const [isDoctorViewer, consultation, outcome] = await Promise.all([
+    isCaseDoctor(user.id, c.doctorId),
+    getLatestConsultation(c.id),
+    getOutcomePublic(c.id),
+  ])
 
   const answers = c.answers as Record<string, unknown>
 
@@ -46,6 +55,27 @@ export default async function CaseDetailPage({
           />
         )}
       </div>
+
+      {isDoctorViewer && (
+        <Card className="p-6">
+          <ConsultationPanel
+            caseId={c.id}
+            caseStatus={c.status}
+            consultation={
+              consultation
+                ? { id: consultation.id, status: consultation.status }
+                : null
+            }
+            hasOutcome={Boolean(outcome)}
+          />
+        </Card>
+      )}
+
+      {c.isOwner && outcome && (
+        <Card className="p-6">
+          <OutcomeView outcome={outcome} />
+        </Card>
+      )}
 
       <Card className="space-y-3 p-6">
         <h2 className="font-heading text-lg font-bold text-foreground">تفاصيل الحالة</h2>

@@ -51,6 +51,16 @@ const PAYMENT: Record<string, string> = {
   DISPUTED: "متنازع عليها",
 }
 
+const SUITABILITY: Record<string, string> = {
+  PENDING: "قيد التقييم",
+  SUITABLE_PRELIMINARILY: "مرشّح مبدئيًا",
+  MORE_INFORMATION_REQUIRED: "بحاجة لمعلومات إضافية",
+  IN_PERSON_ASSESSMENT_REQUIRED: "يتطلب تقييمًا حضوريًا",
+  NOT_SUITABLE: "غير مناسب حاليًا",
+  REFERRED_ELSEWHERE: "إحالة لجهة أنسب",
+}
+
 export const caseStatusAr = (s: string): string => CASE[s] ?? s
 export const appointmentStatusAr = (s: string): string => APPOINTMENT[s] ?? s
 export const paymentStatusAr = (s: string): string => PAYMENT[s] ?? s
+export const suitabilityAr = (s: string): string => SUITABILITY[s] ?? s
