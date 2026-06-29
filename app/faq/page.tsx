@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ChevronDown, HelpCircle } from "lucide-react"
 import { eq, asc } from "drizzle-orm"
-import { db } from "@/lib/db"
+import { db, safeRead } from "@/lib/db"
 import { faq } from "@/lib/db/schema"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -18,15 +18,19 @@ export const metadata = {
 }
 
 export default async function FaqPage() {
-  const items = await db
-    .select({
-      id: faq.id,
-      question: faq.questionAr,
-      answer: faq.answerAr,
-    })
-    .from(faq)
-    .where(eq(faq.visible, true))
-    .orderBy(asc(faq.sortOrder))
+  const items = await safeRead(
+    () =>
+      db
+        .select({
+          id: faq.id,
+          question: faq.questionAr,
+          answer: faq.answerAr,
+        })
+        .from(faq)
+        .where(eq(faq.visible, true))
+        .orderBy(asc(faq.sortOrder)),
+    [],
+  )
 
   return (
     <div className="flex min-h-svh flex-col">

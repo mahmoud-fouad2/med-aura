@@ -1,5 +1,5 @@
 import { and, eq, asc } from "drizzle-orm"
-import { db } from "@/lib/db"
+import { db, isDbConfigured } from "@/lib/db"
 import { procedure as procedureT, procedureCategory } from "@/lib/db/schema"
 
 export type ProcedureListItem = {
@@ -19,6 +19,7 @@ export type CategoryGroup = {
 }
 
 export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
+  if (!isDbConfigured) return []
   const cats = await db
     .select({
       slug: procedureCategory.slug,
@@ -63,6 +64,7 @@ export type ProcedureDetail = {
 export async function getProcedureBySlug(
   slug: string,
 ): Promise<ProcedureDetail | null> {
+  if (!isDbConfigured) return null
   const row = (
     await db
       .select({

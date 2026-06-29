@@ -21,7 +21,19 @@ export type SessionUser = {
 }
 
 export async function getSession() {
-  return auth.api.getSession({ headers: await headers() })
+  try {
+    return await auth.api.getSession({ headers: await headers() })
+  } catch (err) {
+    // Without a reachable database (e.g. local preview) treat as signed-out
+    // rather than crashing every page that renders the header.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "[auth] getSession failed, treating as anonymous:",
+        err instanceof Error ? err.message : String(err),
+      )
+    }
+    return null
+  }
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {

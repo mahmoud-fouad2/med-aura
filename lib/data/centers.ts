@@ -1,5 +1,5 @@
 import { and, eq, desc, isNull, count } from "drizzle-orm"
-import { db } from "@/lib/db"
+import { db, isDbConfigured } from "@/lib/db"
 import { center, doctorProfile } from "@/lib/db/schema"
 
 export type CenterCard = {
@@ -22,6 +22,7 @@ function visibleCenter() {
 }
 
 export async function listPublishedCenters(): Promise<CenterCard[]> {
+  if (!isDbConfigured) return []
   const rows = await db
     .select({
       id: center.id,
@@ -64,6 +65,7 @@ export type CenterDetail = CenterCard & {
 }
 
 export async function getCenterBySlug(slug: string): Promise<CenterDetail | null> {
+  if (!isDbConfigured) return null
   const c = (
     await db
       .select({

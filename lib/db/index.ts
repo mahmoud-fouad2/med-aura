@@ -25,6 +25,33 @@ export const db = drizzle(pool, { schema })
 
 export * from "./schema"
 
+export const isDbConfigured = Boolean(process.env.DATABASE_URL)
+
+/**
+ * Run a NON-critical read query, returning `fallback` when the database is
+ * unconfigured or unreachable. This lets public pages render honest empty
+ * states (instead of crashing) in environments without a database — e.g. local
+ * preview. NEVER use this for mutations or anything that must not silently
+ * no-op; those must surface real errors.
+ */
+export async function safeRead<T>(
+  fn: () => Promise<T>,
+  fallback: T,
+): Promise<T> {
+  if (!isDbConfigured) return fallback
+  try {
+    return await fn()
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "[db] read failed, returning fallback:",
+        err instanceof Error ? err.message : String(err),
+      )
+    }
+    return fallback
+  }
+}
+
 /** Lightweight connectivity probe used by scripts and the admin health page. */
 export async function checkDatabase(): Promise<{ ok: boolean; error?: string }> {
   try {

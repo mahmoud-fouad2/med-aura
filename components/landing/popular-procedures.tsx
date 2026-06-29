@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { eq, asc } from "drizzle-orm"
 import { ArrowLeft, Sparkles, Syringe } from "lucide-react"
-import { db } from "@/lib/db"
+import { db, safeRead } from "@/lib/db"
 import { procedure as procedureT, procedureCategory } from "@/lib/db/schema"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Badge } from "@/components/ui/badge"
@@ -9,19 +9,26 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 
 export async function PopularProcedures() {
-  const rows = await db
-    .select({
-      slug: procedureT.slug,
-      nameAr: procedureT.nameAr,
-      isSurgical: procedureT.isSurgical,
-      recoveryDays: procedureT.recoveryDays,
-      categoryNameAr: procedureCategory.nameAr,
-    })
-    .from(procedureT)
-    .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
-    .where(eq(procedureT.visible, true))
-    .orderBy(asc(procedureT.sortOrder))
-    .limit(8)
+  const rows = await safeRead(
+    () =>
+      db
+        .select({
+          slug: procedureT.slug,
+          nameAr: procedureT.nameAr,
+          isSurgical: procedureT.isSurgical,
+          recoveryDays: procedureT.recoveryDays,
+          categoryNameAr: procedureCategory.nameAr,
+        })
+        .from(procedureT)
+        .innerJoin(
+          procedureCategory,
+          eq(procedureT.categoryId, procedureCategory.id),
+        )
+        .where(eq(procedureT.visible, true))
+        .orderBy(asc(procedureT.sortOrder))
+        .limit(8),
+    [],
+  )
 
   return (
     <section className="border-b border-border bg-background">
