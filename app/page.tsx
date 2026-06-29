@@ -1,9 +1,14 @@
 import { SiteHeader } from "@/components/layout/site-header"
 import { Hero } from "@/components/landing/hero"
-import { Features } from "@/components/landing/features"
 import { CosmeticAreas } from "@/components/landing/cosmetic-areas"
+import { PopularProcedures } from "@/components/landing/popular-procedures"
+import { Features } from "@/components/landing/features"
+import { FeaturedDoctors } from "@/components/landing/featured-doctors"
+import { TrustBand } from "@/components/landing/trust-band"
 import { CtaFooter } from "@/components/landing/cta-footer"
 import { getI18n } from "@/lib/i18n"
+
+export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
   const { t } = await getI18n()
@@ -13,7 +18,10 @@ export default async function HomePage() {
       <main className="flex-1">
         <Hero t={t.home} />
         <CosmeticAreas t={t.home} />
+        <PopularProcedures />
         <Features t={t.home} />
+        <FeaturedDoctors />
+        <TrustBand />
         <CtaFooter />
       </main>
     </div>

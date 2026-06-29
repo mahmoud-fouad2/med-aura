@@ -5,7 +5,10 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { SearchX } from "lucide-react"
 import { DoctorCard } from "@/components/search/doctor-card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Stagger, StaggerItem } from "@/components/motion"
 import { searchDoctors, type SearchParams } from "@/lib/data/doctors"
 import { db } from "@/lib/db"
 import { procedureCategory, country as countryT } from "@/lib/db/schema"
@@ -160,16 +163,20 @@ export default async function SearchPage({
             {/* Results */}
             <section>
               {results.length === 0 ? (
-                <Card className="p-10 text-center">
-                  <p className="text-muted-foreground">{t.search.empty}</p>
-                </Card>
+                <EmptyState
+                  icon={SearchX}
+                  title="لا توجد نتائج مطابقة"
+                  description={t.search.empty}
+                />
               ) : (
                 <>
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <Stagger className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {results.map((d) => (
-                      <DoctorCard key={d.id} doctor={d} />
+                      <StaggerItem key={d.id}>
+                        <DoctorCard doctor={d} />
+                      </StaggerItem>
                     ))}
-                  </div>
+                  </Stagger>
 
                   {totalPages > 1 && (
                     <nav className="mt-8 flex items-center justify-center gap-2">
