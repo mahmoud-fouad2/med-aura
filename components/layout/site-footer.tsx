@@ -37,6 +37,8 @@ export function SiteFooter() {
             links={[
               { href: "/privacy", label: "سياسة الخصوصية" },
               { href: "/terms", label: "الشروط والأحكام" },
+              { href: "/refund-policy", label: "سياسة الاسترجاع" },
+              { href: "/review-policy", label: "سياسة التقييمات" },
               { href: "/medical-disclaimer", label: "إخلاء المسؤولية الطبية" },
             ]}
           />
