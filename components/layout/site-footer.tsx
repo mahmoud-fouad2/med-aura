@@ -20,16 +20,20 @@ export function SiteFooter() {
             title="المنصة"
             links={[
               { href: "/search", label: "ابحث عن طبيب" },
-              { href: "/how-it-works", label: "كيف تعمل المنصة" },
-              { href: "/sign-up", label: "انضم كمقدّم خدمة" },
+              { href: "/procedures", label: "الإجراءات" },
+              { href: "/centers", label: "المراكز" },
+              { href: "/online-consultation", label: "الاستشارة أونلاين" },
+              { href: "/trust-and-safety", label: "الثقة والأمان" },
             ]}
           />
           <FooterCol
-            title="حسابك"
+            title="الشركة"
             links={[
-              { href: "/sign-in", label: "تسجيل الدخول" },
-              { href: "/sign-up", label: "إنشاء حساب" },
-              { href: "/dashboard", label: "لوحة التحكم" },
+              { href: "/about", label: "من نحن" },
+              { href: "/contact", label: "تواصل معنا" },
+              { href: "/faq", label: "الأسئلة الشائعة" },
+              { href: "/for-doctors", label: "انضم كطبيب" },
+              { href: "/for-centers", label: "سجّل مركزك" },
             ]}
           />
           <FooterCol

@@ -17,6 +17,7 @@ import {
   doctorProcedure,
   availabilityRule,
   providerApplication,
+  faq,
 } from "@/lib/db/schema"
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS, type RoleKey } from "@/lib/rbac"
 import { auth } from "@/lib/auth"
@@ -345,6 +346,74 @@ async function seedUsersAndProviders() {
   console.log("✓ approved center + doctor (valid license, availability) + pending application")
 }
 
+async function seedFaqs() {
+  const existing = await db.select({ id: faq.id }).from(faq).limit(1)
+  if (existing.length > 0) {
+    console.log("✓ faqs (already seeded)")
+    return
+  }
+  const items = [
+    {
+      questionAr: "ما هي منصة Med Aura؟",
+      answerAr:
+        "منصة متخصصة حصريًا في التجميل الطبي، تربطك بأطباء ومراكز معتمدين وتدير رحلتك من البحث والاستشارة حتى المتابعة بعد الإجراء بأمان وموثوقية.",
+      category: "general",
+      sortOrder: 1,
+    },
+    {
+      questionAr: "كيف أضمن أن الطبيب معتمد؟",
+      answerAr:
+        "لا يظهر أي طبيب في نتائج البحث إلا بعد مراجعة فريق الاعتماد والتحقق من ترخيصه. وعند انتهاء صلاحية الترخيص يُخفى الطبيب تلقائيًا وتُمنع الحجوزات الجديدة معه.",
+      category: "trust",
+      sortOrder: 2,
+    },
+    {
+      questionAr: "هل ملفاتي الطبية وصوري آمنة؟",
+      answerAr:
+        "نعم. تُخزَّن ملفاتك بشكل خاص وتُعرض عبر روابط مؤقتة فقط، ولا يطّلع عليها أي طبيب إلا بعد منحك إذنًا صريحًا لحالة محددة، ويمكنك سحب الإذن في أي وقت. ويُسجَّل كل اطّلاع على ملف طبي.",
+      category: "privacy",
+      sortOrder: 3,
+    },
+    {
+      questionAr: "كيف تتم الاستشارة؟",
+      answerAr:
+        "تختار طبيبًا وموعدًا متاحًا، تنشئ حالتك وترفع صورك، تمنح الطبيب إذن الاطلاع، ثم تدفع رسوم الاستشارة. بعد تأكيد الدفع يظهر الموعد لدى الطرفين وتتم الاستشارة (فيديو أو حضوريًا).",
+      category: "consultation",
+      sortOrder: 4,
+    },
+    {
+      questionAr: "متى يتم تأكيد العملية نهائيًا؟",
+      answerAr:
+        "لا يُعتمد الإجراء نهائيًا إلا بعد إجراء الاستشارة ومراجعة الطبيب واعتماده الطبي، وقبولك للخطة وعرض السعر، وسداد المبلغ المطلوب، وتأكيد الموعد من المركز.",
+      category: "consultation",
+      sortOrder: 5,
+    },
+    {
+      questionAr: "كيف تتم المدفوعات وهل هي آمنة؟",
+      answerAr:
+        "تتم عبر بوابة دفع آمنة، ولا نخزّن بيانات بطاقتك إطلاقًا. ولا يُعدّ الدفع مؤكدًا إلا بعد تحقق موثوق من مزوّد الدفع.",
+      category: "payments",
+      sortOrder: 6,
+    },
+    {
+      questionAr: "هل يمكنني استرجاع رسوم الاستشارة؟",
+      answerAr:
+        "نعم وفق سياسة الاسترجاع: الإلغاء قبل 24 ساعة يتيح استردادًا كاملًا، وتُطبَّق سياسة مقدّم الخدمة في الحالات الأخرى. راجع صفحة سياسة الاسترجاع للتفاصيل.",
+      category: "payments",
+      sortOrder: 7,
+    },
+    {
+      questionAr: "أنا طبيب أو مركز تجميل، كيف أنضم؟",
+      answerAr:
+        "أنشئ حسابًا ثم قدّم طلب انضمام من لوحة التحكم مرفقًا بترخيصك. يراجع فريق الاعتماد الطلب، وبعد الموافقة يُنشر ملفك ويظهر للمرضى.",
+      category: "providers",
+      sortOrder: 8,
+    },
+  ]
+  await db.insert(faq).values(items)
+  console.log(`✓ faqs (${items.length})`)
+}
+
 async function main() {
   if (process.env.NODE_ENV === "production" && process.env.FORCE_SEED !== "true") {
     console.error("Refusing to seed in production. Set FORCE_SEED=true to override.")
@@ -359,6 +428,7 @@ async function main() {
   await seedRolesAndPermissions()
   await seedGeography()
   await seedCatalog()
+  await seedFaqs()
   await seedUsersAndProviders()
 
   console.log("\n✅ Seed complete. DEMO data — for development only.")

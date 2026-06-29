@@ -13,6 +13,9 @@ export async function SiteHeader() {
   // Only link to routes that actually exist (no 404s).
   const navLinks = [
     { href: "/search", label: t.nav.doctors },
+    { href: "/procedures", label: t.nav.procedures },
+    { href: "/centers", label: t.nav.centers },
+    { href: "/online-consultation", label: "الاستشارة أونلاين" },
     { href: "/how-it-works", label: t.nav.howItWorks },
   ]
 
