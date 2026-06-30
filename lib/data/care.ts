@@ -8,6 +8,8 @@ import {
   quote,
   quoteItem,
   procedureBooking,
+  medicalApproval,
+  review,
 } from "@/lib/db/schema"
 
 export type CareConsultation = {
@@ -183,6 +185,38 @@ export async function getActiveBooking(caseId: string): Promise<CareBooking | nu
     .orderBy(desc(procedureBooking.createdAt))
     .limit(1)
   return rows[0] ?? null
+}
+
+export type CareStage = {
+  booking: { id: string; status: string; scheduledDate: string | null } | null
+  approvalStatus: string | null
+  hasReview: boolean
+}
+
+/** Aggregated late-stage care state for driving the case action panels. */
+export async function getCareStage(caseId: string): Promise<CareStage> {
+  const empty: CareStage = { booking: null, approvalStatus: null, hasReview: false }
+  if (!isDbConfigured) return empty
+  const [booking, approval, reviews] = await Promise.all([
+    db
+      .select({ id: procedureBooking.id, status: procedureBooking.status, scheduledDate: procedureBooking.scheduledDate })
+      .from(procedureBooking)
+      .where(eq(procedureBooking.caseId, caseId))
+      .orderBy(desc(procedureBooking.createdAt))
+      .limit(1),
+    db
+      .select({ status: medicalApproval.status })
+      .from(medicalApproval)
+      .where(eq(medicalApproval.caseId, caseId))
+      .orderBy(desc(medicalApproval.createdAt))
+      .limit(1),
+    db.select({ id: review.id }).from(review).where(eq(review.caseId, caseId)).limit(1),
+  ])
+  return {
+    booking: booking[0] ?? null,
+    approvalStatus: approval[0]?.status ?? null,
+    hasReview: reviews.length > 0,
+  }
 }
 
 /** True if `userId` is the doctor assigned to this case (resource-level check). */

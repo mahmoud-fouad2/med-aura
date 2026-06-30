@@ -9,7 +9,10 @@ import {
   isCaseDoctor,
   getTreatmentPlan,
   getQuoteForCase,
+  getCareStage,
 } from "@/lib/data/care"
+import { hasPermission, PERMISSIONS } from "@/lib/rbac"
+import { StageActions } from "@/components/care/stage-actions"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,18 +36,28 @@ export default async function CaseDetailPage({
   const c = await getCaseDetailForUser(user.id, id)
   if (!c) notFound()
 
-  const [isDoctorViewer, consultation, outcome, plan, quote] = await Promise.all([
-    isCaseDoctor(user.id, c.doctorId),
-    getLatestConsultation(c.id),
-    getOutcomePublic(c.id),
-    getTreatmentPlan(c.id),
-    getQuoteForCase(c.id),
-  ])
+  const [isDoctorViewer, consultation, outcome, plan, quote, isCenterViewer, careStage] =
+    await Promise.all([
+      isCaseDoctor(user.id, c.doctorId),
+      getLatestConsultation(c.id),
+      getOutcomePublic(c.id),
+      getTreatmentPlan(c.id),
+      getQuoteForCase(c.id),
+      hasPermission(user.id, PERMISSIONS.PROCEDURE_CONFIRM),
+      getCareStage(c.id),
+    ])
   const showDoctorCare =
     isDoctorViewer &&
     ["CONSULTATION_COMPLETED", "TREATMENT_PLAN_ISSUED"].includes(c.status)
   const showPatientCare =
     c.isOwner && (plan?.status === "PUBLISHED" || Boolean(quote))
+  const completedStates = ["PROCEDURE_COMPLETED", "FOLLOW_UP", "FULLY_PAID", "CLOSED"]
+  const showStage =
+    (isDoctorViewer && c.status === "DEPOSIT_PAID") ||
+    (isCenterViewer && ["MEDICALLY_APPROVED", "PROCEDURE_CONFIRMED"].includes(c.status)) ||
+    (c.isOwner &&
+      (c.status === "CENTER_CONFIRMED" ||
+        (completedStates.includes(c.status) && !careStage.hasReview)))
 
   const answers = c.answers as Record<string, unknown>
 
@@ -109,6 +122,23 @@ export default async function CaseDetailPage({
       {showPatientCare && (
         <Card className="p-6">
           <PatientCarePanel plan={plan} quote={quote} />
+        </Card>
+      )}
+
+      {showStage && (
+        <Card className="space-y-4 p-6">
+          <h2 className="font-heading text-lg font-bold text-foreground">
+            الإجراء التالي
+          </h2>
+          {isDoctorViewer && (
+            <StageActions caseId={c.id} caseStatus={c.status} role="doctor" stage={careStage} />
+          )}
+          {isCenterViewer && (
+            <StageActions caseId={c.id} caseStatus={c.status} role="center" stage={careStage} />
+          )}
+          {c.isOwner && (
+            <StageActions caseId={c.id} caseStatus={c.status} role="patient" stage={careStage} />
+          )}
         </Card>
       )}
 

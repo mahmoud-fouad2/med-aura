@@ -209,6 +209,16 @@ async function seedUsersAndProviders() {
     "د. سارة العتيبي",
     ROLES.DOCTOR,
   )
+  // Solo practitioner also owns the center → can perform center-side care steps.
+  const centerOwnerRole = (
+    await db.select({ id: roleT.id }).from(roleT).where(eq(roleT.key, ROLES.CENTER_OWNER)).limit(1)
+  )[0]
+  if (centerOwnerRole) {
+    await db
+      .insert(userRole)
+      .values({ userId: approvedDoctorId, roleId: centerOwnerRole.id })
+      .onConflictDoNothing()
+  }
   const pendingDoctorId = await ensureUser(
     "pending-doctor@medaura.local",
     "د. ليان الحربي",
