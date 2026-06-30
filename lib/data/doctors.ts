@@ -10,7 +10,7 @@ import {
   count,
   type SQL,
 } from "drizzle-orm"
-import { db, safeRead } from "@/lib/db"
+import { db } from "@/lib/db"
 import {
   doctorProfile,
   doctorLicense,
@@ -120,7 +120,6 @@ function filterConditions(params: SearchParams): SQL[] {
 export async function searchDoctors(
   params: SearchParams,
 ): Promise<{ results: DoctorCard[]; total: number }> {
-  return safeRead(async () => {
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 12))
   const where = and(...visibilityConditions(), ...filterConditions(params))
@@ -174,7 +173,6 @@ export async function searchDoctors(
     results: rows.map((r) => ({ ...r, procedures: procMap.get(r.id) ?? [] })),
     total: totalRows[0]?.n ?? 0,
   }
-  }, { results: [], total: 0 })
 }
 
 export type PublicDoctor = DoctorCard & {
@@ -191,7 +189,6 @@ export type PublicDoctor = DoctorCard & {
 export async function getPublicDoctorBySlug(
   slug: string,
 ): Promise<PublicDoctor | null> {
-  return safeRead(async () => {
   const where = and(eq(doctorProfile.slug, slug), ...visibilityConditions())
   const rows = await db
     .select({
@@ -248,5 +245,4 @@ export async function getPublicDoctorBySlug(
     licenseLast4: license[0]?.numberLast4 ?? null,
     lastVerifiedAt: license[0]?.lastVerifiedAt ?? null,
   }
-  }, null)
 }

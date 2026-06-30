@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { ChevronDown, HelpCircle } from "lucide-react"
 import { eq, asc } from "drizzle-orm"
-import { db, safeRead } from "@/lib/db"
+import { db } from "@/lib/db"
+import { query } from "@/lib/db/query"
+import { DataState } from "@/components/ui/data-state"
 import { faq } from "@/lib/db/schema"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -18,19 +20,18 @@ export const metadata = {
 }
 
 export default async function FaqPage() {
-  const items = await safeRead(
-    () =>
-      db
-        .select({
-          id: faq.id,
-          question: faq.questionAr,
-          answer: faq.answerAr,
-        })
-        .from(faq)
-        .where(eq(faq.visible, true))
-        .orderBy(asc(faq.sortOrder)),
-    [],
+  const res = await query(() =>
+    db
+      .select({
+        id: faq.id,
+        question: faq.questionAr,
+        answer: faq.answerAr,
+      })
+      .from(faq)
+      .where(eq(faq.visible, true))
+      .orderBy(asc(faq.sortOrder)),
   )
+  const items = res.status === "ok" ? res.data : []
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -44,7 +45,12 @@ export default async function FaqPage() {
 
         <section className="bg-background">
           <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-            {items.length === 0 ? (
+            {res.status !== "ok" ? (
+              <DataState
+                status={res.status}
+                requestId={res.status === "error" ? res.requestId : undefined}
+              />
+            ) : items.length === 0 ? (
               <EmptyState
                 icon={HelpCircle}
                 title="سيتم نشر الأسئلة قريبًا"

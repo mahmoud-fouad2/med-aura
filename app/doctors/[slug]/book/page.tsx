@@ -3,8 +3,10 @@ import { requireAuthPage } from "@/lib/session"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { getAvailableSlots } from "@/lib/data/availability"
 import { isStripeConfigured } from "@/lib/env"
+import { query } from "@/lib/db/query"
 import { SiteHeader } from "@/components/layout/site-header"
 import { Card } from "@/components/ui/card"
+import { DataState } from "@/components/ui/data-state"
 import { BookingClient } from "@/components/booking/booking-client"
 
 export const dynamic = "force-dynamic"
@@ -21,7 +23,21 @@ export default async function BookPage({
 
   await requireAuthPage(`/doctors/${slug}/book${caseId ? `?case=${caseId}` : ""}`)
 
-  const doctor = await getPublicDoctorBySlug(slug)
+  const r = await query(() => getPublicDoctorBySlug(slug))
+  if (r.status !== "ok") {
+    return (
+      <div className="flex min-h-svh flex-col">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16">
+          <DataState
+            status={r.status}
+            requestId={r.status === "error" ? r.requestId : undefined}
+          />
+        </main>
+      </div>
+    )
+  }
+  const doctor = r.data
   if (!doctor) notFound()
 
   const slots = await getAvailableSlots(doctor.id, {

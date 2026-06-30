@@ -10,7 +10,9 @@ import { DoctorCard } from "@/components/search/doctor-card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { searchDoctors, type SearchParams } from "@/lib/data/doctors"
-import { db, safeRead } from "@/lib/db"
+import { db } from "@/lib/db"
+import { query } from "@/lib/db/query"
+import { DataState } from "@/components/ui/data-state"
 import { procedureCategory, country as countryT } from "@/lib/db/schema"
 import { getI18n } from "@/lib/i18n"
 
@@ -44,27 +46,28 @@ export default async function SearchPage({
     page: Number(str(sp.page) ?? "1") || 1,
   }
 
-  const [{ results, total }, categories, countries] = await Promise.all([
-    searchDoctors(params),
-    safeRead(
-      () =>
-        db
-          .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr })
-          .from(procedureCategory)
-          .where(eq(procedureCategory.visible, true))
-          .orderBy(asc(procedureCategory.sortOrder)),
-      [],
+  const [doctorsRes, categoriesRes, countriesRes] = await Promise.all([
+    query(() => searchDoctors(params)),
+    query(() =>
+      db
+        .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr })
+        .from(procedureCategory)
+        .where(eq(procedureCategory.visible, true))
+        .orderBy(asc(procedureCategory.sortOrder)),
     ),
-    safeRead(
-      () =>
-        db
-          .select({ code: countryT.code, nameAr: countryT.nameAr })
-          .from(countryT)
-          .where(eq(countryT.active, true))
-          .orderBy(asc(countryT.sortOrder)),
-      [],
+    query(() =>
+      db
+        .select({ code: countryT.code, nameAr: countryT.nameAr })
+        .from(countryT)
+        .where(eq(countryT.active, true))
+        .orderBy(asc(countryT.sortOrder)),
     ),
   ])
+
+  const categories = categoriesRes.status === "ok" ? categoriesRes.data : []
+  const countries = countriesRes.status === "ok" ? countriesRes.data : []
+  const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
+  const total = doctorsRes.status === "ok" ? doctorsRes.data.total : 0
 
   const pageSize = 12
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -170,7 +173,14 @@ export default async function SearchPage({
 
             {/* Results */}
             <section>
-              {results.length === 0 ? (
+              {doctorsRes.status !== "ok" ? (
+                <DataState
+                  status={doctorsRes.status}
+                  requestId={
+                    doctorsRes.status === "error" ? doctorsRes.requestId : undefined
+                  }
+                />
+              ) : results.length === 0 ? (
                 <EmptyState
                   icon={SearchX}
                   title="لا توجد نتائج مطابقة"

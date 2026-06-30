@@ -1,34 +1,32 @@
 import Link from "next/link"
 import { eq, asc } from "drizzle-orm"
 import { ArrowLeft, Sparkles, Syringe } from "lucide-react"
-import { db, safeRead } from "@/lib/db"
+import { db } from "@/lib/db"
+import { query } from "@/lib/db/query"
 import { procedure as procedureT, procedureCategory } from "@/lib/db/schema"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 
 export async function PopularProcedures() {
-  const rows = await safeRead(
-    () =>
-      db
-        .select({
-          slug: procedureT.slug,
-          nameAr: procedureT.nameAr,
-          isSurgical: procedureT.isSurgical,
-          recoveryDays: procedureT.recoveryDays,
-          categoryNameAr: procedureCategory.nameAr,
-        })
-        .from(procedureT)
-        .innerJoin(
-          procedureCategory,
-          eq(procedureT.categoryId, procedureCategory.id),
-        )
-        .where(eq(procedureT.visible, true))
-        .orderBy(asc(procedureT.sortOrder))
-        .limit(8),
-    [],
+  const res = await query(() =>
+    db
+      .select({
+        slug: procedureT.slug,
+        nameAr: procedureT.nameAr,
+        isSurgical: procedureT.isSurgical,
+        recoveryDays: procedureT.recoveryDays,
+        categoryNameAr: procedureCategory.nameAr,
+      })
+      .from(procedureT)
+      .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
+      .where(eq(procedureT.visible, true))
+      .orderBy(asc(procedureT.sortOrder))
+      .limit(8),
   )
+  const rows = res.status === "ok" ? res.data : []
 
   return (
     <section className="border-b border-border bg-background">
@@ -39,7 +37,14 @@ export async function PopularProcedures() {
           subtitle="نخبة من إجراءات التجميل الجراحية وغير الجراحية، يقدّمها مختصون معتمدون."
         />
 
-        {rows.length === 0 ? (
+        {res.status !== "ok" ? (
+          <div className="mt-12">
+            <DataState
+              status={res.status}
+              requestId={res.status === "error" ? res.requestId : undefined}
+            />
+          </div>
+        ) : rows.length === 0 ? (
           <div className="mt-12">
             <EmptyState
               icon={Sparkles}

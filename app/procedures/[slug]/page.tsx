@@ -7,10 +7,12 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DataState } from "@/components/ui/data-state"
 import { DoctorCard } from "@/components/search/doctor-card"
 import { Stagger, StaggerItem, Reveal } from "@/components/motion"
 import { getProcedureBySlug } from "@/lib/data/procedures"
 import { searchDoctors } from "@/lib/data/doctors"
+import { query } from "@/lib/db/query"
 import { appUrl } from "@/lib/env"
 
 export const dynamic = "force-dynamic"
@@ -21,7 +23,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const p = await getProcedureBySlug(slug)
+  const r = await query(() => getProcedureBySlug(slug))
+  const p = r.status === "ok" ? r.data : null
   if (!p) return { title: "الإجراء غير موجود" }
   return {
     title: `${p.nameAr} — ${p.categoryNameAr}`,
@@ -37,10 +40,26 @@ export default async function ProcedureDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const procedure = await getProcedureBySlug(slug)
+  const procRes = await query(() => getProcedureBySlug(slug))
+  if (procRes.status !== "ok") {
+    return (
+      <div className="flex min-h-svh flex-col">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16">
+          <DataState
+            status={procRes.status}
+            requestId={procRes.status === "error" ? procRes.requestId : undefined}
+          />
+        </main>
+        <SiteFooter />
+      </div>
+    )
+  }
+  const procedure = procRes.data
   if (!procedure) notFound()
 
-  const { results } = await searchDoctors({ procedure: slug, pageSize: 6 })
+  const doctorsRes = await query(() => searchDoctors({ procedure: slug, pageSize: 6 }))
+  const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -114,7 +133,12 @@ export default async function ProcedureDetailPage({
             <h2 className="mb-8 font-heading text-2xl font-bold text-foreground">
               أطباء يقدّمون هذا الإجراء
             </h2>
-            {results.length === 0 ? (
+            {doctorsRes.status !== "ok" ? (
+              <DataState
+                status={doctorsRes.status}
+                requestId={doctorsRes.status === "error" ? doctorsRes.requestId : undefined}
+              />
+            ) : results.length === 0 ? (
               <EmptyState
                 icon={Stethoscope}
                 title="لا يوجد أطباء معتمدون لهذا الإجراء بعد"

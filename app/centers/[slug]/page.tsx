@@ -7,9 +7,11 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DataState } from "@/components/ui/data-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Reveal } from "@/components/motion"
 import { getCenterBySlug } from "@/lib/data/centers"
+import { query } from "@/lib/db/query"
 import { Stethoscope } from "lucide-react"
 import { appUrl } from "@/lib/env"
 
@@ -21,7 +23,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const c = await getCenterBySlug(slug)
+  const r = await query(() => getCenterBySlug(slug))
+  const c = r.status === "ok" ? r.data : null
   if (!c) return { title: "المركز غير موجود" }
   return {
     title: c.name,
@@ -35,7 +38,22 @@ export default async function CenterDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const c = await getCenterBySlug(slug)
+  const r = await query(() => getCenterBySlug(slug))
+  if (r.status !== "ok") {
+    return (
+      <div className="flex min-h-svh flex-col">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16">
+          <DataState
+            status={r.status}
+            requestId={r.status === "error" ? r.requestId : undefined}
+          />
+        </main>
+        <SiteFooter />
+      </div>
+    )
+  }
+  const c = r.data
   if (!c) notFound()
 
   const jsonLd = {

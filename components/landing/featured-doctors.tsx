@@ -1,14 +1,17 @@
 import Link from "next/link"
 import { Stethoscope, ArrowLeft } from "lucide-react"
 import { searchDoctors } from "@/lib/data/doctors"
+import { query } from "@/lib/db/query"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DataState } from "@/components/ui/data-state"
 import { Button } from "@/components/ui/button"
 import { DoctorCard } from "@/components/search/doctor-card"
-import { Reveal, Stagger, StaggerItem } from "@/components/motion"
+import { Stagger, StaggerItem } from "@/components/motion"
 
 export async function FeaturedDoctors() {
-  const { results } = await searchDoctors({ pageSize: 3 })
+  const res = await query(() => searchDoctors({ pageSize: 3 }))
+  const results = res.status === "ok" ? res.data.results : []
 
   return (
     <section className="border-b border-border bg-secondary/30">
@@ -33,7 +36,14 @@ export async function FeaturedDoctors() {
           )}
         </div>
 
-        {results.length === 0 ? (
+        {res.status !== "ok" ? (
+          <div className="mt-12">
+            <DataState
+              status={res.status}
+              requestId={res.status === "error" ? res.requestId : undefined}
+            />
+          </div>
+        ) : results.length === 0 ? (
           <div className="mt-12">
             <EmptyState
               icon={Stethoscope}

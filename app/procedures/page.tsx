@@ -5,8 +5,10 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listProceduresGrouped } from "@/lib/data/procedures"
+import { query } from "@/lib/db/query"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +19,8 @@ export const metadata = {
 }
 
 export default async function ProceduresPage() {
-  const groups = await listProceduresGrouped()
+  const res = await query(() => listProceduresGrouped())
+  const groups = res.status === "ok" ? res.data : []
   const hasAny = groups.some((g) => g.procedures.length > 0)
 
   return (
@@ -32,7 +35,12 @@ export default async function ProceduresPage() {
 
         <section className="bg-background">
           <div className="mx-auto max-w-7xl space-y-16 px-4 py-16 sm:px-6 lg:px-8">
-            {!hasAny ? (
+            {res.status !== "ok" ? (
+              <DataState
+                status={res.status}
+                requestId={res.status === "error" ? res.requestId : undefined}
+              />
+            ) : !hasAny ? (
               <EmptyState
                 icon={Sparkles}
                 title="سيتم عرض الإجراءات قريبًا"

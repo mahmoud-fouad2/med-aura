@@ -16,7 +16,9 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { DataState } from "@/components/ui/data-state"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
+import { query } from "@/lib/db/query"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +28,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const doctor = await getPublicDoctorBySlug(slug)
+  const r = await query(() => getPublicDoctorBySlug(slug))
+  const doctor = r.status === "ok" ? r.data : null
   if (!doctor) return { title: "الطبيب غير موجود" }
   return {
     title: `${doctor.name} — ${doctor.title ?? "طبيب تجميل"}`,
@@ -40,7 +43,22 @@ export default async function DoctorProfilePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const doctor = await getPublicDoctorBySlug(slug)
+  const r = await query(() => getPublicDoctorBySlug(slug))
+  if (r.status !== "ok") {
+    return (
+      <div className="flex min-h-svh flex-col">
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16">
+          <DataState
+            status={r.status}
+            requestId={r.status === "error" ? r.requestId : undefined}
+          />
+        </main>
+        <SiteFooter />
+      </div>
+    )
+  }
+  const doctor = r.data
   if (!doctor) notFound()
 
   const initials = doctor.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"

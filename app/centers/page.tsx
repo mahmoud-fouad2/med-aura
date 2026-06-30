@@ -6,9 +6,11 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { DataState } from "@/components/ui/data-state"
 import { Button } from "@/components/ui/button"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listPublishedCenters } from "@/lib/data/centers"
+import { query } from "@/lib/db/query"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +20,8 @@ export const metadata = {
 }
 
 export default async function CentersPage() {
-  const centers = await listPublishedCenters()
+  const res = await query(() => listPublishedCenters())
+  const centers = res.status === "ok" ? res.data : []
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -32,7 +35,12 @@ export default async function CentersPage() {
 
         <section className="bg-background">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            {centers.length === 0 ? (
+            {res.status !== "ok" ? (
+              <DataState
+                status={res.status}
+                requestId={res.status === "error" ? res.requestId : undefined}
+              />
+            ) : centers.length === 0 ? (
               <EmptyState
                 icon={Building2}
                 title="لا توجد مراكز منشورة بعد"
