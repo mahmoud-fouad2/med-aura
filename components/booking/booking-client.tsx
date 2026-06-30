@@ -59,11 +59,10 @@ export function BookingClient({
           <Info className="mt-0.5 size-5 text-primary" />
           <div>
             <p className="font-medium text-foreground">
-              تم إنشاء الموعد مبدئيًا بانتظار الدفع.
+              تم إنشاء موعدك بانتظار الدفع.
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              بوابة الدفع غير مفعّلة في هذه البيئة، لذلك لم يتم تأكيد الموعد بعد.
-              سيتم التأكيد تلقائيًا بمجرد إتمام الدفع.
+              سيتم تأكيد الموعد تلقائيًا فور إتمام عملية الدفع.
             </p>
           </div>
         </div>
@@ -76,14 +75,6 @@ export function BookingClient({
 
   return (
     <div className="space-y-4">
-      {!paymentsConfigured && (
-        <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
-          <Info className="mt-0.5 size-4" />
-          بوابة الدفع غير مفعّلة في هذه البيئة. يمكنك اختيار موعد، وسيُنشأ بحالة
-          «بانتظار الدفع» دون تأكيد وهمي.
-        </div>
-      )}
-
       <Card className="p-4">
         <h2 className="mb-3 flex items-center gap-2 font-heading font-semibold text-foreground">
           <CalendarClock className="size-5 text-primary" />

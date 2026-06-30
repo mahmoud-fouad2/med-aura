@@ -1,5 +1,5 @@
 import { and, eq, desc, isNull, count } from "drizzle-orm"
-import { db, isDbConfigured } from "@/lib/db"
+import { db, safeRead } from "@/lib/db"
 import { center, doctorProfile } from "@/lib/db/schema"
 
 export type CenterCard = {
@@ -22,7 +22,7 @@ function visibleCenter() {
 }
 
 export async function listPublishedCenters(): Promise<CenterCard[]> {
-  if (!isDbConfigured) return []
+  return safeRead(async () => {
   const rows = await db
     .select({
       id: center.id,
@@ -56,6 +56,7 @@ export async function listPublishedCenters(): Promise<CenterCard[]> {
     result.push({ ...c, doctorCount: dc })
   }
   return result
+  }, [])
 }
 
 export type CenterDetail = CenterCard & {
@@ -65,7 +66,7 @@ export type CenterDetail = CenterCard & {
 }
 
 export async function getCenterBySlug(slug: string): Promise<CenterDetail | null> {
-  if (!isDbConfigured) return null
+  return safeRead(async () => {
   const c = (
     await db
       .select({
@@ -101,4 +102,5 @@ export async function getCenterBySlug(slug: string): Promise<CenterDetail | null
     )
 
   return { ...c, doctorCount: docs.length, doctors: docs }
+  }, null)
 }

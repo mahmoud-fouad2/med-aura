@@ -10,7 +10,7 @@ import { DoctorCard } from "@/components/search/doctor-card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { searchDoctors, type SearchParams } from "@/lib/data/doctors"
-import { db } from "@/lib/db"
+import { db, safeRead } from "@/lib/db"
 import { procedureCategory, country as countryT } from "@/lib/db/schema"
 import { getI18n } from "@/lib/i18n"
 
@@ -46,16 +46,24 @@ export default async function SearchPage({
 
   const [{ results, total }, categories, countries] = await Promise.all([
     searchDoctors(params),
-    db
-      .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr })
-      .from(procedureCategory)
-      .where(eq(procedureCategory.visible, true))
-      .orderBy(asc(procedureCategory.sortOrder)),
-    db
-      .select({ code: countryT.code, nameAr: countryT.nameAr })
-      .from(countryT)
-      .where(eq(countryT.active, true))
-      .orderBy(asc(countryT.sortOrder)),
+    safeRead(
+      () =>
+        db
+          .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr })
+          .from(procedureCategory)
+          .where(eq(procedureCategory.visible, true))
+          .orderBy(asc(procedureCategory.sortOrder)),
+      [],
+    ),
+    safeRead(
+      () =>
+        db
+          .select({ code: countryT.code, nameAr: countryT.nameAr })
+          .from(countryT)
+          .where(eq(countryT.active, true))
+          .orderBy(asc(countryT.sortOrder)),
+      [],
+    ),
   ])
 
   const pageSize = 12

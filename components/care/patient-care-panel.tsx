@@ -155,8 +155,7 @@ function QuoteView({ quote }: { quote: CareQuote }) {
       {pendingNotice ? (
         <div className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-sm text-muted-foreground">
           <Info className="mt-0.5 size-4" />
-          قبلت العرض. بوابة الدفع غير مهيأة في هذه البيئة، لذا لم يُسجَّل العربون
-          بعد. سيُؤكَّد تلقائيًا بمجرد إتمام الدفع.
+          تم قبول العرض. سيتم تأكيد العربون تلقائيًا فور إتمام عملية الدفع.
         </div>
       ) : canAccept ? (
         <Button disabled={busy} onClick={onAccept}>
