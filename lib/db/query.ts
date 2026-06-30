@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { logger } from "@/lib/logger"
+import { captureError } from "@/lib/monitoring"
 
 /**
  * Unified data-read result. Distinguishes a successful (possibly empty) read
@@ -45,7 +46,7 @@ export async function query<T>(fn: () => Promise<T>): Promise<QueryResult<T>> {
       return { status: "unavailable" }
     }
     const requestId = randomUUID().slice(0, 8)
-    logger.error("db query failed", {
+    captureError("db query failed", {
       requestId,
       code,
       message: err instanceof Error ? err.message : String(err),

@@ -425,8 +425,10 @@ async function seedFaqs() {
 }
 
 async function main() {
-  if (process.env.NODE_ENV === "production" && process.env.FORCE_SEED !== "true") {
-    console.error("Refusing to seed in production. Set FORCE_SEED=true to override.")
+  const isProd = process.env.NODE_ENV === "production"
+  if (isProd) {
+    // Hard stop: never seed demo/reference data into production accidentally.
+    console.error("Refusing to run the seed in production (NODE_ENV=production).")
     process.exit(1)
   }
   if (!process.env.DATABASE_URL) {
@@ -434,20 +436,27 @@ async function main() {
     process.exit(1)
   }
 
-  console.log("Seeding Med Aura (development data)…\n")
+  console.log("Seeding Med Aura reference data…\n")
   await seedRolesAndPermissions()
   await seedGeography()
   await seedCatalog()
   await seedFaqs()
-  await seedUsersAndProviders()
 
-  console.log("\n✅ Seed complete. DEMO data — for development only.")
-  console.log("   Login password for all demo users:", DEV_PASSWORD)
-  console.log("   • admin@medaura.local            (Super Admin)")
-  console.log("   • compliance@medaura.local       (Compliance Reviewer)")
-  console.log("   • patient@medaura.local          (Patient)")
-  console.log("   • doctor@medaura.local           (Approved Doctor)")
-  console.log("   • pending-doctor@medaura.local   (Pending application)")
+  // Demo accounts/providers are OPT-IN and never exist in production.
+  const demoEnabled = process.env.ENABLE_DEMO_DATA === "true"
+  if (demoEnabled) {
+    await seedUsersAndProviders()
+    console.log("\n✅ Seed complete (reference + DEMO data — development only).")
+    console.log("   Demo login password:", DEV_PASSWORD)
+    console.log("   • admin@medaura.local            (Super Admin)")
+    console.log("   • compliance@medaura.local       (Compliance Reviewer)")
+    console.log("   • patient@medaura.local          (Patient)")
+    console.log("   • doctor@medaura.local           (Approved Doctor + demo Center Owner)")
+    console.log("   • pending-doctor@medaura.local   (Pending application)")
+  } else {
+    console.log("\n✅ Seed complete (reference data only).")
+    console.log("   Demo accounts skipped. Set ENABLE_DEMO_DATA=true to create them (dev only).")
+  }
 
   await pool.end()
 }

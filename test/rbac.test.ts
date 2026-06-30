@@ -58,4 +58,19 @@ describe("RBAC permission model", () => {
       rolesHavePermission([ROLES.DOCTOR], PERMISSIONS.PROVIDER_APPROVE),
     ).toBe(false)
   })
+
+  it("separates DOCTOR (medical) from CENTER (operational) care steps", () => {
+    // Doctor: medical approval yes; center procedure steps no
+    expect(rolesHavePermission([ROLES.DOCTOR], PERMISSIONS.MEDICAL_APPROVE)).toBe(true)
+    expect(rolesHavePermission([ROLES.DOCTOR], PERMISSIONS.PROCEDURE_CONFIRM)).toBe(false)
+    expect(rolesHavePermission([ROLES.DOCTOR], PERMISSIONS.PROCEDURE_COMPLETE)).toBe(false)
+    // Center owner: procedure steps yes; medical approval no
+    expect(rolesHavePermission([ROLES.CENTER_OWNER], PERMISSIONS.PROCEDURE_CONFIRM)).toBe(true)
+    expect(rolesHavePermission([ROLES.CENTER_OWNER], PERMISSIONS.PROCEDURE_COMPLETE)).toBe(true)
+    expect(rolesHavePermission([ROLES.CENTER_OWNER], PERMISSIONS.MEDICAL_APPROVE)).toBe(false)
+    // Concierge: coordinates only — no medical approval, no quote pricing
+    expect(rolesHavePermission([ROLES.CONCIERGE], PERMISSIONS.MEDICAL_APPROVE)).toBe(false)
+    expect(rolesHavePermission([ROLES.CONCIERGE], PERMISSIONS.QUOTE_WRITE)).toBe(false)
+    expect(rolesHavePermission([ROLES.CONCIERGE], PERMISSIONS.PROCEDURE_CONFIRM)).toBe(false)
+  })
 })

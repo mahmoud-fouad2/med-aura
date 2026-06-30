@@ -48,6 +48,10 @@ const schema = z.object({
   // reCAPTCHA
   RECAPTCHA_SECRET_KEY: z.string().optional(),
   NEXT_PUBLIC_RECAPTCHA_SITE_KEY: z.string().optional(),
+
+  // Ops
+  ENABLE_DEMO_DATA: z.string().optional(),
+  MONITORING_WEBHOOK_URL: z.url().optional(),
 })
 
 export type Env = z.infer<typeof schema>

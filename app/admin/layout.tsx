@@ -15,6 +15,7 @@ export default async function AdminLayout({
   const nav: ShellNavLink[] = [
     { href: "/admin", label: "الإدارة" },
     { href: "/admin/applications", label: "طلبات الانضمام" },
+    { href: "/admin/system-health", label: "صحة النظام" },
   ]
 
   return (
