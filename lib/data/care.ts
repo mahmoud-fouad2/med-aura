@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray, lt } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import {
   appointment,
@@ -10,6 +10,11 @@ import {
   procedureBooking,
   medicalApproval,
   review,
+  followUpPlan,
+  followUpTask,
+  followUpEntry,
+  safetyAlert,
+  invoice,
 } from "@/lib/db/schema"
 
 export type CareConsultation = {
@@ -231,4 +236,147 @@ export async function isCaseDoctor(
     .where(eq(doctorProfile.id, caseDoctorId))
     .limit(1)
   return rows[0]?.userId === userId
+}
+
+export type FollowUpEntryView = {
+  painScore: number | null
+  notes: string | null
+  answers: Record<string, unknown> | null
+  documentIds: string[]
+  createdAt: Date
+}
+export type FollowUpTaskView = {
+  id: string
+  type: string
+  title: string
+  instructions: string | null
+  requiredPhotos: number
+  dueAt: Date | null
+  status: string
+  submittedAt: Date | null
+  reviewedAt: Date | null
+  reviewNotes: string | null
+  latestEntry: FollowUpEntryView | null
+}
+
+/**
+ * Follow-up tasks for a case's latest plan. Lazily flips overdue SCHEDULED/DUE
+ * tasks to MISSED before reading — no cron needed since this is the only read path.
+ */
+export async function getFollowUpTasksForCase(caseId: string): Promise<FollowUpTaskView[]> {
+  if (!isDbConfigured) return []
+  const plan = (
+    await db.select({ id: followUpPlan.id }).from(followUpPlan).where(eq(followUpPlan.caseId, caseId)).orderBy(desc(followUpPlan.createdAt)).limit(1)
+  )[0]
+  if (!plan) return []
+
+  await db
+    .update(followUpTask)
+    .set({ status: "MISSED" })
+    .where(
+      and(
+        eq(followUpTask.planId, plan.id),
+        inArray(followUpTask.status, ["SCHEDULED", "DUE"]),
+        lt(followUpTask.dueAt, new Date()),
+      ),
+    )
+
+  const tasks = await db
+    .select()
+    .from(followUpTask)
+    .where(eq(followUpTask.planId, plan.id))
+    .orderBy(followUpTask.dueAt)
+  if (tasks.length === 0) return []
+
+  const entries = await db
+    .select()
+    .from(followUpEntry)
+    .where(inArray(followUpEntry.taskId, tasks.map((t) => t.id)))
+    .orderBy(desc(followUpEntry.createdAt))
+  const latestByTask = new Map<string, (typeof entries)[number]>()
+  for (const e of entries) if (!latestByTask.has(e.taskId)) latestByTask.set(e.taskId, e)
+
+  return tasks.map((t) => {
+    const e = latestByTask.get(t.id)
+    return {
+      id: t.id,
+      type: t.type,
+      title: t.title,
+      instructions: t.instructions,
+      requiredPhotos: t.requiredPhotos,
+      dueAt: t.dueAt,
+      status: t.status,
+      submittedAt: t.submittedAt,
+      reviewedAt: t.reviewedAt,
+      reviewNotes: t.reviewNotes,
+      latestEntry: e
+        ? {
+            painScore: e.painScore,
+            notes: e.notes,
+            answers: (e.answers ?? null) as Record<string, unknown> | null,
+            documentIds: (e.documentIds ?? []) as string[],
+            createdAt: e.createdAt,
+          }
+        : null,
+    }
+  })
+}
+
+export type SafetyAlertView = {
+  id: string
+  severity: string
+  status: string
+  summary: string | null
+  createdAt: Date
+  acknowledgedAt: Date | null
+  resolvedAt: Date | null
+  resolutionNotes: string | null
+}
+
+export async function getSafetyAlertsForCase(caseId: string): Promise<SafetyAlertView[]> {
+  if (!isDbConfigured) return []
+  const rows = await db
+    .select({
+      id: safetyAlert.id,
+      severity: safetyAlert.severity,
+      status: safetyAlert.status,
+      summary: safetyAlert.summary,
+      createdAt: safetyAlert.createdAt,
+      acknowledgedAt: safetyAlert.acknowledgedAt,
+      resolvedAt: safetyAlert.resolvedAt,
+      resolutionNotes: safetyAlert.resolutionNotes,
+    })
+    .from(safetyAlert)
+    .where(eq(safetyAlert.caseId, caseId))
+    .orderBy(desc(safetyAlert.createdAt))
+  return rows
+}
+
+export type InvoiceView = {
+  id: string
+  invoiceNumber: string
+  currency: string
+  total: string
+  paidAmount: string
+  remainingAmount: string
+  status: string
+}
+
+export async function getInvoiceForCase(caseId: string): Promise<InvoiceView | null> {
+  if (!isDbConfigured) return null
+  const rows = await db
+    .select({
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      currency: invoice.currency,
+      total: invoice.total,
+      paidAmount: invoice.paidAmount,
+      remainingAmount: invoice.remainingAmount,
+      status: invoice.status,
+    })
+    .from(invoice)
+    .where(eq(invoice.caseId, caseId))
+    .orderBy(desc(invoice.createdAt))
+    .limit(1)
+  return rows[0] ?? null
 }

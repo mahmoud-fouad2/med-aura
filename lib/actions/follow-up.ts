@@ -52,7 +52,8 @@ async function assertIsPlanDoctor(userId: string, doctorId: string | null) {
   if (!doc || doc.userId !== userId) throw forbidden()
 }
 
-const SUBMITTABLE = ["SCHEDULED", "DUE"]
+// MISSED is included so a late submission is still accepted — better late than never.
+const SUBMITTABLE = ["SCHEDULED", "DUE", "MISSED"]
 
 /* ── Patient: submit a follow-up task ───────────────────────────────────── */
 const submitSchema = z.object({

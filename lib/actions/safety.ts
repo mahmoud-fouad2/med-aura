@@ -19,25 +19,10 @@ import { requirePermission, PERMISSIONS, ROLES } from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
+import { WARNING_SIGNS } from "@/lib/care/warning-signs"
 import type { ActionResult } from "@/lib/actions/provider"
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
-
-/**
- * Fixed, non-diagnostic warning-sign checklist. The system NEVER infers or
- * displays a diagnosis — selecting any of these only routes a safety alert to
- * the care team for human review; it is not medical advice.
- */
-export const WARNING_SIGNS: { key: string; labelAr: string; critical?: boolean }[] = [
-  { key: "heavy_bleeding", labelAr: "نزيف غزير لا يتوقف", critical: true },
-  { key: "difficulty_breathing", labelAr: "صعوبة في التنفس", critical: true },
-  { key: "chest_pain", labelAr: "ألم في الصدر", critical: true },
-  { key: "high_fever", labelAr: "حرارة مرتفعة (39° فأكثر)" },
-  { key: "severe_pain", labelAr: "ألم شديد لا يستجيب للمسكنات" },
-  { key: "wound_infection", labelAr: "احمرار أو صديد أو رائحة من مكان الجرح" },
-  { key: "allergic_reaction", labelAr: "طفح جلدي أو تورم يوحي بحساسية" },
-  { key: "fainting", labelAr: "إغماء أو دوخة شديدة" },
-]
 
 /** Pure DB write — insert a safety alert. Callable inside an existing transaction. */
 export async function createSafetyAlert(

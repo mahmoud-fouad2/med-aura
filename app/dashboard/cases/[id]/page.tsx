@@ -10,7 +10,11 @@ import {
   getTreatmentPlan,
   getQuoteForCase,
   getCareStage,
+  getFollowUpTasksForCase,
+  getSafetyAlertsForCase,
+  getInvoiceForCase,
 } from "@/lib/data/care"
+import { getCaseClosureEligibility } from "@/lib/actions/case-closure"
 import { hasPermission, PERMISSIONS } from "@/lib/rbac"
 import { StageActions } from "@/components/care/stage-actions"
 import { Card } from "@/components/ui/card"
@@ -22,6 +26,9 @@ import { ConsultationPanel } from "@/components/care/consultation-panel"
 import { OutcomeView } from "@/components/care/outcome-view"
 import { DoctorCarePanel } from "@/components/care/doctor-care-panel"
 import { PatientCarePanel } from "@/components/care/patient-care-panel"
+import { FollowUpPanel } from "@/components/care/follow-up-panel"
+import { ReportSymptomsForm, SafetyAlertList } from "@/components/care/safety-alert-panel"
+import { RemainingBalanceCard, RefundRequestForm, CaseClosureControls } from "@/components/care/finance-actions"
 import { caseStatusAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
@@ -36,16 +43,37 @@ export default async function CaseDetailPage({
   const c = await getCaseDetailForUser(user.id, id)
   if (!c) notFound()
 
-  const [isDoctorViewer, consultation, outcome, plan, quote, isCenterViewer, careStage] =
-    await Promise.all([
-      isCaseDoctor(user.id, c.doctorId),
-      getLatestConsultation(c.id),
-      getOutcomePublic(c.id),
-      getTreatmentPlan(c.id),
-      getQuoteForCase(c.id),
-      hasPermission(user.id, PERMISSIONS.PROCEDURE_CONFIRM),
-      getCareStage(c.id),
-    ])
+  const [
+    isDoctorViewer,
+    consultation,
+    outcome,
+    plan,
+    quote,
+    isCenterViewer,
+    careStage,
+    followUpTasks,
+    safetyAlerts,
+    invoice,
+    canManageFollowUp,
+    canManageSafety,
+    canRequestRefund,
+    canCloseCase,
+  ] = await Promise.all([
+    isCaseDoctor(user.id, c.doctorId),
+    getLatestConsultation(c.id),
+    getOutcomePublic(c.id),
+    getTreatmentPlan(c.id),
+    getQuoteForCase(c.id),
+    hasPermission(user.id, PERMISSIONS.PROCEDURE_CONFIRM),
+    getCareStage(c.id),
+    getFollowUpTasksForCase(c.id),
+    getSafetyAlertsForCase(c.id),
+    getInvoiceForCase(c.id),
+    hasPermission(user.id, PERMISSIONS.FOLLOWUP_MANAGE),
+    hasPermission(user.id, PERMISSIONS.SAFETY_ALERT_MANAGE),
+    hasPermission(user.id, PERMISSIONS.REFUND_REQUEST),
+    hasPermission(user.id, PERMISSIONS.CASE_CLOSE),
+  ])
   const showDoctorCare =
     isDoctorViewer &&
     ["CONSULTATION_COMPLETED", "TREATMENT_PLAN_ISSUED"].includes(c.status)
@@ -58,6 +86,10 @@ export default async function CaseDetailPage({
     (c.isOwner &&
       (c.status === "CENTER_CONFIRMED" ||
         (completedStates.includes(c.status) && !careStage.hasReview)))
+  const closureEligibility =
+    canCloseCase && (completedStates.includes(c.status) || c.status === "CLOSED")
+      ? await getCaseClosureEligibility(c.id)
+      : null
 
   const answers = c.answers as Record<string, unknown>
 
@@ -139,6 +171,48 @@ export default async function CaseDetailPage({
           {c.isOwner && (
             <StageActions caseId={c.id} caseStatus={c.status} role="patient" stage={careStage} />
           )}
+        </Card>
+      )}
+
+      {(followUpTasks.length > 0 || (c.isOwner && completedStates.includes(c.status))) && (
+        <Card className="space-y-4 p-6">
+          <FollowUpPanel
+            caseId={c.id}
+            tasks={followUpTasks}
+            canSubmit={c.isOwner}
+            canReview={isDoctorViewer && canManageFollowUp}
+          />
+          {c.isOwner && (
+            <div className="border-t border-border pt-4">
+              <ReportSymptomsForm caseId={c.id} />
+            </div>
+          )}
+        </Card>
+      )}
+
+      {canManageSafety && safetyAlerts.length > 0 && (
+        <Card className="p-6">
+          <SafetyAlertList alerts={safetyAlerts} />
+        </Card>
+      )}
+
+      {invoice && (
+        <Card className="space-y-4 p-6">
+          {c.isOwner && <RemainingBalanceCard caseId={c.id} invoice={invoice} />}
+          {canRequestRefund && Number(invoice.paidAmount) > 0 && (
+            <RefundRequestForm caseId={c.id} />
+          )}
+        </Card>
+      )}
+
+      {closureEligibility && (
+        <Card className="space-y-3 p-6">
+          <h2 className="font-heading text-lg font-bold text-foreground">إغلاق الحالة</h2>
+          <CaseClosureControls
+            caseId={c.id}
+            eligibility={closureEligibility}
+            isClosed={c.status === "CLOSED"}
+          />
         </Card>
       )}
 
