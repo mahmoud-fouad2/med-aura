@@ -1,5 +1,6 @@
 import { requireAuthPage, currentUserRoles } from "@/lib/session"
-import { ROLES } from "@/lib/rbac"
+import { hasPermission, PERMISSIONS, ROLES } from "@/lib/rbac"
+import { getUnreadNotificationCount } from "@/lib/data/notifications"
 import { AppShell, type ShellNavLink } from "@/components/layout/app-shell"
 
 export const dynamic = "force-dynamic"
@@ -10,13 +11,28 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const user = await requireAuthPage("/dashboard")
-  const roles = await currentUserRoles()
+  const [roles, unreadNotifications, canCenter, canConcierge, canFinance] = await Promise.all([
+    currentUserRoles(),
+    getUnreadNotificationCount(user.id),
+    hasPermission(user.id, PERMISSIONS.CENTER_DASHBOARD_ACCESS),
+    hasPermission(user.id, PERMISSIONS.CONCIERGE_ACCESS),
+    hasPermission(user.id, PERMISSIONS.FINANCE_ACCESS),
+  ])
 
   const nav: ShellNavLink[] = [{ href: "/dashboard", label: "الرئيسية" }]
   nav.push({ href: "/dashboard/cases", label: "حالاتي" })
   nav.push({ href: "/dashboard/appointments", label: "مواعيدي" })
   if (roles.includes(ROLES.DOCTOR)) {
     nav.push({ href: "/dashboard/doctor", label: "لوحة الطبيب" })
+  }
+  if (canCenter) {
+    nav.push({ href: "/dashboard/center", label: "لوحة المركز" })
+  }
+  if (canConcierge) {
+    nav.push({ href: "/dashboard/concierge", label: "لوحة المتابعة" })
+  }
+  if (canFinance) {
+    nav.push({ href: "/dashboard/finance", label: "لوحة المالية" })
   }
   if (
     roles.includes(ROLES.SUPER_ADMIN) ||
@@ -26,7 +42,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <AppShell user={user} nav={nav}>
+    <AppShell user={user} nav={nav} unreadNotifications={unreadNotifications}>
       {children}
     </AppShell>
   )

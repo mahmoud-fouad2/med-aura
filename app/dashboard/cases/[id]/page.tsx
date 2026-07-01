@@ -15,6 +15,10 @@ import {
   getInvoiceForCase,
 } from "@/lib/data/care"
 import { getCaseClosureEligibility } from "@/lib/actions/case-closure"
+import { getCaseConversationView } from "@/lib/data/conversations"
+import { getCaseStatusTimeline } from "@/lib/data/concierge"
+import { ConversationPanel } from "@/components/care/conversation-panel"
+import { CaseTimeline } from "@/components/care/case-timeline"
 import { hasPermission, PERMISSIONS } from "@/lib/rbac"
 import { StageActions } from "@/components/care/stage-actions"
 import { Card } from "@/components/ui/card"
@@ -58,6 +62,8 @@ export default async function CaseDetailPage({
     canManageSafety,
     canRequestRefund,
     canCloseCase,
+    conversation,
+    timeline,
   ] = await Promise.all([
     isCaseDoctor(user.id, c.doctorId),
     getLatestConsultation(c.id),
@@ -73,6 +79,8 @@ export default async function CaseDetailPage({
     hasPermission(user.id, PERMISSIONS.SAFETY_ALERT_MANAGE),
     hasPermission(user.id, PERMISSIONS.REFUND_REQUEST),
     hasPermission(user.id, PERMISSIONS.CASE_CLOSE),
+    getCaseConversationView(c.id, user.id),
+    getCaseStatusTimeline(c.id),
   ])
   const showDoctorCare =
     isDoctorViewer &&
@@ -215,6 +223,21 @@ export default async function CaseDetailPage({
           />
         </Card>
       )}
+
+      {timeline.length > 0 && (
+        <Card className="p-6">
+          <CaseTimeline entries={timeline} />
+        </Card>
+      )}
+
+      <Card className="p-6">
+        <ConversationPanel
+          caseId={c.id}
+          conversation={conversation}
+          currentUserId={user.id}
+          canWriteInternalNote={!c.isOwner}
+        />
+      </Card>
 
       <Card className="space-y-3 p-6">
         <h2 className="font-heading text-lg font-bold text-foreground">تفاصيل الحالة</h2>

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Bell } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
@@ -10,10 +11,12 @@ export type ShellNavLink = { href: string; label: string }
 export async function AppShell({
   user,
   nav,
+  unreadNotifications = 0,
   children,
 }: {
   user: { name: string; email: string }
   nav: ShellNavLink[]
+  unreadNotifications?: number
   children: React.ReactNode
 }) {
   const locale = await getLocale()
@@ -28,6 +31,18 @@ export async function AppShell({
             <NavLinks links={nav} className="hidden items-center gap-1 md:flex" />
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/notifications"
+              aria-label="الإشعارات"
+              className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Bell className="size-5" />
+              {unreadNotifications > 0 && (
+                <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                </span>
+              )}
+            </Link>
             <LanguageSwitcher locale={locale} />
             <UserMenu name={user.name} email={user.email} />
           </div>

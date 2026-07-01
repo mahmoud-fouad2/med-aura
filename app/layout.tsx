@@ -1,4 +1,3 @@
-import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
 import { Tajawal, IBM_Plex_Sans_Arabic } from "next/font/google"
 import "./globals.css"
@@ -51,10 +50,7 @@ export default async function RootLayout({
       className={`${tajawal.variable} ${plexArabic.variable} bg-background`}
       suppressHydrationWarning
     >
-      <body className="font-sans antialiased">
-        {children}
-        {process.env.NODE_ENV === "production" && <Analytics />}
-      </body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   )
 }

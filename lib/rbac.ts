@@ -271,6 +271,7 @@ export async function canAccessCase(
     .select({
       patientUserId: aestheticCase.patientUserId,
       doctorUserId: doctorProfile.userId,
+      centerId: aestheticCase.centerId,
     })
     .from(aestheticCase)
     .leftJoin(doctorProfile, eq(aestheticCase.doctorId, doctorProfile.id))
@@ -281,6 +282,7 @@ export async function canAccessCase(
   if (!row) return false
   if (row.patientUserId === userId) return true
   if (await hasPermission(userId, PERMISSIONS.CASE_READ_ANY)) return true
+  if (row.centerId && (await canAccessCenter(userId, row.centerId))) return true
 
   if (row.doctorUserId === userId) {
     const active = await db
