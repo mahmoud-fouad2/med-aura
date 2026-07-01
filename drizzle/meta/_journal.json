@@ -22,6 +22,13 @@
       "when": 1782751380285,
       "tag": "0002_care_journey",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782922791865,
+      "tag": "0003_c7_ops_followup_safety_refund_closure",
+      "breakpoints": true
     }
   ]
 }

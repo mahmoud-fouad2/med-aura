@@ -16,6 +16,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:seed:catalog": "tsx scripts/seed-catalog.ts",
     "db:seed:demo": "tsx scripts/seed-demo.ts",
+    "db:bootstrap-admin": "tsx scripts/bootstrap-admin.ts",
     "db:health": "tsx scripts/db-health.ts",
     "db:status": "tsx scripts/check-database.ts",
     "test": "vitest run",
