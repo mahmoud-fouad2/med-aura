@@ -125,7 +125,14 @@ const T: Record<CaseStatus, Transition[]> = {
   PROCEDURE_COMPLETED: [{ to: "FOLLOW_UP" }, { to: "FULLY_PAID" }, { to: "CLOSED" }],
   FOLLOW_UP: [{ to: "FULLY_PAID" }, { to: "CLOSED" }],
   FULLY_PAID: [{ to: "FOLLOW_UP" }, { to: "CLOSED" }],
-  CLOSED: [],
+  // Reopening is an authorized administrative action (requires CASE_CLOSE +
+  // a reason — see lib/actions/case-closure.ts), not a bypass of closure.
+  CLOSED: [
+    {
+      to: "FOLLOW_UP",
+      roles: [ROLES.CONCIERGE, ROLES.CENTER_OWNER, ROLES.CENTER_ADMIN, ROLES.SUPER_ADMIN],
+    },
+  ],
   CANCELLED: [],
 }
 

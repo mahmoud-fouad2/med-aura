@@ -9,6 +9,8 @@ import {
   medicalDocument,
   documentAccessGrant,
   consent,
+  center,
+  centerStaff,
 } from "./db/schema"
 import { forbidden, unauthorized } from "./errors"
 
@@ -65,6 +67,15 @@ export const PERMISSIONS = {
   PROCEDURE_COMPLETE: "procedure:complete",
   INVOICE_WRITE: "invoice:write",
 
+  FOLLOWUP_MANAGE: "followup:manage",
+  SAFETY_ALERT_MANAGE: "safety:manage",
+  REFUND_REQUEST: "refund:request",
+  REFUND_MANAGE: "refund:manage",
+  CASE_CLOSE: "case:close",
+  CENTER_DASHBOARD_ACCESS: "center:dashboard",
+  CONCIERGE_ACCESS: "concierge:access",
+  FINANCE_ACCESS: "finance:access",
+
   CATALOG_READ: "catalog:read",
   CATALOG_MANAGE: "catalog:manage",
 
@@ -92,6 +103,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.APPOINTMENT_READ_OWN,
     P.PAYMENT_CREATE,
     P.PAYMENT_READ_OWN,
+    P.REFUND_REQUEST,
     P.CATALOG_READ,
   ],
   [ROLES.DOCTOR]: [
@@ -102,6 +114,8 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.APPOINTMENT_CANCEL,
     P.QUOTE_WRITE,
     P.MEDICAL_APPROVE,
+    P.FOLLOWUP_MANAGE,
+    P.SAFETY_ALERT_MANAGE,
     P.CATALOG_READ,
   ],
   [ROLES.CENTER_OWNER]: [
@@ -113,6 +127,10 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.PROCEDURE_COMPLETE,
     P.INVOICE_WRITE,
     P.PAYMENT_READ_ANY,
+    P.SAFETY_ALERT_MANAGE,
+    P.REFUND_REQUEST,
+    P.CASE_CLOSE,
+    P.CENTER_DASHBOARD_ACCESS,
     P.CATALOG_READ,
   ],
   [ROLES.CENTER_ADMIN]: [
@@ -123,16 +141,25 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.PROCEDURE_CONFIRM,
     P.PROCEDURE_COMPLETE,
     P.INVOICE_WRITE,
+    P.SAFETY_ALERT_MANAGE,
+    P.REFUND_REQUEST,
+    P.CASE_CLOSE,
+    P.CENTER_DASHBOARD_ACCESS,
     P.CATALOG_READ,
   ],
   [ROLES.CENTER_STAFF]: [
     P.APPOINTMENT_READ_ASSIGNED,
     P.PROCEDURE_COMPLETE,
+    P.CENTER_DASHBOARD_ACCESS,
     P.CATALOG_READ,
   ],
   [ROLES.CONCIERGE]: [
     P.CASE_READ_ANY,
     P.APPOINTMENT_READ_ANY,
+    P.SAFETY_ALERT_MANAGE,
+    P.REFUND_REQUEST,
+    P.CASE_CLOSE,
+    P.CONCIERGE_ACCESS,
     P.CATALOG_READ,
   ],
   [ROLES.COMPLIANCE_REVIEWER]: [
@@ -144,7 +171,14 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.AUDIT_READ,
     P.CATALOG_READ,
   ],
-  [ROLES.FINANCE_ADMIN]: [P.PAYMENT_READ_ANY, P.AUDIT_READ, P.CATALOG_READ],
+  [ROLES.FINANCE_ADMIN]: [
+    P.PAYMENT_READ_ANY,
+    P.INVOICE_WRITE,
+    P.REFUND_MANAGE,
+    P.FINANCE_ACCESS,
+    P.AUDIT_READ,
+    P.CATALOG_READ,
+  ],
   [ROLES.SUPPORT_AGENT]: [
     P.CASE_READ_ANY,
     P.APPOINTMENT_READ_ANY,
@@ -300,4 +334,30 @@ export async function canViewDocument(
     )
     .limit(1)
   return granted.length > 0
+}
+
+/**
+ * Which center(s) a user belongs to, as owner (`center.ownerId`) or staff
+ * (`center_staff`). Powers the center dashboard's scoping — CENTER_ADMIN and
+ * CENTER_STAFF are otherwise center-agnostic roles.
+ */
+export async function resolveUserCenterIds(userId: string): Promise<string[]> {
+  const [owned, staff] = await Promise.all([
+    db.select({ id: center.id }).from(center).where(eq(center.ownerId, userId)),
+    db
+      .select({ id: centerStaff.centerId })
+      .from(centerStaff)
+      .where(eq(centerStaff.userId, userId)),
+  ])
+  return Array.from(new Set([...owned.map((c) => c.id), ...staff.map((s) => s.id)]))
+}
+
+/** Is `centerId` one of the centers this user owns/works at (or are they a super admin)? */
+export async function canAccessCenter(
+  userId: string,
+  centerId: string,
+): Promise<boolean> {
+  if (await hasRole(userId, ROLES.SUPER_ADMIN)) return true
+  const ids = await resolveUserCenterIds(userId)
+  return ids.includes(centerId)
 }

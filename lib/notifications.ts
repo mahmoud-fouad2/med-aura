@@ -1,8 +1,21 @@
+import { eq } from "drizzle-orm"
 import { db } from "./db"
-import { notification, notificationDelivery } from "./db/schema"
+import { notification, notificationDelivery, notificationPreference } from "./db/schema"
 import { isEmailConfigured } from "./env"
 import { sendEmail } from "./email"
 import { logger } from "./logger"
+
+async function emailAllowed(userId: string): Promise<boolean> {
+  const row = (
+    await db
+      .select({ emailEnabled: notificationPreference.emailEnabled })
+      .from(notificationPreference)
+      .where(eq(notificationPreference.userId, userId))
+      .limit(1)
+  )[0]
+  // no row = default preference (email on)
+  return row?.emailEnabled ?? true
+}
 
 export type NotifyInput = {
   userId: string
@@ -43,7 +56,13 @@ export async function notify(input: NotifyInput): Promise<void> {
     })
 
     if (input.email) {
-      if (isEmailConfigured()) {
+      if (!(await emailAllowed(input.userId))) {
+        await db.insert(notificationDelivery).values({
+          notificationId: nid,
+          channel: "EMAIL",
+          status: "OPTED_OUT",
+        })
+      } else if (isEmailConfigured()) {
         const res = await sendEmail(input.email)
         await db.insert(notificationDelivery).values({
           notificationId: nid,

@@ -107,6 +107,8 @@ export const followUpTaskTypeEnum = pgEnum("follow_up_task_type", [
 export const followUpTaskStatusEnum = pgEnum("follow_up_task_status", [
   "SCHEDULED",
   "DUE",
+  "SUBMITTED",
+  "UNDER_REVIEW",
   "COMPLETED",
   "MISSED",
   "ESCALATED",
@@ -122,8 +124,26 @@ export const safetyAlertStatusEnum = pgEnum("safety_alert_status", [
   "OPEN",
   "ACKNOWLEDGED",
   "CONTACTED",
+  "PROVIDER_REVIEWED",
   "RESOLVED",
   "REFERRED_TO_EMERGENCY",
+  "FALSE_ALARM",
+])
+export const refundStatusEnum = pgEnum("refund_status", [
+  "REQUESTED",
+  "UNDER_REVIEW",
+  "APPROVED",
+  "REJECTED",
+  "PROVIDER_CONFIRMED",
+  "PROCESSED",
+  "FAILED",
+  "CANCELLED",
+])
+export const internalTaskStatusEnum = pgEnum("internal_task_status", [
+  "OPEN",
+  "IN_PROGRESS",
+  "DONE",
+  "CANCELLED",
 ])
 export const reviewModerationStatusEnum = pgEnum("review_moderation_status", [
   "PENDING",
@@ -143,6 +163,7 @@ export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_stat
   "SENT",
   "FAILED",
   "NOT_CONFIGURED",
+  "OPTED_OUT",
 ])
 
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID())
@@ -473,6 +494,38 @@ export const creditNote = pgTable(
   (t) => [index("credit_note_invoice_idx").on(t.invoiceId)],
 )
 
+/** Refund request lifecycle: request → finance review → (provider confirm) → process. */
+export const refundRequest = pgTable(
+  "refund_request",
+  {
+    id: id(),
+    invoiceId: text("invoiceId").notNull().references(() => invoice.id, { onDelete: "restrict" }),
+    paymentId: text("paymentId").references(() => payment.id, { onDelete: "set null" }),
+    caseId: text("caseId").notNull().references(() => aestheticCase.id, { onDelete: "cascade" }),
+    requestedByUserId: text("requestedByUserId").notNull().references(() => user.id, { onDelete: "restrict" }),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    reason: text("reason").notNull(),
+    status: refundStatusEnum("status").notNull().default("REQUESTED"),
+    reviewedBy: text("reviewedBy"),
+    reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+    reviewNotes: text("reviewNotes"),
+    providerConfirmedBy: text("providerConfirmedBy"),
+    providerConfirmedAt: timestamp("providerConfirmedAt", { withTimezone: true }),
+    creditNoteId: text("creditNoteId").references(() => creditNote.id, { onDelete: "set null" }),
+    providerRefundId: text("providerRefundId"),
+    processedAt: timestamp("processedAt", { withTimezone: true }),
+    failureReason: text("failureReason"),
+    ...lifecycle(),
+    ...authorship(),
+  },
+  (t) => [
+    index("refund_invoice_idx").on(t.invoiceId),
+    index("refund_case_idx").on(t.caseId),
+    index("refund_status_idx").on(t.status),
+    uniqueIndex("refund_provider_refund_idx").on(t.providerRefundId),
+  ],
+)
+
 /* ── Follow-up ───────────────────────────────────────────────────────────── */
 export const followUpPlan = pgTable(
   "follow_up_plan",
@@ -500,6 +553,10 @@ export const followUpTask = pgTable(
     assignedTo: text("assignedTo"),
     dueAt: timestamp("dueAt", { withTimezone: true }),
     status: followUpTaskStatusEnum("status").notNull().default("SCHEDULED"),
+    submittedAt: timestamp("submittedAt", { withTimezone: true }),
+    reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+    reviewedBy: text("reviewedBy"),
+    reviewNotes: text("reviewNotes"),
     completedAt: timestamp("completedAt", { withTimezone: true }),
     ...lifecycle(),
   },
@@ -548,6 +605,8 @@ export const safetyAlert = pgTable(
     acknowledgedAt: timestamp("acknowledgedAt", { withTimezone: true }),
     acknowledgedBy: text("acknowledgedBy"),
     resolvedAt: timestamp("resolvedAt", { withTimezone: true }),
+    resolvedBy: text("resolvedBy"),
+    resolutionNotes: text("resolutionNotes"),
     ...lifecycle(),
   },
   (t) => [index("safety_case_idx").on(t.caseId), index("safety_status_idx").on(t.status)],
@@ -635,6 +694,9 @@ export const message = pgTable(
     conversationId: text("conversationId").notNull().references(() => conversation.id, { onDelete: "cascade" }),
     senderUserId: text("senderUserId").notNull().references(() => user.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
+    // existing medicalDocument ids the sender already has access to; visibility
+    // for readers is still enforced per-document via canViewDocument.
+    documentIds: jsonb("documentIds").notNull().default([]),
     isInternalNote: boolean("isInternalNote").notNull().default(false),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deletedAt", { withTimezone: true }),
@@ -673,6 +735,13 @@ export const notificationDelivery = pgTable(
   (t) => [index("notif_delivery_idx").on(t.notificationId)],
 )
 
+/** Per-user delivery preferences. Missing row = defaults (email on). */
+export const notificationPreference = pgTable("notification_preference", {
+  userId: text("userId").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  emailEnabled: boolean("emailEnabled").notNull().default(true),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+})
+
 /* ── Internal tasks (ops/concierge) ──────────────────────────────────────── */
 export const internalTask = pgTable(
   "internal_task",
@@ -683,10 +752,31 @@ export const internalTask = pgTable(
     title: text("title").notNull(),
     description: text("description"),
     priority: text("priority").notNull().default("normal"),
+    status: internalTaskStatusEnum("status").notNull().default("OPEN"),
     dueAt: timestamp("dueAt", { withTimezone: true }),
     completedAt: timestamp("completedAt", { withTimezone: true }),
     ...lifecycle(),
     ...authorship(),
   },
-  (t) => [index("internal_task_case_idx").on(t.caseId), index("internal_task_assignee_idx").on(t.assignedTo)],
+  (t) => [
+    index("internal_task_case_idx").on(t.caseId),
+    index("internal_task_assignee_idx").on(t.assignedTo),
+    index("internal_task_status_idx").on(t.status),
+  ],
+)
+
+/** Closure record: one per closure event (a case can be reopened + re-closed). */
+export const caseClosure = pgTable(
+  "case_closure",
+  {
+    id: id(),
+    caseId: text("caseId").notNull().references(() => aestheticCase.id, { onDelete: "cascade" }),
+    closedBy: text("closedBy").notNull(),
+    closedAt: timestamp("closedAt", { withTimezone: true }).notNull().defaultNow(),
+    reason: text("reason"),
+    reopenedBy: text("reopenedBy"),
+    reopenedAt: timestamp("reopenedAt", { withTimezone: true }),
+    reopenReason: text("reopenReason"),
+  },
+  (t) => [index("case_closure_case_idx").on(t.caseId)],
 )

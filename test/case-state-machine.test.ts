@@ -57,8 +57,15 @@ describe("case state machine", () => {
     expect(canRoleTransition("DEPOSIT_PAID", "MEDICALLY_APPROVED", [ROLES.SUPER_ADMIN])).toBe(true)
   })
 
-  it("terminal states have no outgoing transitions", () => {
-    expect(allowedNextStates("CLOSED")).toHaveLength(0)
+  it("CANCELLED is fully terminal", () => {
     expect(allowedNextStates("CANCELLED")).toHaveLength(0)
+  })
+
+  it("CLOSED only allows an authorized, role-gated reopen — not a free bypass", () => {
+    expect(allowedNextStates("CLOSED")).toEqual(["FOLLOW_UP"])
+    expect(canRoleTransition("CLOSED", "FOLLOW_UP", [ROLES.PATIENT])).toBe(false)
+    expect(canRoleTransition("CLOSED", "FOLLOW_UP", [ROLES.DOCTOR])).toBe(false)
+    expect(canRoleTransition("CLOSED", "FOLLOW_UP", [ROLES.CONCIERGE])).toBe(true)
+    expect(canRoleTransition("CLOSED", "FOLLOW_UP", [ROLES.SUPER_ADMIN])).toBe(true)
   })
 })

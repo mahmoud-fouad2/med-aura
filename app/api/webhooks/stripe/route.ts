@@ -11,7 +11,9 @@ import {
   procedureBooking,
   procedureBookingHistory,
   quote,
+  invoice,
 } from "@/lib/db/schema"
+import { assertCaseTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
 import { constructWebhookEvent } from "@/lib/payments/stripe"
 import { writeAudit } from "@/lib/audit"
 import { notify, type NotifyInput } from "@/lib/notifications"
@@ -250,6 +252,48 @@ async function applyPaymentSucceeded(
         body: "تم استلام العربون. الخطوة التالية هي الاعتماد الطبي من طبيبك.",
         caseId: caseRow.id,
         href: `/dashboard/cases/${caseRow.id}`,
+      })
+      return
+    }
+
+    // ── Final/remaining balance → invoice PAID + case FULLY_PAID ──
+    if (pay.purpose === "FINAL_PAYMENT" && pay.caseId) {
+      const inv = (
+        await tx.select().from(invoice).where(eq(invoice.caseId, pay.caseId)).orderBy(desc(invoice.createdAt)).limit(1)
+      )[0]
+      if (!inv) {
+        logger.warn("webhook: final payment with no invoice", { caseId: pay.caseId, paymentId })
+        return
+      }
+      const newPaid = Number(inv.paidAmount) + Number(pay.amount)
+      const newRemaining = Math.max(0, Number(inv.total) - newPaid)
+      const newStatus = newRemaining <= 0 ? "PAID" : "PARTIALLY_PAID"
+      await tx
+        .update(invoice)
+        .set({ paidAmount: newPaid.toFixed(2), remainingAmount: newRemaining.toFixed(2), status: newStatus })
+        .where(eq(invoice.id, inv.id))
+      await writeAudit(
+        { action: "invoice.final_payment.applied", actorUserId: pay.payerUserId, entityType: "invoice", entityId: inv.id, metadata: { amount: pay.amount, newStatus } },
+        tx,
+      )
+
+      if (newRemaining <= 0) {
+        const caseRow = (
+          await tx.select({ id: aestheticCase.id, status: aestheticCase.status, patientUserId: aestheticCase.patientUserId }).from(aestheticCase).where(eq(aestheticCase.id, pay.caseId)).limit(1)
+        )[0]
+        if (caseRow && ["PROCEDURE_COMPLETED", "FOLLOW_UP"].includes(caseRow.status)) {
+          assertCaseTransition(caseRow.status as CaseStatus, "FULLY_PAID")
+          await tx.update(aestheticCase).set({ status: "FULLY_PAID" }).where(eq(aestheticCase.id, pay.caseId))
+          await tx.insert(caseStatusHistory).values({ caseId: pay.caseId, fromStatus: caseRow.status, toStatus: "FULLY_PAID", note: "تم سداد كامل المبلغ المتبقي" })
+        }
+      }
+
+      post.push({
+        userId: pay.payerUserId,
+        type: "invoice.final_payment.paid",
+        title: newRemaining <= 0 ? "تم سداد فاتورتك بالكامل" : "تم استلام دفعة من الرصيد المتبقي",
+        caseId: pay.caseId,
+        href: `/dashboard/cases/${pay.caseId}`,
       })
     }
   })

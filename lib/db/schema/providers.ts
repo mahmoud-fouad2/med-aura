@@ -57,6 +57,27 @@ export const center = pgTable(
   ],
 )
 
+/**
+ * Membership of a center_admin/center_staff (and, redundantly, the owner) in a
+ * specific center. `center.ownerId` remains the source of truth for ownership;
+ * this table lets the center dashboard resolve which center(s) a staff user
+ * belongs to, since CENTER_ADMIN/CENTER_STAFF are otherwise center-agnostic roles.
+ */
+export const centerStaff = pgTable(
+  "center_staff",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    centerId: text("centerId").notNull().references(() => center.id, { onDelete: "cascade" }),
+    userId: text("userId").notNull().references(() => user.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("staff"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("center_staff_unique").on(t.centerId, t.userId),
+    index("center_staff_user_idx").on(t.userId),
+  ],
+)
+
 export const doctorProfile = pgTable(
   "doctor_profile",
   {
