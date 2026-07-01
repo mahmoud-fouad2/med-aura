@@ -424,29 +424,41 @@ async function seedFaqs() {
   console.log(`✓ faqs (${items.length})`)
 }
 
-async function main() {
-  const isProd = process.env.NODE_ENV === "production"
-  if (isProd) {
-    // Hard stop: never seed demo/reference data into production accidentally.
-    console.error("Refusing to run the seed in production (NODE_ENV=production).")
-    process.exit(1)
-  }
-  if (!process.env.DATABASE_URL) {
-    console.error("DATABASE_URL is not set. Copy .env.example to .env.local.")
-    process.exit(1)
-  }
-
-  console.log("Seeding Med Aura reference data…\n")
+/** Reference/catalog data: roles, permissions, geography, procedures, FAQs.
+ *  This is REQUIRED data and is safe to run in any environment (incl. production). */
+export async function seedReference(): Promise<void> {
   await seedRolesAndPermissions()
   await seedGeography()
   await seedCatalog()
   await seedFaqs()
+}
 
-  // Demo accounts/providers are OPT-IN and never exist in production.
-  const demoEnabled = process.env.ENABLE_DEMO_DATA === "true"
-  if (demoEnabled) {
-    await seedUsersAndProviders()
-    console.log("\n✅ Seed complete (reference + DEMO data — development only).")
+/** Demo accounts/providers. NEVER run in production. */
+export async function seedDemo(): Promise<void> {
+  await seedUsersAndProviders()
+}
+
+export async function runSeed({ demo }: { demo: boolean }): Promise<void> {
+  if (!process.env.DATABASE_URL) {
+    console.error("DATABASE_URL is not set. Copy .env.example to .env.local.")
+    process.exit(1)
+  }
+  // Demo data must NEVER be created in production. Reference/catalog data is
+  // required and is allowed everywhere.
+  if (demo && process.env.NODE_ENV === "production") {
+    console.error(
+      "Refusing to create DEMO data in production (NODE_ENV=production). " +
+        "Use `db:seed:catalog` for reference data in production.",
+    )
+    process.exit(1)
+  }
+
+  console.log("Seeding Med Aura reference data…\n")
+  await seedReference()
+
+  if (demo) {
+    await seedDemo()
+    console.log("\n✅ Seed complete (reference + DEMO data — non-production only).")
     console.log("   Demo login password:", DEV_PASSWORD)
     console.log("   • admin@medaura.local            (Super Admin)")
     console.log("   • compliance@medaura.local       (Compliance Reviewer)")
@@ -454,15 +466,22 @@ async function main() {
     console.log("   • doctor@medaura.local           (Approved Doctor + demo Center Owner)")
     console.log("   • pending-doctor@medaura.local   (Pending application)")
   } else {
-    console.log("\n✅ Seed complete (reference data only).")
-    console.log("   Demo accounts skipped. Set ENABLE_DEMO_DATA=true to create them (dev only).")
+    console.log("\n✅ Seed complete (reference/catalog data only).")
+    console.log("   Demo accounts skipped. Run `db:seed:demo` (non-production) to create them.")
   }
 
   await pool.end()
 }
 
-main().catch(async (err) => {
-  console.error("Seed failed:", err)
-  await pool.end()
-  process.exit(1)
-})
+// Auto-run only when this file is executed directly (`tsx scripts/seed.ts`),
+// not when imported by seed-catalog.ts / seed-demo.ts.
+const invoked = process.argv[1] ?? ""
+if (invoked.endsWith("seed.ts") || invoked.endsWith("seed.js")) {
+  runSeed({ demo: process.env.ENABLE_DEMO_DATA === "true" }).catch(async (err) => {
+    console.error("Seed failed:", err)
+    try {
+      await pool.end()
+    } catch {}
+    process.exit(1)
+  })
+}

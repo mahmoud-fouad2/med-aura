@@ -23,7 +23,7 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/65">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" aria-label="Med Aura">
-          <Logo markClassName="h-9 w-9" />
+          <Logo className="h-9 sm:h-10" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

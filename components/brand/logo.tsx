@@ -1,12 +1,30 @@
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 /**
  * Med Aura brand — single source of truth.
  *
- * The mark is an "M" monogram inside a soft "aura" ring. It uses currentColor
- * so it inherits the surrounding text color (e.g. wrap in `text-primary`).
- * To swap in final brand artwork later, replace ONLY this file.
+ * `Logo` is the real horizontal lockup (face + M monogram + "MED AURA"),
+ * derived from the master artwork with the white background keyed out so it
+ * sits cleanly on any surface. `LogoMark` is a lightweight vector "M" monogram
+ * that inherits `currentColor` — used where a single-colour glyph is needed
+ * (dark auth panel, loading spinner, decorative watermark, favicons).
  */
+
+/** Real brand lockup (transparent PNG). Default height h-9; override via className. */
+export function Logo({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/brand/med-aura-horizontal.png"
+      alt="Med Aura — رحلتك التجميلية بثقة"
+      width={1233}
+      height={391}
+      priority
+      className={cn("h-9 w-auto select-none", className)}
+    />
+  )
+}
+
 export function LogoMark({
   className,
   title = "Med Aura",
@@ -61,26 +79,6 @@ export function Wordmark({ className }: { className?: string }) {
       )}
     >
       MED<span className="text-primary"> AURA</span>
-    </span>
-  )
-}
-
-/** Combined lockup used in headers, auth, footer. */
-export function Logo({
-  className,
-  markClassName,
-  showWordmark = true,
-}: {
-  className?: string
-  markClassName?: string
-  showWordmark?: boolean
-}) {
-  return (
-    <span className={cn("flex items-center gap-2.5", className)}>
-      <span className="text-primary">
-        <LogoMark className={markClassName} />
-      </span>
-      {showWordmark && <Wordmark />}
     </span>
   )
 }

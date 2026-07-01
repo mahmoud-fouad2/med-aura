@@ -32,10 +32,10 @@ const schema = z.object({
   R2_BUCKET: z.string().optional(),
   R2_PUBLIC_BASE_URL: z.url().optional(),
 
-  // Stripe (payments, test mode)
+  // Stripe (payments, test mode). Checkout is redirect-based, so only the
+  // server secret + webhook secret are consumed (no publishable key needed).
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
 
   // Email (transactional)
   EMAIL_FROM: z.string().optional(),
@@ -45,9 +45,9 @@ const schema = z.object({
   VIDEO_PROVIDER_API_KEY: z.string().optional(),
   VIDEO_PROVIDER_API_SECRET: z.string().optional(),
 
-  // reCAPTCHA
+  // reCAPTCHA. Server-side verification is wired into the contact action; the
+  // client token widget is not implemented yet, so no site key is consumed.
   RECAPTCHA_SECRET_KEY: z.string().optional(),
-  NEXT_PUBLIC_RECAPTCHA_SITE_KEY: z.string().optional(),
 
   // Ops
   ENABLE_DEMO_DATA: z.string().optional(),
@@ -129,14 +129,29 @@ export function appUrl(): string {
  */
 export function assertCoreEnv(): void {
   const e = read()
+  const prod = e.NODE_ENV === "production"
+
   const missing: string[] = []
   if (!e.DATABASE_URL) missing.push("DATABASE_URL")
   if (!e.BETTER_AUTH_SECRET) missing.push("BETTER_AUTH_SECRET")
+  // ENCRYPTION_KEY is only strictly required in production (lib/crypto derives a
+  // clearly-warned insecure dev key otherwise).
+  if (prod && !e.ENCRYPTION_KEY) missing.push("ENCRYPTION_KEY")
 
-  if (missing.length === 0) return
+  const problems: string[] = []
+  // Demo data must never be enabled in production.
+  if (prod && e.ENABLE_DEMO_DATA === "true") {
+    problems.push("ENABLE_DEMO_DATA must not be 'true' in production")
+  }
 
-  const msg = `[env] missing core variables: ${missing.join(", ")}`
-  if (e.NODE_ENV === "production") {
+  if (missing.length === 0 && problems.length === 0) return
+
+  const parts: string[] = []
+  if (missing.length) parts.push(`missing core variables: ${missing.join(", ")}`)
+  if (problems.length) parts.push(problems.join("; "))
+  const msg = `[env] ${parts.join(" | ")}`
+
+  if (prod) {
     throw new Error(msg + " — refusing to start in production.")
   }
   console.warn(

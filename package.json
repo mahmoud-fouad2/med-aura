@@ -14,6 +14,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed:catalog": "tsx scripts/seed-catalog.ts",
+    "db:seed:demo": "tsx scripts/seed-demo.ts",
     "db:health": "tsx scripts/db-health.ts",
     "db:status": "tsx scripts/check-database.ts",
     "test": "vitest run",
@@ -43,6 +45,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^24",
@@ -51,10 +54,13 @@
     "@types/react-dom": "^19",
     "dotenv": "^16.4.7",
     "drizzle-kit": "^0.31.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.19.2",
     "typescript": "5.7.3",
+    "typescript-eslint": "^8",
     "vitest": "^2.1.8"
   },
   "pnpm": {
