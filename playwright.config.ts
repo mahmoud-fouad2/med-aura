@@ -20,7 +20,10 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm start -p 3000",
+    // `npx next start` instead of `pnpm start`: Playwright spawns this command
+    // with a bare shell that doesn't always resolve the `pnpm` shim (seen on
+    // Windows), while `npx` reliably resolves the local next binary everywhere.
+    command: "npx next start -p 3000",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

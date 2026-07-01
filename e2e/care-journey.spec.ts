@@ -37,7 +37,7 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   await page.getByLabel("الاسم الكامل").fill("مريض اختبار")
   await page.getByLabel("البريد الإلكتروني").fill(email)
   await page.getByLabel("كلمة المرور").fill("E2ePassw0rd!")
-  await page.getByRole("button", { name: /إنشاء|تسجيل/ }).click()
+  await page.getByRole("button", { name: /أنشئ|إنشاء|تسجيل/ }).click()
   // auto sign-in → dashboard
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
   await expect(page.getByText("مرحبًا").first()).toBeVisible()

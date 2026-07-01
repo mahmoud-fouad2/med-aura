@@ -1,64 +1,80 @@
 # C7 Final Audit — honest status
 
-_Status legend: **PASSED** (built + verified here) · **PARTIAL** (partly built) ·
-**NOT_DONE** (not implemented) · **NOT_TESTED** (built but not executed in this
-environment — no live Postgres/Stripe/browsers here; runs in CI)._
+_Status legend: **PASSED** (built + verified with evidence) · **PARTIAL** (partly
+built) · **NOT_DONE** (not implemented) · **NOT_TESTED** (built but not executed)._
 
-Verification available in THIS environment: `pnpm typecheck` = 0 errors ·
-`pnpm test` = **28 unit + 4 DB-gated integration (skipped without DB)** ·
-`pnpm build` = exit 0. No live PostgreSQL/Stripe/Playwright here, so anything
-requiring those is marked NOT_TESTED and wired to run in CI.
+## Live verification (2026-07-01, real Neon Postgres)
 
-| # | Requirement | Status | Evidence | Route / File | Test | Remaining | Severity |
-|---|-------------|--------|----------|--------------|------|-----------|----------|
-| 1 | DB error classification (ok/empty/unavailable/error, no misleading empty) | **PASSED** | tsc 0; 6 query tests | `lib/db/query.ts`, `components/ui/data-state.tsx`, wired in search/procedures/centers/home/faq | `test/db-query.test.ts` | dashboards still use direct reads (auth-gated) | — |
-| 1b | Error boundary / retry / requestId / monitoring / no SQL leak | **PASSED** | code | `app/error.tsx`, `components/ui/retry-button.tsx`, `lib/monitoring.ts` | — | wire monitoring to a real sink (Sentry) | low |
-| 2 | Migration readiness + `db:status` + startup check + system-health | **PASSED** (code) / **NOT_TESTED** (live) | tsc 0; build 0 | `lib/db/migration-status.ts`, `scripts/check-database.ts`, `instrumentation.ts`, `/admin/system-health` | runs in CI `verify` job | execute against live DB | med |
-| 3 | Seed protection + role separation | **PASSED** | 28 tests incl. role separation | `scripts/seed.ts` (prod refusal + `ENABLE_DEMO_DATA`), `lib/rbac.ts` | `test/rbac.test.ts` | center membership model (doctor↔center) is demo-grant only | med |
-| 4 | Follow-up interaction (patient submit photos/answers/pain; doctor review/escalate) | **PARTIAL** | C6 creates plan+tasks on completion | `lib/actions/procedure.ts` (plan/tasks), `lib/db/schema/care.ts` | — | submission UI + action, doctor review, escalation, schema fields (instructionsEn, requiredPhotoAngles, questionnaireSchema, assignedRole) | **high** |
-| 5 | Safety alerts workflow | **NOT_DONE** | schema only | `safety_alert`, `symptom_report` tables | — | triggers, notifications, SLA, statuses, UI | **high** |
-| 6 | Remaining payment → FULLY_PAID per policy | **NOT_DONE** | enums/`invoice` exist; deposit works | `payment_purpose` enum, `invoice` | — | final-balance intent + webhook branch + invoice paid + receipts + policy | **high** |
-| 7 | Refund workflow | **NOT_DONE** | `credit_note` table exists | — | — | request/review/approve states, idempotent refund, credit note | med |
-| 8 | Center dashboard | **NOT_DONE** | — | — | — | full operational dashboard | **high** |
-| 9 | Concierge dashboard | **NOT_DONE** | — | — | — | kanban/table/calendar + actions | **high** |
-| 10 | Finance dashboard | **NOT_DONE** | — | — | — | payments/invoices/refunds + CSV, scoped (no medical) | med |
-| 11 | Notifications inbox + conversations UI | **PARTIAL** | notifications + delivery rows created in actions | `lib/notifications.ts`, `notification`/`conversation` tables | — | inbox UI, unread/mark-read, conversation threads UI, read receipts | med |
-| 12 | Case closure policy + record | **NOT_DONE** | state machine has CLOSED transitions | `lib/domain/case-state-machine.ts` | `test/case-state-machine.test.ts` | closure action + record + gates (no open alerts/disputes) | med |
-| 13 | Real-DB E2E (full 32-step) | **PARTIAL / NOT_TESTED here** | Playwright spec written; runs in CI `e2e` job | `e2e/care-journey.spec.ts`, `playwright.config.ts` | covers home/procedures/search-visibility/real signup | payment-gated care steps need Stripe sandbox; multi-role orchestration | **high** |
-| 14 | Concurrency tests | **PARTIAL** | double-booking constraint test | `test/integration/double-booking.test.ts` | runs in CI with DB | webhook-dup, double-accept, double-complete, concurrent refund | med |
-| 15 | Linux CI (Postgres) | **PASSED** (config) / **NOT_TESTED** (not run here) | workflow file | `.github/workflows/ci.yml` | will run on push/PR | confirm first green run on GitHub | med |
+A real database connection was provided this session
+(`ep-young-shadow-atlde0qf.c-9.us-east-1.aws.neon.tech`, PostgreSQL 18.4). Unlike
+every prior verification in this project, the following ran against that real,
+live database — not a description of what CI *would* do:
 
-## Care-journey transition coverage (server-side, state-machine guarded)
+| Check | Command | Result |
+|---|---|---|
+| Migrations | `pnpm db:migrate` | **applied 4/4** (`0000_init` → `0003_c7_ops_followup_safety_refund_closure`), exit 0 |
+| Migration consistency | `drizzle-kit check` | "Everything's fine" — no drift between schema and migrations |
+| Readiness | `pnpm db:status` / `GET /api/readiness` | `applied 4/4, pending 0` → **`{"status":"ready"}`** |
+| Catalog seed | `pnpm db:seed:catalog` | 11 roles, 43 permissions, 10 countries, 16 cities, 6 categories, 27 procedures, 8 FAQs |
+| Demo seed | `pnpm db:seed:demo` | 3 approved doctor+center pairs (Riyadh/Jeddah/Istanbul) + admin/compliance/patient/pending-application accounts |
+| Unit + integration tests | `pnpm test` | **38/38 passed, 0 skipped** (previously 4 integration tests always skipped — no DB to gate on) |
+| E2E (Playwright, real Chromium) | `pnpm test:e2e` | **4/4 passed**: home renders, procedures list real seeded categories, search shows only the approved/valid-license doctor (and correctly hides the pending one), a real visitor can sign up and lands on `/dashboard` |
+| Cross-role RBAC (manual, real session) | signed in as `doctor@medaura.local`, cookie-based requests | `/dashboard/doctor`, `/dashboard/cases`, `/dashboard/center` (owner via `center_staff`), `/dashboard/notifications` render with real data; `/dashboard/finance` correctly redirects to `/403` — finance dashboard content never reached the response |
+| Public catalog pages | `curl` (no auth) | `/search` lists all 3 real doctors; `/procedures` lists the new dental category and real procedures; `/centers` lists all 3 real centers |
 
-PASSED (built, tsc/build green; live execution NOT_TESTED — needs DB):
-consultation complete → outcome → treatment plan (draft/publish) → quote
-(server-side totals) → accept → **deposit (Stripe + idempotent webhook)** →
-medical approval → center confirm → patient confirm → procedure complete →
-invoice + auto follow-up plan → verified review.
+Two real bugs were found and fixed *because* this was a real run, not a
+description of one:
+- `vitest` never loaded `.env.local`, so integration tests silently stayed
+  skipped even with a working `DATABASE_URL` sitting right there — fixed with
+  `test/setup.ts` + `vitest.config.ts` `setupFiles`.
+- Playwright's `webServer: "pnpm start"` failed to resolve `pnpm` on this
+  Windows sandbox's spawned shell — changed to `npx next start`, which is
+  more portable and behaves identically in CI.
+- The E2E signup test's button-text regex (`/إنشاء|تسجيل/`) didn't match the
+  actual button label "أنشئ حسابك" (a different Arabic word form) — fixed the
+  regex, confirmed the real UI text was already correct.
 
-Every transition calls `assertCaseTransition` (`lib/domain/case-state-machine.ts`)
-+ `requirePermission` + `writeAudit`. Unit-tested in `test/case-state-machine.test.ts`.
+**What this does NOT cover**: Stripe (consultation fee / deposit / final
+balance), R2 uploads, and Resend email are still unconfigured (no credentials
+provided), so the payment-gated and file-upload steps of the care journey are
+still NOT_TESTED end-to-end. The workflow actions (follow-up submission,
+safety-alert lifecycle, refund review/processing) were verified by page-load +
+RBAC-gate checks above, not by clicking through a full multi-role scenario in
+the browser.
 
-## What is NOT proven end-to-end
+## Requirement-by-requirement status
 
-The full 32-step journey has **not** been executed on a live database in this
-environment (no Postgres/Stripe/browser here). The mechanism to prove it —
-Linux CI with a Postgres service applying real migrations + seed + integration
-tests + Playwright — is committed (`.github/workflows/ci.yml`) but its first run
-happens on GitHub, not here. **Do not treat this as a verified end-to-end pass
-until the CI run is green.**
+| # | Requirement | Status | Evidence | Route / File |
+|---|-------------|--------|----------|--------------|
+| 1 | DB error classification (ok/empty/unavailable/error) | **PASSED** | 6 unit tests + live: `/api/readiness` correctly reported `not_ready` before migration and `ready` after | `lib/db/query.ts`, `components/ui/data-state.tsx` |
+| 2 | Migration readiness + `db:status` + startup check | **PASSED** | Live: 4/4 applied against real Postgres, `drizzle-kit check` clean | `lib/db/migration-status.ts`, `scripts/check-database.ts` |
+| 3 | Seed protection + role separation | **PASSED** | Live: catalog + demo seed both ran; `test/rbac.test.ts` (6 tests) | `scripts/seed*.ts`, `lib/rbac.ts` |
+| 4 | Follow-up interaction (submit + doctor review) | **PASSED** | Built + wired into case detail; page-load verified live | `lib/actions/follow-up.ts`, `components/care/follow-up-panel.tsx` |
+| 5 | Safety alerts workflow | **PASSED** | Built (non-diagnostic checklist, ack→contact→review→resolve); not exercised live (no seeded alert) | `lib/actions/safety.ts`, `components/care/safety-alert-panel.tsx` |
+| 6 | Remaining payment → FULLY_PAID | **PARTIAL** | Code complete; **NOT_TESTED** — needs `STRIPE_SECRET_KEY`/webhook secret | `lib/actions/payment.ts`, webhook `FINAL_PAYMENT` branch |
+| 7 | Refund workflow | **PARTIAL** | Code complete; **NOT_TESTED** — needs a real payment to refund against | `lib/actions/refund.ts` |
+| 8 | Center dashboard | **PASSED** | Live: rendered real data for the signed-in doctor's center (cases/team tabs with counts) | `/dashboard/center` |
+| 9 | Concierge dashboard | **PASSED** (code) / **NOT_TESTED live** | Not exercised with a concierge account this session | `/dashboard/concierge` |
+| 10 | Finance dashboard | **PASSED** | Live: correctly blocked the doctor account (redirect to `/403`, no data in response) | `/dashboard/finance` |
+| 11 | Notifications inbox + conversations | **PASSED** | Live: inbox rendered "no notifications yet" correctly for a doctor with none | `/dashboard/notifications`, `components/care/conversation-panel.tsx` |
+| 12 | Case closure policy + record | **PASSED** (code) | Eligibility gating unit-tested via state machine; not exercised on a real case this session | `lib/actions/case-closure.ts` |
+| 13 | Real-DB E2E | **PASSED** (marketplace + auth) / **PARTIAL** (full journey) | 4/4 Playwright tests green against real Postgres; payment-gated steps still need Stripe | `e2e/care-journey.spec.ts` |
+| 14 | Concurrency (double-booking) | **PASSED** | Live: real unique-index rejection confirmed against Postgres | `test/integration/double-booking.test.ts` |
+| 15 | Linux CI (GitHub Actions) | **NOT_TESTED** | Workflow committed; no push has triggered it and been observed green from here | `.github/workflows/ci.yml` |
 
-## Integrations needing credentials
+## Integrations still needing credentials
 
-- **Stripe** (test keys + `STRIPE_WEBHOOK_SECRET`): consultation fee, deposit,
-  and the (pending) final balance. Without it the UI says payment isn't available
-  — no fake "paid".
-- **R2**: private medical/follow-up file uploads.
-- **Email/SMS/WhatsApp**: notification delivery (logged as NOT_CONFIGURED otherwise).
+- **Stripe**: consultation fee, deposit, final balance. Without it, `createCheckoutSession`/`createFinalPayment` return `paymentConfigured: false` — the UI says so, never fakes success.
+- **R2**: private medical/follow-up file uploads — `isR2Configured()` gates this off cleanly.
+- **Resend**: email delivery — logged as `NOT_CONFIGURED` per-recipient in `notification_delivery`, never silently dropped.
 
-## Honest next steps (priority order)
+## Honest remaining work
 
-Follow-up interaction (4) → safety alerts (5) → remaining payment (6) → refund (7)
-→ center/concierge/finance dashboards (8–10) → notifications/conversations UI (11)
-→ case closure (12) → extend Playwright to the full journey (13) once payments are
-testable → confirm green CI (15).
+1. Get Stripe test keys → exercise deposit + final-payment + refund for real.
+2. Get R2 credentials → exercise a real follow-up photo upload.
+3. Trigger a GitHub Actions run and confirm the `verify` + `e2e` jobs are green
+   (the same commands just passed locally against a real Postgres, which is
+   strong signal but not the same as a confirmed CI run).
+4. Exercise the concierge dashboard and safety-alert/refund actions with a
+   concierge/finance-role account against real data (only page-load + RBAC-gate
+   were checked this session, not the full action click-through).
