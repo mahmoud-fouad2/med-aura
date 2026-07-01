@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
+import { CategoryIconBadge } from "@/components/marketing/category-icon"
 
 export async function PopularProcedures() {
   const res = await query(() =>
@@ -19,6 +20,7 @@ export async function PopularProcedures() {
         isSurgical: procedureT.isSurgical,
         recoveryDays: procedureT.recoveryDays,
         categoryNameAr: procedureCategory.nameAr,
+        categoryIcon: procedureCategory.icon,
       })
       .from(procedureT)
       .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
@@ -61,15 +63,16 @@ export async function PopularProcedures() {
                   className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
                 >
                   <div className="flex items-center justify-between">
-                    <Badge variant={p.isSurgical ? "secondary" : "outline"}>
-                      <Syringe className="size-3" />
-                      {p.isSurgical ? "جراحي" : "غير جراحي"}
-                    </Badge>
+                    <CategoryIconBadge icon={p.categoryIcon} className="size-10" iconClassName="size-5" />
                     <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 group-hover:-translate-x-1 group-hover:text-primary" />
                   </div>
                   <h3 className="font-heading text-lg font-bold text-foreground">
                     {p.nameAr}
                   </h3>
+                  <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit">
+                    <Syringe className="size-3" />
+                    {p.isSurgical ? "جراحي" : "غير جراحي"}
+                  </Badge>
                   <p className="mt-auto text-sm text-muted-foreground">
                     {p.categoryNameAr}
                     {p.recoveryDays != null && p.recoveryDays > 0

@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { Video, FileLock2, ClipboardList, ShieldCheck } from "lucide-react"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -52,20 +53,31 @@ export default function OnlineConsultationPage() {
         </section>
 
         <section className="bg-secondary/30">
-          <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
-            <SectionHeading eyebrow="الخطوات" title="كيف تحجز استشارتك" align="start" />
-            <Stagger className="mt-10 space-y-4">
-              {steps.map((s, i) => (
-                <StaggerItem key={i}>
-                  <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                      {i + 1}
-                    </span>
-                    <p className="pt-1 text-foreground">{s}</p>
-                  </div>
-                </StaggerItem>
-              ))}
-            </Stagger>
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
+            <div>
+              <SectionHeading eyebrow="الخطوات" title="كيف تحجز استشارتك" align="start" />
+              <Stagger className="mt-10 space-y-4">
+                {steps.map((s, i) => (
+                  <StaggerItem key={i}>
+                    <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                        {i + 1}
+                      </span>
+                      <p className="pt-1 text-foreground">{s}</p>
+                    </div>
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            </div>
+            <div className="relative order-first mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-[2rem] border border-border shadow-elegant-lg lg:order-last">
+              <Image
+                src="/hero-clinic.png"
+                alt="استشارة تجميلية عبر الفيديو مع طبيب معتمد"
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 28rem, 90vw"
+              />
+            </div>
           </div>
         </section>
       </main>

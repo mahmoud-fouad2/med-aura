@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
+import { CategoryIconBadge } from "@/components/marketing/category-icon"
 import { listProceduresGrouped } from "@/lib/data/procedures"
 import { query } from "@/lib/db/query"
 
@@ -51,7 +52,8 @@ export default async function ProceduresPage() {
                 .filter((g) => g.procedures.length > 0)
                 .map((g) => (
                   <div key={g.slug}>
-                    <div className="mb-6 flex items-end justify-between gap-4">
+                    <div className="mb-6 flex items-center gap-4">
+                      <CategoryIconBadge icon={g.icon} className="size-14" iconClassName="size-7" />
                       <div>
                         <h2 className="font-heading text-2xl font-bold text-foreground">
                           {g.nameAr}
@@ -69,15 +71,16 @@ export default async function ProceduresPage() {
                             className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
                           >
                             <div className="flex items-center justify-between">
-                              <Badge variant={p.isSurgical ? "secondary" : "outline"}>
-                                <Syringe className="size-3" />
-                                {p.isSurgical ? "جراحي" : "غير جراحي"}
-                              </Badge>
+                              <CategoryIconBadge icon={g.icon} className="size-10" iconClassName="size-5" />
                               <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 group-hover:-translate-x-1 group-hover:text-primary" />
                             </div>
                             <h3 className="font-heading text-lg font-bold text-foreground">
                               {p.nameAr}
                             </h3>
+                            <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit">
+                              <Syringe className="size-3" />
+                              {p.isSurgical ? "جراحي" : "غير جراحي"}
+                            </Badge>
                             {p.recoveryDays != null && p.recoveryDays > 0 && (
                               <p className="mt-auto text-sm text-muted-foreground">
                                 تعافٍ تقديري {p.recoveryDays} يوم

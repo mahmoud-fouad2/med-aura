@@ -12,6 +12,7 @@ import {
   procedureCategory,
   procedure as procedureT,
   center,
+  centerStaff,
   doctorProfile,
   doctorLicense,
   doctorProcedure,
@@ -80,8 +81,14 @@ async function seedGeography() {
   const countries = [
     { code: "SA", nameAr: "السعودية", nameEn: "Saudi Arabia", sortOrder: 1 },
     { code: "AE", nameAr: "الإمارات", nameEn: "United Arab Emirates", sortOrder: 2 },
-    { code: "TR", nameAr: "تركيا", nameEn: "Türkiye", sortOrder: 3 },
-    { code: "EG", nameAr: "مصر", nameEn: "Egypt", sortOrder: 4 },
+    { code: "QA", nameAr: "قطر", nameEn: "Qatar", sortOrder: 3 },
+    { code: "KW", nameAr: "الكويت", nameEn: "Kuwait", sortOrder: 4 },
+    { code: "BH", nameAr: "البحرين", nameEn: "Bahrain", sortOrder: 5 },
+    { code: "OM", nameAr: "عُمان", nameEn: "Oman", sortOrder: 6 },
+    { code: "TR", nameAr: "تركيا", nameEn: "Türkiye", sortOrder: 7 },
+    { code: "EG", nameAr: "مصر", nameEn: "Egypt", sortOrder: 8 },
+    { code: "JO", nameAr: "الأردن", nameEn: "Jordan", sortOrder: 9 },
+    { code: "LB", nameAr: "لبنان", nameEn: "Lebanon", sortOrder: 10 },
   ]
   for (const c of countries) {
     await db.insert(countryT).values(c).onConflictDoNothing()
@@ -91,8 +98,20 @@ async function seedGeography() {
   const cities = [
     { countryId: byCode.get("SA")!, nameAr: "الرياض", nameEn: "Riyadh" },
     { countryId: byCode.get("SA")!, nameAr: "جدة", nameEn: "Jeddah" },
+    { countryId: byCode.get("SA")!, nameAr: "الدمام", nameEn: "Dammam" },
     { countryId: byCode.get("AE")!, nameAr: "دبي", nameEn: "Dubai" },
+    { countryId: byCode.get("AE")!, nameAr: "أبوظبي", nameEn: "Abu Dhabi" },
+    { countryId: byCode.get("AE")!, nameAr: "الشارقة", nameEn: "Sharjah" },
+    { countryId: byCode.get("QA")!, nameAr: "الدوحة", nameEn: "Doha" },
+    { countryId: byCode.get("KW")!, nameAr: "مدينة الكويت", nameEn: "Kuwait City" },
+    { countryId: byCode.get("BH")!, nameAr: "المنامة", nameEn: "Manama" },
+    { countryId: byCode.get("OM")!, nameAr: "مسقط", nameEn: "Muscat" },
     { countryId: byCode.get("TR")!, nameAr: "إسطنبول", nameEn: "Istanbul" },
+    { countryId: byCode.get("TR")!, nameAr: "أنطاليا", nameEn: "Antalya" },
+    { countryId: byCode.get("EG")!, nameAr: "القاهرة", nameEn: "Cairo" },
+    { countryId: byCode.get("EG")!, nameAr: "الإسكندرية", nameEn: "Alexandria" },
+    { countryId: byCode.get("JO")!, nameAr: "عمّان", nameEn: "Amman" },
+    { countryId: byCode.get("LB")!, nameAr: "بيروت", nameEn: "Beirut" },
   ]
   for (const c of cities) {
     const exists = await db
@@ -107,11 +126,12 @@ async function seedGeography() {
 
 async function seedCatalog() {
   const categories = [
-    { slug: "face-neck", nameAr: "الوجه والرقبة", nameEn: "Face & Neck", icon: "smile", sortOrder: 1 },
-    { slug: "breast", nameAr: "الثدي", nameEn: "Breast", icon: "ribbon", sortOrder: 2 },
-    { slug: "body", nameAr: "الجسم", nameEn: "Body", icon: "activity", sortOrder: 3 },
-    { slug: "skin", nameAr: "البشرة والإجراءات غير الجراحية", nameEn: "Skin & Non-surgical", icon: "sparkles", sortOrder: 4 },
-    { slug: "hair", nameAr: "الشعر", nameEn: "Hair", icon: "scissors", sortOrder: 5 },
+    { slug: "face-neck", nameAr: "الوجه والرقبة", nameEn: "Face & Neck", descriptionAr: "إجراءات تجميل الوجه والرقبة بمختلف أنواعها.", icon: "Smile", sortOrder: 1 },
+    { slug: "breast", nameAr: "الثدي", nameEn: "Breast", descriptionAr: "تكبير وشد وتصغير الثدي بإشراف طبي معتمد.", icon: "Gem", sortOrder: 2 },
+    { slug: "body", nameAr: "الجسم", nameEn: "Body", descriptionAr: "نحت وشد الجسم وإجراءات تحسين القوام.", icon: "Activity", sortOrder: 3 },
+    { slug: "skin", nameAr: "البشرة والإجراءات غير الجراحية", nameEn: "Skin & Non-surgical", descriptionAr: "بوتوكس وفيلر وعناية بالبشرة دون جراحة.", icon: "Sparkles", sortOrder: 4 },
+    { slug: "hair", nameAr: "الشعر", nameEn: "Hair", descriptionAr: "زراعة الشعر وعلاجات تساقطه.", icon: "Scissors", sortOrder: 5 },
+    { slug: "dental", nameAr: "الأسنان وابتسامة هوليوود", nameEn: "Dental & Smile Design", descriptionAr: "تجميل الأسنان وتصميم الابتسامة.", icon: "SmilePlus", sortOrder: 6 },
   ]
   for (const c of categories) {
     await db.insert(procedureCategory).values(c).onConflictDoNothing()
@@ -120,17 +140,41 @@ async function seedCatalog() {
   const catBySlug = new Map(cats.map((c) => [c.slug, c.id]))
 
   const procedures = [
+    // الوجه والرقبة
     { slug: "rhinoplasty", cat: "face-neck", nameAr: "تجميل الأنف", nameEn: "Rhinoplasty", isSurgical: true, recoveryDays: 14 },
     { slug: "facelift", cat: "face-neck", nameAr: "شد الوجه", nameEn: "Facelift", isSurgical: true, recoveryDays: 21 },
     { slug: "blepharoplasty", cat: "face-neck", nameAr: "شد الجفون", nameEn: "Eyelid surgery", isSurgical: true, recoveryDays: 10 },
+    { slug: "otoplasty", cat: "face-neck", nameAr: "تجميل الأذن", nameEn: "Otoplasty", isSurgical: true, recoveryDays: 7 },
+    { slug: "chin-augmentation", cat: "face-neck", nameAr: "تجميل الذقن", nameEn: "Chin augmentation", isSurgical: true, recoveryDays: 10 },
+    { slug: "neck-lift", cat: "face-neck", nameAr: "شد الرقبة", nameEn: "Neck lift", isSurgical: true, recoveryDays: 14 },
+    { slug: "brow-lift", cat: "face-neck", nameAr: "شد الحاجب", nameEn: "Brow lift", isSurgical: true, recoveryDays: 10 },
+    // الثدي
     { slug: "breast-augmentation", cat: "breast", nameAr: "تكبير الثدي", nameEn: "Breast augmentation", isSurgical: true, recoveryDays: 21 },
+    { slug: "breast-lift", cat: "breast", nameAr: "شد الثدي", nameEn: "Breast lift", isSurgical: true, recoveryDays: 21 },
+    { slug: "breast-reduction", cat: "breast", nameAr: "تصغير الثدي", nameEn: "Breast reduction", isSurgical: true, recoveryDays: 21 },
+    // الجسم
     { slug: "liposuction", cat: "body", nameAr: "شفط الدهون", nameEn: "Liposuction", isSurgical: true, recoveryDays: 14 },
     { slug: "tummy-tuck", cat: "body", nameAr: "شد البطن", nameEn: "Tummy tuck", isSurgical: true, recoveryDays: 28 },
+    { slug: "brazilian-butt-lift", cat: "body", nameAr: "شد وتكبير الأرداف", nameEn: "Brazilian butt lift", isSurgical: true, recoveryDays: 21 },
+    { slug: "arm-lift", cat: "body", nameAr: "شد الذراعين", nameEn: "Arm lift", isSurgical: true, recoveryDays: 14 },
+    { slug: "thigh-lift", cat: "body", nameAr: "شد الفخذين", nameEn: "Thigh lift", isSurgical: true, recoveryDays: 21 },
+    { slug: "mommy-makeover", cat: "body", nameAr: "إجراء الأمومة الشامل", nameEn: "Mommy makeover", isSurgical: true, recoveryDays: 28 },
+    // البشرة وغير الجراحي
     { slug: "botox", cat: "skin", nameAr: "البوتوكس", nameEn: "Botox", isSurgical: false, recoveryDays: 0 },
     { slug: "dermal-fillers", cat: "skin", nameAr: "الفيلر", nameEn: "Dermal fillers", isSurgical: false, recoveryDays: 0 },
+    { slug: "chemical-peel", cat: "skin", nameAr: "التقشير الكيميائي", nameEn: "Chemical peel", isSurgical: false, recoveryDays: 3 },
+    { slug: "laser-hair-removal", cat: "skin", nameAr: "إزالة الشعر بالليزر", nameEn: "Laser hair removal", isSurgical: false, recoveryDays: 0 },
+    { slug: "microneedling", cat: "skin", nameAr: "الإبر الدقيقة", nameEn: "Microneedling", isSurgical: false, recoveryDays: 2 },
+    { slug: "thread-lift", cat: "skin", nameAr: "شد الخيوط", nameEn: "Thread lift", isSurgical: false, recoveryDays: 5 },
+    // الشعر
     { slug: "hair-transplant", cat: "hair", nameAr: "زراعة الشعر", nameEn: "Hair transplant", isSurgical: true, recoveryDays: 10 },
+    { slug: "prp-hair", cat: "hair", nameAr: "حقن البلازما للشعر", nameEn: "PRP hair treatment", isSurgical: false, recoveryDays: 1 },
+    // الأسنان وابتسامة هوليوود
+    { slug: "veneers", cat: "dental", nameAr: "فينير الأسنان", nameEn: "Dental veneers", isSurgical: false, recoveryDays: 3 },
+    { slug: "teeth-whitening", cat: "dental", nameAr: "تبييض الأسنان", nameEn: "Teeth whitening", isSurgical: false, recoveryDays: 0 },
+    { slug: "smile-makeover", cat: "dental", nameAr: "تصميم الابتسامة", nameEn: "Smile makeover", isSurgical: false, recoveryDays: 5 },
   ]
-  for (const p of procedures) {
+  for (const [i, p] of procedures.entries()) {
     await db
       .insert(procedureT)
       .values({
@@ -141,6 +185,7 @@ async function seedCatalog() {
         isSurgical: p.isSurgical,
         recoveryDays: p.recoveryDays,
         requiredConsultation: "VIDEO_CONSULTATION",
+        sortOrder: i,
       })
       .onConflictDoNothing()
   }
@@ -196,53 +241,51 @@ async function ensureUser(
   return row.id
 }
 
-async function seedUsersAndProviders() {
-  const adminId = await ensureUser("admin@medaura.local", "مدير النظام", ROLES.SUPER_ADMIN)
-  const complianceId = await ensureUser(
-    "compliance@medaura.local",
-    "مراجع الاعتماد",
-    ROLES.COMPLIANCE_REVIEWER,
-  )
-  await ensureUser("patient@medaura.local", "مريم المريضة", ROLES.PATIENT)
-  const approvedDoctorId = await ensureUser(
-    "doctor@medaura.local",
-    "د. سارة العتيبي",
-    ROLES.DOCTOR,
-  )
-  // Solo practitioner also owns the center → can perform center-side care steps.
+type DemoDoctorInput = {
+  email: string
+  name: string
+  doctorSlug: string
+  title: string
+  bio: string
+  country: string
+  city: string
+  yearsExperience: number
+  consultationFee: string
+  currency: string
+  licenseNumber: string
+  centerSlug: string
+  centerLegalName: string
+  centerName: string
+  centerDescription: string
+  procedureSlugs: string[]
+}
+
+/** Idempotent: creates the doctor + their center (as owner) + license + procedures + availability. */
+async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<string> {
+  const doctorUserId = await ensureUser(input.email, input.name, ROLES.DOCTOR)
+
   const centerOwnerRole = (
     await db.select({ id: roleT.id }).from(roleT).where(eq(roleT.key, ROLES.CENTER_OWNER)).limit(1)
   )[0]
   if (centerOwnerRole) {
-    await db
-      .insert(userRole)
-      .values({ userId: approvedDoctorId, roleId: centerOwnerRole.id })
-      .onConflictDoNothing()
+    await db.insert(userRole).values({ userId: doctorUserId, roleId: centerOwnerRole.id }).onConflictDoNothing()
   }
-  const pendingDoctorId = await ensureUser(
-    "pending-doctor@medaura.local",
-    "د. ليان الحربي",
-    ROLES.PATIENT, // still patient until approved
-  )
-  console.log("✓ users (admin, compliance, patient, approved doctor, pending doctor)")
 
-  // ── Approved center ──────────────────────────────────────────────────────
-  const centerSlug = "noor-aesthetic-center"
   let centerRow = (
-    await db.select().from(center).where(eq(center.slug, centerSlug)).limit(1)
+    await db.select().from(center).where(eq(center.slug, input.centerSlug)).limit(1)
   )[0]
   if (!centerRow) {
     centerRow = (
       await db
         .insert(center)
         .values({
-          ownerId: approvedDoctorId,
-          legalName: "مركز نور للطب التجميلي",
-          name: "مركز نور للتجميل",
-          slug: centerSlug,
-          description: "مركز متخصص في جراحات وإجراءات التجميل، معتمد ومرخّص.",
-          country: "SA",
-          city: "الرياض",
+          ownerId: doctorUserId,
+          legalName: input.centerLegalName,
+          name: input.centerName,
+          slug: input.centerSlug,
+          description: input.centerDescription,
+          country: input.country,
+          city: input.city,
           languages: ["ar", "en"],
           verified: true,
           published: true,
@@ -251,33 +294,31 @@ async function seedUsersAndProviders() {
         .returning()
     )[0]
   }
+  await db
+    .insert(centerStaff)
+    .values({ centerId: centerRow.id, userId: doctorUserId, role: "owner" })
+    .onConflictDoNothing()
 
-  // ── Approved, published doctor with a VALID license ──────────────────────
-  const doctorSlug = "dr-sara-alotaibi"
   let doc = (
-    await db
-      .select()
-      .from(doctorProfile)
-      .where(eq(doctorProfile.slug, doctorSlug))
-      .limit(1)
+    await db.select().from(doctorProfile).where(eq(doctorProfile.slug, input.doctorSlug)).limit(1)
   )[0]
   if (!doc) {
     doc = (
       await db
         .insert(doctorProfile)
         .values({
-          userId: approvedDoctorId,
+          userId: doctorUserId,
           centerId: centerRow.id,
-          name: "د. سارة العتيبي",
-          slug: doctorSlug,
-          title: "استشارية جراحة تجميل",
-          bio: "استشارية جراحة تجميل بخبرة واسعة في تجميل الأنف والوجه.",
+          name: input.name,
+          slug: input.doctorSlug,
+          title: input.title,
+          bio: input.bio,
           languages: ["ar", "en"],
-          country: "SA",
-          city: "الرياض",
-          yearsExperience: 12,
-          consultationFee: "300.00",
-          currency: "SAR",
+          country: input.country,
+          city: input.city,
+          yearsExperience: input.yearsExperience,
+          consultationFee: input.consultationFee,
+          currency: input.currency,
           offersVideo: true,
           offersInPerson: true,
           verified: true,
@@ -287,11 +328,10 @@ async function seedUsersAndProviders() {
         .returning()
     )[0]
 
-    const licenseNumber = "SA-PLS-44821"
     await db.insert(doctorLicense).values({
       doctorId: doc.id,
-      numberEncrypted: encryptString(licenseNumber),
-      numberLast4: last4(licenseNumber),
+      numberEncrypted: encryptString(input.licenseNumber),
+      numberLast4: last4(input.licenseNumber),
       issuingAuthority: "الهيئة السعودية للتخصصات الصحية",
       issueDate: "2019-01-01",
       expiryDate: "2030-12-31", // valid (future)
@@ -299,15 +339,14 @@ async function seedUsersAndProviders() {
       lastVerifiedAt: new Date(),
     })
 
-    // link to rhinoplasty + a couple more
     const procs = await db.select().from(procedureT)
     const procBySlug = new Map(procs.map((p) => [p.slug, p.id]))
-    for (const slug of ["rhinoplasty", "facelift", "botox"]) {
+    for (const slug of input.procedureSlugs) {
       const pid = procBySlug.get(slug)
       if (pid)
         await db
           .insert(doctorProcedure)
-          .values({ doctorId: doc.id, procedureId: pid, priceFrom: "12000.00", currency: "SAR" })
+          .values({ doctorId: doc.id, procedureId: pid, priceFrom: "12000.00", currency: input.currency })
           .onConflictDoNothing()
     }
 
@@ -324,6 +363,81 @@ async function seedUsersAndProviders() {
       })
     }
   }
+  return doc.id
+}
+
+async function seedUsersAndProviders() {
+  const adminId = await ensureUser("admin@medaura.local", "مدير النظام", ROLES.SUPER_ADMIN)
+  const complianceId = await ensureUser(
+    "compliance@medaura.local",
+    "مراجع الاعتماد",
+    ROLES.COMPLIANCE_REVIEWER,
+  )
+  await ensureUser("patient@medaura.local", "مريم المريضة", ROLES.PATIENT)
+
+  await ensureApprovedDoctorWithCenter({
+    email: "doctor@medaura.local",
+    name: "د. سارة العتيبي",
+    doctorSlug: "dr-sara-alotaibi",
+    title: "استشارية جراحة تجميل",
+    bio: "استشارية جراحة تجميل بخبرة واسعة في تجميل الأنف والوجه.",
+    country: "SA",
+    city: "الرياض",
+    yearsExperience: 12,
+    consultationFee: "300.00",
+    currency: "SAR",
+    licenseNumber: "SA-PLS-44821",
+    centerSlug: "noor-aesthetic-center",
+    centerLegalName: "مركز نور للطب التجميلي",
+    centerName: "مركز نور للتجميل",
+    centerDescription: "مركز متخصص في جراحات وإجراءات التجميل، معتمد ومرخّص.",
+    procedureSlugs: ["rhinoplasty", "facelift", "botox", "dermal-fillers"],
+  })
+
+  await ensureApprovedDoctorWithCenter({
+    email: "doctor2@medaura.local",
+    name: "د. نورة القحطاني",
+    doctorSlug: "dr-noura-alqahtani",
+    title: "استشارية جراحة تجميل الجسم",
+    bio: "استشارية متخصصة في نحت وشد الجسم وتكبير الثدي.",
+    country: "SA",
+    city: "جدة",
+    yearsExperience: 9,
+    consultationFee: "350.00",
+    currency: "SAR",
+    licenseNumber: "SA-PLS-51239",
+    centerSlug: "amal-cosmetic-center",
+    centerLegalName: "مركز الأمل للطب التجميلي",
+    centerName: "مركز الأمل للتجميل",
+    centerDescription: "مركز معتمد متخصص في جراحات نحت وشد الجسم.",
+    procedureSlugs: ["liposuction", "tummy-tuck", "breast-augmentation", "mommy-makeover"],
+  })
+
+  await ensureApprovedDoctorWithCenter({
+    email: "doctor3@medaura.local",
+    name: "د. أحمد يلماز",
+    doctorSlug: "dr-ahmet-yilmaz",
+    title: "استشاري زراعة الشعر وتجميل الوجه",
+    bio: "استشاري زراعة شعر بخبرة دولية، ومتخصص في تجميل الأنف.",
+    country: "TR",
+    city: "إسطنبول",
+    yearsExperience: 15,
+    consultationFee: "50.00",
+    currency: "USD",
+    licenseNumber: "TR-HT-88210",
+    centerSlug: "istanbul-aesthetic-center",
+    centerLegalName: "Istanbul Aesthetic Medical Center",
+    centerName: "مركز إسطنبول للتجميل",
+    centerDescription: "مركز دولي معتمد لزراعة الشعر وجراحات التجميل.",
+    procedureSlugs: ["hair-transplant", "prp-hair", "rhinoplasty"],
+  })
+
+  const pendingDoctorId = await ensureUser(
+    "pending-doctor@medaura.local",
+    "د. ليان الحربي",
+    ROLES.PATIENT, // still patient until approved
+  )
+  console.log("✓ users (admin, compliance, patient, 3 approved doctors/centers, pending doctor)")
 
   // ── Pending doctor application for compliance to review ───────────────────
   const existingApp = await db
@@ -463,7 +577,9 @@ export async function runSeed({ demo }: { demo: boolean }): Promise<void> {
     console.log("   • admin@medaura.local            (Super Admin)")
     console.log("   • compliance@medaura.local       (Compliance Reviewer)")
     console.log("   • patient@medaura.local          (Patient)")
-    console.log("   • doctor@medaura.local           (Approved Doctor + demo Center Owner)")
+    console.log("   • doctor@medaura.local           (د. سارة العتيبي — الرياض، أنف/وجه)")
+    console.log("   • doctor2@medaura.local          (د. نورة القحطاني — جدة، جسم/ثدي)")
+    console.log("   • doctor3@medaura.local          (د. أحمد يلماز — إسطنبول، شعر)")
     console.log("   • pending-doctor@medaura.local   (Pending application)")
   } else {
     console.log("\n✅ Seed complete (reference/catalog data only).")

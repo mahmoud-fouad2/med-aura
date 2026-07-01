@@ -15,6 +15,7 @@ export type CategoryGroup = {
   slug: string
   nameAr: string
   descriptionAr: string | null
+  icon: string | null
   procedures: ProcedureListItem[]
 }
 
@@ -24,6 +25,7 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
       slug: procedureCategory.slug,
       nameAr: procedureCategory.nameAr,
       descriptionAr: procedureCategory.descriptionAr,
+      icon: procedureCategory.icon,
     })
     .from(procedureCategory)
     .where(eq(procedureCategory.visible, true))

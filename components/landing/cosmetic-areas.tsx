@@ -1,11 +1,11 @@
 import Link from "next/link"
 import {
   Smile,
-  ScanFace,
-  Ribbon,
+  Gem,
   PersonStanding,
   Sparkles,
   Scissors,
+  SmilePlus,
   ArrowLeft,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -13,15 +13,15 @@ import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
 import type { Dictionary } from "@/lib/i18n"
 
-type Area = { slug: string; label: string; icon: LucideIcon; asQuery?: boolean }
+type Area = { slug: string; label: string; icon: LucideIcon }
 
 const areas: Area[] = [
   { slug: "face-neck", label: "الوجه والرقبة", icon: Smile },
-  { slug: "rhinoplasty", label: "تجميل الأنف", icon: ScanFace, asQuery: true },
-  { slug: "breast", label: "الثدي", icon: Ribbon },
-  { slug: "body", label: "البطن والجسم", icon: PersonStanding },
+  { slug: "breast", label: "الثدي", icon: Gem },
+  { slug: "body", label: "الجسم", icon: PersonStanding },
   { slug: "skin", label: "البشرة", icon: Sparkles },
   { slug: "hair", label: "الشعر", icon: Scissors },
+  { slug: "dental", label: "الأسنان والابتسامة", icon: SmilePlus },
 ]
 
 export function CosmeticAreas({ t }: { t: Dictionary["home"] }) {
@@ -37,11 +37,7 @@ export function CosmeticAreas({ t }: { t: Dictionary["home"] }) {
           {areas.map((a) => (
             <StaggerItem key={a.slug}>
               <Link
-                href={
-                  a.asQuery
-                    ? `/search?q=${encodeURIComponent("تجميل الأنف")}`
-                    : `/search?category=${a.slug}`
-                }
+                href={`/search?category=${a.slug}`}
                 className="group flex h-full flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
               >
                 <span className="relative flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/12 to-accent text-primary transition-transform duration-300 group-hover:scale-105">
