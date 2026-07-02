@@ -13,20 +13,24 @@ export function LanguageSwitcher({ locale }: { locale: Locale }) {
   const next: Locale = locale === "ar" ? "en" : "ar"
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      disabled={pending}
-      onClick={() =>
+    <form
+      action={() =>
         startTransition(async () => {
           await setLocale(next)
           router.refresh()
         })
       }
-      aria-label={next === "en" ? "Switch to English" : "التبديل إلى العربية"}
     >
-      <Languages className="size-4" />
-      {next === "en" ? "EN" : "ع"}
-    </Button>
+      <Button
+        type="submit"
+        variant="ghost"
+        size="sm"
+        disabled={pending}
+        aria-label={next === "en" ? "Switch to English" : "التبديل إلى العربية"}
+      >
+        <Languages className="size-4" />
+        {next === "en" ? "EN" : "ع"}
+      </Button>
+    </form>
   )
 }

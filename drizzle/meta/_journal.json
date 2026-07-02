@@ -29,6 +29,13 @@
       "when": 1782922791865,
       "tag": "0003_c7_ops_followup_safety_refund_closure",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782932429580,
+      "tag": "0004_safety_alert_assignee",
+      "breakpoints": true
     }
   ]
 }

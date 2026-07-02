@@ -602,14 +602,20 @@ export const safetyAlert = pgTable(
     severity: safetyAlertSeverityEnum("severity").notNull().default("MEDIUM"),
     status: safetyAlertStatusEnum("status").notNull().default("OPEN"),
     summary: text("summary"),
+    assignedTo: text("assignedTo").references(() => user.id, { onDelete: "set null" }),
     acknowledgedAt: timestamp("acknowledgedAt", { withTimezone: true }),
     acknowledgedBy: text("acknowledgedBy"),
     resolvedAt: timestamp("resolvedAt", { withTimezone: true }),
     resolvedBy: text("resolvedBy"),
     resolutionNotes: text("resolutionNotes"),
     ...lifecycle(),
+    ...authorship(),
   },
-  (t) => [index("safety_case_idx").on(t.caseId), index("safety_status_idx").on(t.status)],
+  (t) => [
+    index("safety_case_idx").on(t.caseId),
+    index("safety_status_idx").on(t.status),
+    index("safety_assignee_idx").on(t.assignedTo),
+  ],
 )
 
 /* ── Reviews ─────────────────────────────────────────────────────────────── */

@@ -21,6 +21,20 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.__medAuraPool = pool
 }
 
+/**
+ * node-postgres requires an 'error' listener on the pool: serverless Postgres
+ * (Neon) can auto-suspend and terminate idle connections from the backend
+ * side, which otherwise surfaces as an uncaught exception and can take down
+ * the process. Log and let the pool evict the dead client; callers already
+ * handle query failures via safeRead()/query(). Guarded so dev hot-reload
+ * doesn't stack a new listener on the cached pool every reload.
+ */
+if (pool.listenerCount("error") === 0) {
+  pool.on("error", (err) => {
+    console.warn("[db] idle client error (pool will reconnect):", err.message)
+  })
+}
+
 export const db = drizzle(pool, { schema })
 
 export * from "./schema"
