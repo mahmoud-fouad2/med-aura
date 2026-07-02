@@ -20,6 +20,7 @@ import { DataState } from "@/components/ui/data-state"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
 import { currencyAr, countryNameAr } from "@/lib/status-labels"
+import { getI18n } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -29,12 +30,16 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const { locale } = await getI18n()
+  const isAr = locale === "ar"
   const r = await query(() => getPublicDoctorBySlug(slug))
   const doctor = r.status === "ok" ? r.data : null
-  if (!doctor) return { title: "الطبيب غير موجود" }
+  if (!doctor) return { title: isAr ? "الطبيب غير موجود" : "Doctor not found" }
   return {
-    title: `${doctor.name} — ${doctor.title ?? "طبيب تجميل"}`,
-    description: doctor.bio ?? `${doctor.name}، ${doctor.title ?? ""} على Med Aura.`,
+    title: isAr 
+      ? `${doctor.name} — ${doctor.title ?? "طبيب تجميل"}`
+      : `${doctor.name} — ${doctor.title ?? "Aesthetic Doctor"}`,
+    description: doctor.bio ?? `${doctor.name}، ${doctor.title ?? ""} on Med Aura.`,
   }
 }
 
@@ -43,7 +48,12 @@ export default async function DoctorProfilePage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, { locale }] = await Promise.all([
+    params,
+    getI18n()
+  ])
+  const isAr = locale === "ar"
+
   const r = await query(() => getPublicDoctorBySlug(slug))
   if (r.status !== "ok") {
     return (
@@ -84,7 +94,7 @@ export default async function DoctorProfilePage({
                         {doctor.name}
                       </h1>
                       {doctor.verified && (
-                        <BadgeCheck className="size-5 text-primary" aria-label="موثّق" />
+                        <BadgeCheck className="size-5 text-primary" aria-label={isAr ? "موثّق" : "Verified"} />
                       )}
                     </div>
                     <p className="text-muted-foreground">{doctor.title}</p>
@@ -95,7 +105,7 @@ export default async function DoctorProfilePage({
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Stethoscope className="size-4" />
-                        خبرة {doctor.yearsExperience} سنة
+                        {isAr ? `خبرة ${doctor.yearsExperience} سنة` : `${doctor.yearsExperience} Years Experience`}
                       </span>
                       {doctor.languages.length > 0 && (
                         <span className="inline-flex items-center gap-1">
@@ -114,7 +124,7 @@ export default async function DoctorProfilePage({
               {doctor.procedures.length > 0 && (
                 <Card className="p-6">
                   <h2 className="mb-3 font-heading text-lg font-bold text-foreground">
-                    الإجراءات
+                    {isAr ? "الإجراءات" : "Procedures"}
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {doctor.procedures.map((p) => (
@@ -129,25 +139,25 @@ export default async function DoctorProfilePage({
               <Card className="p-6">
                 <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-foreground">
                   <ShieldCheck className="size-5 text-primary" />
-                  التحقق والاعتماد
+                  {isAr ? "التحقق والاعتماد" : "Acquisition & License Verification"}
                 </h2>
                 <dl className="space-y-2 text-sm">
-                  <Row label="حالة التحقق" value={doctor.verified ? "موثّق" : "—"} />
-                  <Row label="جهة الترخيص" value={doctor.licenseAuthority ?? "—"} />
+                  <Row label={isAr ? "حالة التحقق" : "Verification Status"} value={doctor.verified ? (isAr ? "موثّق" : "Verified") : "—"} />
+                  <Row label={isAr ? "جهة الترخيص" : "Licensing Authority"} value={doctor.licenseAuthority ?? "—"} />
                   <Row
-                    label="رقم الترخيص"
+                    label={isAr ? "رقم الترخيص" : "License Number"}
                     value={doctor.licenseLast4 ? `•••• ${doctor.licenseLast4}` : "—"}
                   />
                   <Row
-                    label="آخر تحقق"
+                    label={isAr ? "آخر تحقق" : "Last Verification Check"}
                     value={
                       doctor.lastVerifiedAt
-                        ? new Date(doctor.lastVerifiedAt).toLocaleDateString("ar-SA")
+                        ? new Date(doctor.lastVerifiedAt).toLocaleDateString(isAr ? "ar-SA" : "en-US")
                         : "—"
                     }
                   />
                   {doctor.centerName && (
-                    <Row label="المركز" value={doctor.centerName} />
+                    <Row label={isAr ? "المركز" : "Aesthetic Center"} value={doctor.centerName} />
                   )}
                 </dl>
               </Card>
@@ -160,42 +170,65 @@ export default async function DoctorProfilePage({
                   {doctor.consultationFee ? (
                     <p>
                       <span className="font-heading text-2xl font-bold text-foreground">
-                        {Number(doctor.consultationFee).toLocaleString("ar-SA")} {currencyAr(doctor.currency)}
+                        {isAr 
+                          ? `${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${currencyAr(doctor.currency)}`
+                          : `${Number(doctor.consultationFee).toLocaleString("en-US")} ${doctor.currency}`}
                       </span>
-                      <span className="text-muted-foreground"> / استشارة</span>
+                      <span className="text-muted-foreground"> / {isAr ? "استشارة" : "Consultation"}</span>
                     </p>
                   ) : (
-                    <p className="text-muted-foreground">سعر الاستشارة يُحدد عند الحجز</p>
+                    <p className="text-muted-foreground">{isAr ? "سعر الاستشارة يُحدد عند الحجز" : "Consultation fee is set upon booking"}</p>
                   )}
                 </div>
-                <div className="mb-4 flex flex-col gap-1 text-sm text-muted-foreground">
+                <div className="mb-6 flex flex-col gap-1.5 text-sm text-muted-foreground">
                   {doctor.offersVideo && (
                     <span className="inline-flex items-center gap-1.5">
-                      <Video className="size-4 text-primary" /> استشارة فيديو
+                      <Video className="size-4 text-primary" /> {isAr ? "استشارة فيديو" : "Video Consultation"}
                     </span>
                   )}
                   {doctor.offersInPerson && (
                     <span className="inline-flex items-center gap-1.5">
-                      <Building2 className="size-4 text-primary" /> استشارة حضورية
+                      <Building2 className="size-4 text-primary" /> {isAr ? "استشارة حضورية" : "In-Person Consultation"}
                     </span>
                   )}
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    render={
-                      <Link href={`/doctors/${doctor.slug}/book`}>
-                        حجز استشارة
-                      </Link>
-                    }
-                  />
-                  <Button
-                    variant="outline"
-                    render={
-                      <Link href={`/dashboard/cases/new?doctor=${doctor.id}`}>
-                        ابدأ حالتك
-                      </Link>
-                    }
-                  />
+                
+                {/* Optimized Conversion Path UI */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Button
+                      className="w-full h-11 text-base shadow-elegant"
+                      render={
+                        <Link href={`/doctors/${doctor.slug}/book`}>
+                          {isAr ? "حجز استشارة مباشر" : "Book Direct Appointment"}
+                        </Link>
+                      }
+                    />
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      {isAr ? "اختر موعداً فورياً واستشر طبيبك بالكامل" : "Select an instant slot and consult your doctor directly"}
+                    </p>
+                  </div>
+                  
+                  <div className="relative flex py-1 items-center">
+                    <div className="flex-grow border-t border-border/80"></div>
+                    <span className="flex-shrink mx-3 text-xs text-muted-foreground font-medium">{isAr ? "أو" : "Or"}</span>
+                    <div className="flex-grow border-t border-border/80"></div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 text-base transition-all"
+                      render={
+                        <Link href={`/dashboard/cases/new?doctor=${doctor.id}`}>
+                          {isAr ? "ابدأ دراسة حالة بأمان" : "Start Case Study Safely"}
+                        </Link>
+                      }
+                    />
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      {isAr ? "شارك صورك وتقاريرك للحصول على خطة وسعر متوقع" : "Share photos & details for a custom plan and price from the doctor"}
+                    </p>
+                  </div>
                 </div>
               </Card>
             </aside>

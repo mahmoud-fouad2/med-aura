@@ -234,7 +234,7 @@ function Section({
           <Icon className="size-4 text-primary" /> {title}
         </h2>
         <Link href={viewAllHref} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-          عرض الكل <ArrowLeft className="size-3" />
+          عرض الكل <ArrowLeft className="size-3 rtl:rotate-0 ltr:rotate-180" />
         </Link>
       </div>
       {children}

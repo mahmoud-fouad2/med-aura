@@ -2,9 +2,9 @@ import { Search, FileLock2, Video, ClipboardList, CalendarCheck } from "lucide-r
 import type { LucideIcon } from "lucide-react"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
-import type { Dictionary } from "@/lib/i18n"
+import type { Dictionary, Locale } from "@/lib/i18n"
 
-const steps: { icon: LucideIcon; title: string; desc: string }[] = [
+const stepsAr = [
   { icon: Search, title: "اختر الإجراء والطبيب", desc: "تصفّح إجراءات التجميل وقارن بين أطباء ومراكز معتمدين." },
   { icon: FileLock2, title: "شارك حالتك بأمان", desc: "أنشئ حالتك وارفع صورك وتقاريرك في مساحة خاصة محمية." },
   { icon: Video, title: "استشر طبيبًا", desc: "احجز استشارة فيديو أو حضورية بعد منح إذن الاطلاع." },
@@ -12,22 +12,39 @@ const steps: { icon: LucideIcon; title: string; desc: string }[] = [
   { icon: CalendarCheck, title: "أكمل الحجز والمتابعة", desc: "ثبّت موعد الإجراء وتابع تعافيك خطوة بخطوة." },
 ]
 
-export function Features({ t }: { t: Dictionary["home"] }) {
+const stepsEn = [
+  { icon: Search, title: "Choose Procedure & Doctor", desc: "Browse aesthetic procedures and compare accredited doctors and centers." },
+  { icon: FileLock2, title: "Securely Share Your Case", desc: "Create your case and upload photos or reports in a private protected space." },
+  { icon: Video, title: "Consult a Doctor", desc: "Book a video or in-person consultation after granting viewing permission." },
+  { icon: ClipboardList, title: "Receive Plan & Quote", desc: "Get a clear treatment plan and pricing estimate before making any decision." },
+  { icon: CalendarCheck, title: "Complete Booking & Follow-up", desc: "Confirm your procedure appointment and track your recovery step by step." },
+]
+
+export function Features({ 
+  t, 
+  locale 
+}: { 
+  t: Dictionary["home"]
+  locale: Locale
+}) {
+  const isAr = locale === "ar"
+  const steps = isAr ? stepsAr : stepsEn
+
   return (
     <section id="how-it-works" className="border-b border-border bg-secondary/30">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="رحلة واضحة"
+          eyebrow={isAr ? "رحلة واضحة" : "A Clear Journey"}
           title={t.howItWorks}
-          subtitle="خمس خطوات مدروسة من البحث حتى المتابعة بعد الإجراء، بثقة ووضوح."
+          subtitle={isAr ? "خمس خطوات مدروسة من البحث حتى المتابعة بعد الإجراء، بثقة ووضوح." : "Five thoughtful steps from search to post-procedure follow-up, with confidence and clarity."}
         />
 
-        <Stagger className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <Stagger className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-5 animate-in fade-in-50 duration-500">
           {steps.map((step, i) => (
             <StaggerItem key={step.title} className="relative">
               {i < steps.length - 1 && (
                 <span
-                  className="absolute top-9 left-0 hidden h-px w-full -translate-x-1/2 bg-gradient-to-l from-primary/30 to-transparent lg:block"
+                  className="absolute top-9 hidden h-px w-full lg:block bg-gradient-to-l from-primary/30 to-transparent ltr:bg-gradient-to-r ltr:right-0 ltr:translate-x-1/2 rtl:left-0 rtl:-translate-x-1/2"
                   aria-hidden
                 />
               )}

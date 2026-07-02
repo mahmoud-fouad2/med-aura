@@ -72,7 +72,7 @@ export default async function ProceduresPage() {
                           >
                             <div className="flex items-center justify-between">
                               <CategoryIconBadge icon={g.icon} className="size-10" iconClassName="size-5" />
-                              <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 group-hover:-translate-x-1 group-hover:text-primary" />
+                              <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1 group-hover:text-primary" />
                             </div>
                             <h3 className="font-heading text-lg font-bold text-foreground">
                               {p.nameAr}

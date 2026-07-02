@@ -138,7 +138,7 @@ export default async function AdminSettingsPage() {
               <div className="min-w-0 flex-1">
                 <p className="flex items-center justify-between gap-2 font-medium text-foreground">
                   {s.label}
-                  <ArrowLeft className="size-4 text-muted-foreground transition-transform group-hover:-translate-x-0.5 group-hover:text-primary" />
+                  <ArrowLeft className="size-4 text-muted-foreground transition-transform rtl:rotate-0 ltr:rotate-180 rtl:group-hover:-translate-x-0.5 ltr:group-hover:translate-x-0.5 group-hover:text-primary" />
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{s.desc}</p>
               </div>

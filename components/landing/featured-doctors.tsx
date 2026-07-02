@@ -8,10 +8,15 @@ import { DataState } from "@/components/ui/data-state"
 import { Button } from "@/components/ui/button"
 import { DoctorCard } from "@/components/search/doctor-card"
 import { Stagger, StaggerItem } from "@/components/motion"
+import { getI18n } from "@/lib/i18n"
 
 export async function FeaturedDoctors() {
-  const res = await query(() => searchDoctors({ pageSize: 3 }))
+  const [res, { locale, t }] = await Promise.all([
+    query(() => searchDoctors({ pageSize: 3 })),
+    getI18n()
+  ])
   const results = res.status === "ok" ? res.data.results : []
+  const isAr = locale === "ar"
 
   return (
     <section className="border-b border-border bg-secondary/30">
@@ -19,17 +24,17 @@ export async function FeaturedDoctors() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             align="start"
-            eyebrow="نخبة موثّقة"
-            title="الأطباء الموثقون"
-            subtitle="يظهر هنا الأطباء المعتمدون فقط، بعد التحقق من تراخيصهم."
+            eyebrow={isAr ? "نخبة موثّقة" : "Verified Selection"}
+            title={t.home.verifiedDoctors}
+            subtitle={isAr ? "يظهر هنا الأطباء المعتمدون فقط، بعد التحقق من تراخيصهم." : "Only verified, accredited doctors are displayed here after strict license checks."}
           />
           {results.length > 0 && (
             <Button
               variant="outline"
               render={
                 <Link href="/search">
-                  عرض جميع الأطباء
-                  <ArrowLeft className="size-4" />
+                  {isAr ? "عرض جميع الأطباء" : "View all doctors"}
+                  <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />
                 </Link>
               }
             />
@@ -47,10 +52,10 @@ export async function FeaturedDoctors() {
           <div className="mt-12">
             <EmptyState
               icon={Stethoscope}
-              title="نرحّب بأطباء التجميل المعتمدين"
-              description="لا يظهر أي طبيب قبل التحقق من ترخيصه. هل أنت طبيب؟ انضم إلى المنصة."
+              title={isAr ? "نرحّب بأطباء التجميل المعتمدين" : "Welcome Accredited Aesthetic Doctors"}
+              description={isAr ? "لا يظهر أي طبيب قبل التحقق من ترخيصه. هل أنت طبيب؟ انضم إلى المنصة." : "No doctor appears prior to verified licensing. Are you a doctor? Join the platform."}
               action={
-                <Button render={<Link href="/for-doctors">انضم كطبيب</Link>} />
+                <Button render={<Link href="/for-doctors">{isAr ? "انضم كطبيب" : "Join as a doctor"}</Link>} />
               }
             />
           </div>

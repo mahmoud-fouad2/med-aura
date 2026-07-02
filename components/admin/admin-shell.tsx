@@ -92,7 +92,7 @@ export function AdminShell({
               <Link href="/admin" className="hover:text-foreground">الإدارة</Link>
               {activeLabel && activeLabel !== "نظرة عامة" && (
                 <>
-                  <ChevronLeft className="size-3.5" />
+                  <ChevronLeft className="size-3.5 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180" />
                   <span className="font-medium text-foreground">{activeLabel}</span>
                 </>
               )}

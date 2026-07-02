@@ -15,6 +15,8 @@ import { searchDoctors } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
 import { appUrl } from "@/lib/env"
 
+import { getI18n } from "@/lib/i18n"
+
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata({
@@ -23,14 +25,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const { t } = await getI18n()
   const r = await query(() => getProcedureBySlug(slug))
   const p = r.status === "ok" ? r.data : null
-  if (!p) return { title: "الإجراء غير موجود" }
+  if (!p) return { title: t.common.none }
   return {
     title: `${p.nameAr} — ${p.categoryNameAr}`,
     description:
       p.descriptionAr ??
-      `تعرّف على إجراء ${p.nameAr} واحجز استشارة مع طبيب تجميل معتمد على Med Aura.`,
+      `Learn about ${p.nameAr} and book a consultation with a certified plastic surgeon on Med Aura.`,
   }
 }
 
@@ -39,7 +42,11 @@ export default async function ProcedureDetailPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, { t, locale }] = await Promise.all([
+    params,
+    getI18n()
+  ])
+  const isAr = locale === "ar"
   const procRes = await query(() => getProcedureBySlug(slug))
   if (procRes.status !== "ok") {
     return (
@@ -84,33 +91,33 @@ export default async function ProcedureDetailPage({
           <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
             <nav className="mb-4 flex items-center gap-1 text-sm text-muted-foreground">
               <Link href="/procedures" className="hover:text-primary">
-                الإجراءات
+                {t.nav.procedures}
               </Link>
-              <ChevronLeft className="size-4" />
-              <span className="text-foreground">{procedure.nameAr}</span>
+              <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
+              <span className="text-foreground">{isAr ? procedure.nameAr : procedure.nameEn}</span>
             </nav>
             <Reveal>
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                  {procedure.nameAr}
+                  {isAr ? procedure.nameAr : procedure.nameEn}
                 </h1>
                 <Badge variant={procedure.isSurgical ? "secondary" : "outline"}>
                   <Syringe className="size-3" />
-                  {procedure.isSurgical ? "جراحي" : "غير جراحي"}
+                  {procedure.isSurgical ? (isAr ? "جراحي" : "Surgical") : (isAr ? "غير جراحي" : "Non-surgical")}
                 </Badge>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <span>التصنيف: {procedure.categoryNameAr}</span>
+                <span>{isAr ? `التصنيف: ${procedure.categoryNameAr}` : `Category: ${procedure.categoryNameAr}`}</span>
                 {procedure.recoveryDays != null && procedure.recoveryDays > 0 && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="size-4" />
-                    تعافٍ تقديري {procedure.recoveryDays} يوم
+                    {isAr ? `تعافٍ تقديري ${procedure.recoveryDays} يوم` : `Estimated recovery: ${procedure.recoveryDays} Days`}
                   </span>
                 )}
               </div>
               {procedure.descriptionAr && (
                 <p className="mt-5 max-w-3xl text-lg leading-relaxed text-muted-foreground">
-                  {procedure.descriptionAr}
+                  {isAr ? procedure.descriptionAr : procedure.descriptionEn || procedure.descriptionAr}
                 </p>
               )}
               <div className="mt-6">
@@ -118,7 +125,7 @@ export default async function ProcedureDetailPage({
                   size="lg"
                   render={
                     <Link href={`/search?procedure=${procedure.slug}`}>
-                      ابحث عن طبيب لهذا الإجراء
+                      {isAr ? "ابحث عن طبيب لهذا الإجراء" : "Find a Doctor for This Procedure"}
                     </Link>
                   }
                 />
@@ -131,7 +138,7 @@ export default async function ProcedureDetailPage({
         <section className="bg-background">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <h2 className="mb-8 font-heading text-2xl font-bold text-foreground">
-              أطباء يقدّمون هذا الإجراء
+              {isAr ? "أطباء يقدّمون هذا الإجراء" : "Accredited Doctors Performing This Procedure"}
             </h2>
             {doctorsRes.status !== "ok" ? (
               <DataState
@@ -141,9 +148,9 @@ export default async function ProcedureDetailPage({
             ) : results.length === 0 ? (
               <EmptyState
                 icon={Stethoscope}
-                title="لا يوجد أطباء معتمدون لهذا الإجراء بعد"
-                description="نضيف الأطباء بعد التحقق من تراخيصهم. تحقّق لاحقًا أو تصفّح إجراءات أخرى."
-                action={<Button render={<Link href="/procedures">كل الإجراءات</Link>} />}
+                title={isAr ? "لا يوجد أطباء معتمدون لهذا الإجراء بعد" : "No accredited doctors for this procedure yet"}
+                description={isAr ? "نضيف الأطباء بعد التحقق من تراخيصهم. تحقّق لاحقًا أو تصفّح إجراءات أخرى." : "Doctors are listed after strict license checks. Check back soon or browse other procedures."}
+                action={<Button render={<Link href="/procedures">{isAr ? "كل الإجراءات" : "All Procedures"}</Link>} />}
               />
             ) : (
               <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

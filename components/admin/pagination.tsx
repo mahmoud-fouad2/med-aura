@@ -32,13 +32,13 @@ export function AdminPagination({
       </p>
       <div className="flex items-center gap-1">
         <PageLink href={buildHref(page - 1)} disabled={page <= 1} aria-label="الصفحة السابقة">
-          <ChevronRight className="size-4" />
+          <ChevronRight className="size-4 rtl:rotate-0 ltr:rotate-180" />
         </PageLink>
         <span className="px-2 text-xs">
           {page} / {totalPages}
         </span>
         <PageLink href={buildHref(page + 1)} disabled={page >= totalPages} aria-label="الصفحة التالية">
-          <ChevronLeft className="size-4" />
+          <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
         </PageLink>
       </div>
     </div>

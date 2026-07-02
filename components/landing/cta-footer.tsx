@@ -3,8 +3,12 @@ import { ArrowLeft, Stethoscope, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { Reveal } from "@/components/motion"
+import { getI18n } from "@/lib/i18n"
 
-export function CtaFooter() {
+export async function CtaFooter() {
+  const { locale } = await getI18n()
+  const isAr = locale === "ar"
+
   return (
     <>
       <section className="bg-background">
@@ -16,11 +20,12 @@ export function CtaFooter() {
               <div className="pointer-events-none absolute -bottom-24 -right-10 size-72 rounded-full bg-white/10 blur-3xl" />
               <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
                 <h2 className="text-balance font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">
-                  هل أنت طبيب أو مركز تجميل؟
+                  {isAr ? "هل أنت طبيب أو مركز تجميل؟" : "Are you a doctor or an aesthetic center?"}
                 </h2>
                 <p className="text-pretty text-lg leading-relaxed text-primary-foreground/90">
-                  انضم إلى Med Aura بعد التحقق من تراخيصك، واعرض خدماتك أمام مرضى
-                  يبحثون عن رعاية تجميلية موثوقة من السعودية والخليج والعالم.
+                  {isAr 
+                    ? "انضم إلى Med Aura بعد التحقق من تراخيصك، واعرض خدماتك أمام مرضى يبحثون عن رعاية تجميلية موثوقة من السعودية والخليج والعالم."
+                    : "Join Med Aura after verifying your license, and showcase your services to patients seeking trusted aesthetic care from Saudi Arabia, the Gulf, and the world."}
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Button
@@ -29,7 +34,7 @@ export function CtaFooter() {
                     render={
                       <Link href="/for-doctors">
                         <Stethoscope className="size-5" />
-                        انضم كطبيب
+                        {isAr ? "انضم كطبيب" : "Join as a doctor"}
                       </Link>
                     }
                   />
@@ -40,8 +45,8 @@ export function CtaFooter() {
                     render={
                       <Link href="/for-centers">
                         <Building2 className="size-5" />
-                        سجّل مركزك
-                        <ArrowLeft className="size-4" />
+                        {isAr ? "سجّل مركزك" : "Register your center"}
+                        <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />
                       </Link>
                     }
                   />

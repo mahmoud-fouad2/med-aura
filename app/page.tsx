@@ -11,15 +11,15 @@ import { getI18n } from "@/lib/i18n"
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const { t } = await getI18n()
+  const { locale, t } = await getI18n()
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
       <main className="flex-1">
-        <Hero t={t.home} />
-        <CosmeticAreas t={t.home} />
+        <Hero t={t.home} tCommon={t.common} locale={locale} />
+        <CosmeticAreas t={t.home} locale={locale} />
         <PopularProcedures />
-        <Features t={t.home} />
+        <Features t={t.home} locale={locale} />
         <FeaturedDoctors />
         <TrustBand />
         <CtaFooter />

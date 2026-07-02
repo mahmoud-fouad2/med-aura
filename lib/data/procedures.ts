@@ -56,6 +56,7 @@ export type ProcedureDetail = {
   nameAr: string
   nameEn: string
   descriptionAr: string | null
+  descriptionEn: string | null
   isSurgical: boolean
   recoveryDays: number | null
   categorySlug: string
@@ -72,6 +73,7 @@ export async function getProcedureBySlug(
         nameAr: procedureT.nameAr,
         nameEn: procedureT.nameEn,
         descriptionAr: procedureT.descriptionAr,
+        descriptionEn: procedureT.descriptionEn,
         isSurgical: procedureT.isSurgical,
         recoveryDays: procedureT.recoveryDays,
         categorySlug: procedureCategory.slug,

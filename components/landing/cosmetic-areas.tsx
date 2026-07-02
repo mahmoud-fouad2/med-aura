@@ -11,27 +11,35 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
-import type { Dictionary } from "@/lib/i18n"
+import type { Dictionary, Locale } from "@/lib/i18n"
 
-type Area = { slug: string; label: string; icon: LucideIcon }
+type Area = { slug: string; label: string; labelEn: string; icon: LucideIcon }
 
 const areas: Area[] = [
-  { slug: "face-neck", label: "الوجه والرقبة", icon: Smile },
-  { slug: "breast", label: "الثدي", icon: Gem },
-  { slug: "body", label: "الجسم", icon: PersonStanding },
-  { slug: "skin", label: "البشرة", icon: Sparkles },
-  { slug: "hair", label: "الشعر", icon: Scissors },
-  { slug: "dental", label: "الأسنان والابتسامة", icon: SmilePlus },
+  { slug: "face-neck", label: "الوجه والرقبة", labelEn: "Face & Neck", icon: Smile },
+  { slug: "breast", label: "الثدي", labelEn: "Breast", icon: Gem },
+  { slug: "body", label: "الجسم", labelEn: "Body", icon: PersonStanding },
+  { slug: "skin", label: "البشرة", labelEn: "Skin", icon: Sparkles },
+  { slug: "hair", label: "الشعر", labelEn: "Hair", icon: Scissors },
+  { slug: "dental", label: "الأسنان والابتسامة", labelEn: "Dental & Smile", icon: SmilePlus },
 ]
 
-export function CosmeticAreas({ t }: { t: Dictionary["home"] }) {
+export function CosmeticAreas({ 
+  t, 
+  locale 
+}: { 
+  t: Dictionary["home"]
+  locale: Locale
+}) {
+  const isAr = locale === "ar"
+
   return (
     <section className="border-b border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="اكتشف حسب المنطقة"
+          eyebrow={isAr ? "اكتشف حسب المنطقة" : "Explore by Area"}
           title={t.exploreByArea}
-          subtitle="اختر المنطقة التي تهتم بها وتصفّح الأطباء والإجراءات المتخصصة."
+          subtitle={isAr ? "اختر المنطقة التي تهتم بها وتصفّح الأطباء والإجراءات المتخصصة." : "Choose the area you are interested in and browse specialized doctors and procedures."}
         />
         <Stagger className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {areas.map((a) => (
@@ -44,11 +52,11 @@ export function CosmeticAreas({ t }: { t: Dictionary["home"] }) {
                   <a.icon className="size-7" />
                 </span>
                 <span className="font-heading font-semibold text-foreground">
-                  {a.label}
+                  {isAr ? a.label : a.labelEn}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  استكشف
-                  <ArrowLeft className="size-3.5" />
+                  {isAr ? "استكشف" : "Explore"}
+                  <ArrowLeft className="size-3.5 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1" />
                 </span>
               </Link>
             </StaggerItem>

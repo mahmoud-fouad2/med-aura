@@ -15,6 +15,7 @@ import { query } from "@/lib/db/query"
 import { countryNameAr } from "@/lib/status-labels"
 import { Stethoscope } from "lucide-react"
 import { appUrl } from "@/lib/env"
+import { getI18n } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -24,12 +25,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const { t } = await getI18n()
   const r = await query(() => getCenterBySlug(slug))
   const c = r.status === "ok" ? r.data : null
-  if (!c) return { title: "المركز غير موجود" }
+  if (!c) return { title: t.common.none }
   return {
     title: c.name,
-    description: c.description ?? `${c.name} على Med Aura.`,
+    description: c.description ?? `${c.name} on Med Aura.`,
   }
 }
 
@@ -38,7 +40,10 @@ export default async function CenterDetailPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, { t }] = await Promise.all([
+    params,
+    getI18n(),
+  ])
   const r = await query(() => getCenterBySlug(slug))
   if (r.status !== "ok") {
     return (
@@ -77,9 +82,9 @@ export default async function CenterDetailPage({
           <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
             <nav className="mb-4 flex items-center gap-1 text-sm text-muted-foreground">
               <Link href="/centers" className="hover:text-primary">
-                المراكز
+                {t.nav.centers}
               </Link>
-              <ChevronLeft className="size-4" />
+              <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
               <span className="text-foreground">{c.name}</span>
             </nav>
             <Reveal>

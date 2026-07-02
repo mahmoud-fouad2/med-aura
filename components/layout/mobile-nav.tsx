@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,25 @@ export function MobileNav({
 }) {
   const [open, setOpen] = useState(false)
 
+  // Avoid background scrolling & handle Escape key
+  useEffect(() => {
+    if (!open) return
+    
+    document.body.classList.add("overflow-hidden")
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    
+    return () => {
+      document.body.classList.remove("overflow-hidden")
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [open])
+
   return (
     <div className="md:hidden">
       <Button
@@ -25,9 +44,10 @@ export function MobileNav({
         size="icon"
         aria-label="القائمة"
         aria-expanded={open}
+        aria-controls="mobile-nav-panel"
         onClick={() => setOpen((v) => !v)}
       >
-        {open ? <Menu className="size-5" /> : <Menu className="size-5" />}
+        {open ? <X className="size-5" /> : <Menu className="size-5" />}
       </Button>
 
       {open && (
@@ -36,7 +56,10 @@ export function MobileNav({
             className="fixed inset-0 top-16 z-40 bg-foreground/20 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed inset-x-0 top-16 z-50 border-b border-border bg-background p-4 shadow-lg">
+          <div 
+            id="mobile-nav-panel"
+            className="fixed inset-x-0 top-16 z-50 border-b border-border bg-background p-4 shadow-lg animate-in fade-in slide-in-from-top-4 duration-200"
+          >
             <div className="mb-2 flex justify-end">
               <Button
                 variant="ghost"
