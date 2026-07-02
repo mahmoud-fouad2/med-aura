@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { RefundReviewPanel } from "@/components/finance/refund-review-panel"
-import { paymentStatusAr } from "@/lib/status-labels"
+import { paymentStatusAr, paymentPurposeAr, currencyAr, invoiceStatusAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 
@@ -54,7 +54,7 @@ export default async function FinanceDashboardPage() {
           <TabsTrigger value="invoices">الفواتير ({invoices.length})</TabsTrigger>
           <TabsTrigger value="refunds">الاسترجاعات ({refunds.length})</TabsTrigger>
           <TabsTrigger value="disputes">النزاعات ({disputedPayments.length})</TabsTrigger>
-          <TabsTrigger value="webhooks">سجل الـWebhooks ({webhooks.length})</TabsTrigger>
+          <TabsTrigger value="webhooks">سجل أحداث الدفع ({webhooks.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="payments" className="mt-4">
@@ -65,10 +65,10 @@ export default async function FinanceDashboardPage() {
               rows={payments}
               columns={[
                 { header: "المرجع", cell: (p) => p.reference },
-                { header: "الغرض", cell: (p) => p.purpose },
+                { header: "الغرض", cell: (p) => paymentPurposeAr(p.purpose) },
                 { header: "الدافع", cell: (p) => p.payerName },
                 { header: "الحالة", cell: (p) => <Badge variant="outline">{paymentStatusAr(p.status)}</Badge> },
-                { header: "المبلغ", cell: (p) => `${Number(p.amount).toLocaleString("ar-SA")} ${p.currency}` },
+                { header: "المبلغ", cell: (p) => `${Number(p.amount).toLocaleString("ar-SA")} ${currencyAr(p.currency)}` },
                 { header: "التاريخ", cell: (p) => new Date(p.createdAt).toLocaleDateString("ar-SA") },
               ]}
             />
@@ -84,9 +84,9 @@ export default async function FinanceDashboardPage() {
               columns={[
                 { header: "الرقم", cell: (i) => i.invoiceNumber },
                 { header: "المريض", cell: (i) => i.patientName },
-                { header: "الحالة", cell: (i) => <Badge variant="outline">{i.status}</Badge> },
-                { header: "الإجمالي", cell: (i) => `${Number(i.total).toLocaleString("ar-SA")} ${i.currency}` },
-                { header: "المتبقي", cell: (i) => `${Number(i.remainingAmount).toLocaleString("ar-SA")} ${i.currency}` },
+                { header: "الحالة", cell: (i) => <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge> },
+                { header: "الإجمالي", cell: (i) => `${Number(i.total).toLocaleString("ar-SA")} ${currencyAr(i.currency)}` },
+                { header: "المتبقي", cell: (i) => `${Number(i.remainingAmount).toLocaleString("ar-SA")} ${currencyAr(i.currency)}` },
               ]}
             />
           )}
@@ -105,7 +105,7 @@ export default async function FinanceDashboardPage() {
               columns={[
                 { header: "المرجع", cell: (p) => p.reference },
                 { header: "الدافع", cell: (p) => p.payerName },
-                { header: "المبلغ", cell: (p) => `${Number(p.amount).toLocaleString("ar-SA")} ${p.currency}` },
+                { header: "المبلغ", cell: (p) => `${Number(p.amount).toLocaleString("ar-SA")} ${currencyAr(p.currency)}` },
               ]}
             />
           )}
@@ -113,7 +113,7 @@ export default async function FinanceDashboardPage() {
 
         <TabsContent value="webhooks" className="mt-4">
           {webhooks.length === 0 ? (
-            <EmptyState icon={Wallet} title="لا يوجد سجل Webhooks" description="ستظهر هنا أحداث بوابة الدفع." />
+            <EmptyState icon={Wallet} title="لا يوجد سجل أحداث بعد" description="ستظهر هنا أحداث بوابة الدفع." />
           ) : (
             <DataTable
               rows={webhooks}
@@ -151,7 +151,7 @@ function SummaryCard({
         <span className="text-sm">{label}</span>
       </div>
       <p className={`font-heading text-xl font-bold ${warn ? "text-warning" : "text-foreground"}`}>
-        {value.toLocaleString("ar-SA")} {currency}
+        {value.toLocaleString("ar-SA")} {currencyAr(currency)}
       </p>
     </Card>
   )

@@ -17,8 +17,8 @@ export function Logo({ className }: { className?: string }) {
     <Image
       src="/brand/med-aura-horizontal.png"
       alt="Med Aura — رحلتك التجميلية بثقة"
-      width={1233}
-      height={391}
+      width={1217}
+      height={389}
       priority
       className={cn("h-9 w-auto select-none", className)}
     />

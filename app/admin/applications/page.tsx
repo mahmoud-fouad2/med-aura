@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { ApplicationReview } from "@/components/admin/application-review"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
+import { countryNameAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "طلبات الانضمام" }
@@ -70,7 +71,7 @@ export default async function ApplicationsPage() {
                       <StatusBadge status={r.status} />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {p.title} · {p.city}، {p.country} · خبرة {p.yearsExperience ?? 0} سنة
+                      {p.title} · {p.city}، {countryNameAr(p.country ?? "")} · خبرة {p.yearsExperience ?? 0} سنة
                     </p>
                     <p dir="ltr" className="text-right text-xs text-muted-foreground">
                       {r.applicantEmail}

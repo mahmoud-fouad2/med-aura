@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { currencyAr, countryNameAr } from "@/lib/status-labels"
 import type { DoctorCard as DoctorCardData } from "@/lib/data/doctors"
 
 export function DoctorCard({ doctor }: { doctor: DoctorCardData }) {
@@ -33,7 +34,7 @@ export function DoctorCard({ doctor }: { doctor: DoctorCardData }) {
           )}
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="size-3.5" />
-            {[doctor.city, doctor.country].filter(Boolean).join("، ")}
+            {[doctor.city, countryNameAr(doctor.country)].filter(Boolean).join("، ")}
             <span aria-hidden>·</span>
             خبرة {doctor.yearsExperience} سنة
           </p>
@@ -68,7 +69,7 @@ export function DoctorCard({ doctor }: { doctor: DoctorCardData }) {
           {doctor.consultationFee ? (
             <>
               <span className="font-bold text-foreground">
-                {Number(doctor.consultationFee).toLocaleString("ar-SA")} {doctor.currency}
+                {Number(doctor.consultationFee).toLocaleString("ar-SA")} {currencyAr(doctor.currency)}
               </span>
               <span className="text-muted-foreground"> / استشارة</span>
             </>

@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Reveal } from "@/components/motion"
 import { getCenterBySlug } from "@/lib/data/centers"
 import { query } from "@/lib/db/query"
+import { countryNameAr } from "@/lib/status-labels"
 import { Stethoscope } from "lucide-react"
 import { appUrl } from "@/lib/env"
 
@@ -60,7 +61,7 @@ export default async function CenterDetailPage({
     "@context": "https://schema.org",
     "@type": "MedicalClinic",
     name: c.name,
-    address: [c.city, c.country].filter(Boolean).join("، ") || undefined,
+    address: [c.city, countryNameAr(c.country)].filter(Boolean).join("، ") || undefined,
     url: `${appUrl()}/centers/${c.slug}`,
   }
 
@@ -96,7 +97,7 @@ export default async function CenterDetailPage({
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="size-4" />
-                      {[c.city, c.country].filter(Boolean).join("، ")}
+                      {[c.city, countryNameAr(c.country)].filter(Boolean).join("، ")}
                     </span>
                     {c.languages.length > 0 && (
                       <span className="inline-flex items-center gap-1">

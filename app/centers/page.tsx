@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listPublishedCenters } from "@/lib/data/centers"
 import { query } from "@/lib/db/query"
+import { countryNameAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 
@@ -68,7 +69,7 @@ export default async function CentersPage() {
                         </h3>
                         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                           <MapPin className="size-3.5" />
-                          {[c.city, c.country].filter(Boolean).join("، ")}
+                          {[c.city, countryNameAr(c.country)].filter(Boolean).join("، ")}
                         </p>
                         {c.description && (
                           <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">

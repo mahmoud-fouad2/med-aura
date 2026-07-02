@@ -20,7 +20,7 @@ import { isStripeConfigured, isR2Configured, isEmailConfigured } from "@/lib/env
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
-import { caseStatusAr } from "@/lib/status-labels"
+import { caseStatusAr, paymentPurposeAr, currencyAr, safetyAlertSeverityAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 
@@ -121,7 +121,7 @@ export default async function AdminOverviewPage() {
             ) : (
               <ul className="divide-y divide-border">
                 {highPrioritySafety.map((a) => (
-                  <ListRow key={a.id} href={`/dashboard/cases/${a.caseId}`} title={a.patientName} subtitle={a.summary ?? "تنبيه سلامة"} badge={a.severity} badgeVariant="destructive" />
+                  <ListRow key={a.id} href={`/dashboard/cases/${a.caseId}`} title={a.patientName} subtitle={a.summary ?? "تنبيه سلامة"} badge={safetyAlertSeverityAr(a.severity)} badgeVariant="destructive" />
                 ))}
               </ul>
             )}
@@ -135,10 +135,10 @@ export default async function AdminOverviewPage() {
             ) : (
               <ul className="divide-y divide-border">
                 {pendingPayments.map((p) => (
-                  <ListRow key={p.id} href="/dashboard/finance" title={p.payerName} subtitle={`${p.purpose} — ${Number(p.amount).toLocaleString("ar-SA")} ${p.currency}`} badge="معلّقة" />
+                  <ListRow key={p.id} href="/dashboard/finance" title={p.payerName} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA")} ${currencyAr(p.currency)}`} badge="معلّقة" />
                 ))}
                 {openRefunds.map((r) => (
-                  <ListRow key={r.id} href="/dashboard/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA")} ${r.currency}`} badge="بانتظار المعالجة" />
+                  <ListRow key={r.id} href="/dashboard/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
                 ))}
               </ul>
             )}

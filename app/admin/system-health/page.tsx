@@ -21,7 +21,7 @@ export default async function SystemHealthPage() {
 
   const integrations = [
     { label: "بوابة الدفع (Stripe)", ok: isStripeConfigured() },
-    { label: "تحقق Webhook الدفع", ok: isStripeWebhookConfigured() },
+    { label: "تحقق إشعارات الدفع الفورية", ok: isStripeWebhookConfigured() },
     { label: "التخزين (R2)", ok: isR2Configured() },
     { label: "البريد", ok: isEmailConfigured() },
     { label: "الفيديو", ok: isVideoConfigured() },

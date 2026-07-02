@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/layout/site-header"
 import { Card } from "@/components/ui/card"
 import { DataState } from "@/components/ui/data-state"
 import { BookingClient } from "@/components/booking/booking-client"
+import { currencyAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 
@@ -54,7 +55,7 @@ export default async function BookPage({
           </h1>
           <p className="mt-1 text-muted-foreground">
             {doctor.consultationFee
-              ? `سعر الاستشارة ${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${doctor.currency}`
+              ? `سعر الاستشارة ${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${currencyAr(doctor.currency)}`
               : "سعر الاستشارة غير محدد"}
           </p>
 
@@ -73,7 +74,7 @@ export default async function BookPage({
                 slots={slots}
                 caseId={caseId}
                 paymentsConfigured={isStripeConfigured()}
-                feeLabel={`${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${doctor.currency}`}
+                feeLabel={`${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${currencyAr(doctor.currency)}`}
               />
             )}
           </div>

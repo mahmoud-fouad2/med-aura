@@ -16,7 +16,17 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { caseStatusAr } from "@/lib/status-labels"
+import {
+  caseStatusAr,
+  quoteStatusAr,
+  procedureBookingStatusAr,
+  invoiceStatusAr,
+  followUpTaskStatusAr,
+  safetyAlertSeverityAr,
+  safetyAlertStatusAr,
+  currencyAr,
+  centerRoleAr,
+} from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 
@@ -90,7 +100,7 @@ export default async function CenterDashboardPage() {
             render={(p) => (
               <>
                 <span className="font-medium text-foreground">{p.name}</span>
-                <Badge variant="outline">{p.role}</Badge>
+                <Badge variant="outline">{centerRoleAr(p.role)}</Badge>
               </>
             )}
           />
@@ -103,8 +113,8 @@ export default async function CenterDashboardPage() {
             render={(q) => (
               <>
                 <span className="font-medium text-foreground">{q.quoteNumber}</span>
-                <span className="text-sm text-muted-foreground">{Number(q.total).toLocaleString("ar-SA")} {q.currency}</span>
-                <Badge variant="outline">{q.status}</Badge>
+                <span className="text-sm text-muted-foreground">{Number(q.total).toLocaleString("ar-SA")} {currencyAr(q.currency)}</span>
+                <Badge variant="outline">{quoteStatusAr(q.status)}</Badge>
               </>
             )}
           />
@@ -119,7 +129,7 @@ export default async function CenterDashboardPage() {
               <>
                 <span className="font-medium text-foreground">{b.patientName}</span>
                 <span className="text-sm text-muted-foreground">{b.scheduledDate ?? "بدون موعد بعد"}</span>
-                <Badge variant="outline">{b.status}</Badge>
+                <Badge variant="outline">{procedureBookingStatusAr(b.status)}</Badge>
               </>
             )}
           />
@@ -133,9 +143,9 @@ export default async function CenterDashboardPage() {
               <>
                 <span className="font-medium text-foreground">{i.invoiceNumber}</span>
                 <span className="text-sm text-muted-foreground">
-                  متبقي {Number(i.remainingAmount).toLocaleString("ar-SA")} {i.currency}
+                  متبقي {Number(i.remainingAmount).toLocaleString("ar-SA")} {currencyAr(i.currency)}
                 </span>
-                <Badge variant="outline">{i.status}</Badge>
+                <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge>
               </>
             )}
           />
@@ -153,7 +163,7 @@ export default async function CenterDashboardPage() {
                   {f.dueAt ? new Date(f.dueAt).toLocaleDateString("ar-SA") : "—"}
                 </span>
                 <Badge variant={f.status === "MISSED" || f.status === "ESCALATED" ? "destructive" : "outline"}>
-                  {f.status}
+                  {followUpTaskStatusAr(f.status)}
                 </Badge>
               </>
             )}
@@ -168,8 +178,8 @@ export default async function CenterDashboardPage() {
             render={(a) => (
               <>
                 <span className="font-medium text-foreground">{a.summary ?? "تنبيه سلامة"}</span>
-                <Badge variant="destructive">{a.severity}</Badge>
-                <Badge variant="outline">{a.status}</Badge>
+                <Badge variant="destructive">{safetyAlertSeverityAr(a.severity)}</Badge>
+                <Badge variant="outline">{safetyAlertStatusAr(a.status)}</Badge>
               </>
             )}
           />

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
+import { countryNameAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الأطباء" }
@@ -96,7 +97,7 @@ export default async function AdminDoctorsPage({
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{d.published ? "نعم" : "لا"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{d.centerName ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{d.city ? `${d.city}، ` : ""}{d.country}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{d.city ? `${d.city}، ` : ""}{countryNameAr(d.country)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{d.yearsExperience}</td>
                     <td className="px-4 py-3">
                       <Link href={`/doctors/${d.slug}`} className="text-xs font-medium text-primary hover:underline">

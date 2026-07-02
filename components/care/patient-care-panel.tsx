@@ -5,6 +5,7 @@ import { FileText, CheckCircle2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { acceptQuote, markQuoteViewed } from "@/lib/actions/quote"
+import { currencyAr } from "@/lib/status-labels"
 import type { CarePlan, CareQuote } from "@/lib/data/care"
 
 const CAT_LABELS: Record<string, string> = {
@@ -143,12 +144,12 @@ function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean })
       </div>
 
       <dl className="space-y-1 text-sm">
-        <Row label="المجموع الفرعي" value={`${money(quote.subtotal)} ${quote.currency}`} />
-        {Number(quote.discount) > 0 && <Row label="الخصم" value={`- ${money(quote.discount)} ${quote.currency}`} />}
-        <Row label="الضريبة" value={`${money(quote.tax)} ${quote.currency}`} />
-        <Row label="الإجمالي" value={`${money(quote.total)} ${quote.currency}`} strong />
-        <Row label="العربون المطلوب" value={`${money(quote.depositRequired)} ${quote.currency}`} strong />
-        <Row label="المتبقي بعد العربون" value={`${money(quote.remainingBalance)} ${quote.currency}`} />
+        <Row label="المجموع الفرعي" value={`${money(quote.subtotal)} ${currencyAr(quote.currency)}`} />
+        {Number(quote.discount) > 0 && <Row label="الخصم" value={`- ${money(quote.discount)} ${currencyAr(quote.currency)}`} />}
+        <Row label="الضريبة" value={`${money(quote.tax)} ${currencyAr(quote.currency)}`} />
+        <Row label="الإجمالي" value={`${money(quote.total)} ${currencyAr(quote.currency)}`} strong />
+        <Row label="العربون المطلوب" value={`${money(quote.depositRequired)} ${currencyAr(quote.currency)}`} strong />
+        <Row label="المتبقي بعد العربون" value={`${money(quote.remainingBalance)} ${currencyAr(quote.currency)}`} />
       </dl>
 
       {error && (

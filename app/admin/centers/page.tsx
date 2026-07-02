@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
+import { countryNameAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المراكز" }
@@ -94,7 +95,7 @@ export default async function AdminCentersPage({
                       <StatusBadge tone={statusTone(c.status)} label={STATUS_LABEL[c.status] ?? c.status} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.published ? "نعم" : "لا"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.country}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{countryNameAr(c.country)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.city ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.doctorCount.toLocaleString("ar-SA")}</td>
                   </tr>

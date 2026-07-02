@@ -1,5 +1,38 @@
 /** Arabic labels for status enums shown in the UI. */
 
+const CURRENCY: Record<string, string> = {
+  SAR: "ر.س",
+  AED: "د.إ",
+  USD: "$",
+  EUR: "€",
+  QAR: "ر.ق",
+  KWD: "د.ك",
+  BHD: "د.ب",
+  OMR: "ر.ع",
+  EGP: "ج.م",
+  TRY: "₺",
+}
+
+/** Arabic currency symbol for a given ISO code — falls back to the code itself for anything not mapped. */
+export const currencyAr = (code: string): string => CURRENCY[code] ?? code
+
+const COUNTRY: Record<string, string> = {
+  SA: "السعودية",
+  AE: "الإمارات",
+  QA: "قطر",
+  KW: "الكويت",
+  BH: "البحرين",
+  OM: "عُمان",
+  TR: "تركيا",
+  EG: "مصر",
+  JO: "الأردن",
+  LB: "لبنان",
+}
+
+/** Arabic country name for a stored ISO alpha-2 code — falls back to the stored value itself
+ * (e.g. a value already spelled out in Arabic) for anything not in the map. */
+export const countryNameAr = (value: string): string => COUNTRY[value] ?? value
+
 const CASE: Record<string, string> = {
   DRAFT: "مسودة",
   SUBMITTED: "تم الإرسال",
@@ -51,6 +84,14 @@ const PAYMENT: Record<string, string> = {
   DISPUTED: "متنازع عليها",
 }
 
+const PAYMENT_PURPOSE: Record<string, string> = {
+  CONSULTATION_FEE: "رسوم استشارة",
+  DEPOSIT: "عربون",
+  PARTIAL_PAYMENT: "دفعة جزئية",
+  FINAL_PAYMENT: "سداد المتبقي",
+  SERVICE_FEE: "رسوم خدمة",
+}
+
 const SUITABILITY: Record<string, string> = {
   PENDING: "قيد التقييم",
   SUITABLE_PRELIMINARILY: "مرشّح مبدئيًا",
@@ -99,6 +140,35 @@ const REFUND: Record<string, string> = {
   CANCELLED: "ملغى",
 }
 
+const QUOTE: Record<string, string> = {
+  DRAFT: "مسودة",
+  SENT: "أُرسل",
+  VIEWED: "تمت المشاهدة",
+  ACCEPTED: "مقبول",
+  REJECTED: "مرفوض",
+  EXPIRED: "منتهي الصلاحية",
+  CANCELLED: "ملغى",
+  SUPERSEDED: "استُبدل بعرض أحدث",
+}
+
+const PROCEDURE_BOOKING: Record<string, string> = {
+  PENDING_MEDICAL_APPROVAL: "بانتظار الاعتماد الطبي",
+  PENDING_CENTER_CONFIRMATION: "بانتظار تأكيد المركز",
+  PENDING_PATIENT_REQUIREMENTS: "بانتظار متطلبات المريض",
+  CONFIRMED: "مؤكد",
+  RESCHEDULE_REQUESTED: "طُلبت إعادة الجدولة",
+  RESCHEDULED: "أُعيدت جدولته",
+  CANCELLED: "ملغى",
+  COMPLETED: "مكتمل",
+  NO_SHOW: "لم يحضر",
+}
+
+const CENTER_ROLE: Record<string, string> = {
+  owner: "مالك المركز",
+  admin: "مدير",
+  staff: "طاقم",
+}
+
 const FOLLOW_UP_TASK: Record<string, string> = {
   SCHEDULED: "مجدولة",
   DUE: "مستحقة",
@@ -119,3 +189,7 @@ export const safetyAlertSeverityAr = (s: string): string => SAFETY_SEVERITY[s] ?
 export const safetyAlertStatusAr = (s: string): string => SAFETY_STATUS[s] ?? s
 export const refundStatusAr = (s: string): string => REFUND[s] ?? s
 export const followUpTaskStatusAr = (s: string): string => FOLLOW_UP_TASK[s] ?? s
+export const paymentPurposeAr = (s: string): string => PAYMENT_PURPOSE[s] ?? s
+export const quoteStatusAr = (s: string): string => QUOTE[s] ?? s
+export const procedureBookingStatusAr = (s: string): string => PROCEDURE_BOOKING[s] ?? s
+export const centerRoleAr = (s: string): string => CENTER_ROLE[s] ?? s

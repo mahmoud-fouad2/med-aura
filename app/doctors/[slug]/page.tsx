@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DataState } from "@/components/ui/data-state"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
+import { currencyAr, countryNameAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 
@@ -90,7 +91,7 @@ export default async function DoctorProfilePage({
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="size-4" />
-                        {[doctor.city, doctor.country].filter(Boolean).join("، ")}
+                        {[doctor.city, countryNameAr(doctor.country)].filter(Boolean).join("، ")}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Stethoscope className="size-4" />
@@ -159,7 +160,7 @@ export default async function DoctorProfilePage({
                   {doctor.consultationFee ? (
                     <p>
                       <span className="font-heading text-2xl font-bold text-foreground">
-                        {Number(doctor.consultationFee).toLocaleString("ar-SA")} {doctor.currency}
+                        {Number(doctor.consultationFee).toLocaleString("ar-SA")} {currencyAr(doctor.currency)}
                       </span>
                       <span className="text-muted-foreground"> / استشارة</span>
                     </p>

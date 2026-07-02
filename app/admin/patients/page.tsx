@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { countryNameAr } from "@/lib/status-labels"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المرضى" }
@@ -63,7 +64,7 @@ export default async function AdminPatientsPage({
                   <tr key={p.userId} className="transition-colors hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium text-foreground">{p.name}</td>
                     <td dir="ltr" className="px-4 py-3 text-end text-muted-foreground">{p.email}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{p.residenceCountry ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{p.residenceCountry ? countryNameAr(p.residenceCountry) : "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{p.city ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {p.caseCount > 0 ? (

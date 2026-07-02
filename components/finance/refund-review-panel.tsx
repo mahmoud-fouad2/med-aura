@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Undo2 } from "lucide-react"
 import { reviewRefundRequest, providerConfirmRefund, processRefund } from "@/lib/actions/refund"
+import { currencyAr } from "@/lib/status-labels"
 import type { FinanceRefundRow } from "@/lib/data/finance"
 
 const STATUS_LABEL: Record<string, string> = {
@@ -56,7 +57,7 @@ function RefundCard({ refund }: { refund: FinanceRefundRow }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-medium text-foreground">
-            {refund.requestedByName} — {Number(refund.amount).toLocaleString("ar-SA")} {refund.currency}
+            {refund.requestedByName} — {Number(refund.amount).toLocaleString("ar-SA")} {currencyAr(refund.currency)}
           </p>
           <Link href={`/dashboard/cases/${refund.caseId}`} className="text-xs text-primary hover:underline">
             فاتورة {refund.invoiceNumber}

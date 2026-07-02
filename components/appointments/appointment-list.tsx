@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Video, Building2, Phone, CalendarClock } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { appointmentStatusAr, paymentStatusAr } from "@/lib/status-labels"
+import { appointmentStatusAr, paymentStatusAr, currencyAr } from "@/lib/status-labels"
 import type { AppointmentRow } from "@/lib/data/appointments"
 
 const typeIcon: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -68,7 +68,7 @@ export function AppointmentList({
             <div className="flex flex-col items-end gap-1 text-sm">
               {a.priceAmount && (
                 <span className="font-medium text-foreground">
-                  {Number(a.priceAmount).toLocaleString("ar-SA")} {a.currency}
+                  {Number(a.priceAmount).toLocaleString("ar-SA")} {currencyAr(a.currency)}
                 </span>
               )}
               {a.paymentStatus && (
