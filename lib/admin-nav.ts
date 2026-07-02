@@ -83,6 +83,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/activity", label: "سجل النشاط", icon: "History", anyOf: [P.AUDIT_READ] },
       { href: "/admin/system-health", label: "صحة النظام", icon: "Activity", anyOf: [P.ADMIN_ACCESS] },
+      { href: "/admin/settings", label: "الإعدادات", icon: "Settings2", anyOf: [P.ADMIN_ACCESS] },
     ],
   },
 ]

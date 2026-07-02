@@ -59,6 +59,42 @@ export async function getDoctorProfileId(
   return row?.id ?? null
 }
 
+/**
+ * Admin/concierge oversight — every appointment, latest first, joined to the
+ * doctor's profile and the patient. Optional status filter narrows to a single
+ * pipeline state. Not paginated at the SQL layer yet because the appointment
+ * volume in production stays well under one page; callers should refuse to
+ * render more than 200 rows and switch to a filter instead.
+ */
+export async function listAppointmentsForAdmin(opts?: {
+  status?: string
+  limit?: number
+}): Promise<(AppointmentRow & { patientName: string })[]> {
+  const rows = await db
+    .select({
+      id: appointment.id,
+      reference: appointment.reference,
+      type: appointment.type,
+      status: appointment.status,
+      startsAt: appointment.startsAt,
+      endsAt: appointment.endsAt,
+      priceAmount: appointment.priceAmount,
+      currency: appointment.currency,
+      counterpartName: doctorProfile.name,
+      patientName: userT.name,
+      paymentStatus: payment.status,
+      caseId: appointment.caseId,
+    })
+    .from(appointment)
+    .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
+    .innerJoin(userT, eq(appointment.patientUserId, userT.id))
+    .leftJoin(payment, eq(payment.appointmentId, appointment.id))
+    .where(opts?.status ? eq(appointment.status, opts.status as never) : undefined)
+    .orderBy(desc(appointment.startsAt))
+    .limit(opts?.limit ?? 200)
+  return rows
+}
+
 export async function listDoctorAppointments(
   doctorUserId: string,
 ): Promise<AppointmentRow[]> {

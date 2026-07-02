@@ -180,8 +180,17 @@ const FOLLOW_UP_TASK: Record<string, string> = {
   CANCELLED: "ملغاة",
 }
 
+const APPOINTMENT_TYPE: Record<string, string> = {
+  VIDEO_CONSULTATION: "استشارة فيديو",
+  IN_PERSON_CONSULTATION: "استشارة حضورية",
+  PHONE_CONSULTATION: "استشارة هاتفية",
+  PROCEDURE: "إجراء",
+  FOLLOW_UP: "متابعة",
+}
+
 export const caseStatusAr = (s: string): string => CASE[s] ?? s
 export const appointmentStatusAr = (s: string): string => APPOINTMENT[s] ?? s
+export const appointmentTypeAr = (s: string): string => APPOINTMENT_TYPE[s] ?? s
 export const paymentStatusAr = (s: string): string => PAYMENT[s] ?? s
 export const suitabilityAr = (s: string): string => SUITABILITY[s] ?? s
 export const invoiceStatusAr = (s: string): string => INVOICE[s] ?? s
