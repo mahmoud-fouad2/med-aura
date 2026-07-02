@@ -18,9 +18,12 @@ import { getCaseClosureEligibility } from "@/lib/actions/case-closure"
 import { getCaseConversationView } from "@/lib/data/conversations"
 import { getCaseStatusTimeline } from "@/lib/data/concierge"
 import { listActivityForEntityIds } from "@/lib/data/admin-activity"
+import { listSafetyAssignees } from "@/lib/data/admin-safety"
 import { ConversationPanel } from "@/components/care/conversation-panel"
 import { CaseTimeline } from "@/components/care/case-timeline"
 import { ActivityTimeline } from "@/components/admin/activity-timeline"
+import { CreateSafetyAlertForm } from "@/components/admin/create-safety-alert-form"
+import { CreateFollowUpTaskForm } from "@/components/admin/create-followup-task-form"
 import { hasPermission, PERMISSIONS } from "@/lib/rbac"
 import { StageActions } from "@/components/care/stage-actions"
 import { Card } from "@/components/ui/card"
@@ -112,6 +115,7 @@ export default async function CaseDetailPage({
         ),
       )
     : []
+  const safetyAssignees = canManageSafety ? await listSafetyAssignees() : []
 
   const answers = c.answers as Record<string, unknown>
 
@@ -206,7 +210,7 @@ export default async function CaseDetailPage({
         </Card>
       )}
 
-      {(followUpTasks.length > 0 || (c.isOwner && completedStates.includes(c.status))) && (
+      {(followUpTasks.length > 0 || (c.isOwner && completedStates.includes(c.status)) || canManageFollowUp) && (
         <Card className="space-y-4 p-6">
           <FollowUpPanel
             caseId={c.id}
@@ -214,6 +218,11 @@ export default async function CaseDetailPage({
             canSubmit={c.isOwner}
             canReview={isDoctorViewer && canManageFollowUp}
           />
+          {canManageFollowUp && (
+            <div className="border-t border-border pt-4">
+              <CreateFollowUpTaskForm caseId={c.id} />
+            </div>
+          )}
           {c.isOwner && (
             <div className="border-t border-border pt-4">
               <ReportSymptomsForm caseId={c.id} />
@@ -222,9 +231,10 @@ export default async function CaseDetailPage({
         </Card>
       )}
 
-      {canManageSafety && safetyAlerts.length > 0 && (
-        <Card className="p-6">
-          <SafetyAlertList alerts={safetyAlerts} />
+      {canManageSafety && (
+        <Card className="space-y-4 p-6">
+          {safetyAlerts.length > 0 && <SafetyAlertList alerts={safetyAlerts} />}
+          <CreateSafetyAlertForm caseId={c.id} assignees={safetyAssignees} />
         </Card>
       )}
 

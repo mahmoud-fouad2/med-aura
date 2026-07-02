@@ -300,6 +300,84 @@ export async function resolveSafetyAlert(input: unknown): Promise<ActionResult> 
   }
 }
 
+/* ── Staff: create an alert directly (not via a patient symptom report) ── */
+const manualCreateSchema = z.object({
+  caseId: z.string().min(1),
+  severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
+  summary: z.string().min(3).max(2000),
+  assignedTo: z.string().min(1).optional(),
+})
+
+export async function createSafetyAlertManual(input: unknown): Promise<ActionResult<{ alertId: string }>> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.SAFETY_ALERT_MANAGE)
+    const parsed = manualCreateSchema.safeParse(input)
+    if (!parsed.success)
+      throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
+    const data = parsed.data
+
+    const c = (
+      await db
+        .select({ id: aestheticCase.id, patientUserId: aestheticCase.patientUserId })
+        .from(aestheticCase)
+        .where(eq(aestheticCase.id, data.caseId))
+        .limit(1)
+    )[0]
+    if (!c) throw new AppError("NOT_FOUND")
+
+    let alertId = ""
+    await db.transaction(async (tx) => {
+      alertId = await createSafetyAlert(
+        { caseId: c.id, patientUserId: c.patientUserId, severity: data.severity, summary: data.summary },
+        user.id,
+        tx,
+      )
+      if (data.assignedTo) {
+        await tx.update(safetyAlert).set({ assignedTo: data.assignedTo }).where(eq(safetyAlert.id, alertId))
+        await writeAudit({ action: "safety_alert.assign", actorUserId: user.id, entityType: "safety_alert", entityId: alertId, metadata: { assignedTo: data.assignedTo } }, tx)
+      }
+    })
+
+    await notifySafetyAlertRecipients(alertId)
+    revalidatePath(`/dashboard/cases/${c.id}`)
+    revalidatePath("/admin/safety-alerts")
+    return { ok: true, data: { alertId } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const assignSchema = z.object({
+  alertId: z.string().min(1),
+  assignedTo: z.string().min(1),
+})
+
+export async function assignSafetyAlert(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.SAFETY_ALERT_MANAGE)
+    const parsed = assignSchema.safeParse(input)
+    if (!parsed.success)
+      throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
+    const data = parsed.data
+    const alert = await loadAlert(data.alertId)
+
+    await db.transaction(async (tx) => {
+      await tx.update(safetyAlert).set({ assignedTo: data.assignedTo }).where(eq(safetyAlert.id, data.alertId))
+      await writeAudit({ action: "safety_alert.assign", actorUserId: user.id, entityType: "safety_alert", entityId: data.alertId, metadata: { assignedTo: data.assignedTo } }, tx)
+    })
+
+    revalidatePath(`/dashboard/cases/${alert.caseId}`)
+    revalidatePath("/admin/safety-alerts")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
 /** Unresolved alerts for a case — used to gate case closure. */
 export async function hasOpenSafetyAlerts(caseId: string): Promise<boolean> {
   const rows = await db

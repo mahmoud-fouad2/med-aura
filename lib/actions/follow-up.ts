@@ -138,6 +138,88 @@ export async function submitFollowUpTask(input: unknown): Promise<ActionResult> 
   }
 }
 
+/* ── Staff: manually schedule a follow-up task for a case ──────────────── */
+const createTaskSchema = z.object({
+  caseId: z.string().min(1),
+  type: z.enum([
+    "PHOTO_UPLOAD", "QUESTIONNAIRE", "VIDEO_APPOINTMENT", "IN_PERSON_APPOINTMENT",
+    "MEDICATION_REMINDER", "GENERAL_CHECK", "DOCTOR_REVIEW",
+  ]),
+  title: z.string().min(3).max(200),
+  instructions: z.string().max(2000).optional().default(""),
+  dueAt: z.string().min(1),
+  requiredPhotos: z.coerce.number().int().min(0).max(10).optional().default(0),
+})
+
+/** Staff-scheduled follow-up task — finds the case's existing plan or creates one. */
+export async function createFollowUpTask(input: unknown): Promise<ActionResult<{ taskId: string }>> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.FOLLOWUP_MANAGE)
+    const parsed = createTaskSchema.safeParse(input)
+    if (!parsed.success)
+      throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
+    const data = parsed.data
+
+    const c = (
+      await db
+        .select({ id: aestheticCase.id, patientUserId: aestheticCase.patientUserId, doctorId: aestheticCase.doctorId })
+        .from(aestheticCase)
+        .where(eq(aestheticCase.id, data.caseId))
+        .limit(1)
+    )[0]
+    if (!c) throw new AppError("NOT_FOUND")
+
+    let taskId = ""
+    await db.transaction(async (tx) => {
+      let plan = (
+        await tx.select({ id: followUpPlan.id }).from(followUpPlan).where(eq(followUpPlan.caseId, c.id)).limit(1)
+      )[0]
+      if (!plan) {
+        const inserted = await tx
+          .insert(followUpPlan)
+          .values({ caseId: c.id, doctorId: c.doctorId })
+          .returning({ id: followUpPlan.id })
+        plan = inserted[0]
+      }
+
+      const inserted = await tx
+        .insert(followUpTask)
+        .values({
+          planId: plan.id,
+          type: data.type,
+          title: data.title,
+          instructions: data.instructions || null,
+          requiredPhotos: data.requiredPhotos,
+          dueAt: new Date(data.dueAt),
+          status: "SCHEDULED",
+        })
+        .returning({ id: followUpTask.id })
+      taskId = inserted[0].id
+
+      await writeAudit(
+        { action: "followup.task.create", actorUserId: user.id, entityType: "follow_up_task", entityId: taskId, metadata: { caseId: c.id, type: data.type } },
+        tx,
+      )
+    })
+
+    await notify({
+      userId: c.patientUserId,
+      type: "followup.scheduled",
+      title: `تمت جدولة متابعة جديدة: ${data.title}`,
+      caseId: c.id,
+      href: `/dashboard/cases/${c.id}`,
+    })
+
+    revalidatePath(`/dashboard/cases/${c.id}`)
+    revalidatePath("/admin/follow-ups")
+    return { ok: true, data: { taskId } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
 /* ── Doctor: review a submitted task ────────────────────────────────────── */
 const reviewSchema = z.object({
   taskId: z.string().min(1),
