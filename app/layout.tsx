@@ -1,19 +1,34 @@
 import type { Metadata, Viewport } from "next"
-import { Tajawal, IBM_Plex_Sans_Arabic } from "next/font/google"
+import localFont from "next/font/local"
 import "./globals.css"
 import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
 
-const tajawal = Tajawal({
-  variable: "--font-heading",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700", "800", "900"],
+const alexandria = localFont({
+  src: "../public/fonts/Alexandria-Variable.woff2",
+  variable: "--font-body",
+  weight: "400 700",
+  display: "swap",
+  preload: true,
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
 })
 
-const plexArabic = IBM_Plex_Sans_Arabic({
-  variable: "--font-body",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
+const alexandriaHeading = localFont({
+  src: "../public/fonts/Alexandria-Variable.woff2",
+  variable: "--font-heading",
+  weight: "500 700",
+  display: "swap",
+  preload: false,
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
+})
+
+const inter = localFont({
+  src: "../public/fonts/Inter-Variable.woff2",
+  variable: "--font-numbers",
+  weight: "400 700",
+  display: "swap",
+  preload: false,
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
 })
 
 export const metadata: Metadata = {
@@ -47,7 +62,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir(locale)}
-      className={`${tajawal.variable} ${plexArabic.variable} bg-background`}
+      className={`${alexandria.variable} ${alexandriaHeading.variable} ${inter.variable} bg-background`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">{children}</body>
