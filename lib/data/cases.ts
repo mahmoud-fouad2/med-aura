@@ -4,6 +4,7 @@ import {
   aestheticCase,
   procedure as procedureT,
   doctorProfile,
+  center as centerT,
   medicalDocument,
   consent,
   user as userT,
@@ -59,6 +60,10 @@ export type CaseDetail = {
   ageYears: number | null
   answers: Record<string, unknown>
   procedureName: string
+  patientUserId: string
+  patientName: string
+  centerId: string | null
+  centerName: string | null
   doctorId: string | null
   doctorName: string | null
   doctorSlug: string | null
@@ -85,6 +90,9 @@ export async function getCaseDetailForUser(
         ageYears: aestheticCase.ageYears,
         answers: aestheticCase.answers,
         patientUserId: aestheticCase.patientUserId,
+        patientName: userT.name,
+        centerId: aestheticCase.centerId,
+        centerName: centerT.name,
         doctorId: aestheticCase.doctorId,
         procedureName: procedureT.nameAr,
         doctorName: doctorProfile.name,
@@ -92,7 +100,9 @@ export async function getCaseDetailForUser(
       })
       .from(aestheticCase)
       .innerJoin(procedureT, eq(aestheticCase.procedureId, procedureT.id))
+      .innerJoin(userT, eq(aestheticCase.patientUserId, userT.id))
       .leftJoin(doctorProfile, eq(aestheticCase.doctorId, doctorProfile.id))
+      .leftJoin(centerT, eq(aestheticCase.centerId, centerT.id))
       .where(eq(aestheticCase.id, caseId))
       .limit(1)
   )[0]
@@ -135,6 +145,10 @@ export async function getCaseDetailForUser(
     ageYears: row.ageYears,
     answers: (row.answers ?? {}) as Record<string, unknown>,
     procedureName: row.procedureName,
+    patientUserId: row.patientUserId,
+    patientName: row.patientName,
+    centerId: row.centerId,
+    centerName: row.centerName,
     doctorId: row.doctorId,
     doctorName: row.doctorName,
     doctorSlug: row.doctorSlug,

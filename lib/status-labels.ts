@@ -60,7 +60,62 @@ const SUITABILITY: Record<string, string> = {
   REFERRED_ELSEWHERE: "إحالة لجهة أنسب",
 }
 
+const INVOICE: Record<string, string> = {
+  DRAFT: "مسودة",
+  ISSUED: "صدرت",
+  PARTIALLY_PAID: "مدفوعة جزئيًا",
+  PAID: "مدفوعة بالكامل",
+  OVERDUE: "متأخرة السداد",
+  CANCELLED: "ملغاة",
+  REFUNDED: "مستردة",
+  PARTIALLY_REFUNDED: "مستردة جزئيًا",
+}
+
+const SAFETY_SEVERITY: Record<string, string> = {
+  LOW: "منخفضة",
+  MEDIUM: "متوسطة",
+  HIGH: "مرتفعة",
+  CRITICAL: "حرجة",
+}
+
+const SAFETY_STATUS: Record<string, string> = {
+  OPEN: "مفتوح",
+  ACKNOWLEDGED: "تم الاطّلاع",
+  CONTACTED: "تم التواصل",
+  PROVIDER_REVIEWED: "راجعه الطبيب",
+  RESOLVED: "تمت المعالجة",
+  REFERRED_TO_EMERGENCY: "إحالة للطوارئ",
+  FALSE_ALARM: "إنذار غير حقيقي",
+}
+
+const REFUND: Record<string, string> = {
+  REQUESTED: "مُقدَّم",
+  UNDER_REVIEW: "قيد المراجعة",
+  APPROVED: "تمت الموافقة",
+  REJECTED: "مرفوض",
+  PROVIDER_CONFIRMED: "أكّده المزوّد",
+  PROCESSED: "تمت المعالجة",
+  FAILED: "فشل",
+  CANCELLED: "ملغى",
+}
+
+const FOLLOW_UP_TASK: Record<string, string> = {
+  SCHEDULED: "مجدولة",
+  DUE: "مستحقة",
+  SUBMITTED: "أُرسلت",
+  UNDER_REVIEW: "قيد المراجعة",
+  COMPLETED: "مكتملة",
+  MISSED: "فائتة",
+  ESCALATED: "تم التصعيد",
+  CANCELLED: "ملغاة",
+}
+
 export const caseStatusAr = (s: string): string => CASE[s] ?? s
 export const appointmentStatusAr = (s: string): string => APPOINTMENT[s] ?? s
 export const paymentStatusAr = (s: string): string => PAYMENT[s] ?? s
 export const suitabilityAr = (s: string): string => SUITABILITY[s] ?? s
+export const invoiceStatusAr = (s: string): string => INVOICE[s] ?? s
+export const safetyAlertSeverityAr = (s: string): string => SAFETY_SEVERITY[s] ?? s
+export const safetyAlertStatusAr = (s: string): string => SAFETY_STATUS[s] ?? s
+export const refundStatusAr = (s: string): string => REFUND[s] ?? s
+export const followUpTaskStatusAr = (s: string): string => FOLLOW_UP_TASK[s] ?? s

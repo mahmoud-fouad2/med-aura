@@ -26,14 +26,17 @@ const CAT_LABELS: Record<string, string> = {
 export function PatientCarePanel({
   plan,
   quote,
+  readOnly = false,
 }: {
   plan: CarePlan | null
   quote: CareQuote | null
+  /** Staff/admin viewing on behalf of oversight, not the patient — no accept/pay actions. */
+  readOnly?: boolean
 }) {
   return (
     <div className="space-y-6">
       {plan && plan.status === "PUBLISHED" && <PlanView plan={plan} />}
-      {quote && <QuoteView quote={quote} />}
+      {quote && <QuoteView quote={quote} readOnly={readOnly} />}
     </div>
   )
 }
@@ -70,16 +73,16 @@ function PlanView({ plan }: { plan: CarePlan }) {
   )
 }
 
-function QuoteView({ quote }: { quote: CareQuote }) {
+function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingNotice, setPendingNotice] = useState(false)
 
-  const canAccept = quote.status === "SENT" || quote.status === "VIEWED"
+  const canAccept = !readOnly && (quote.status === "SENT" || quote.status === "VIEWED")
 
   useEffect(() => {
-    if (quote.status === "SENT") void markQuoteViewed(quote.id)
-  }, [quote.id, quote.status])
+    if (!readOnly && quote.status === "SENT") void markQuoteViewed(quote.id)
+  }, [quote.id, quote.status, readOnly])
 
   async function onAccept() {
     setBusy(true)
@@ -164,6 +167,8 @@ function QuoteView({ quote }: { quote: CareQuote }) {
         </Button>
       ) : quote.status === "ACCEPTED" ? (
         <p className="text-sm text-success">تم قبول العرض. تابع خطوات الدفع والاعتماد.</p>
+      ) : readOnly && (quote.status === "SENT" || quote.status === "VIEWED") ? (
+        <p className="text-sm text-muted-foreground">بانتظار قبول المريض للعرض.</p>
       ) : null}
     </div>
   )

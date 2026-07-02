@@ -17,8 +17,10 @@ import {
 import { getCaseClosureEligibility } from "@/lib/actions/case-closure"
 import { getCaseConversationView } from "@/lib/data/conversations"
 import { getCaseStatusTimeline } from "@/lib/data/concierge"
+import { listActivityForEntityIds } from "@/lib/data/admin-activity"
 import { ConversationPanel } from "@/components/care/conversation-panel"
 import { CaseTimeline } from "@/components/care/case-timeline"
+import { ActivityTimeline } from "@/components/admin/activity-timeline"
 import { hasPermission, PERMISSIONS } from "@/lib/rbac"
 import { StageActions } from "@/components/care/stage-actions"
 import { Card } from "@/components/ui/card"
@@ -62,6 +64,8 @@ export default async function CaseDetailPage({
     canManageSafety,
     canRequestRefund,
     canCloseCase,
+    canViewCaseFull,
+    canAudit,
     conversation,
     timeline,
   ] = await Promise.all([
@@ -79,6 +83,8 @@ export default async function CaseDetailPage({
     hasPermission(user.id, PERMISSIONS.SAFETY_ALERT_MANAGE),
     hasPermission(user.id, PERMISSIONS.REFUND_REQUEST),
     hasPermission(user.id, PERMISSIONS.CASE_CLOSE),
+    hasPermission(user.id, PERMISSIONS.CASE_READ_ANY),
+    hasPermission(user.id, PERMISSIONS.AUDIT_READ),
     getCaseConversationView(c.id, user.id),
     getCaseStatusTimeline(c.id),
   ])
@@ -86,7 +92,7 @@ export default async function CaseDetailPage({
     isDoctorViewer &&
     ["CONSULTATION_COMPLETED", "TREATMENT_PLAN_ISSUED"].includes(c.status)
   const showPatientCare =
-    c.isOwner && (plan?.status === "PUBLISHED" || Boolean(quote))
+    (c.isOwner || canViewCaseFull) && (plan?.status === "PUBLISHED" || Boolean(quote))
   const completedStates = ["PROCEDURE_COMPLETED", "FOLLOW_UP", "FULLY_PAID", "CLOSED"]
   const showStage =
     (isDoctorViewer && c.status === "DEPOSIT_PAID") ||
@@ -98,6 +104,14 @@ export default async function CaseDetailPage({
     canCloseCase && (completedStates.includes(c.status) || c.status === "CLOSED")
       ? await getCaseClosureEligibility(c.id)
       : null
+
+  const activity = canAudit
+    ? await listActivityForEntityIds(
+        [c.id, plan?.id, quote?.id, invoice?.id, ...safetyAlerts.map((a) => a.id), ...followUpTasks.map((t) => t.id)].filter(
+          (id): id is string => Boolean(id),
+        ),
+      )
+    : []
 
   const answers = c.answers as Record<string, unknown>
 
@@ -111,7 +125,17 @@ export default async function CaseDetailPage({
             </h1>
             <Badge variant="secondary">{caseStatusAr(c.status)}</Badge>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{c.reference}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {c.reference}
+            {!c.isOwner && (canViewCaseFull || isDoctorViewer || isCenterViewer) && (
+              <>
+                {" · "}
+                {c.patientName}
+                {c.centerName && ` · ${c.centerName}`}
+                {c.doctorName && ` · ${c.doctorName}`}
+              </>
+            )}
+          </p>
         </div>
         {c.doctorSlug && c.isOwner && (
           <Button
@@ -161,7 +185,7 @@ export default async function CaseDetailPage({
 
       {showPatientCare && (
         <Card className="p-6">
-          <PatientCarePanel plan={plan} quote={quote} />
+          <PatientCarePanel plan={plan} quote={quote} readOnly={!c.isOwner} />
         </Card>
       )}
 
@@ -204,9 +228,9 @@ export default async function CaseDetailPage({
         </Card>
       )}
 
-      {invoice && (
+      {invoice && (c.isOwner || canViewCaseFull) && (
         <Card className="space-y-4 p-6">
-          {c.isOwner && <RemainingBalanceCard caseId={c.id} invoice={invoice} />}
+          <RemainingBalanceCard caseId={c.id} invoice={invoice} readOnly={!c.isOwner} />
           {canRequestRefund && Number(invoice.paidAmount) > 0 && (
             <RefundRequestForm caseId={c.id} />
           )}
@@ -227,6 +251,12 @@ export default async function CaseDetailPage({
       {timeline.length > 0 && (
         <Card className="p-6">
           <CaseTimeline entries={timeline} />
+        </Card>
+      )}
+
+      {canAudit && activity.length > 0 && (
+        <Card className="p-6">
+          <ActivityTimeline entries={activity} />
         </Card>
       )}
 

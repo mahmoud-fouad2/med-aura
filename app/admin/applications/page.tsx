@@ -6,8 +6,11 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ApplicationReview } from "@/components/admin/application-review"
+import { requirePermissionPage } from "@/lib/session"
+import { PERMISSIONS } from "@/lib/rbac"
 
 export const dynamic = "force-dynamic"
+export const metadata = { title: "طلبات الانضمام" }
 
 type Payload = {
   name?: string
@@ -21,6 +24,7 @@ type Payload = {
 }
 
 export default async function ApplicationsPage() {
+  await requirePermissionPage(PERMISSIONS.PROVIDER_REVIEW)
   const rows = await db
     .select({
       id: providerApplication.id,

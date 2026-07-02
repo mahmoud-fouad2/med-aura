@@ -18,8 +18,16 @@ const INVOICE_STATUS_LABEL: Record<string, string> = {
   OVERDUE: "متأخرة", CANCELLED: "ملغاة", REFUNDED: "مستردة", PARTIALLY_REFUNDED: "مستردة جزئيًا",
 }
 
-/** Patient: pay the remaining balance shown on the case's invoice. */
-export function RemainingBalanceCard({ caseId, invoice }: { caseId: string; invoice: InvoiceView }) {
+/** Patient: pay the remaining balance shown on the case's invoice. Staff/admin can view the same breakdown read-only. */
+export function RemainingBalanceCard({
+  caseId,
+  invoice,
+  readOnly = false,
+}: {
+  caseId: string
+  invoice: InvoiceView
+  readOnly?: boolean
+}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notConfigured, setNotConfigured] = useState(false)
@@ -67,7 +75,13 @@ export function RemainingBalanceCard({ caseId, invoice }: { caseId: string; invo
         </div>
       </dl>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {notConfigured ? (
+      {readOnly ? (
+        remaining > 0 ? (
+          <p className="text-sm text-muted-foreground">بانتظار سداد المريض للمتبقي.</p>
+        ) : (
+          <p className="text-sm text-success">تم سداد الفاتورة بالكامل.</p>
+        )
+      ) : notConfigured ? (
         <p className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-sm text-muted-foreground">
           <Info className="mt-0.5 size-4 shrink-0" /> بوابة الدفع غير مفعّلة حاليًا.
         </p>
