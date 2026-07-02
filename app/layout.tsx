@@ -3,6 +3,7 @@ import localFont from "next/font/local"
 import "./globals.css"
 import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
+import { Toaster } from "@/components/ui/toaster"
 
 const alexandria = localFont({
   src: "../public/fonts/Alexandria-Variable.woff2",
@@ -65,7 +66,10 @@ export default async function RootLayout({
       className={`${alexandria.variable} ${alexandriaHeading.variable} ${inter.variable} bg-background`}
       suppressHydrationWarning
     >
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
 }

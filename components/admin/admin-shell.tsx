@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Menu, PanelLeftClose, PanelLeftOpen, Search, ChevronLeft, Bell } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Menu, PanelLeftClose, PanelLeftOpen, ChevronLeft, Bell } from "lucide-react"
 import { Logo, LogoMark } from "@/components/brand/logo"
 import { AdminIcon } from "@/components/admin/admin-icon"
+import { CommandPalette } from "@/components/admin/command-palette"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { UserMenu } from "@/components/layout/user-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -102,7 +102,9 @@ export function AdminShell({
               {activeLabel ?? "الإدارة"}
             </h1>
 
-            <AdminSearch />
+            <div className="mx-2 flex-1">
+              <CommandPalette nav={nav} />
+            </div>
 
             <div className="flex items-center gap-1">
               <Link
@@ -125,29 +127,6 @@ export function AdminShell({
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
-  )
-}
-
-function AdminSearch() {
-  const router = useRouter()
-  const [q, setQ] = useState("")
-  return (
-    <form
-      className="relative mx-2 hidden max-w-sm flex-1 md:block"
-      onSubmit={(e) => {
-        e.preventDefault()
-        if (q.trim()) router.push(`/admin/cases?q=${encodeURIComponent(q.trim())}`)
-      }}
-    >
-      <Search className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="بحث في الحالات — بالمرجع، اسم المريض، الطبيب…"
-        className="h-9 pr-9"
-        aria-label="بحث"
-      />
-    </form>
   )
 }
 

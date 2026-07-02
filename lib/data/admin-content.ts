@@ -25,7 +25,18 @@ export async function listCitiesForAdmin(): Promise<AdminCityRow[]> {
     .orderBy(asc(countryT.sortOrder), asc(cityT.nameAr))
 }
 
-export type AdminCategoryRow = { id: string; nameAr: string; visible: boolean; procedureCount: number }
+export type AdminCategoryRow = {
+  id: string
+  slug: string
+  nameAr: string
+  nameEn: string
+  descriptionAr: string | null
+  descriptionEn: string | null
+  icon: string | null
+  sortOrder: number
+  visible: boolean
+  procedureCount: number
+}
 
 export async function listCategoriesForAdmin(): Promise<AdminCategoryRow[]> {
   if (!isDbConfigured) return []
@@ -34,15 +45,52 @@ export async function listCategoriesForAdmin(): Promise<AdminCategoryRow[]> {
   const procedures = await db.select({ categoryId: procedureT.categoryId }).from(procedureT).where(inArray(procedureT.categoryId, categories.map((c) => c.id)))
   const countByCategory = new Map<string, number>()
   for (const p of procedures) countByCategory.set(p.categoryId, (countByCategory.get(p.categoryId) ?? 0) + 1)
-  return categories.map((c) => ({ id: c.id, nameAr: c.nameAr, visible: c.visible, procedureCount: countByCategory.get(c.id) ?? 0 }))
+  return categories.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    nameAr: c.nameAr,
+    nameEn: c.nameEn,
+    descriptionAr: c.descriptionAr,
+    descriptionEn: c.descriptionEn,
+    icon: c.icon,
+    sortOrder: c.sortOrder,
+    visible: c.visible,
+    procedureCount: countByCategory.get(c.id) ?? 0,
+  }))
 }
 
-export type AdminProcedureRow = { id: string; nameAr: string; categoryNameAr: string; isSurgical: boolean }
+export type AdminProcedureRow = {
+  id: string
+  categoryId: string
+  categoryNameAr: string
+  slug: string
+  nameAr: string
+  nameEn: string
+  descriptionAr: string | null
+  descriptionEn: string | null
+  isSurgical: boolean
+  recoveryDays: number | null
+  visible: boolean
+  sortOrder: number
+}
 
 export async function listProceduresForAdmin(): Promise<AdminProcedureRow[]> {
   if (!isDbConfigured) return []
   return db
-    .select({ id: procedureT.id, nameAr: procedureT.nameAr, categoryNameAr: procedureCategory.nameAr, isSurgical: procedureT.isSurgical })
+    .select({
+      id: procedureT.id,
+      categoryId: procedureT.categoryId,
+      categoryNameAr: procedureCategory.nameAr,
+      slug: procedureT.slug,
+      nameAr: procedureT.nameAr,
+      nameEn: procedureT.nameEn,
+      descriptionAr: procedureT.descriptionAr,
+      descriptionEn: procedureT.descriptionEn,
+      isSurgical: procedureT.isSurgical,
+      recoveryDays: procedureT.recoveryDays,
+      visible: procedureT.visible,
+      sortOrder: procedureT.sortOrder,
+    })
     .from(procedureT)
     .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
     .orderBy(asc(procedureCategory.sortOrder), asc(procedureT.nameAr))

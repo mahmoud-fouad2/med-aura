@@ -11,7 +11,9 @@ import {
   listCasesNeedingIntervention,
   listRecentApplications,
   listHighPrioritySafetyAlerts,
+  getRecent30dActivity,
 } from "@/lib/data/admin-overview"
+import { ActivityChart } from "@/components/admin/activity-chart"
 import { listRecentActivity } from "@/lib/data/admin-activity"
 import { listRefundRequestsFinance, listPayments } from "@/lib/data/finance"
 import { getUnreadNotificationCount } from "@/lib/data/notifications"
@@ -34,9 +36,10 @@ export default async function AdminOverviewPage() {
   const canAudit = perms.has(PERMISSIONS.AUDIT_READ)
   const canAdmin = perms.has(PERMISSIONS.ADMIN_ACCESS)
 
-  const [kpis, interventionCases, recentApplications, highPrioritySafety, recentActivity, refunds, pendingPaymentsList, dbStatus, unreadNotifications] =
+  const [kpis, activity30d, interventionCases, recentApplications, highPrioritySafety, recentActivity, refunds, pendingPaymentsList, dbStatus, unreadNotifications] =
     await Promise.all([
       getAdminOverviewKpis(canFinance),
+      canCases ? getRecent30dActivity(canFinance) : Promise.resolve([]),
       canCases ? listCasesNeedingIntervention() : Promise.resolve([]),
       canReview ? listRecentApplications() : Promise.resolve([]),
       canSafety ? listHighPrioritySafetyAlerts() : Promise.resolve([]),
@@ -84,6 +87,18 @@ export default async function AdminOverviewPage() {
         )}
         <Kpi icon={Bell} label="إشعاراتك غير المقروءة" value={unreadNotifications} href="/dashboard/notifications" />
       </div>
+
+      {canCases && activity30d.length > 0 && (
+        <Card className="p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-heading text-sm font-bold text-foreground">
+              <Activity className="size-4 text-primary" /> النشاط خلال آخر 30 يومًا
+            </h2>
+            <span className="text-xs text-muted-foreground">بيانات حقيقية من قاعدة البيانات</span>
+          </div>
+          <ActivityChart data={activity30d} showFinance={canFinance} />
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {canCases && (

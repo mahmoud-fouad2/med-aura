@@ -134,6 +134,69 @@ export async function getAdminOverviewKpis(includeFinance: boolean): Promise<Adm
   }
 }
 
+/**
+ * Real 30-day daily activity — no fake seeding. Days with zero rows still
+ * appear in the series so the chart lines don't skip and mislead visually.
+ * All aggregation happens in Postgres via DATE_TRUNC + LEFT JOIN on a
+ * generate_series calendar, so it is O(30) rows regardless of table size.
+ */
+export type ActivityPoint = {
+  day: string // YYYY-MM-DD
+  newCases: number
+  paidPayments: number
+  paidAmount: number
+}
+
+export async function getRecent30dActivity(
+  includeFinance: boolean,
+): Promise<ActivityPoint[]> {
+  if (!isDbConfigured) return []
+  const rows = await db.execute<{
+    day: Date
+    new_cases: number
+    paid_payments: number
+    paid_amount: number
+  }>(sql`
+    with calendar as (
+      select generate_series(
+        (now() at time zone 'utc')::date - interval '29 days',
+        (now() at time zone 'utc')::date,
+        interval '1 day'
+      )::date as day
+    ),
+    cases as (
+      select date_trunc('day', "createdAt")::date as day, count(*)::int as n
+      from ${aestheticCase}
+      where "createdAt" >= (now() at time zone 'utc')::date - interval '29 days'
+      group by 1
+    ),
+    payments as (
+      select
+        date_trunc('day', "createdAt")::date as day,
+        count(*) filter (where status = 'SUCCEEDED')::int as n,
+        coalesce(sum(case when status = 'SUCCEEDED' then amount::numeric else 0 end), 0)::float as amt
+      from ${payment}
+      where "createdAt" >= (now() at time zone 'utc')::date - interval '29 days'
+      group by 1
+    )
+    select
+      c.day,
+      coalesce(cs.n, 0) as new_cases,
+      coalesce(p.n, 0) as paid_payments,
+      coalesce(p.amt, 0) as paid_amount
+    from calendar c
+    left join cases cs on cs.day = c.day
+    left join payments p on p.day = c.day
+    order by c.day asc
+  `)
+  return rows.rows.map((r) => ({
+    day: new Date(r.day).toISOString().slice(0, 10),
+    newCases: Number(r.new_cases) || 0,
+    paidPayments: includeFinance ? Number(r.paid_payments) || 0 : 0,
+    paidAmount: includeFinance ? Number(r.paid_amount) || 0 : 0,
+  }))
+}
+
 export type InterventionCaseRow = {
   id: string
   reference: string
