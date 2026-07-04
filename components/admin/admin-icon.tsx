@@ -20,6 +20,7 @@ import {
   Activity,
   Settings2,
   ImageIcon,
+  Plane,
   Circle,
   type LucideIcon,
 } from "lucide-react"
@@ -46,6 +47,7 @@ const ICONS: Record<string, LucideIcon> = {
   Activity,
   Settings2,
   ImageIcon,
+  Plane,
 }
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {

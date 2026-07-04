@@ -54,6 +54,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     title: "التشغيل",
     items: [
       { href: "/dashboard/concierge", label: "لوحة المتابعة التشغيلية", icon: "KanbanSquare", anyOf: [P.CONCIERGE_ACCESS], external: true },
+      { href: "/admin/travel", label: "طلبات السفر", icon: "Plane", anyOf: [P.TRAVEL_OFFER_MANAGE] },
       { href: "/dashboard/center", label: "لوحة المركز", icon: "Building", anyOf: [P.CENTER_DASHBOARD_ACCESS], external: true },
     ],
   },

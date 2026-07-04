@@ -88,6 +88,10 @@ export const PERMISSIONS = {
   // Before/After portfolio module
   BEFORE_AFTER_WRITE: "before_after:write",
   BEFORE_AFTER_MODERATE: "before_after:moderate",
+
+  // Travel & concierge module
+  TRAVEL_REQUEST_OWN: "travel:request:own",
+  TRAVEL_OFFER_MANAGE: "travel:offer:manage",
 } as const
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
@@ -109,6 +113,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.PAYMENT_READ_OWN,
     P.REFUND_REQUEST,
     P.CATALOG_READ,
+    P.TRAVEL_REQUEST_OWN,
   ],
   [ROLES.DOCTOR]: [
     P.CASE_READ_ASSIGNED,
@@ -169,6 +174,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.CASE_CLOSE,
     P.CONCIERGE_ACCESS,
     P.CATALOG_READ,
+    P.TRAVEL_OFFER_MANAGE,
   ],
   // Compliance reviewers get platform-wide oversight (case/appointment visibility,
   // safety-alert handling, system health) in addition to their provider-vetting

@@ -185,6 +185,29 @@ export const beforeAfterMediaKindEnum = pgEnum("before_after_media_kind", [
   "AFTER",
 ])
 
+/** Travel request lifecycle. Owned by the patient, moved by the concierge. */
+export const travelRequestStatusEnum = pgEnum("travel_request_status", [
+  "DRAFT",
+  "SUBMITTED",
+  "INFO_REQUESTED",
+  "ASSIGNED",
+  "OFFER_SENT",
+  "ACCEPTED",
+  "DECLINED",
+  "CANCELLED",
+  "FULFILLED",
+])
+
+/** Concierge-authored offer against a travel request. */
+export const travelOfferStatusEnum = pgEnum("travel_offer_status", [
+  "DRAFT",
+  "SENT",
+  "ACCEPTED",
+  "DECLINED",
+  "EXPIRED",
+  "WITHDRAWN",
+])
+
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID())
 
 /* ── Consultation outcome ────────────────────────────────────────────────── */
@@ -889,6 +912,93 @@ export const beforeAfterMedia = pgTable(
   (t) => [
     index("ba_media_case_idx").on(t.caseId),
     index("ba_media_kind_idx").on(t.kind),
+  ],
+)
+
+/**
+ * Patient-created travel & accommodation request tied to an aesthetic case.
+ * Med Aura does not execute bookings itself — this is a coordination request
+ * that a concierge picks up and answers with structured travel_offer rows.
+ */
+export const travelRequest = pgTable(
+  "travel_request",
+  {
+    id: id(),
+    caseId: text("caseId").notNull().references(() => aestheticCase.id, {
+      onDelete: "cascade",
+    }),
+    patientUserId: text("patientUserId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    originCountry: text("originCountry").notNull(),
+    originCity: text("originCity"),
+    destinationCountry: text("destinationCountry").notNull(),
+    destinationCity: text("destinationCity"),
+    arrivalDate: date("arrivalDate"),
+    departureDate: date("departureDate"),
+    travelers: integer("travelers").notNull().default(1),
+    needsAccommodation: boolean("needsAccommodation").notNull().default(false),
+    needsAirportTransfer: boolean("needsAirportTransfer")
+      .notNull()
+      .default(false),
+    needsInterpreter: boolean("needsInterpreter").notNull().default(false),
+    interpreterLanguage: text("interpreterLanguage"),
+    specialRequirements: text("specialRequirements"),
+    status: travelRequestStatusEnum("status").notNull().default("SUBMITTED"),
+    assignedConciergeId: text("assignedConciergeId").references(
+      () => user.id,
+      { onDelete: "set null" },
+    ),
+    slaDueAt: timestamp("slaDueAt", { withTimezone: true }),
+    ...lifecycle(),
+    ...authorship(),
+  },
+  (t) => [
+    index("travel_req_case_idx").on(t.caseId),
+    index("travel_req_status_idx").on(t.status),
+    index("travel_req_concierge_idx").on(t.assignedConciergeId),
+  ],
+)
+
+/**
+ * Concierge-authored offer against a travel request. Multiple offers per
+ * request are allowed (revisions/alternatives); at most one may be ACCEPTED
+ * at a time — enforced in the action layer.
+ */
+export const travelOffer = pgTable(
+  "travel_offer",
+  {
+    id: id(),
+    requestId: text("requestId")
+      .notNull()
+      .references(() => travelRequest.id, { onDelete: "cascade" }),
+    createdBy: text("createdBy").notNull(),
+    // Structured but flexible: each offer carries markdown-style summary
+    // fields so a concierge can iterate quickly without a rigid schema
+    flightNotes: text("flightNotes"),
+    hotelName: text("hotelName"),
+    hotelNotes: text("hotelNotes"),
+    transferNotes: text("transferNotes"),
+    interpreterNotes: text("interpreterNotes"),
+    totalAmount: numeric("totalAmount", { precision: 12, scale: 2 }),
+    currency: text("currency").notNull().default("SAR"),
+    validUntil: timestamp("validUntil", { withTimezone: true }),
+    attachmentKey: text("attachmentKey"),
+    status: travelOfferStatusEnum("status").notNull().default("DRAFT"),
+    sentAt: timestamp("sentAt", { withTimezone: true }),
+    respondedAt: timestamp("respondedAt", { withTimezone: true }),
+    responseNote: text("responseNote"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedBy: text("updatedBy"),
+  },
+  (t) => [
+    index("travel_offer_req_idx").on(t.requestId),
+    index("travel_offer_status_idx").on(t.status),
   ],
 )
 
