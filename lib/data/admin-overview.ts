@@ -173,8 +173,8 @@ export async function getRecent30dActivity(
     payments as (
       select
         date_trunc('day', "createdAt")::date as day,
-        count(*) filter (where status = 'SUCCEEDED')::int as n,
-        coalesce(sum(case when status = 'SUCCEEDED' then amount::numeric else 0 end), 0)::float as amt
+        count(*) filter (where status = 'PAID')::int as n,
+        coalesce(sum(case when status = 'PAID' then amount::numeric else 0 end), 0)::float as amt
       from ${payment}
       where "createdAt" >= (now() at time zone 'utc')::date - interval '29 days'
       group by 1
