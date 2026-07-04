@@ -21,6 +21,7 @@ import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
 import { currencyAr, countryNameAr } from "@/lib/status-labels"
 import { getI18n } from "@/lib/i18n"
+import { appUrl } from "@/lib/env"
 
 export const dynamic = "force-dynamic"
 
@@ -74,9 +75,40 @@ export default async function DoctorProfilePage({
 
   const initials = doctor.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
 
+  // Schema.org — Physician. Every field is real; ratings only surface when
+  // there's actual review volume (no fake averages).
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Physician",
+    name: doctor.name,
+    ...(doctor.title ? { jobTitle: doctor.title } : {}),
+    ...(doctor.bio ? { description: doctor.bio } : {}),
+    url: `${appUrl()}/doctors/${doctor.slug}`,
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: doctor.country,
+      ...(doctor.city ? { addressLocality: doctor.city } : {}),
+    },
+    ...(doctor.languages?.length ? { knowsLanguage: doctor.languages } : {}),
+    medicalSpecialty: "Plastic Surgery",
+  }
+  if (doctor.reviewCount > 0 && doctor.rating) {
+    jsonLd.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: doctor.rating,
+      reviewCount: doctor.reviewCount,
+      bestRating: "5",
+      worstRating: "1",
+    }
+  }
+
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <main className="flex-1 bg-muted/20">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
