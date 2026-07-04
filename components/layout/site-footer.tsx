@@ -23,6 +23,7 @@ export function SiteFooter() {
               { href: "/procedures", label: "الإجراءات" },
               { href: "/centers", label: "المراكز" },
               { href: "/destinations", label: "الوجهات" },
+              { href: "/before-after", label: "قبل وبعد" },
               { href: "/online-consultation", label: "الاستشارة أونلاين" },
               { href: "/trust-and-safety", label: "الثقة والأمان" },
             ]}

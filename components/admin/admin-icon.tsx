@@ -19,6 +19,7 @@ import {
   History,
   Activity,
   Settings2,
+  ImageIcon,
   Circle,
   type LucideIcon,
 } from "lucide-react"
@@ -44,6 +45,7 @@ const ICONS: Record<string, LucideIcon> = {
   History,
   Activity,
   Settings2,
+  ImageIcon,
 }
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {

@@ -84,6 +84,10 @@ export const PERMISSIONS = {
   USER_READ_ANY: "user:read:any",
   ROLE_ASSIGN: "role:assign",
   AUDIT_READ: "audit:read",
+
+  // Before/After portfolio module
+  BEFORE_AFTER_WRITE: "before_after:write",
+  BEFORE_AFTER_MODERATE: "before_after:moderate",
 } as const
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
@@ -117,6 +121,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.FOLLOWUP_MANAGE,
     P.SAFETY_ALERT_MANAGE,
     P.CATALOG_READ,
+    P.BEFORE_AFTER_WRITE,
   ],
   [ROLES.CENTER_OWNER]: [
     P.CASE_READ_ASSIGNED,
@@ -132,6 +137,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.CASE_CLOSE,
     P.CENTER_DASHBOARD_ACCESS,
     P.CATALOG_READ,
+    P.BEFORE_AFTER_WRITE,
   ],
   [ROLES.CENTER_ADMIN]: [
     P.CASE_READ_ASSIGNED,
@@ -146,6 +152,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.CASE_CLOSE,
     P.CENTER_DASHBOARD_ACCESS,
     P.CATALOG_READ,
+    P.BEFORE_AFTER_WRITE,
   ],
   [ROLES.CENTER_STAFF]: [
     P.APPOINTMENT_READ_ASSIGNED,
@@ -178,6 +185,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.USER_READ_ANY,
     P.AUDIT_READ,
     P.CATALOG_READ,
+    P.BEFORE_AFTER_MODERATE,
   ],
   [ROLES.FINANCE_ADMIN]: [
     P.PAYMENT_READ_ANY,
@@ -192,7 +200,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.APPOINTMENT_READ_ANY,
     P.CATALOG_READ,
   ],
-  [ROLES.CONTENT_ADMIN]: [P.CATALOG_MANAGE, P.CATALOG_READ],
+  [ROLES.CONTENT_ADMIN]: [P.CATALOG_MANAGE, P.CATALOG_READ, P.BEFORE_AFTER_MODERATE],
   // Super admin gets everything via the wildcard in hasPermission().
   [ROLES.SUPER_ADMIN]: [],
 }

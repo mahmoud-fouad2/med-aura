@@ -43,6 +43,13 @@
       "when": 1782950400000,
       "tag": "0005_notification_preferences_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783036800000,
+      "tag": "0006_before_after_module",
+      "breakpoints": true
     }
   ]
 }

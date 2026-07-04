@@ -166,6 +166,25 @@ export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_stat
   "OPTED_OUT",
 ])
 
+/**
+ * Before/After case lifecycle. Everything progresses through moderation;
+ * the public site only ever sees APPROVED entries. ARCHIVED is a soft
+ * delete used when the doctor withdraws consent after publication.
+ */
+export const beforeAfterStatusEnum = pgEnum("before_after_status", [
+  "DRAFT",
+  "SUBMITTED",
+  "APPROVED",
+  "REJECTED",
+  "ARCHIVED",
+])
+
+/** Which side of the treatment the media captures. */
+export const beforeAfterMediaKindEnum = pgEnum("before_after_media_kind", [
+  "BEFORE",
+  "AFTER",
+])
+
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID())
 
 /* ── Consultation outcome ────────────────────────────────────────────────── */
@@ -783,6 +802,93 @@ export const internalTask = pgTable(
     index("internal_task_case_idx").on(t.caseId),
     index("internal_task_assignee_idx").on(t.assignedTo),
     index("internal_task_status_idx").on(t.status),
+  ],
+)
+
+/**
+ * Before/After case — the doctor-or-center-authored portfolio entry. The
+ * patient is intentionally NOT referenced: media is de-identified before
+ * upload, and Compliance verifies that in moderation. `sourceCaseId` links
+ * the entry back to the aesthetic_case for audit, but is never exposed to
+ * the public API. `consentGrantedAt` is filled only when the doctor has an
+ * on-file signed consent — moderation refuses to approve without it.
+ */
+export const beforeAfterCase = pgTable(
+  "before_after_case",
+  {
+    id: id(),
+    doctorId: text("doctorId").references(() => doctorProfile.id, {
+      onDelete: "set null",
+    }),
+    centerId: text("centerId").references(() => center.id, {
+      onDelete: "set null",
+    }),
+    procedureId: text("procedureId")
+      .notNull()
+      .references(() => procedure.id, { onDelete: "restrict" }),
+    // optional link back to the source case; never surfaced publicly
+    sourceCaseId: text("sourceCaseId").references(() => aestheticCase.id, {
+      onDelete: "set null",
+    }),
+    titleAr: text("titleAr").notNull(),
+    titleEn: text("titleEn"),
+    descriptionAr: text("descriptionAr"),
+    descriptionEn: text("descriptionEn"),
+    // Age captured as a RANGE (e.g. "25-34") not a birth date, to avoid PII
+    ageRange: text("ageRange"),
+    gender: text("gender"), // "female" | "male" | "other" | null
+    treatmentDate: date("treatmentDate"),
+    // Days after the procedure the AFTER photos were captured
+    afterCaptureDays: integer("afterCaptureDays"),
+    // Consent gate — moderation cannot approve without this being true
+    consentGranted: boolean("consentGranted").notNull().default(false),
+    consentGrantedAt: timestamp("consentGrantedAt", { withTimezone: true }),
+    // Optional reference to the signed consent PDF (private R2 key)
+    consentDocumentKey: text("consentDocumentKey"),
+    status: beforeAfterStatusEnum("status").notNull().default("DRAFT"),
+    rejectionReason: text("rejectionReason"),
+    publishedAt: timestamp("publishedAt", { withTimezone: true }),
+    reviewedBy: text("reviewedBy"),
+    reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+    // Watermark and download blocking are enforced client-side; both are on
+    // by default and remain on for approved public entries.
+    ...lifecycle(),
+    ...authorship(),
+  },
+  (t) => [
+    index("ba_status_idx").on(t.status),
+    index("ba_doctor_idx").on(t.doctorId),
+    index("ba_center_idx").on(t.centerId),
+    index("ba_procedure_idx").on(t.procedureId),
+  ],
+)
+
+/**
+ * Media pair for a Before/After entry. `objectKey` points to a public R2
+ * asset (watermarked variant) — original private uploads still live in
+ * medical_document. Angle helps callers pair matching before/after shots.
+ */
+export const beforeAfterMedia = pgTable(
+  "before_after_media",
+  {
+    id: id(),
+    caseId: text("caseId")
+      .notNull()
+      .references(() => beforeAfterCase.id, { onDelete: "cascade" }),
+    kind: beforeAfterMediaKindEnum("kind").notNull(),
+    objectKey: text("objectKey").notNull(),
+    contentType: text("contentType").notNull(),
+    sizeBytes: integer("sizeBytes").notNull().default(0),
+    width: integer("width"),
+    height: integer("height"),
+    // e.g. "front", "left-3q", "profile", "top-down"
+    angle: text("angle"),
+    sortOrder: integer("sortOrder").notNull().default(0),
+    ...lifecycle(),
+  },
+  (t) => [
+    index("ba_media_case_idx").on(t.caseId),
+    index("ba_media_kind_idx").on(t.kind),
   ],
 )
 
