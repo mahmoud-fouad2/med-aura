@@ -32,7 +32,7 @@ export default function ForCentersPage() {
           eyebrow="لمراكز التجميل"
           title="سجّل مركزك على Med Aura"
           subtitle="منصة متكاملة لإدارة أطبائك ومواعيدك وحالاتك وحجوزاتك، مع حضور موثوق أمام مرضى يبحثون عن رعاية تجميلية."
-          primary={{ href: "/contact", label: "تواصل لتسجيل مركزك" }}
+          primary={{ href: "/for-centers/apply", label: "سجّل مركزك" }}
           secondary={{ href: "/for-doctors", label: "أنت طبيب؟" }}
         />
 

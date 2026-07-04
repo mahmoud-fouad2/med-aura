@@ -22,6 +22,7 @@ export function SiteFooter() {
               { href: "/search", label: "ابحث عن طبيب" },
               { href: "/procedures", label: "الإجراءات" },
               { href: "/centers", label: "المراكز" },
+              { href: "/destinations", label: "الوجهات" },
               { href: "/online-consultation", label: "الاستشارة أونلاين" },
               { href: "/trust-and-safety", label: "الثقة والأمان" },
             ]}

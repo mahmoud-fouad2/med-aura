@@ -53,15 +53,25 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
 }
 
+/**
+ * Header row inside a dropdown menu (e.g. the user card at the top of an
+ * account menu). Rendered as a plain <div> rather than
+ * `MenuPrimitive.GroupLabel` because that primitive requires a wrapping
+ * <Menu.Group> or <Menu.RadioGroup> parent — using it outside one throws
+ * Base UI production error #31 during render and crashes the client bundle.
+ * A dropdown-header is a presentational chunk, not a "group label" in the
+ * ARIA sense, so a plain div is both semantically correct and safe.
+ */
 function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<"div"> & {
   inset?: boolean
 }) {
   return (
-    <MenuPrimitive.GroupLabel
+    <div
+      role="presentation"
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(

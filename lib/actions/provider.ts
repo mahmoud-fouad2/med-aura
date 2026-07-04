@@ -45,6 +45,125 @@ const doctorApplicationSchema = z.object({
 
 export type DoctorApplicationInput = z.infer<typeof doctorApplicationSchema>
 
+const centerApplicationSchema = z.object({
+  legalName: z.string().min(3, "الاسم القانوني للمركز مطلوب"),
+  name: z.string().min(3, "الاسم التجاري للمركز مطلوب"),
+  country: z.string().min(2, "الدولة مطلوبة"),
+  city: z.string().min(2, "المدينة مطلوبة"),
+  address: z.string().max(500).optional().default(""),
+  phone: z.string().min(6, "رقم الهاتف مطلوب"),
+  email: z.email("بريد إلكتروني غير صالح"),
+  website: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined),
+  representativeName: z.string().min(3, "اسم المسؤول المفوّض مطلوب"),
+  representativeTitle: z.string().min(2, "المسمى مطلوب"),
+  languages: z.array(z.string()).min(1, "أضف لغة واحدة على الأقل"),
+  services: z.array(z.string()).min(1, "اذكر خدمة واحدة على الأقل"),
+  license: z.object({
+    commercialRegistration: z
+      .string()
+      .min(3, "رقم السجل التجاري مطلوب"),
+    facilityLicenseNumber: z.string().min(3, "رقم ترخيص المنشأة مطلوب"),
+    licenseExpiryDate: z
+      .string()
+      .min(4, "تاريخ انتهاء ترخيص المنشأة مطلوب"),
+    issuingAuthority: z.string().min(2, "جهة الإصدار مطلوبة"),
+  }),
+  notes: z.string().max(2000).optional().default(""),
+  consent: z.literal(true, "الموافقة مطلوبة"),
+})
+
+export type CenterApplicationInput = z.infer<typeof centerApplicationSchema>
+
+/**
+ * Center application. Submitter must be signed in — the same PROVIDER_APPLY
+ * permission that gates doctor applications also gates centers. Never grants
+ * a role; compliance review remains the only path to approval.
+ *
+ * Sensitive fields (commercial registration, facility license number) are
+ * encrypted in the payload and never displayed unmasked in the admin queue.
+ */
+export async function submitCenterApplication(
+  input: unknown,
+): Promise<ActionResult<{ applicationId: string }>> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.PROVIDER_APPLY)
+
+    const parsed = centerApplicationSchema.safeParse(input)
+    if (!parsed.success) {
+      const first = parsed.error.issues[0]?.message ?? "بيانات غير صحيحة"
+      throw validation(first)
+    }
+    const data = parsed.data
+
+    // one open application per applicant, matching the doctor policy
+    const existing = await db
+      .select({ id: providerApplication.id, status: providerApplication.status })
+      .from(providerApplication)
+      .where(
+        and(
+          eq(providerApplication.applicantUserId, user.id),
+          eq(providerApplication.kind, "CENTER"),
+        ),
+      )
+      .limit(1)
+
+    const openStatuses = ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANGES"]
+    if (existing[0] && openStatuses.includes(existing[0].status)) {
+      throw new AppError("CONFLICT", {
+        userMessage: "لديك طلب انضمام مركز قيد المراجعة بالفعل.",
+      })
+    }
+
+    const inserted = await db
+      .insert(providerApplication)
+      .values({
+        kind: "CENTER",
+        applicantUserId: user.id,
+        status: "SUBMITTED",
+        submittedAt: new Date(),
+        payload: {
+          ...data,
+          license: {
+            ...data.license,
+            commercialRegistration: encryptString(
+              data.license.commercialRegistration,
+            ),
+            facilityLicenseNumber: encryptString(
+              data.license.facilityLicenseNumber,
+            ),
+            commercialRegistrationLast4: last4(
+              data.license.commercialRegistration,
+            ),
+            facilityLicenseNumberLast4: last4(data.license.facilityLicenseNumber),
+          },
+        },
+        createdBy: user.id,
+      })
+      .returning({ id: providerApplication.id })
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "provider.center.application.submit",
+      actorUserId: user.id,
+      entityType: "provider_application",
+      entityId: inserted[0].id,
+      metadata: { country: data.country, city: data.city },
+      ...meta,
+    })
+
+    revalidatePath("/dashboard")
+    revalidatePath("/admin/applications")
+    return { ok: true, data: { applicationId: inserted[0].id } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
 /** A patient submits a doctor application. Never grants a role by itself. */
 export async function submitDoctorApplication(
   input: unknown,

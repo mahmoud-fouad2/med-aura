@@ -15,6 +15,7 @@ export async function SiteHeader() {
     { href: "/search", label: t.nav.doctors },
     { href: "/procedures", label: t.nav.procedures },
     { href: "/centers", label: t.nav.centers },
+    { href: "/destinations", label: "الوجهات" },
     { href: "/online-consultation", label: "الاستشارة أونلاين" },
     { href: "/how-it-works", label: t.nav.howItWorks },
   ]

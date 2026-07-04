@@ -36,6 +36,13 @@
       "when": 1782932429580,
       "tag": "0004_safety_alert_assignee",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782950400000,
+      "tag": "0005_notification_preferences_channels",
+      "breakpoints": true
     }
   ]
 }

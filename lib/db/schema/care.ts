@@ -741,10 +741,25 @@ export const notificationDelivery = pgTable(
   (t) => [index("notif_delivery_idx").on(t.notificationId)],
 )
 
-/** Per-user delivery preferences. Missing row = defaults (email on). */
+/**
+ * Per-user notification channel preferences. Missing row = defaults
+ * (in-app + email on, SMS + WhatsApp off). Fine-grained event-level toggles
+ * can layer on top later via `mutedEvents` (JSON array of event keys).
+ *
+ * A saved preference for a channel with no configured adapter is a no-op at
+ * send-time: notificationDelivery records NOT_CONFIGURED so the UI can honestly
+ * tell the user "you enabled SMS but SMS is not yet configured on the platform".
+ */
 export const notificationPreference = pgTable("notification_preference", {
   userId: text("userId").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  inAppEnabled: boolean("inAppEnabled").notNull().default(true),
   emailEnabled: boolean("emailEnabled").notNull().default(true),
+  smsEnabled: boolean("smsEnabled").notNull().default(false),
+  whatsappEnabled: boolean("whatsappEnabled").notNull().default(false),
+  // Optional phone override; when null the user profile phone is used.
+  smsPhone: text("smsPhone"),
+  whatsappPhone: text("whatsappPhone"),
+  mutedEvents: text("mutedEvents").array().notNull().default([]),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 })
 
