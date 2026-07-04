@@ -1002,6 +1002,30 @@ export const travelOffer = pgTable(
   ],
 )
 
+/**
+ * Patient favourites. Deliberately a single flat table for all favouritable
+ * entities (doctor / center / procedure) — the kind column disambiguates.
+ * (userId, kind, refId) is unique so idempotent toggles are simple.
+ */
+export const favorite = pgTable(
+  "favorite",
+  {
+    id: id(),
+    userId: text("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // 'doctor' | 'center' | 'procedure'
+    refId: text("refId").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("favorite_uniq").on(t.userId, t.kind, t.refId),
+    index("favorite_user_idx").on(t.userId),
+  ],
+)
+
 /** Closure record: one per closure event (a case can be reopened + re-closed). */
 export const caseClosure = pgTable(
   "case_closure",
