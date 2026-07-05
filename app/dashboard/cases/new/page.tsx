@@ -1,7 +1,13 @@
 import { asc, eq } from "drizzle-orm"
+import { Sparkles, ShieldCheck, FileLock2, Info } from "lucide-react"
 import { db } from "@/lib/db"
-import { procedure as procedureT, doctorProfile, doctorProcedure } from "@/lib/db/schema"
+import {
+  procedure as procedureT,
+  doctorProfile,
+  doctorProcedure,
+} from "@/lib/db/schema"
 import { CaseWizard } from "@/components/cases/case-wizard"
+import { PageHeader } from "@/components/dashboard/page-header"
 
 export const dynamic = "force-dynamic"
 
@@ -25,7 +31,6 @@ export default async function NewCasePage({
     )[0]
     doctorName = doc?.name ?? null
 
-    // restrict to the procedures this doctor offers
     procedures = await db
       .select({ slug: procedureT.slug, nameAr: procedureT.nameAr })
       .from(doctorProcedure)
@@ -41,22 +46,83 @@ export default async function NewCasePage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">
-          إنشاء حالة جديدة
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          شاركنا تفاصيل حالتك بأمان. ملفاتك خاصة ولن يطّلع عليها الطبيب إلا بعد
-          منحك الإذن.
-        </p>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader
+        eyebrow="حالة جديدة"
+        title="ابدأ حالتك التجميلية"
+        description={
+          doctorName
+            ? `الحالة ستُفتح مع د. ${doctorName} — أنت تتحكم بمن يراها.`
+            : "شارك تفاصيل حالتك بأمان. ملفاتك خاصة ولن يطّلع عليها الطبيب إلا بعد منحك الإذن."
+        }
+      />
+
+      {/* Privacy assurance strip — three trust points */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <TrustCard
+          icon={FileLock2}
+          title="ملفاتك مشفَّرة"
+          desc="نُخزّن الصور والتقارير في مساحة خاصة معزولة."
+        />
+        <TrustCard
+          icon={ShieldCheck}
+          title="أنت تتحكم بالإذن"
+          desc="لا يراها طبيب إلا بموافقتك المباشرة."
+        />
+        <TrustCard
+          icon={Info}
+          title="تراجع في أي وقت"
+          desc="يمكنك سحب الإذن أو حذف الحالة لاحقًا."
+        />
       </div>
+
+      {doctorName && (
+        <div className="flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <Sparkles className="size-5" />
+          </span>
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              الطبيب المختار: د. {doctorName}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              ستُشارَك الحالة معه فور إرسالها. يمكنك تغيير الطبيب أو
+              مشاركتها لاحقًا مع طبيب آخر.
+            </p>
+          </div>
+        </div>
+      )}
+
       <CaseWizard
         procedures={procedures}
         defaultProcedure={defaultProcedure}
         doctorId={doctorId}
         doctorName={doctorName}
       />
+    </div>
+  )
+}
+
+function TrustCard({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  desc: string
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+        <Icon className="size-[18px]" />
+      </span>
+      <div>
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+          {desc}
+        </p>
+      </div>
     </div>
   )
 }
