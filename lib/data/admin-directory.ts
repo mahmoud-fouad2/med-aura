@@ -94,6 +94,7 @@ export async function listDoctorsForAdmin(filters: { status?: string; q?: string
 
 export type AdminCenterRow = {
   id: string
+  slug: string
   name: string
   status: string
   published: boolean
@@ -112,6 +113,7 @@ export async function listCentersForAdmin(filters: { status?: string; q?: string
   const rows = await db
     .select({
       id: centerT.id,
+      slug: centerT.slug,
       name: centerT.name,
       status: centerT.status,
       published: centerT.published,
