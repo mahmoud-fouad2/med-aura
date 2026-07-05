@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { SearchX } from "lucide-react"
+import { SearchX, SlidersHorizontal, ChevronLeft } from "lucide-react"
 import { DoctorCard } from "@/components/search/doctor-card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Stagger, StaggerItem } from "@/components/motion"
@@ -15,6 +15,8 @@ import { query } from "@/lib/db/query"
 import { DataState } from "@/components/ui/data-state"
 import { procedureCategory, country as countryT } from "@/lib/db/schema"
 import { getI18n } from "@/lib/i18n"
+import { getCurrentUser } from "@/lib/session"
+import { getFavoriteRefIds } from "@/lib/data/favorites"
 
 export const dynamic = "force-dynamic"
 
@@ -46,7 +48,9 @@ export default async function SearchPage({
     page: Number(str(sp.page) ?? "1") || 1,
   }
 
-  const [doctorsRes, categoriesRes, countriesRes] = await Promise.all([
+  const user = await getCurrentUser()
+
+  const [doctorsRes, categoriesRes, countriesRes, favs] = await Promise.all([
     query(() => searchDoctors(params)),
     query(() =>
       db
@@ -62,6 +66,13 @@ export default async function SearchPage({
         .where(eq(countryT.active, true))
         .orderBy(asc(countryT.sortOrder)),
     ),
+    user
+      ? getFavoriteRefIds(user.id)
+      : Promise.resolve({
+          doctor: new Set<string>(),
+          center: new Set<string>(),
+          procedure: new Set<string>(),
+        }),
   ])
 
   const categories = categoriesRes.status === "ok" ? categoriesRes.data : []
@@ -83,22 +94,59 @@ export default async function SearchPage({
     return `/search?${q.toString()}`
   }
 
+  const activeFilters = [
+    params.category,
+    params.country,
+    params.city,
+    params.consultation,
+    params.surgical,
+    params.q,
+  ].filter(Boolean).length
+
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
       <main className="flex-1 bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            {t.search.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t.search.resultsCount(total)}
-          </p>
+          <div className="space-y-1.5 border-b border-border/60 pb-6">
+            <p className="font-heading text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+              اكتشاف
+            </p>
+            <h1 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-[32px]">
+              {t.search.title}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {t.search.resultsCount(total)}
+              {activeFilters > 0 && (
+                <>
+                  {" "}
+                  ·{" "}
+                  <Link
+                    href="/search"
+                    className="text-primary hover:underline"
+                  >
+                    مسح كل الفلاتر ({activeFilters})
+                  </Link>
+                </>
+              )}
+            </p>
+          </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[260px_1fr]">
             {/* Filters — GET form, so filters live in the URL and survive back/refresh */}
             <aside>
-              <Card className="p-4">
+              <Card className="sticky top-24 border-border/70 p-5">
+                <div className="mb-4 flex items-center gap-2 border-b border-border/60 pb-3">
+                  <SlidersHorizontal className="size-4 text-primary" />
+                  <h2 className="font-heading text-sm font-bold text-foreground">
+                    عوامل التصفية
+                  </h2>
+                  {activeFilters > 0 && (
+                    <span className="ms-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                      {activeFilters}
+                    </span>
+                  )}
+                </div>
                 <form method="get" className="flex flex-col gap-4">
                   <FilterField label={t.search.procedure}>
                     <select
@@ -181,38 +229,62 @@ export default async function SearchPage({
                   }
                 />
               ) : results.length === 0 ? (
-                <EmptyState
-                  icon={SearchX}
-                  title="لا توجد نتائج مطابقة"
-                  description={t.search.empty}
-                />
+                <Card className="p-10">
+                  <EmptyState
+                    icon={SearchX}
+                    title="لا توجد نتائج مطابقة"
+                    description={t.search.empty}
+                    action={
+                      activeFilters > 0 ? (
+                        <Button
+                          variant="outline"
+                          render={<Link href="/search">مسح كل الفلاتر</Link>}
+                        />
+                      ) : undefined
+                    }
+                  />
+                </Card>
               ) : (
                 <>
                   <Stagger className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {results.map((d) => (
                       <StaggerItem key={d.id}>
-                        <DoctorCard doctor={d} />
+                        <DoctorCard
+                          doctor={d}
+                          isSignedIn={Boolean(user)}
+                          favorited={favs.doctor.has(d.id)}
+                        />
                       </StaggerItem>
                     ))}
                   </Stagger>
 
                   {totalPages > 1 && (
-                    <nav className="mt-8 flex items-center justify-center gap-2">
+                    <nav className="mt-10 flex items-center justify-center gap-3">
                       {page > 1 && (
                         <Button
                           variant="outline"
                           size="sm"
-                          render={<Link href={buildPageHref(page - 1)}>السابق</Link>}
+                          render={
+                            <Link href={buildPageHref(page - 1)}>
+                              <ChevronLeft className="size-3.5 rtl:rotate-180 ltr:rotate-0" />
+                              السابق
+                            </Link>
+                          }
                         />
                       )}
-                      <span className="text-sm text-muted-foreground">
+                      <span className="rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium tabular-nums text-muted-foreground">
                         صفحة {page} من {totalPages}
                       </span>
                       {page < totalPages && (
                         <Button
                           variant="outline"
                           size="sm"
-                          render={<Link href={buildPageHref(page + 1)}>التالي</Link>}
+                          render={
+                            <Link href={buildPageHref(page + 1)}>
+                              التالي
+                              <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
+                            </Link>
+                          }
                         />
                       )}
                     </nav>
