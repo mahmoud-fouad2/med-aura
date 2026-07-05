@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { CalendarPlus } from "lucide-react"
+import { CalendarPlus, Sparkles, ChevronLeft } from "lucide-react"
 import { getCurrentUser } from "@/lib/session"
 import { getCaseDetailForUser } from "@/lib/data/cases"
 import {
@@ -121,35 +121,73 @@ export default async function CaseDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              {c.procedureName}
-            </h1>
-            <Badge variant="secondary">{caseStatusAr(c.status)}</Badge>
+      {/* Breadcrumb */}
+      <nav
+        className="flex items-center gap-1.5 text-xs text-muted-foreground"
+        aria-label="مسار التنقل"
+      >
+        <Link href="/dashboard" className="hover:text-foreground">
+          لوحة التحكم
+        </Link>
+        <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
+        <Link href="/dashboard/cases" className="hover:text-foreground">
+          حالاتي
+        </Link>
+        <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
+        <span
+          dir="ltr"
+          className="font-mono font-medium text-foreground"
+        >
+          {c.reference}
+        </span>
+      </nav>
+
+      {/* Editorial header card */}
+      <div className="relative isolate overflow-hidden rounded-2xl border border-border/70 bg-card p-6 shadow-[0_1px_2px_rgba(20,20,60,0.04),0_4px_16px_-8px_rgba(20,20,60,0.08)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                <Sparkles className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-heading text-[10px] font-semibold uppercase tracking-[0.16em] text-primary/80">
+                  الإجراء
+                </p>
+                <h1 className="font-heading text-2xl font-bold leading-tight text-foreground">
+                  {c.procedureName}
+                </h1>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                {caseStatusAr(c.status)}
+              </span>
+              {!c.isOwner &&
+                (canViewCaseFull || isDoctorViewer || isCenterViewer) && (
+                  <>
+                    {c.patientName && <span>المريض: {c.patientName}</span>}
+                    {c.centerName && <span>المركز: {c.centerName}</span>}
+                    {c.doctorName && <span>الطبيب: {c.doctorName}</span>}
+                  </>
+                )}
+              {c.isOwner && c.doctorName && (
+                <span>مع د. {c.doctorName}</span>
+              )}
+            </div>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {c.reference}
-            {!c.isOwner && (canViewCaseFull || isDoctorViewer || isCenterViewer) && (
-              <>
-                {" · "}
-                {c.patientName}
-                {c.centerName && ` · ${c.centerName}`}
-                {c.doctorName && ` · ${c.doctorName}`}
-              </>
-            )}
-          </p>
+          {c.doctorSlug && c.isOwner && (
+            <Button
+              render={
+                <Link href={`/doctors/${c.doctorSlug}/book?case=${c.id}`}>
+                  <CalendarPlus className="size-4" />
+                  احجز استشارة
+                </Link>
+              }
+            />
+          )}
         </div>
-        {c.doctorSlug && c.isOwner && (
-          <Button
-            render={
-              <Link href={`/doctors/${c.doctorSlug}/book?case=${c.id}`}>
-                <CalendarPlus className="size-4" /> احجز استشارة
-              </Link>
-            }
-          />
-        )}
       </div>
 
       {isDoctorViewer && (
