@@ -113,44 +113,110 @@ export default async function DoctorProfilePage({
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-6">
-              <Card className="p-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="size-20">
-                    <AvatarFallback className="bg-primary/10 text-2xl font-semibold text-primary">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h1 className="font-heading text-2xl font-bold text-foreground">
-                        {doctor.name}
-                      </h1>
+              <Card className="relative overflow-hidden p-0">
+                {/* Editorial cover gradient */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                <div className="relative h-32 bg-gradient-to-br from-primary/10 via-secondary/50 to-background">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 opacity-60"
+                  >
+                    <svg
+                      className="h-full w-full text-primary/8"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <defs>
+                        <pattern
+                          id="doc-dots"
+                          width="16"
+                          height="16"
+                          patternUnits="userSpaceOnUse"
+                        >
+                          <circle cx="1" cy="1" r="1" fill="currentColor" />
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill="url(#doc-dots)" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <div className="-mt-16 flex items-end gap-4 sm:gap-6">
+                    <Avatar className="size-24 shrink-0 ring-4 ring-background">
+                      <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-3xl font-heading font-bold text-primary">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="pb-1">
                       {doctor.verified && (
-                        <BadgeCheck className="size-5 text-primary" aria-label={isAr ? "موثّق" : "Verified"} />
-                      )}
-                    </div>
-                    <p className="text-muted-foreground">{doctor.title}</p>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="size-4" />
-                        {[doctor.city, countryNameAr(doctor.country)].filter(Boolean).join("، ")}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Stethoscope className="size-4" />
-                        {isAr ? `خبرة ${doctor.yearsExperience} سنة` : `${doctor.yearsExperience} Years Experience`}
-                      </span>
-                      {doctor.languages.length > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <LangIcon className="size-4" />
-                          {doctor.languages.join("، ")}
+                        <span className="mb-1 inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/8 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                          <BadgeCheck className="size-3" />
+                          طبيب موثّق
                         </span>
                       )}
                     </div>
                   </div>
+
+                  <div className="mt-4 space-y-2">
+                    <h1 className="font-heading text-3xl font-bold leading-tight text-foreground">
+                      {doctor.name}
+                    </h1>
+                    {doctor.title && (
+                      <p className="text-base text-muted-foreground">
+                        {doctor.title}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-x-5 gap-y-1.5 pt-1 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="size-4 text-primary/70" />
+                        {[doctor.city, countryNameAr(doctor.country)]
+                          .filter(Boolean)
+                          .join("، ")}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Stethoscope className="size-4 text-primary/70" />
+                        {isAr
+                          ? `خبرة ${doctor.yearsExperience} سنة`
+                          : `${doctor.yearsExperience} Years Experience`}
+                      </span>
+                      {doctor.languages.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <LangIcon className="size-4 text-primary/70" />
+                          {doctor.languages.join("، ")}
+                        </span>
+                      )}
+                    </div>
+                    {doctor.reviewCount > 0 && doctor.rating && (
+                      <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1 text-sm">
+                        <div className="inline-flex items-center gap-0.5 text-warning-foreground">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span
+                              key={i}
+                              className={
+                                "size-3 rounded-full " +
+                                (i < Math.round(Number(doctor.rating))
+                                  ? "bg-current"
+                                  : "bg-muted")
+                              }
+                            />
+                          ))}
+                        </div>
+                        <span className="font-medium tabular-nums text-foreground">
+                          {doctor.rating}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({doctor.reviewCount} تقييم)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {doctor.bio && (
+                    <p className="mt-5 leading-relaxed text-foreground/90">
+                      {doctor.bio}
+                    </p>
+                  )}
                 </div>
-                {doctor.bio && (
-                  <p className="mt-4 leading-relaxed text-foreground/90">{doctor.bio}</p>
-                )}
               </Card>
 
               {doctor.procedures.length > 0 && (
