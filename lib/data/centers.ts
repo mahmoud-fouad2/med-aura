@@ -11,6 +11,8 @@ export type CenterCard = {
   city: string | null
   verified: boolean
   doctorCount: number
+  rating: string | null
+  reviewCount: number
 }
 
 function visibleCenter() {
@@ -31,6 +33,8 @@ export async function listPublishedCenters(): Promise<CenterCard[]> {
       country: center.country,
       city: center.city,
       verified: center.verified,
+      rating: center.rating,
+      reviewCount: center.reviewCount,
     })
     .from(center)
     .where(visibleCenter())
@@ -76,6 +80,8 @@ export async function getCenterBySlug(slug: string): Promise<CenterDetail | null
         address: center.address,
         languages: center.languages,
         verified: center.verified,
+        rating: center.rating,
+        reviewCount: center.reviewCount,
       })
       .from(center)
       .where(and(eq(center.slug, slug), visibleCenter()))
