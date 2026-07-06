@@ -129,7 +129,7 @@ export default async function AdminBeforeAfterPage({
                     </span>
                   )}
                   <span className="text-muted-foreground">
-                    {new Date(item.createdAt).toLocaleDateString("ar-SA")}
+                    {new Date(item.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
                   </span>
                 </div>
 

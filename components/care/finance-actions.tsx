@@ -64,15 +64,15 @@ export function RemainingBalanceCard({
       <dl className="space-y-1 text-sm">
         <div className="flex justify-between">
           <dt className="text-muted-foreground">الإجمالي</dt>
-          <dd className="text-foreground">{Number(invoice.total).toLocaleString("ar-SA")} {currencyAr(invoice.currency)}</dd>
+          <dd className="text-foreground">{Number(invoice.total).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(invoice.currency)}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-muted-foreground">المدفوع</dt>
-          <dd className="text-foreground">{Number(invoice.paidAmount).toLocaleString("ar-SA")} {currencyAr(invoice.currency)}</dd>
+          <dd className="text-foreground">{Number(invoice.paidAmount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(invoice.currency)}</dd>
         </div>
         <div className="flex justify-between font-bold">
           <dt>المتبقي</dt>
-          <dd>{remaining.toLocaleString("ar-SA")} {currencyAr(invoice.currency)}</dd>
+          <dd>{remaining.toLocaleString("ar-SA-u-nu-latn")} {currencyAr(invoice.currency)}</dd>
         </div>
       </dl>
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -88,7 +88,7 @@ export function RemainingBalanceCard({
         </p>
       ) : remaining > 0 ? (
         <Button disabled={busy} onClick={onPay}>
-          {busy ? "جارٍ التحويل…" : `سداد المتبقي (${remaining.toLocaleString("ar-SA")} ${currencyAr(invoice.currency)})`}
+          {busy ? "جارٍ التحويل…" : `سداد المتبقي (${remaining.toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(invoice.currency)})`}
         </Button>
       ) : (
         <p className="text-sm text-success">تم سداد الفاتورة بالكامل.</p>

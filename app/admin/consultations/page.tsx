@@ -45,7 +45,7 @@ function str(v: string | string[] | undefined): string | undefined {
 }
 
 function fmtDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
     dateStyle: "short",
     timeStyle: "short",
   }).format(d)
@@ -74,7 +74,7 @@ export default async function AdminConsultationsPage({
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">طلبات الاستشارة</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {rows.length.toLocaleString("ar-SA")} موعد استشارة/إجراء
+          {rows.length.toLocaleString("ar-SA-u-nu-latn")} موعد استشارة/إجراء
         </p>
       </div>
 

@@ -28,8 +28,8 @@ export default async function AdminProceduresPage() {
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">المحتوى والإجراءات</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {categories.length.toLocaleString("ar-SA")} قسم،{" "}
-          {procedures.length.toLocaleString("ar-SA")} إجراء
+          {categories.length.toLocaleString("ar-SA-u-nu-latn")} قسم،{" "}
+          {procedures.length.toLocaleString("ar-SA-u-nu-latn")} إجراء
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default async function AdminProceduresPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.sortOrder}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {c.procedureCount.toLocaleString("ar-SA")}
+                      {c.procedureCount.toLocaleString("ar-SA-u-nu-latn")}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
@@ -134,7 +134,7 @@ export default async function AdminProceduresPage() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {p.recoveryDays != null
-                        ? `${p.recoveryDays.toLocaleString("ar-SA")} يوم`
+                        ? `${p.recoveryDays.toLocaleString("ar-SA-u-nu-latn")} يوم`
                         : "—"}
                     </td>
                     <td className="px-4 py-3">

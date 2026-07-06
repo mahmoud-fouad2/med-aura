@@ -110,7 +110,7 @@ export default async function DestinationDetailPage({
                   المراكز المعتمدة
                 </h2>
                 <span className="text-sm text-muted-foreground">
-                  {d.centers.length.toLocaleString("ar-SA")} مركز
+                  {d.centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز
                 </span>
               </div>
               {d.centers.length === 0 ? (
@@ -154,7 +154,7 @@ export default async function DestinationDetailPage({
                   الأطباء المعتمدون
                 </h2>
                 <span className="text-sm text-muted-foreground">
-                  {d.doctors.length.toLocaleString("ar-SA")} طبيب
+                  {d.doctors.length.toLocaleString("ar-SA-u-nu-latn")} طبيب
                 </span>
               </div>
               {d.doctors.length === 0 ? (
@@ -185,7 +185,7 @@ export default async function DestinationDetailPage({
                             {[doc.city, d.nameAr].filter(Boolean).join("، ")}
                           </p>
                           <p className="mt-2 text-xs text-muted-foreground">
-                            خبرة {doc.yearsExperience.toLocaleString("ar-SA")} سنة
+                            خبرة {doc.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة
                           </p>
                         </Card>
                       </Link>

@@ -76,7 +76,7 @@ export default async function AdminTravelPage({
           طلبات السفر
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {items.length.toLocaleString("ar-SA")} طلب. Med Aura لا تنفّذ حجزًا
+          {items.length.toLocaleString("ar-SA-u-nu-latn")} طلب. Med Aura لا تنفّذ حجزًا
           فعليًا للطيران أو الفندق — الطلبات هنا للتنسيق فقط، والعروض التي يصدرها
           الـConcierge تبقى مقترحات مسجّلة.
         </p>
@@ -149,7 +149,7 @@ export default async function AdminTravelPage({
                   <Field
                     icon={UsersIcon}
                     label="المسافرون"
-                    value={r.travelers.toLocaleString("ar-SA")}
+                    value={r.travelers.toLocaleString("ar-SA-u-nu-latn")}
                   />
                   <Field
                     icon={Clock}
@@ -178,7 +178,7 @@ export default async function AdminTravelPage({
                   <Field
                     icon={Plane}
                     label="العروض"
-                    value={`${r.offerCount.toLocaleString("ar-SA")}${r.lastOfferStatus ? ` — ${r.lastOfferStatus}` : ""}`}
+                    value={`${r.offerCount.toLocaleString("ar-SA-u-nu-latn")}${r.lastOfferStatus ? ` — ${r.lastOfferStatus}` : ""}`}
                   />
                 </div>
 

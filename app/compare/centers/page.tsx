@@ -121,7 +121,7 @@ export default async function CenterComparePage({
                   {rows.map((c) => (
                     <Cell key={c.id}>
                       {c.reviewCount > 0 && c.rating
-                        ? `${c.rating} (${c.reviewCount.toLocaleString("ar-SA")})`
+                        ? `${c.rating} (${c.reviewCount.toLocaleString("ar-SA-u-nu-latn")})`
                         : "لا توجد تقييمات موثّقة بعد"}
                     </Cell>
                   ))}

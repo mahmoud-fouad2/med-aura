@@ -19,7 +19,7 @@ export default async function AdminGeographyPage() {
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">الدول والمدن</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {countries.length.toLocaleString("ar-SA")} دولة، {cities.length.toLocaleString("ar-SA")} مدينة
+          {countries.length.toLocaleString("ar-SA-u-nu-latn")} دولة، {cities.length.toLocaleString("ar-SA-u-nu-latn")} مدينة
         </p>
       </div>
 

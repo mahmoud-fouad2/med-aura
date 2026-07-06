@@ -35,12 +35,12 @@ export default async function AdminPatientsPage({
       <PageHeader
         eyebrow="الدليل"
         title="المرضى"
-        description={`${patients.length.toLocaleString("ar-SA")} مريض مسجَّل${q ? ` مطابق للبحث "${q}"` : ""}`}
+        description={`${patients.length.toLocaleString("ar-SA-u-nu-latn")} مريض مسجَّل${q ? ` مطابق للبحث "${q}"` : ""}`}
         stats={
           patients.length > 0
             ? [
-                { label: "الإجمالي", value: patients.length.toLocaleString("ar-SA") },
-                { label: "لديهم حالات", value: withCases.length.toLocaleString("ar-SA") },
+                { label: "الإجمالي", value: patients.length.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "لديهم حالات", value: withCases.length.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }
@@ -142,7 +142,7 @@ export default async function AdminPatientsPage({
                             href={`/admin/cases?q=${encodeURIComponent(p.name)}`}
                             className="group inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-primary hover:bg-primary/15"
                           >
-                            {p.caseCount.toLocaleString("ar-SA")} حالة
+                            {p.caseCount.toLocaleString("ar-SA-u-nu-latn")} حالة
                             <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
                           </Link>
                         ) : (
@@ -152,7 +152,7 @@ export default async function AdminPatientsPage({
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
-                        {new Date(p.createdAt).toLocaleDateString("ar-SA")}
+                        {new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
                       </td>
                     </tr>
                   )

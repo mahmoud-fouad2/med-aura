@@ -65,12 +65,12 @@ export default async function AdminDoctorsPage({
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="الأطباء"
-        description={`${doctors.length.toLocaleString("ar-SA")} طبيب${status ? ` — ${STATUS_LABEL[status]}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
+        description={`${doctors.length.toLocaleString("ar-SA-u-nu-latn")} طبيب${status ? ` — ${STATUS_LABEL[status]}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
         stats={
           !status && doctors.length > 0
             ? [
-                { label: "المعتمدون", value: approved.toLocaleString("ar-SA") },
-                { label: "قيد المراجعة", value: pending.toLocaleString("ar-SA") },
+                { label: "المعتمدون", value: approved.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "قيد المراجعة", value: pending.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }
@@ -95,7 +95,7 @@ export default async function AdminDoctorsPage({
         </form>
         <div className="flex flex-wrap gap-1 border-t border-border/60 pt-3">
           <TabLink active={!status} href={buildHref(undefined)}>
-            الكل ({doctors.length.toLocaleString("ar-SA")})
+            الكل ({doctors.length.toLocaleString("ar-SA-u-nu-latn")})
           </TabLink>
           {Object.entries(STATUS_LABEL).map(([k, label]) => (
             <TabLink key={k} active={status === k} href={buildHref(k)}>
@@ -179,7 +179,7 @@ export default async function AdminDoctorsPage({
                         {countryNameAr(d.country)}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground tabular-nums">
-                        {d.yearsExperience.toLocaleString("ar-SA")} سنة
+                        {d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة
                       </td>
                       <td className="px-4 py-3">
                         <Link

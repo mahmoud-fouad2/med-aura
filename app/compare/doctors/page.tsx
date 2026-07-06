@@ -112,7 +112,7 @@ export default async function DoctorComparePage({
                 <Row label="سنوات الخبرة">
                   {rows.map((d) => (
                     <Cell key={d.id}>
-                      {d.yearsExperience.toLocaleString("ar-SA")}
+                      {d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")}
                     </Cell>
                   ))}
                 </Row>
@@ -152,7 +152,7 @@ export default async function DoctorComparePage({
                   {rows.map((d) => (
                     <Cell key={d.id}>
                       {d.reviewCount > 0 && d.rating
-                        ? `${d.rating} (${d.reviewCount.toLocaleString("ar-SA")})`
+                        ? `${d.rating} (${d.reviewCount.toLocaleString("ar-SA-u-nu-latn")})`
                         : "لا توجد تقييمات موثّقة بعد"}
                     </Cell>
                   ))}

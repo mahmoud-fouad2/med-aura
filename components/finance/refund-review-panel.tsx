@@ -57,7 +57,7 @@ function RefundCard({ refund }: { refund: FinanceRefundRow }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-medium text-foreground">
-            {refund.requestedByName} — {Number(refund.amount).toLocaleString("ar-SA")} {currencyAr(refund.currency)}
+            {refund.requestedByName} — {Number(refund.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(refund.currency)}
           </p>
           <Link href={`/dashboard/cases/${refund.caseId}`} className="text-xs text-primary hover:underline">
             فاتورة {refund.invoiceNumber}

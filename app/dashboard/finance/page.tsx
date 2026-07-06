@@ -71,7 +71,7 @@ export default async function FinanceDashboardPage() {
         <MetricCard
           icon={TrendingUp}
           label="إجمالي المحصّل"
-          value={`${summary.totalCollected.toLocaleString("ar-SA")} ${cur}`}
+          value={`${summary.totalCollected.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
           hint="مدفوعات ناجحة مؤكَّدة"
           tone="success"
           emphasis
@@ -79,7 +79,7 @@ export default async function FinanceDashboardPage() {
         <MetricCard
           icon={Wallet}
           label="إجمالي الفواتير"
-          value={`${summary.totalInvoiced.toLocaleString("ar-SA")} ${cur}`}
+          value={`${summary.totalInvoiced.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
           hint="جميع الفواتير المُصدَرة"
           tone="primary"
           emphasis
@@ -87,7 +87,7 @@ export default async function FinanceDashboardPage() {
         <MetricCard
           icon={AlertCircle}
           label="متبقٍ غير محصّل"
-          value={`${summary.totalOutstanding.toLocaleString("ar-SA")} ${cur}`}
+          value={`${summary.totalOutstanding.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
           hint={
             summary.totalOutstanding > 0
               ? "بحاجة للمتابعة"
@@ -99,7 +99,7 @@ export default async function FinanceDashboardPage() {
         <MetricCard
           icon={TrendingDown}
           label="إجمالي المسترجع"
-          value={`${summary.totalRefunded.toLocaleString("ar-SA")} ${cur}`}
+          value={`${summary.totalRefunded.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
           hint="مبالغ رُدَّت للمرضى"
           tone="neutral"
           emphasis
@@ -148,8 +148,8 @@ export default async function FinanceDashboardPage() {
                   { header: "الغرض", cell: (p) => paymentPurposeAr(p.purpose) },
                   { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span> },
                   { header: "الحالة", cell: (p) => <PaymentStatusPill status={p.status} /> },
-                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-foreground">{Number(p.amount).toLocaleString("ar-SA")} {currencyAr(p.currency)}</span> },
-                  { header: "التاريخ", cell: (p) => <span className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("ar-SA")}</span> },
+                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-foreground">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
+                  { header: "التاريخ", cell: (p) => <span className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}</span> },
                 ]}
               />
             )}
@@ -177,7 +177,7 @@ export default async function FinanceDashboardPage() {
                   { header: "الرقم", cell: (i) => <span dir="ltr" className="font-mono text-xs">{i.invoiceNumber}</span> },
                   { header: "المريض", cell: (i) => <span className="font-medium text-foreground">{i.patientName}</span> },
                   { header: "الحالة", cell: (i) => <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge> },
-                  { header: "الإجمالي", cell: (i) => <span className="tabular-nums font-medium text-foreground">{Number(i.total).toLocaleString("ar-SA")} {currencyAr(i.currency)}</span> },
+                  { header: "الإجمالي", cell: (i) => <span className="tabular-nums font-medium text-foreground">{Number(i.total).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(i.currency)}</span> },
                   {
                     header: "المتبقي",
                     cell: (i) => (
@@ -189,7 +189,7 @@ export default async function FinanceDashboardPage() {
                             : "text-success")
                         }
                       >
-                        {Number(i.remainingAmount).toLocaleString("ar-SA")}{" "}
+                        {Number(i.remainingAmount).toLocaleString("ar-SA-u-nu-latn")}{" "}
                         {currencyAr(i.currency)}
                       </span>
                     ),
@@ -234,7 +234,7 @@ export default async function FinanceDashboardPage() {
                 columns={[
                   { header: "المرجع", cell: (p) => <span dir="ltr" className="font-mono text-xs">{p.reference}</span> },
                   { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span> },
-                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-destructive">{Number(p.amount).toLocaleString("ar-SA")} {currencyAr(p.currency)}</span> },
+                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-destructive">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
                 ]}
               />
             )}
@@ -277,7 +277,7 @@ export default async function FinanceDashboardPage() {
                         </span>
                       ),
                   },
-                  { header: "التاريخ", cell: (w) => <span className="text-xs text-muted-foreground">{new Date(w.createdAt).toLocaleString("ar-SA")}</span> },
+                  { header: "التاريخ", cell: (w) => <span className="text-xs text-muted-foreground">{new Date(w.createdAt).toLocaleString("ar-SA-u-nu-latn")}</span> },
                 ]}
               />
             )}

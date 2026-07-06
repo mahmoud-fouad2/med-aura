@@ -250,7 +250,7 @@ export default async function DoctorProfilePage({
                     label={isAr ? "آخر تحقق" : "Last Verification Check"}
                     value={
                       doctor.lastVerifiedAt
-                        ? new Date(doctor.lastVerifiedAt).toLocaleDateString(isAr ? "ar-SA" : "en-US")
+                        ? new Date(doctor.lastVerifiedAt).toLocaleDateString(isAr ? "ar-SA-u-nu-latn" : "en-US")
                         : "—"
                     }
                   />
@@ -269,7 +269,7 @@ export default async function DoctorProfilePage({
                     <p>
                       <span className="font-heading text-2xl font-bold text-foreground">
                         {isAr 
-                          ? `${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${currencyAr(doctor.currency)}`
+                          ? `${Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(doctor.currency)}`
                           : `${Number(doctor.consultationFee).toLocaleString("en-US")} ${doctor.currency}`}
                       </span>
                       <span className="text-muted-foreground"> / {isAr ? "استشارة" : "Consultation"}</span>

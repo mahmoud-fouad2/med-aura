@@ -23,7 +23,7 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">المستخدمون والصلاحيات</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{users.length.toLocaleString("ar-SA")} مستخدم</p>
+        <p className="mt-1 text-sm text-muted-foreground">{users.length.toLocaleString("ar-SA-u-nu-latn")} مستخدم</p>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -61,7 +61,7 @@ export default async function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                      {new Date(u.createdAt).toLocaleDateString("ar-SA")}
+                      {new Date(u.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
                     </td>
                   </tr>
                 ))}

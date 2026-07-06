@@ -29,6 +29,7 @@ import {
   appointmentStatusAr,
   appointmentTypeAr,
 } from "@/lib/status-labels"
+import { firstNameOf } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -69,7 +70,7 @@ function relativeDay(d: Date): string {
   if (days === 1) return "غدًا"
   if (days === -1) return "أمس"
   if (days > 1 && days < 8) return `خلال ${days} أيام`
-  return d.toLocaleDateString("ar-SA", { day: "numeric", month: "short" })
+  return d.toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short" })
 }
 
 export default async function DashboardHome() {
@@ -102,7 +103,7 @@ export default async function DashboardHome() {
   const currentCase = activeCases[0]
   const favTotal = favs.doctor.size + favs.center.size + favs.procedure.size
 
-  const firstName = user.name.split(" ")[0]
+  const firstName = firstNameOf(user.name)
 
   return (
     <div className="space-y-6">
@@ -182,7 +183,7 @@ export default async function DashboardHome() {
         <MetricCard
           icon={FileText}
           label="حالات نشطة"
-          value={activeCases.length.toLocaleString("ar-SA")}
+          value={activeCases.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={cases.length > activeCases.length ? `+ ${cases.length - activeCases.length} حالة مغلقة` : "لا توجد حالات مغلقة بعد"}
           href="/dashboard/cases"
           tone="primary"
@@ -200,7 +201,7 @@ export default async function DashboardHome() {
         <MetricCard
           icon={Bell}
           label="إشعارات غير مقروءة"
-          value={unread.toLocaleString("ar-SA")}
+          value={unread.toLocaleString("ar-SA-u-nu-latn")}
           hint={unread === 0 ? "أنت على اطلاع بكل شيء" : "افتح صندوق الوارد"}
           href="/dashboard/notifications"
           tone={unread > 0 ? "warning" : "neutral"}
@@ -208,7 +209,7 @@ export default async function DashboardHome() {
         <MetricCard
           icon={Heart}
           label="المفضلة"
-          value={favTotal.toLocaleString("ar-SA")}
+          value={favTotal.toLocaleString("ar-SA-u-nu-latn")}
           hint={favTotal === 0 ? "احفظ أطباءك المفضلين" : "افتح قائمتك"}
           href="/dashboard/favorites"
           tone="neutral"
@@ -249,10 +250,10 @@ export default async function DashboardHome() {
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/8 text-primary">
                           <span className="font-heading text-[13px] font-bold leading-none">
-                            {new Date(a.startsAt).toLocaleDateString("ar-SA", { day: "numeric" })}
+                            {new Date(a.startsAt).toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric" })}
                           </span>
                           <span className="mt-0.5 text-[9px] uppercase tracking-wider">
-                            {new Date(a.startsAt).toLocaleDateString("ar-SA", { month: "short" })}
+                            {new Date(a.startsAt).toLocaleDateString("ar-SA-u-nu-latn", { month: "short" })}
                           </span>
                         </div>
                         <div className="min-w-0">
@@ -260,7 +261,7 @@ export default async function DashboardHome() {
                             {appointmentTypeAr(a.type)} — {a.counterpartName}
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {new Date(a.startsAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(a.startsAt).toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" })}
                             {" · "}
                             {appointmentStatusAr(a.status)}
                           </p>

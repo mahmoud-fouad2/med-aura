@@ -102,7 +102,7 @@ function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean })
     setPendingNotice(true)
   }
 
-  const money = (v: string) => Number(v).toLocaleString("ar-SA", { maximumFractionDigits: 2 })
+  const money = (v: string) => Number(v).toLocaleString("ar-SA-u-nu-latn", { maximumFractionDigits: 2 })
 
   return (
     <div className="space-y-4 rounded-xl border border-border p-4">

@@ -20,7 +20,7 @@ export type ActivityPoint = {
 
 function fmtDay(d: string): string {
   const dt = new Date(d + "T00:00:00Z")
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
     day: "numeric",
     month: "short",
   }).format(dt)

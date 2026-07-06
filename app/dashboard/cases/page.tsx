@@ -88,7 +88,7 @@ export default async function CasesPage() {
           <MetricCard
             icon={Activity}
             label="حالات نشطة"
-            value={active.length.toLocaleString("ar-SA")}
+            value={active.length.toLocaleString("ar-SA-u-nu-latn")}
             hint={active.length === 0 ? "لا حالات نشطة" : "في مرحلة قيد التقدّم"}
             tone={active.length > 0 ? "primary" : "neutral"}
             emphasis
@@ -96,7 +96,7 @@ export default async function CasesPage() {
           <MetricCard
             icon={Sparkles}
             label="تحتاج انتباهك"
-            value={attention.length.toLocaleString("ar-SA")}
+            value={attention.length.toLocaleString("ar-SA-u-nu-latn")}
             hint={
               attention.length === 0
                 ? "كل شيء على ما يرام"
@@ -108,7 +108,7 @@ export default async function CasesPage() {
           <MetricCard
             icon={CheckCircle2}
             label="حالات مغلقة"
-            value={closed.length.toLocaleString("ar-SA")}
+            value={closed.length.toLocaleString("ar-SA-u-nu-latn")}
             hint="اكتملت أو أُلغيت"
             tone="neutral"
             emphasis
@@ -138,7 +138,7 @@ export default async function CasesPage() {
         <SectionCard
           icon={FileText}
           title="جميع الحالات"
-          description={`${cases.length.toLocaleString("ar-SA")} ${cases.length === 1 ? "حالة" : "حالة"} بترتيب من الأحدث`}
+          description={`${cases.length.toLocaleString("ar-SA-u-nu-latn")} ${cases.length === 1 ? "حالة" : "حالة"} بترتيب من الأحدث`}
         >
           <ul className="divide-y divide-border/60">
             {cases.map((c) => (
@@ -176,7 +176,7 @@ export default async function CasesPage() {
                       {caseStatusAr(c.status)}
                     </span>
                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleDateString("ar-SA")}
+                      {new Date(c.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
                       <ChevronLeft className="size-3 text-muted-foreground transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
                     </span>
                   </div>

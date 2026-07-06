@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { FileHeart } from "lucide-react"
+import { FileHeart, ChevronLeft, SlidersHorizontal } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
 import { listCasesForAdmin, listCaseFilterOptions, type CaseListFilters } from "@/lib/data/admin-cases"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { AdminPagination } from "@/components/admin/pagination"
+import { PageHeader } from "@/components/dashboard/page-header"
 import {
   caseStatusAr,
   invoiceStatusAr,
@@ -94,16 +95,49 @@ export default async function AdminCasesPage({
     return `/admin/cases?${q.toString()}`
   }
 
+  const activeFilterCount = [
+    filters.q,
+    filters.status,
+    filters.doctorId,
+    filters.centerId,
+    filters.procedureId,
+    filters.country,
+    filters.paymentStatus,
+    filters.severity,
+    filters.from,
+    filters.to,
+  ].filter(Boolean).length
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">الحالات الطبية</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {totalCount.toLocaleString("ar-SA")} حالة إجمالًا
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="الرعاية"
+        title="الحالات الطبية"
+        description={`${totalCount.toLocaleString("ar-SA-u-nu-latn")} حالة إجمالًا${activeFilterCount > 0 ? ` — ${activeFilterCount} فلتر مطبَّق` : ""}`}
+      />
 
       <Card className="p-4">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="size-4 text-primary" />
+            <h2 className="font-heading text-sm font-bold text-foreground">
+              عوامل التصفية
+            </h2>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {activeFilterCount}
+              </span>
+            )}
+          </div>
+          {activeFilterCount > 0 && (
+            <Link
+              href="/admin/cases"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              مسح الكل
+            </Link>
+          )}
+        </div>
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
           <Field label="بحث">
             <Input name="q" defaultValue={filters.q ?? ""} placeholder="مرجع، اسم مريض، اسم طبيب…" />
@@ -186,64 +220,114 @@ export default async function AdminCasesPage({
 
       <Card className="overflow-hidden p-0">
         {rows.length === 0 ? (
-          <EmptyState
-            icon={FileHeart}
-            title="لا توجد حالات مطابقة"
-            description="جرّب تعديل الفلاتر أو البحث بمرجع أو اسم مختلف."
-          />
+          <div className="p-10">
+            <EmptyState
+              icon={FileHeart}
+              title="لا توجد حالات مطابقة"
+              description="جرّب تعديل الفلاتر أو البحث بمرجع أو اسم مختلف."
+              tone="muted"
+            />
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                    <Th>رقم الحالة</Th>
+                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                    <Th>الحالة</Th>
                     <Th>المريض</Th>
                     <Th>الإجراء</Th>
                     <Th>الطبيب</Th>
                     <Th>المركز</Th>
-                    <Th>الدولة</Th>
                     <Th>المرحلة</Th>
                     <Th>الخطورة</Th>
-                    <Th>حالة الدفع</Th>
+                    <Th>الدفع</Th>
                     <Th>آخر تحديث</Th>
+                    <Th>—</Th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
-                  {rows.map((r) => (
-                    <tr key={r.id} className="transition-colors hover:bg-muted/30">
-                      <td className="px-4 py-3">
-                        <Link href={`/dashboard/cases/${r.id}`} className="font-medium text-primary hover:underline">
-                          {r.reference}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-foreground">{r.patientName}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.procedureName}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.doctorName ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.centerName ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.country ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge tone={caseStatusTone(r.status)} label={caseStatusAr(r.status)} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {r.severity ? (
-                          <StatusBadge tone={severityTone(r.severity)} label={safetyAlertSeverityAr(r.severity)} />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {r.paymentStatus ? (
-                          <StatusBadge tone={paymentTone(r.paymentStatus)} label={invoiceStatusAr(r.paymentStatus)} />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {new Date(r.updatedAt).toLocaleDateString("ar-SA")}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-border/60">
+                  {rows.map((r) => {
+                    const patientInitial = r.patientName.trim().charAt(0) || "؟"
+                    return (
+                      <tr
+                        key={r.id}
+                        className="transition-colors hover:bg-muted/25"
+                      >
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/dashboard/cases/${r.id}`}
+                            dir="ltr"
+                            className="font-mono text-[11px] font-medium text-primary hover:underline"
+                          >
+                            {r.reference}
+                          </Link>
+                          {r.country && (
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              {r.country}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary ring-1 ring-primary/15">
+                              {patientInitial}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {r.patientName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {r.procedureName}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {r.doctorName ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {r.centerName ?? "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge
+                            tone={caseStatusTone(r.status)}
+                            label={caseStatusAr(r.status)}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          {r.severity ? (
+                            <StatusBadge
+                              tone={severityTone(r.severity)}
+                              label={safetyAlertSeverityAr(r.severity)}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground/60">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {r.paymentStatus ? (
+                            <StatusBadge
+                              tone={paymentTone(r.paymentStatus)}
+                              label={invoiceStatusAr(r.paymentStatus)}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground/60">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-[11px] text-muted-foreground tabular-nums">
+                          {new Date(r.updatedAt).toLocaleDateString("ar-SA-u-nu-latn")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/dashboard/cases/${r.id}`}
+                            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            فتح
+                            <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

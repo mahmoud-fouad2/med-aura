@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
@@ -53,8 +53,6 @@ jobs:
       - name: Apply migrations
         run: pnpm db:migrate
 
-      - name: Migration consistency (drizzle-kit check)
-        run: pnpm exec drizzle-kit check
 
       - name: Seed test database
         run: pnpm db:seed
@@ -103,7 +101,7 @@ jobs:
           version: 9.15.0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate

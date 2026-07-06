@@ -93,12 +93,12 @@ export default async function AdminSafetyAlertsPage({
         stats={
           alerts.length > 0
             ? [
-                { label: "الإجمالي", value: alerts.length.toLocaleString("ar-SA") },
+                { label: "الإجمالي", value: alerts.length.toLocaleString("ar-SA-u-nu-latn") },
                 {
                   label: "حرجة / عالية",
-                  value: critical.toLocaleString("ar-SA"),
+                  value: critical.toLocaleString("ar-SA-u-nu-latn"),
                 },
-                { label: "بدون تعيين", value: unassigned.toLocaleString("ar-SA") },
+                { label: "بدون تعيين", value: unassigned.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }
@@ -270,7 +270,7 @@ export default async function AdminSafetyAlertsPage({
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-[11px] text-muted-foreground">
-                        {new Date(a.createdAt).toLocaleString("ar-SA")}
+                        {new Date(a.createdAt).toLocaleString("ar-SA-u-nu-latn")}
                       </td>
                       <td className="px-4 py-3">
                         <Link

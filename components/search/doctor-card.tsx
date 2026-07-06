@@ -136,7 +136,7 @@ export function DoctorCard({
           {doctor.consultationFee ? (
             <div>
               <span className="font-heading text-base font-bold tabular-nums text-foreground">
-                {Number(doctor.consultationFee).toLocaleString("ar-SA")}
+                {Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")}
               </span>
               <span className="ms-1 text-xs text-muted-foreground">
                 {currencyAr(doctor.currency)} / استشارة

@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq, inArray } from "drizzle-orm"
 import { Sparkles, ShieldCheck, FileLock2, Info } from "lucide-react"
 import { db } from "@/lib/db"
 import {
@@ -6,7 +6,7 @@ import {
   doctorProfile,
   doctorProcedure,
 } from "@/lib/db/schema"
-import { CaseWizard } from "@/components/cases/case-wizard"
+import { CaseWizard, type WizardDoctor } from "@/components/cases/case-wizard"
 import { PageHeader } from "@/components/dashboard/page-header"
 
 export const dynamic = "force-dynamic"
@@ -20,6 +20,7 @@ export default async function NewCasePage({
 
   let doctorName: string | null = null
   let procedures: { slug: string; nameAr: string }[]
+  let doctors: WizardDoctor[] = []
 
   if (doctorId) {
     const doc = (
@@ -38,11 +39,53 @@ export default async function NewCasePage({
       .where(eq(doctorProcedure.doctorId, doctorId))
       .orderBy(asc(procedureT.nameAr))
   } else {
-    procedures = await db
-      .select({ slug: procedureT.slug, nameAr: procedureT.nameAr })
-      .from(procedureT)
-      .where(eq(procedureT.visible, true))
-      .orderBy(asc(procedureT.sortOrder))
+    // No doctor preselected: the wizard shows a required picker so the case
+    // always has a receiving doctor. Fetch approved+published doctors with
+    // the slugs of the procedures each one offers (batched, no N+1).
+    const [procs, docRows] = await Promise.all([
+      db
+        .select({ slug: procedureT.slug, nameAr: procedureT.nameAr })
+        .from(procedureT)
+        .where(eq(procedureT.visible, true))
+        .orderBy(asc(procedureT.sortOrder)),
+      db
+        .select({
+          id: doctorProfile.id,
+          name: doctorProfile.name,
+          city: doctorProfile.city,
+        })
+        .from(doctorProfile)
+        .where(
+          and(
+            eq(doctorProfile.status, "approved"),
+            eq(doctorProfile.published, true),
+          ),
+        )
+        .orderBy(asc(doctorProfile.name))
+        .limit(200),
+    ])
+    procedures = procs
+
+    if (docRows.length > 0) {
+      const links = await db
+        .select({
+          doctorId: doctorProcedure.doctorId,
+          slug: procedureT.slug,
+        })
+        .from(doctorProcedure)
+        .innerJoin(procedureT, eq(doctorProcedure.procedureId, procedureT.id))
+        .where(inArray(doctorProcedure.doctorId, docRows.map((d) => d.id)))
+      const slugsByDoctor = new Map<string, string[]>()
+      for (const l of links) {
+        const list = slugsByDoctor.get(l.doctorId) ?? []
+        list.push(l.slug)
+        slugsByDoctor.set(l.doctorId, list)
+      }
+      doctors = docRows.map((d) => ({
+        ...d,
+        procedureSlugs: slugsByDoctor.get(d.id) ?? [],
+      }))
+    }
   }
 
   return (
@@ -95,6 +138,7 @@ export default async function NewCasePage({
 
       <CaseWizard
         procedures={procedures}
+        doctors={doctors}
         defaultProcedure={defaultProcedure}
         doctorId={doctorId}
         doctorName={doctorName}

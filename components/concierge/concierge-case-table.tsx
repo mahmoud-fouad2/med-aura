@@ -58,7 +58,7 @@ export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
                     <Badge variant="secondary">{caseStatusAr(c.status)}</Badge>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {new Date(c.updatedAt).toLocaleDateString("ar-SA")}
+                    {new Date(c.updatedAt).toLocaleDateString("ar-SA-u-nu-latn")}
                   </td>
                 </tr>
               ))}

@@ -33,7 +33,7 @@ export function OutcomeView({ outcome }: { outcome: OutcomePublic }) {
       )}
       {outcome.completedAt && (
         <p className="text-xs text-muted-foreground">
-          {new Date(outcome.completedAt).toLocaleDateString("ar-SA")}
+          {new Date(outcome.completedAt).toLocaleDateString("ar-SA-u-nu-latn")}
         </p>
       )}
       <p className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">

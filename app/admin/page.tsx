@@ -67,7 +67,7 @@ export default async function AdminOverviewPage() {
           <MetricCard
             icon={Users}
             label="إجمالي المرضى"
-            value={kpis.totalPatients.toLocaleString("ar-SA")}
+            value={kpis.totalPatients.toLocaleString("ar-SA-u-nu-latn")}
             hint="مسجّلون على المنصة"
             tone="primary"
             emphasis
@@ -75,7 +75,7 @@ export default async function AdminOverviewPage() {
           <MetricCard
             icon={FileHeart}
             label="حالات جديدة"
-            value={kpis.newCasesThisWeek.toLocaleString("ar-SA")}
+            value={kpis.newCasesThisWeek.toLocaleString("ar-SA-u-nu-latn")}
             hint="خلال آخر ٧ أيام"
             tone="success"
             emphasis
@@ -83,7 +83,7 @@ export default async function AdminOverviewPage() {
           <MetricCard
             icon={Activity}
             label="الحالات النشطة"
-            value={kpis.activeCases.toLocaleString("ar-SA")}
+            value={kpis.activeCases.toLocaleString("ar-SA-u-nu-latn")}
             hint="في أي مرحلة قبل الإغلاق"
             href="/admin/cases"
             tone="primary"
@@ -92,7 +92,7 @@ export default async function AdminOverviewPage() {
           <MetricCard
             icon={AlertTriangle}
             label="تحتاج تدخلًا"
-            value={kpis.casesNeedingIntervention.toLocaleString("ar-SA")}
+            value={kpis.casesNeedingIntervention.toLocaleString("ar-SA-u-nu-latn")}
             hint={kpis.casesNeedingIntervention > 0 ? "افتح قائمة الحالات الحرجة" : "كل شيء على ما يرام"}
             href="/admin/cases"
             tone={kpis.casesNeedingIntervention > 0 ? "danger" : "success"}
@@ -108,7 +108,7 @@ export default async function AdminOverviewPage() {
             <MetricCard
               icon={ClipboardCheck}
               label="طلبات انضمام"
-              value={kpis.pendingApplications.toLocaleString("ar-SA")}
+              value={kpis.pendingApplications.toLocaleString("ar-SA-u-nu-latn")}
               hint={kpis.pendingApplications > 0 ? "بانتظار المراجعة" : "لا طلبات معلّقة"}
               href="/admin/applications"
               tone={kpis.pendingApplications > 0 ? "warning" : "neutral"}
@@ -116,14 +116,14 @@ export default async function AdminOverviewPage() {
             <MetricCard
               icon={Stethoscope}
               label="أطباء معتمدون"
-              value={kpis.approvedDoctors.toLocaleString("ar-SA")}
+              value={kpis.approvedDoctors.toLocaleString("ar-SA-u-nu-latn")}
               href="/admin/doctors"
               tone="neutral"
             />
             <MetricCard
               icon={Building2}
               label="مراكز معتمدة"
-              value={kpis.approvedCenters.toLocaleString("ar-SA")}
+              value={kpis.approvedCenters.toLocaleString("ar-SA-u-nu-latn")}
               href="/admin/centers"
               tone="neutral"
             />
@@ -133,7 +133,7 @@ export default async function AdminOverviewPage() {
           <MetricCard
             icon={ClipboardList}
             label="متابعات متأخرة"
-            value={kpis.overdueFollowUps.toLocaleString("ar-SA")}
+            value={kpis.overdueFollowUps.toLocaleString("ar-SA-u-nu-latn")}
             href="/admin/follow-ups"
             tone={kpis.overdueFollowUps > 0 ? "warning" : "neutral"}
           />
@@ -142,7 +142,7 @@ export default async function AdminOverviewPage() {
           <MetricCard
             icon={ShieldAlert}
             label="تنبيهات سلامة مفتوحة"
-            value={kpis.openSafetyAlerts.toLocaleString("ar-SA")}
+            value={kpis.openSafetyAlerts.toLocaleString("ar-SA-u-nu-latn")}
             href="/admin/safety-alerts"
             tone={kpis.openSafetyAlerts > 0 ? "danger" : "success"}
           />
@@ -152,21 +152,21 @@ export default async function AdminOverviewPage() {
             <MetricCard
               icon={Wallet}
               label="مدفوعات معلّقة"
-              value={kpis.pendingPayments.toLocaleString("ar-SA")}
+              value={kpis.pendingPayments.toLocaleString("ar-SA-u-nu-latn")}
               href="/dashboard/finance"
               tone="warning"
             />
             <MetricCard
               icon={Wallet}
               label="إجمالي المحصّل"
-              value={`${(kpis.totalPaidAmount ?? 0).toLocaleString("ar-SA")} ر.س`}
+              value={`${(kpis.totalPaidAmount ?? 0).toLocaleString("ar-SA-u-nu-latn")} ر.س`}
               href="/dashboard/finance"
               tone="success"
             />
             <MetricCard
               icon={Undo2}
               label="طلبات استرجاع"
-              value={(kpis.openRefundRequests ?? 0).toLocaleString("ar-SA")}
+              value={(kpis.openRefundRequests ?? 0).toLocaleString("ar-SA-u-nu-latn")}
               href="/dashboard/finance#refunds"
               tone={(kpis.openRefundRequests ?? 0) > 0 ? "warning" : "neutral"}
             />
@@ -175,7 +175,7 @@ export default async function AdminOverviewPage() {
         <MetricCard
           icon={Bell}
           label="إشعارات غير مقروءة"
-          value={unreadNotifications.toLocaleString("ar-SA")}
+          value={unreadNotifications.toLocaleString("ar-SA-u-nu-latn")}
           href="/dashboard/notifications"
           tone={unreadNotifications > 0 ? "warning" : "neutral"}
         />
@@ -227,7 +227,7 @@ export default async function AdminOverviewPage() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {recentApplications.map((a) => (
-                  <ListRow key={a.id} href="/admin/applications" title={a.applicantName} subtitle={a.kind === "DOCTOR" ? "طلب طبيب" : "طلب مركز"} badge={a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("ar-SA") : "—"} />
+                  <ListRow key={a.id} href="/admin/applications" title={a.applicantName} subtitle={a.kind === "DOCTOR" ? "طلب طبيب" : "طلب مركز"} badge={a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("ar-SA-u-nu-latn") : "—"} />
                 ))}
               </ul>
             )}
@@ -267,10 +267,10 @@ export default async function AdminOverviewPage() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {pendingPayments.map((p) => (
-                  <ListRow key={p.id} href="/dashboard/finance" title={p.payerName} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA")} ${currencyAr(p.currency)}`} badge="معلّقة" />
+                  <ListRow key={p.id} href="/dashboard/finance" title={p.payerName} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(p.currency)}`} badge="معلّقة" />
                 ))}
                 {openRefunds.map((r) => (
-                  <ListRow key={r.id} href="/dashboard/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
+                  <ListRow key={r.id} href="/dashboard/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
                 ))}
               </ul>
             )}
@@ -290,7 +290,7 @@ export default async function AdminOverviewPage() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {recentActivity.map((a) => (
-                  <ListRow key={a.id} href="/admin/activity" title={a.actorName ?? "النظام"} subtitle={a.action} badge={new Date(a.createdAt).toLocaleString("ar-SA")} />
+                  <ListRow key={a.id} href="/admin/activity" title={a.actorName ?? "النظام"} subtitle={a.action} badge={new Date(a.createdAt).toLocaleString("ar-SA-u-nu-latn")} />
                 ))}
               </ul>
             )}

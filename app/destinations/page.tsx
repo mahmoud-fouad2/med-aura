@@ -144,7 +144,7 @@ function Stat({
     <div className="flex flex-col items-center gap-0.5 rounded-lg bg-muted/40 p-2">
       <Icon className="size-4 text-primary" />
       <span className="font-heading text-lg font-bold text-foreground">
-        {value.toLocaleString("ar-SA")}
+        {value.toLocaleString("ar-SA-u-nu-latn")}
       </span>
       <span className="text-[10px] text-muted-foreground">{label}</span>
     </div>

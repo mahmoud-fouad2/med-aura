@@ -26,7 +26,9 @@ function caseReference(): string {
 
 const createCaseSchema = z.object({
   procedureSlug: z.string().min(1, "اختر الإجراء"),
-  doctorId: z.string().optional(),
+  // A case must always have a receiving doctor — an unassigned case would
+  // never surface in any doctor's queue and silently go nowhere.
+  doctorId: z.string().min(1, "اختر الطبيب المعالج"),
   goal: z.string().max(500).optional(),
   description: z.string().max(4000).optional(),
   ageYears: z.coerce.number().int().min(0).max(120).optional(),
@@ -58,18 +60,22 @@ export async function createCase(
     )[0]
     if (!proc) throw validation("الإجراء غير موجود.")
 
-    let centerId: string | null = null
-    if (data.doctorId) {
-      const doc = (
-        await db
-          .select({ id: doctorProfile.id, centerId: doctorProfile.centerId })
-          .from(doctorProfile)
-          .where(eq(doctorProfile.id, data.doctorId))
-          .limit(1)
-      )[0]
-      if (!doc) throw validation("الطبيب غير موجود.")
-      centerId = doc.centerId
-    }
+    // Only approved + published doctors can receive new cases.
+    const doc = (
+      await db
+        .select({ id: doctorProfile.id, centerId: doctorProfile.centerId })
+        .from(doctorProfile)
+        .where(
+          and(
+            eq(doctorProfile.id, data.doctorId),
+            eq(doctorProfile.status, "approved"),
+            eq(doctorProfile.published, true),
+          ),
+        )
+        .limit(1)
+    )[0]
+    if (!doc) throw validation("الطبيب المختار غير متاح حاليًا.")
+    const centerId: string | null = doc.centerId
 
     const reference = caseReference()
     const caseId = await db.transaction(async (tx) => {

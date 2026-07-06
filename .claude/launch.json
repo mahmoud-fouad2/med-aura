@@ -5,7 +5,8 @@
       "name": "medaura-dev",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["--yes", "pnpm@9.15.0", "dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

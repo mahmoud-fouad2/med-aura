@@ -171,7 +171,7 @@ function AlertCard({ alert }: { alert: SafetyAlertView }) {
       </div>
       {alert.summary && <p className="text-sm text-foreground">{alert.summary}</p>}
       <p className="text-xs text-muted-foreground">
-        {new Date(alert.createdAt).toLocaleString("ar-SA")}
+        {new Date(alert.createdAt).toLocaleString("ar-SA-u-nu-latn")}
       </p>
       {alert.resolutionNotes && (
         <p className="rounded-lg bg-muted/50 p-2 text-sm text-muted-foreground">{alert.resolutionNotes}</p>

@@ -97,7 +97,7 @@ function TaskCard({
       )}
       {task.dueAt && (
         <p className="mt-1 text-xs text-muted-foreground">
-          الموعد المستحق: {new Date(task.dueAt).toLocaleDateString("ar-SA")}
+          الموعد المستحق: {new Date(task.dueAt).toLocaleDateString("ar-SA-u-nu-latn")}
         </p>
       )}
 

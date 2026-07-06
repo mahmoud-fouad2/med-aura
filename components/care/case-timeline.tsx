@@ -18,7 +18,7 @@ export function CaseTimeline({ entries }: { entries: CaseTimelineEntry[] }) {
               {caseStatusAr(e.toStatus)}
             </p>
             {e.note && <p className="text-sm text-muted-foreground">{e.note}</p>}
-            <p className="text-xs text-muted-foreground">{new Date(e.createdAt).toLocaleString("ar-SA")}</p>
+            <p className="text-xs text-muted-foreground">{new Date(e.createdAt).toLocaleString("ar-SA-u-nu-latn")}</p>
           </li>
         ))}
       </ol>

@@ -56,7 +56,7 @@ export function ActivityTimeline({ entries, emptyText }: { entries: ActivityRow[
             <span className="absolute top-1.5 -right-[21px] size-2.5 rounded-full bg-primary" />
             <p className="text-sm font-medium text-foreground">{actionLabel(e.action)}</p>
             <p className="text-xs text-muted-foreground">
-              {e.actorName ?? "النظام"} · {new Date(e.createdAt).toLocaleString("ar-SA")}
+              {e.actorName ?? "النظام"} · {new Date(e.createdAt).toLocaleString("ar-SA-u-nu-latn")}
             </p>
           </li>
         ))}

@@ -106,9 +106,9 @@ export default async function ApplicationsPage() {
         stats={
           rows.length > 0
             ? [
-                { label: "بانتظار المراجعة", value: openCount.toLocaleString("ar-SA") },
-                { label: "طلبات أطباء", value: doctorCount.toLocaleString("ar-SA") },
-                { label: "طلبات مراكز", value: centerCount.toLocaleString("ar-SA") },
+                { label: "بانتظار المراجعة", value: openCount.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "طلبات أطباء", value: doctorCount.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "طلبات مراكز", value: centerCount.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }

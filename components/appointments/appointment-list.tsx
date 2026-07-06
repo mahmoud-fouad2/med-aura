@@ -42,9 +42,9 @@ function statusTone(status: string): {
 
 function fmtDayLabel(d: Date): { day: string; month: string; weekday: string } {
   return {
-    day: new Intl.DateTimeFormat("ar-SA", { day: "numeric" }).format(d),
-    month: new Intl.DateTimeFormat("ar-SA", { month: "short" }).format(d),
-    weekday: new Intl.DateTimeFormat("ar-SA", { weekday: "short" }).format(d),
+    day: new Intl.DateTimeFormat("ar-SA-u-nu-latn", { day: "numeric" }).format(d),
+    month: new Intl.DateTimeFormat("ar-SA-u-nu-latn", { month: "short" }).format(d),
+    weekday: new Intl.DateTimeFormat("ar-SA-u-nu-latn", { weekday: "short" }).format(d),
   }
 }
 
@@ -129,7 +129,7 @@ export function AppointmentList({
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                       <span dir="ltr" className="tabular-nums">
-                        {new Intl.DateTimeFormat("ar-SA", {
+                        {new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
                           hour: "2-digit",
                           minute: "2-digit",
                         }).format(d)}
@@ -144,7 +144,7 @@ export function AppointmentList({
                 <div className="flex shrink-0 flex-col items-end gap-1 text-end text-sm">
                   {a.priceAmount && (
                     <span className="font-heading text-base font-bold tabular-nums text-foreground">
-                      {Number(a.priceAmount).toLocaleString("ar-SA")}{" "}
+                      {Number(a.priceAmount).toLocaleString("ar-SA-u-nu-latn")}{" "}
                       <span className="text-xs text-muted-foreground">
                         {currencyAr(a.currency)}
                       </span>

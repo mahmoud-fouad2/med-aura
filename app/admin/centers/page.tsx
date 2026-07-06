@@ -66,12 +66,12 @@ export default async function AdminCentersPage({
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="المراكز"
-        description={`${centers.length.toLocaleString("ar-SA")} مركز${status ? ` — ${STATUS_LABEL[status]}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
+        description={`${centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز${status ? ` — ${STATUS_LABEL[status]}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
         stats={
           !status && centers.length > 0
             ? [
-                { label: "المعتمدة", value: approved.toLocaleString("ar-SA") },
-                { label: "قيد المراجعة", value: pending.toLocaleString("ar-SA") },
+                { label: "المعتمدة", value: approved.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "قيد المراجعة", value: pending.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }
@@ -96,7 +96,7 @@ export default async function AdminCentersPage({
         </form>
         <div className="flex flex-wrap gap-1 border-t border-border/60 pt-3">
           <TabLink active={!status} href={buildHref(undefined)}>
-            الكل ({centers.length.toLocaleString("ar-SA")})
+            الكل ({centers.length.toLocaleString("ar-SA-u-nu-latn")})
           </TabLink>
           {Object.entries(STATUS_LABEL).map(([k, label]) => (
             <TabLink key={k} active={status === k} href={buildHref(k)}>
@@ -177,7 +177,7 @@ export default async function AdminCentersPage({
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
                           <UsersIcon className="size-3" />
-                          {c.doctorCount.toLocaleString("ar-SA")}
+                          {c.doctorCount.toLocaleString("ar-SA-u-nu-latn")}
                         </span>
                       </td>
                       <td className="px-4 py-3">

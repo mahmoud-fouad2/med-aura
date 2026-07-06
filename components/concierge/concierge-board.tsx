@@ -143,7 +143,7 @@ export function ConciergeBoard({
                   <td className="p-3">
                     {t.dueAt ? (
                       <span className={isOverdue(t) ? "font-medium text-destructive" : "text-muted-foreground"}>
-                        {new Date(t.dueAt).toLocaleDateString("ar-SA")}
+                        {new Date(t.dueAt).toLocaleDateString("ar-SA-u-nu-latn")}
                       </span>
                     ) : (
                       "—"
@@ -191,7 +191,7 @@ function TaskCard({ task, assignableUsers }: { task: InternalTaskRow; assignable
         {task.dueAt && (
           <span className={`inline-flex items-center gap-1 text-xs ${overdue ? "text-destructive" : "text-muted-foreground"}`}>
             {overdue && <AlertTriangle className="size-3" />}
-            {new Date(task.dueAt).toLocaleDateString("ar-SA")}
+            {new Date(task.dueAt).toLocaleDateString("ar-SA-u-nu-latn")}
           </span>
         )}
       </div>

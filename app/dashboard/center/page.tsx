@@ -119,7 +119,7 @@ export default async function CenterDashboardPage() {
         <MetricCard
           icon={FileText}
           label="حالات نشطة"
-          value={activeCases.length.toLocaleString("ar-SA")}
+          value={activeCases.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={`${cases.length - activeCases.length} مغلقة`}
           tone="primary"
           emphasis
@@ -127,7 +127,7 @@ export default async function CenterDashboardPage() {
         <MetricCard
           icon={Users}
           label="أعضاء الفريق"
-          value={people.length.toLocaleString("ar-SA")}
+          value={people.length.toLocaleString("ar-SA-u-nu-latn")}
           hint="أطباء وموظفون مرتبطون بمركزك"
           tone="neutral"
           emphasis
@@ -135,7 +135,7 @@ export default async function CenterDashboardPage() {
         <MetricCard
           icon={Wallet}
           label="مستحقات معلّقة"
-          value={`${outstandingTotal.toLocaleString("ar-SA")} ${currencyAr(outstandingCurrency)}`}
+          value={`${outstandingTotal.toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(outstandingCurrency)}`}
           hint={
             outstandingInvoices.length === 0
               ? "لا مستحقات"
@@ -147,7 +147,7 @@ export default async function CenterDashboardPage() {
         <MetricCard
           icon={ShieldAlert}
           label="تنبيهات سلامة مفتوحة"
-          value={openSafety.length.toLocaleString("ar-SA")}
+          value={openSafety.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={
             openSafety.length === 0
               ? "لا تنبيهات مفتوحة"
@@ -283,7 +283,7 @@ export default async function CenterDashboardPage() {
                         {q.quoteNumber}
                       </p>
                       <p className="mt-0.5 font-medium tabular-nums text-foreground">
-                        {Number(q.total).toLocaleString("ar-SA")}{" "}
+                        {Number(q.total).toLocaleString("ar-SA-u-nu-latn")}{" "}
                         {currencyAr(q.currency)}
                       </p>
                     </div>
@@ -376,7 +376,7 @@ export default async function CenterDashboardPage() {
                             : "text-success")
                         }
                       >
-                        متبقي {Number(i.remainingAmount).toLocaleString("ar-SA")}{" "}
+                        متبقي {Number(i.remainingAmount).toLocaleString("ar-SA-u-nu-latn")}{" "}
                         {currencyAr(i.currency)}
                       </p>
                     </div>
@@ -416,7 +416,7 @@ export default async function CenterDashboardPage() {
                         <p className="font-medium text-foreground">{f.title}</p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {f.dueAt
-                            ? new Date(f.dueAt).toLocaleDateString("ar-SA")
+                            ? new Date(f.dueAt).toLocaleDateString("ar-SA-u-nu-latn")
                             : "بدون موعد استحقاق"}
                         </p>
                       </div>
@@ -469,7 +469,7 @@ export default async function CenterDashboardPage() {
                           {a.summary ?? "تنبيه سلامة"}
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          {new Date(a.createdAt).toLocaleDateString("ar-SA")}
+                          {new Date(a.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">

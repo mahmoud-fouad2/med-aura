@@ -44,7 +44,7 @@ export default async function ConciergeDashboardPage() {
         <MetricCard
           icon={ClipboardList}
           label="مهام مفتوحة"
-          value={openTasks.length.toLocaleString("ar-SA")}
+          value={openTasks.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={openTasks.length === 0 ? "لا مهام معلّقة" : "تحتاج متابعة"}
           tone={openTasks.length > 0 ? "primary" : "success"}
           emphasis
@@ -52,7 +52,7 @@ export default async function ConciergeDashboardPage() {
         <MetricCard
           icon={AlertTriangle}
           label="مهام متأخرة"
-          value={overdueTasks.length.toLocaleString("ar-SA")}
+          value={overdueTasks.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={
             overdueTasks.length === 0
               ? "كل المهام في وقتها"
@@ -64,7 +64,7 @@ export default async function ConciergeDashboardPage() {
         <MetricCard
           icon={Activity}
           label="حالات نشطة"
-          value={activeCases.length.toLocaleString("ar-SA")}
+          value={activeCases.length.toLocaleString("ar-SA-u-nu-latn")}
           hint="في أي مرحلة قبل الإغلاق"
           tone="primary"
           emphasis
@@ -72,7 +72,7 @@ export default async function ConciergeDashboardPage() {
         <MetricCard
           icon={KanbanSquare}
           label="إجمالي الحالات"
-          value={cases.length.toLocaleString("ar-SA")}
+          value={cases.length.toLocaleString("ar-SA-u-nu-latn")}
           hint="نشطة ومغلقة"
           tone="neutral"
           emphasis

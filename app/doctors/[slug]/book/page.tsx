@@ -55,7 +55,7 @@ export default async function BookPage({
           </h1>
           <p className="mt-1 text-muted-foreground">
             {doctor.consultationFee
-              ? `سعر الاستشارة ${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${currencyAr(doctor.currency)}`
+              ? `سعر الاستشارة ${Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(doctor.currency)}`
               : "سعر الاستشارة غير محدد"}
           </p>
 
@@ -74,7 +74,7 @@ export default async function BookPage({
                 slots={slots}
                 caseId={caseId}
                 paymentsConfigured={isStripeConfigured()}
-                feeLabel={`${Number(doctor.consultationFee).toLocaleString("ar-SA")} ${currencyAr(doctor.currency)}`}
+                feeLabel={`${Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(doctor.currency)}`}
               />
             )}
           </div>

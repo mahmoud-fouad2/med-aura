@@ -19,6 +19,7 @@ import { DashboardHero } from "@/components/dashboard/hero-banner"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
 import { caseStatusAr, appointmentTypeAr } from "@/lib/status-labels"
+import { firstNameOf } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -57,7 +58,7 @@ function relativeDay(d: Date): string {
   if (days === 1) return "غدًا"
   if (days === -1) return "أمس"
   if (days > 1 && days < 8) return `خلال ${days} أيام`
-  return d.toLocaleDateString("ar-SA", { day: "numeric", month: "short" })
+  return d.toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short" })
 }
 
 function startOfDay(d: Date): Date {
@@ -96,7 +97,7 @@ export default async function DoctorDashboardPage() {
   const activeCases = cases.filter((c) => ACTIVE_CASE.has(c.status))
   const pendingConsent = cases.filter((c) => !c.consentActive)
 
-  const firstName = user.name.replace(/^د\.?\s*/, "").trim().split(" ")[0]
+  const firstName = firstNameOf(user.name)
 
   return (
     <div className="space-y-6">
@@ -136,7 +137,7 @@ export default async function DoctorDashboardPage() {
                     dir="ltr"
                     className="mt-0.5 font-heading text-sm font-bold text-foreground"
                   >
-                    {new Date(nextAppt.startsAt).toLocaleTimeString("ar-SA", {
+                    {new Date(nextAppt.startsAt).toLocaleTimeString("ar-SA-u-nu-latn", {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -169,7 +170,7 @@ export default async function DoctorDashboardPage() {
         <MetricCard
           icon={CalendarClock}
           label="مواعيد اليوم"
-          value={today.length.toLocaleString("ar-SA")}
+          value={today.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={today.length === 0 ? "لا مواعيد اليوم" : "قادمة في جدولك"}
           tone={today.length > 0 ? "success" : "neutral"}
           emphasis
@@ -177,7 +178,7 @@ export default async function DoctorDashboardPage() {
         <MetricCard
           icon={Activity}
           label="مواعيد قادمة"
-          value={upcoming.length.toLocaleString("ar-SA")}
+          value={upcoming.length.toLocaleString("ar-SA-u-nu-latn")}
           hint="خلال الأيام القادمة"
           tone="primary"
           emphasis
@@ -185,7 +186,7 @@ export default async function DoctorDashboardPage() {
         <MetricCard
           icon={FolderOpen}
           label="حالات نشطة"
-          value={activeCases.length.toLocaleString("ar-SA")}
+          value={activeCases.length.toLocaleString("ar-SA-u-nu-latn")}
           hint="مشتركة معك بأذون سارية"
           tone="primary"
           emphasis
@@ -193,7 +194,7 @@ export default async function DoctorDashboardPage() {
         <MetricCard
           icon={ShieldCheck}
           label="بانتظار إذن المريض"
-          value={pendingConsent.length.toLocaleString("ar-SA")}
+          value={pendingConsent.length.toLocaleString("ar-SA-u-nu-latn")}
           hint={
             pendingConsent.length === 0
               ? "كل الحالات مفتوحة لك"

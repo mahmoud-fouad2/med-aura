@@ -119,7 +119,7 @@ export default async function AdminSettingsPage() {
         <MetricCard
           icon={ShieldCheck}
           label="أدوار محفوظة"
-          value={roles.length.toLocaleString("ar-SA")}
+          value={roles.length.toLocaleString("ar-SA-u-nu-latn")}
           hint="متاحة للتعيين على المستخدمين"
           tone="primary"
           emphasis
@@ -127,7 +127,7 @@ export default async function AdminSettingsPage() {
         <MetricCard
           icon={Settings2}
           label="أنواع الصلاحيات"
-          value={Object.keys(PERMISSIONS).length.toLocaleString("ar-SA")}
+          value={Object.keys(PERMISSIONS).length.toLocaleString("ar-SA-u-nu-latn")}
           hint="مسجَّلة في مصفوفة الأدوار"
           tone="neutral"
           emphasis
@@ -177,7 +177,7 @@ export default async function AdminSettingsPage() {
               >
                 <span className="font-medium text-foreground">{roleAr(r)}</span>
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
-                  {(ROLE_PERMISSIONS[r]?.length ?? 0).toLocaleString("ar-SA")}{" "}
+                  {(ROLE_PERMISSIONS[r]?.length ?? 0).toLocaleString("ar-SA-u-nu-latn")}{" "}
                   صلاحية
                 </span>
               </div>

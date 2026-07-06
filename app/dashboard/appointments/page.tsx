@@ -83,7 +83,7 @@ export default async function PatientAppointmentsPage({
               المواعيد القادمة
             </h2>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-              {upcoming.length.toLocaleString("ar-SA")}
+              {upcoming.length.toLocaleString("ar-SA-u-nu-latn")}
             </span>
           </div>
           <AppointmentList rows={upcoming} perspective="patient" />
@@ -97,7 +97,7 @@ export default async function PatientAppointmentsPage({
               مواعيد سابقة
             </h2>
             <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-              {past.length.toLocaleString("ar-SA")}
+              {past.length.toLocaleString("ar-SA-u-nu-latn")}
             </span>
           </div>
           <AppointmentList rows={past} perspective="patient" />

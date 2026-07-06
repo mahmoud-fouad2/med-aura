@@ -130,7 +130,7 @@ export async function isSlotAvailable(
 }
 
 function formatSlot(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
     weekday: "long",
     day: "numeric",
     month: "long",

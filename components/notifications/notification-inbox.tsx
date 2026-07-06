@@ -40,7 +40,7 @@ function relativeTime(d: Date): string {
   if (hours < 24) return `منذ ${hours} س`
   const days = Math.floor(hours / 24)
   if (days < 7) return `منذ ${days} يوم`
-  return d.toLocaleDateString("ar-SA", { day: "numeric", month: "short" })
+  return d.toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short" })
 }
 
 export function NotificationInbox({

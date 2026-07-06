@@ -73,9 +73,9 @@ export default async function AdminFollowUpsPage({
         stats={
           tasks.length > 0
             ? [
-                { label: "الإجمالي", value: tasks.length.toLocaleString("ar-SA") },
-                { label: "مفتوحة", value: openCount.toLocaleString("ar-SA") },
-                { label: "متأخرة", value: overdueCount.toLocaleString("ar-SA") },
+                { label: "الإجمالي", value: tasks.length.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "مفتوحة", value: openCount.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "متأخرة", value: overdueCount.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }
@@ -194,7 +194,7 @@ export default async function AdminFollowUpsPage({
                                 : "text-muted-foreground")
                             }
                           >
-                            {new Date(t.dueAt).toLocaleDateString("ar-SA")}
+                            {new Date(t.dueAt).toLocaleDateString("ar-SA-u-nu-latn")}
                           </span>
                         ) : (
                           <span className="text-muted-foreground/60">—</span>

@@ -204,7 +204,7 @@ function QuoteForm({ caseId }: { caseId: string }) {
       <div className="flex items-center gap-3">
         <Label htmlFor="depositPercent" className="whitespace-nowrap">نسبة العربون %</Label>
         <Input id="depositPercent" type="number" className="w-24" value={depositPercent} onChange={(e) => setDepositPercent(e.target.value)} />
-        <span className="text-sm text-muted-foreground">الإجمالي التقديري: {total.toLocaleString("ar-SA", { maximumFractionDigits: 2 })} ر.س</span>
+        <span className="text-sm text-muted-foreground">الإجمالي التقديري: {total.toLocaleString("ar-SA-u-nu-latn", { maximumFractionDigits: 2 })} ر.س</span>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

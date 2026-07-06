@@ -67,7 +67,7 @@ export function ConversationPanel({
                   )}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(m.createdAt).toLocaleString("ar-SA")}
+                  {new Date(m.createdAt).toLocaleString("ar-SA-u-nu-latn")}
                 </span>
               </div>
               <p className="whitespace-pre-wrap text-foreground">{m.body}</p>
