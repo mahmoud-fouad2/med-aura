@@ -153,21 +153,21 @@ export default async function AdminOverviewPage() {
               icon={Wallet}
               label="مدفوعات معلّقة"
               value={kpis.pendingPayments.toLocaleString("ar-SA-u-nu-latn")}
-              href="/dashboard/finance"
+              href="/admin/finance"
               tone="warning"
             />
             <MetricCard
               icon={Wallet}
               label="إجمالي المحصّل"
               value={`${(kpis.totalPaidAmount ?? 0).toLocaleString("ar-SA-u-nu-latn")} ر.س`}
-              href="/dashboard/finance"
+              href="/admin/finance"
               tone="success"
             />
             <MetricCard
               icon={Undo2}
               label="طلبات استرجاع"
               value={(kpis.openRefundRequests ?? 0).toLocaleString("ar-SA-u-nu-latn")}
-              href="/dashboard/finance#refunds"
+              href="/admin/finance#refunds"
               tone={(kpis.openRefundRequests ?? 0) > 0 ? "warning" : "neutral"}
             />
           </>
@@ -259,7 +259,7 @@ export default async function AdminOverviewPage() {
             icon={Wallet}
             title="مدفوعات واسترجاعات معلّقة"
             description="بانتظار المعالجة اليدوية أو تأكيد المزوّد."
-            viewAllHref="/dashboard/finance"
+            viewAllHref="/admin/finance"
             tone="warning"
           >
             {pendingPayments.length === 0 && openRefunds.length === 0 ? (
@@ -267,10 +267,10 @@ export default async function AdminOverviewPage() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {pendingPayments.map((p) => (
-                  <ListRow key={p.id} href="/dashboard/finance" title={p.payerName} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(p.currency)}`} badge="معلّقة" />
+                  <ListRow key={p.id} href="/admin/finance" title={p.payerName} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(p.currency)}`} badge="معلّقة" />
                 ))}
                 {openRefunds.map((r) => (
-                  <ListRow key={r.id} href="/dashboard/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
+                  <ListRow key={r.id} href="/admin/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
                 ))}
               </ul>
             )}
@@ -307,8 +307,8 @@ export default async function AdminOverviewPage() {
           >
             <div className="space-y-2 p-5 text-sm">
               <StatusRow label="قاعدة البيانات" ok={dbStatus.connected && dbStatus.ready} />
-              <StatusRow label="بوابة الدفع (Stripe)" ok={isStripeConfigured()} />
-              <StatusRow label="التخزين (R2)" ok={isR2Configured()} />
+              <StatusRow label="بوابة الدفع الإلكتروني" ok={isStripeConfigured()} />
+              <StatusRow label="التخزين السحابي للملفات" ok={isR2Configured()} />
               <StatusRow label="البريد" ok={isEmailConfigured()} />
             </div>
           </SectionCard>
@@ -367,8 +367,8 @@ function QuickActions({ perms }: { perms: Set<string> }) {
     { href: "/admin/applications", label: "مراجعة طلبات الانضمام", icon: ClipboardCheck, show: perms.has(PERMISSIONS.PROVIDER_REVIEW) },
     { href: "/admin/cases", label: "إدارة الحالات", icon: FileHeart, show: perms.has(PERMISSIONS.CASE_READ_ANY) },
     { href: "/admin/safety-alerts", label: "تنبيهات السلامة", icon: ShieldAlert, show: perms.has(PERMISSIONS.SAFETY_ALERT_MANAGE) },
-    { href: "/dashboard/finance", label: "لوحة المالية", icon: Wallet, show: perms.has(PERMISSIONS.FINANCE_ACCESS) },
-    { href: "/dashboard/concierge", label: "لوحة المتابعة التشغيلية", icon: Plug, show: perms.has(PERMISSIONS.CONCIERGE_ACCESS) },
+    { href: "/admin/finance", label: "لوحة المالية", icon: Wallet, show: perms.has(PERMISSIONS.FINANCE_ACCESS) },
+    { href: "/admin/concierge", label: "لوحة المتابعة التشغيلية", icon: Plug, show: perms.has(PERMISSIONS.CONCIERGE_ACCESS) },
   ].filter((a) => a.show)
 
   if (actions.length === 0) return null

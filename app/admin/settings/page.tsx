@@ -43,12 +43,12 @@ export default async function AdminSettingsPage() {
         ? `${db.appliedCount}/${db.journalCount} ترحيل مطبَّق`
         : "غير جاهزة",
     },
-    { label: "بوابة الدفع (Stripe)", ok: isStripeConfigured() },
+    { label: "بوابة الدفع الإلكتروني", ok: isStripeConfigured() },
     { label: "إشعارات الدفع الفورية", ok: isStripeWebhookConfigured() },
-    { label: "التخزين السحابي (R2)", ok: isR2Configured() },
-    { label: "البريد (Resend)", ok: isEmailConfigured() },
+    { label: "التخزين السحابي للملفات", ok: isR2Configured() },
+    { label: "خدمة البريد الإلكتروني", ok: isEmailConfigured() },
     { label: "الفيديو للاستشارة", ok: isVideoConfigured() },
-    { label: "reCAPTCHA", ok: isRecaptchaConfigured() },
+    { label: "الحماية من الروبوتات", ok: isRecaptchaConfigured() },
   ]
   const activeCount = integrations.filter((i) => i.ok).length
 
@@ -77,7 +77,7 @@ export default async function AdminSettingsPage() {
       href: "/admin/system-health",
       label: "صحة النظام",
       icon: Activity,
-      desc: "حالة قاعدة البيانات، عمليات الترحيل، والتكاملات.",
+      desc: "حالة قاعدة البيانات والخدمات المتصلة.",
     },
     {
       href: "/dashboard/notifications",

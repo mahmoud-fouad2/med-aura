@@ -84,6 +84,7 @@ export async function requestRefund(
 
     revalidatePath(`/dashboard/cases/${data.caseId}`)
     revalidatePath("/dashboard/finance")
+    revalidatePath("/admin/finance")
     return { ok: true, data: { refundRequestId: id } }
   } catch (err) {
     const safe = toSafeError(err)
@@ -130,6 +131,7 @@ export async function reviewRefundRequest(input: unknown): Promise<ActionResult>
       href: `/dashboard/cases/${r.caseId}`,
     })
     revalidatePath("/dashboard/finance")
+    revalidatePath("/admin/finance")
     revalidatePath(`/dashboard/cases/${r.caseId}`)
     return { ok: true }
   } catch (err) {
@@ -155,6 +157,7 @@ export async function providerConfirmRefund(refundRequestId: string): Promise<Ac
       await writeAudit({ action: "refund.provider_confirm", actorUserId: user.id, entityType: "refund_request", entityId: r.id }, tx)
     })
     revalidatePath("/dashboard/finance")
+    revalidatePath("/admin/finance")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)
@@ -254,6 +257,7 @@ export async function processRefund(refundRequestId: string): Promise<ActionResu
       href: `/dashboard/cases/${r.caseId}`,
     })
     revalidatePath("/dashboard/finance")
+    revalidatePath("/admin/finance")
     revalidatePath(`/dashboard/cases/${r.caseId}`)
     return { ok: true }
   } catch (err) {

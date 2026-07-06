@@ -2,7 +2,15 @@ import { asc, desc, eq, inArray } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { country as countryT, city as cityT, procedureCategory, procedure as procedureT, user as userT, userRole, role as roleT } from "@/lib/db/schema"
 
-export type AdminCountryRow = { id: string; code: string; nameAr: string; active: boolean; cityCount: number }
+export type AdminCountryRow = {
+  id: string
+  code: string
+  nameAr: string
+  nameEn: string
+  sortOrder: number
+  active: boolean
+  cityCount: number
+}
 
 export async function listCountriesForAdmin(): Promise<AdminCountryRow[]> {
   if (!isDbConfigured) return []
@@ -11,15 +19,37 @@ export async function listCountriesForAdmin(): Promise<AdminCountryRow[]> {
   const cities = await db.select({ countryId: cityT.countryId }).from(cityT).where(inArray(cityT.countryId, countries.map((c) => c.id)))
   const countByCountry = new Map<string, number>()
   for (const c of cities) countByCountry.set(c.countryId, (countByCountry.get(c.countryId) ?? 0) + 1)
-  return countries.map((c) => ({ id: c.id, code: c.code, nameAr: c.nameAr, active: c.active, cityCount: countByCountry.get(c.id) ?? 0 }))
+  return countries.map((c) => ({
+    id: c.id,
+    code: c.code,
+    nameAr: c.nameAr,
+    nameEn: c.nameEn,
+    sortOrder: c.sortOrder,
+    active: c.active,
+    cityCount: countByCountry.get(c.id) ?? 0,
+  }))
 }
 
-export type AdminCityRow = { id: string; nameAr: string; countryNameAr: string; active: boolean }
+export type AdminCityRow = {
+  id: string
+  countryId: string
+  nameAr: string
+  nameEn: string
+  countryNameAr: string
+  active: boolean
+}
 
 export async function listCitiesForAdmin(): Promise<AdminCityRow[]> {
   if (!isDbConfigured) return []
   return db
-    .select({ id: cityT.id, nameAr: cityT.nameAr, countryNameAr: countryT.nameAr, active: cityT.active })
+    .select({
+      id: cityT.id,
+      countryId: cityT.countryId,
+      nameAr: cityT.nameAr,
+      nameEn: cityT.nameEn,
+      countryNameAr: countryT.nameAr,
+      active: cityT.active,
+    })
     .from(cityT)
     .innerJoin(countryT, eq(cityT.countryId, countryT.id))
     .orderBy(asc(countryT.sortOrder), asc(cityT.nameAr))

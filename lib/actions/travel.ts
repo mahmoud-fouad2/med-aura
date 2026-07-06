@@ -125,6 +125,7 @@ export async function submitTravelRequest(
     revalidatePath(`/dashboard/cases/${data.caseId}`)
     revalidatePath("/admin/travel")
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true, data: { id: row.id } }
   } catch (err) {
     const safe = toSafeError(err)
@@ -172,6 +173,7 @@ export async function assignTravelRequest(
 
     revalidatePath("/admin/travel")
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)
@@ -261,6 +263,7 @@ export async function createTravelOffer(
 
     revalidatePath("/admin/travel")
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true, data: { id: offer.id } }
   } catch (err) {
     const safe = toSafeError(err)
@@ -350,6 +353,7 @@ export async function acceptTravelOffer(
 
     revalidatePath("/admin/travel")
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)
@@ -402,6 +406,7 @@ export async function cancelTravelRequest(
 
     revalidatePath("/admin/travel")
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)

@@ -53,7 +53,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     title: "التشغيل",
     items: [
-      { href: "/dashboard/concierge", label: "لوحة المتابعة التشغيلية", icon: "KanbanSquare", anyOf: [P.CONCIERGE_ACCESS], external: true },
+      { href: "/admin/concierge", label: "فريق المتابعة", icon: "KanbanSquare", anyOf: [P.CONCIERGE_ACCESS] },
       { href: "/admin/travel", label: "طلبات السفر", icon: "Plane", anyOf: [P.TRAVEL_OFFER_MANAGE] },
       { href: "/dashboard/center", label: "لوحة المركز", icon: "Building", anyOf: [P.CENTER_DASHBOARD_ACCESS], external: true },
     ],
@@ -61,8 +61,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     title: "المالية",
     items: [
-      { href: "/dashboard/finance", label: "المدفوعات والفواتير", icon: "Wallet", anyOf: [P.FINANCE_ACCESS], external: true },
-      { href: "/dashboard/finance#refunds", label: "الاسترجاعات", icon: "Undo2", anyOf: [P.FINANCE_ACCESS], external: true },
+      { href: "/admin/finance", label: "المدفوعات والفواتير", icon: "Wallet", anyOf: [P.FINANCE_ACCESS] },
+      { href: "/admin/finance#refunds", label: "الاسترجاعات", icon: "Undo2", anyOf: [P.FINANCE_ACCESS] },
     ],
   },
   {

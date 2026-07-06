@@ -114,7 +114,7 @@ export function CenterApplicationForm({
           تم استلام طلبك
         </h2>
         <p className="mx-auto max-w-md text-sm text-muted-foreground">
-          سيتواصل فريق Compliance معك خلال أيام العمل التالية لإكمال المراجعة
+          سيتواصل فريق المراجعة والاعتماد معك خلال أيام العمل التالية لإكمال المراجعة
           وطلب المستندات إن لزم. تابع حالة الطلب من لوحة التحكم.
         </p>
         <div className="flex justify-center gap-3">

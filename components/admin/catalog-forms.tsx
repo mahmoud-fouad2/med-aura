@@ -85,7 +85,7 @@ export function CategoryFormButton({ existing }: { existing?: CategoryRow }) {
       >
         {existing && <input type="hidden" name="id" value={existing.id} />}
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="الرابط الفريد (slug)">
+          <Field label="الرابط الفريد">
             <Input
               name="slug"
               defaultValue={existing?.slug ?? ""}
@@ -217,7 +217,7 @@ export function ProcedureFormButton({
               ))}
             </select>
           </Field>
-          <Field label="الرابط الفريد (slug)">
+          <Field label="الرابط الفريد">
             <Input
               name="slug"
               defaultValue={existing?.slug ?? ""}

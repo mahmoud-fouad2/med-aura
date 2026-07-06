@@ -29,10 +29,10 @@ export default async function DashboardLayout({
     nav.push({ href: "/dashboard/center", label: "لوحة المركز" })
   }
   if (canConcierge) {
-    nav.push({ href: "/dashboard/concierge", label: "لوحة المتابعة" })
+    nav.push({ href: "/admin/concierge", label: "لوحة المتابعة" })
   }
   if (canFinance) {
-    nav.push({ href: "/dashboard/finance", label: "لوحة المالية" })
+    nav.push({ href: "/admin/finance", label: "لوحة المالية" })
   }
   if (
     roles.includes(ROLES.SUPER_ADMIN) ||

@@ -20,12 +20,12 @@ export default async function SystemHealthPage() {
   const db = await getMigrationStatus()
 
   const integrations = [
-    { label: "بوابة الدفع (Stripe)", ok: isStripeConfigured() },
+    { label: "بوابة الدفع الإلكتروني", ok: isStripeConfigured() },
     { label: "تحقق إشعارات الدفع الفورية", ok: isStripeWebhookConfigured() },
-    { label: "التخزين (R2)", ok: isR2Configured() },
+    { label: "التخزين السحابي للملفات", ok: isR2Configured() },
     { label: "البريد", ok: isEmailConfigured() },
     { label: "الفيديو", ok: isVideoConfigured() },
-    { label: "reCAPTCHA", ok: isRecaptchaConfigured() },
+    { label: "الحماية من الروبوتات", ok: isRecaptchaConfigured() },
   ]
 
   return (
@@ -36,10 +36,13 @@ export default async function SystemHealthPage() {
         <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
           <AlertTriangle className="mt-0.5 size-5 text-destructive" />
           <div>
-            <p className="font-medium text-foreground">المخطط غير محدّث</p>
+            <p className="font-medium text-foreground">
+              تحديثات بنية بانتظار التطبيق
+            </p>
             <p className="text-muted-foreground">
-              توجد {db.pending} عملية ترحيل غير مطبقة. شغّل{" "}
-              <code className="rounded bg-muted px-1">pnpm db:migrate</code>.
+              توجد {db.pending} تحديثات لم تُطبَّق بعد على قاعدة البيانات.
+              تواصل مع المسؤول التقني لإكمال النشر قبل استخدام الميزات
+              الجديدة.
             </p>
           </div>
         </div>
@@ -50,10 +53,16 @@ export default async function SystemHealthPage() {
           <Database className="size-5 text-primary" /> قاعدة البيانات
         </h2>
         <dl className="space-y-2 text-sm">
-          <HealthRow label="مهيأة (DATABASE_URL)" ok={db.configured} />
-          <HealthRow label="الاتصال" ok={db.connected} detail={db.error ?? undefined} />
-          <Row label="عمليات الترحيل المطبقة" value={`${db.appliedCount} / ${db.journalCount}`} />
-          <Row label="غير المطبقة" value={String(db.pending)} />
+          <HealthRow label="الإعداد الأساسي" ok={db.configured} />
+          <HealthRow
+            label="الاتصال"
+            ok={db.connected}
+            detail={
+              db.connected ? undefined : "تعذّر الوصول لقاعدة البيانات حاليًا"
+            }
+          />
+          <Row label="تحديثات البنية المطبَّقة" value={`${db.appliedCount} / ${db.journalCount}`} />
+          <Row label="بانتظار التطبيق" value={String(db.pending)} />
           <HealthRow label="جاهزة" ok={db.ready} />
         </dl>
       </Card>

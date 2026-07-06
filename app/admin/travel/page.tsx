@@ -78,7 +78,7 @@ export default async function AdminTravelPage({
         <p className="mt-1 text-sm text-muted-foreground">
           {items.length.toLocaleString("ar-SA-u-nu-latn")} طلب. Med Aura لا تنفّذ حجزًا
           فعليًا للطيران أو الفندق — الطلبات هنا للتنسيق فقط، والعروض التي يصدرها
-          الـConcierge تبقى مقترحات مسجّلة.
+          فريق المتابعة تبقى مقترحات مسجّلة.
         </p>
       </div>
 
@@ -190,7 +190,7 @@ export default async function AdminTravelPage({
                   </span>
                   {overdue && (
                     <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">
-                      تجاوز SLA
+                      متأخر عن مهلة الرد
                     </span>
                   )}
                 </div>

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic"
 export const metadata = {
   title: "سجّل مركزك",
   description:
-    "قدّم طلب انضمام مركزك التجميلي إلى Med Aura ليتم اعتماده ونشره بعد مراجعة فريق Compliance.",
+    "قدّم طلب انضمام مركزك التجميلي إلى Med Aura ليتم اعتماده ونشره بعد مراجعة فريق المراجعة والاعتماد.",
 }
 
 export default async function CenterApplyPage() {
@@ -59,7 +59,7 @@ export default async function CenterApplyPage() {
                 طلب انضمام مركز تجميلي
               </h1>
               <p className="mt-1 text-muted-foreground">
-                البيانات المطلوبة تخضع لمراجعة فريق Compliance. لن يظهر المركز
+                البيانات المطلوبة تخضع لمراجعة فريق المراجعة والاعتماد. لن يظهر المركز
                 للجمهور قبل اعتماد الطلب.
               </p>
             </div>

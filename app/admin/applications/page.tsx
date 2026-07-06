@@ -102,7 +102,7 @@ export default async function ApplicationsPage() {
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="طلبات الانضمام"
-        description="طلبات الأطباء والمراكز بانتظار مراجعة فريق Compliance."
+        description="طلبات الأطباء والمراكز بانتظار مراجعة فريق المراجعة والاعتماد."
         stats={
           rows.length > 0
             ? [

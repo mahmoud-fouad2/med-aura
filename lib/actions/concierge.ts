@@ -47,6 +47,7 @@ export async function createInternalTask(
 
     await writeAudit({ action: "internal_task.create", actorUserId: user.id, entityType: "internal_task", entityId: rows[0].id })
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true, data: { id: rows[0].id } }
   } catch (err) {
     const safe = toSafeError(err)
@@ -77,6 +78,7 @@ export async function updateInternalTaskStatus(input: unknown): Promise<ActionRe
       .where(eq(internalTask.id, data.taskId))
     await writeAudit({ action: "internal_task.status", actorUserId: user.id, entityType: "internal_task", entityId: data.taskId, metadata: { status: data.status } })
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)
@@ -104,6 +106,7 @@ export async function assignInternalTask(input: unknown): Promise<ActionResult> 
     await db.update(internalTask).set({ assignedTo: data.assignedTo, updatedBy: user.id }).where(eq(internalTask.id, data.taskId))
     await writeAudit({ action: "internal_task.assign", actorUserId: user.id, entityType: "internal_task", entityId: data.taskId, metadata: { assignedTo: data.assignedTo } })
     revalidatePath("/dashboard/concierge")
+    revalidatePath("/admin/concierge")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)
