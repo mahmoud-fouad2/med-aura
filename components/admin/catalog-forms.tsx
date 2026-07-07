@@ -110,7 +110,7 @@ export function CategoryFormButton({ existing }: { existing?: CategoryRow }) {
           <Field label="الاسم بالإنجليزية">
             <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
           </Field>
-          <Field label="أيقونة (اسم Lucide، اختياري)">
+          <Field label="الأيقونة (اختياري)">
             <Input
               name="icon"
               defaultValue={existing?.icon ?? ""}

@@ -11,8 +11,14 @@ import { test, expect } from "@playwright/test"
 
 test("home page renders the Med Aura brand and hero", async ({ page }) => {
   await page.goto("/")
-  await expect(page.locator("text=MED").first()).toBeVisible()
-  await expect(page.getByRole("link", { name: "ابحث", exact: false }).first()).toBeVisible()
+  // brand appears in the trust band ("لماذا Med Aura")
+  await expect(page.getByText("Med Aura").first()).toBeVisible()
+  // hero search form submits to /search
+  await expect(page.getByRole("button", { name: /ابحث|بحث/ }).first()).toBeVisible()
+  // quick-search chips are real links into /search
+  await expect(
+    page.getByRole("link", { name: "تجميل الأنف", exact: false }).first(),
+  ).toBeVisible()
 })
 
 test("procedures page lists seeded cosmetic categories from the DB", async ({ page }) => {
@@ -38,7 +44,9 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   await page.getByLabel("البريد الإلكتروني").fill(email)
   await page.getByLabel("كلمة المرور").fill("E2ePassw0rd!")
   await page.getByRole("button", { name: /أنشئ|إنشاء|تسجيل/ }).click()
-  // auto sign-in → dashboard
+  // auto sign-in → dashboard greets the patient by first name
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
-  await expect(page.getByText("مرحبًا").first()).toBeVisible()
+  await expect(page.getByText(/أهلًا/).first()).toBeVisible()
+  // fresh patient sees the humane empty states, not errors
+  await expect(page.getByText("لا مواعيد قادمة حاليًا").first()).toBeVisible()
 })

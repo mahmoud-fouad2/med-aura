@@ -10,6 +10,10 @@ import {
   Bell,
   ChevronLeft,
   BadgeCheck,
+  CircleAlert,
+  Clock,
+  CreditCard,
+  LifeBuoy,
 } from "lucide-react"
 import { getCurrentUser, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
@@ -105,6 +109,63 @@ export default async function DashboardHome() {
 
   const firstName = firstNameOf(user.name)
 
+  // Real, actionable to-dos only — each one maps to a case/appointment state
+  // that is genuinely waiting on the patient.
+  const CASE_ACTION: Record<string, { title: string; desc: string }> = {
+    MORE_INFORMATION_REQUIRED: {
+      title: "طبيبك يحتاج معلومات إضافية",
+      desc: "أضف التفاصيل أو الصور المطلوبة حتى تستمر المراجعة.",
+    },
+    CONSULTATION_REQUIRED: {
+      title: "احجز موعد استشارتك",
+      desc: "طبيبك جاهز للقائك — اختر الوقت المناسب لك.",
+    },
+    TREATMENT_PLAN_ISSUED: {
+      title: "خطة علاجك جاهزة",
+      desc: "اطّلع على تفاصيل الخطة المقترحة لك.",
+    },
+    QUOTE_ISSUED: {
+      title: "عرض السعر بانتظار قرارك",
+      desc: "راجع التكلفة والتفاصيل ثم اتخذ قرارك بهدوء.",
+    },
+    PATIENT_REVIEWING: {
+      title: "عرض السعر بانتظار قرارك",
+      desc: "راجع التكلفة والتفاصيل ثم اتخذ قرارك بهدوء.",
+    },
+    QUOTE_ACCEPTED: {
+      title: "ادفع العربون لتثبيت إجراءك",
+      desc: "خطوة واحدة تفصلك عن تأكيد موعد الإجراء.",
+    },
+    CENTER_CONFIRMED: {
+      title: "أكمل سداد المبلغ المتبقي",
+      desc: "المركز أكّد جاهزيته — أكمل الدفع لإتمام التثبيت.",
+    },
+    FOLLOW_UP: {
+      title: "شارك تحديث تعافيك",
+      desc: "أرسل صورة أو ملاحظة ليطمئن عليك طبيبك.",
+    },
+  }
+  const requiredActions: { href: string; title: string; desc: string }[] = []
+  for (const c of activeCases) {
+    const a = CASE_ACTION[c.status]
+    if (a) {
+      requiredActions.push({
+        href: `/dashboard/cases/${c.id}`,
+        title: a.title,
+        desc: `${c.procedureName} · ${a.desc}`,
+      })
+    }
+  }
+  for (const a of upcoming) {
+    if (a.status === "PENDING_PAYMENT") {
+      requiredActions.push({
+        href: "/dashboard/appointments",
+        title: "أكمل الدفع لتثبيت موعدك",
+        desc: `${appointmentTypeAr(a.type)} مع ${a.counterpartName} — لن يُحجز الوقت قبل إتمام الدفع.`,
+      })
+    }
+  }
+
   return (
     <div className="space-y-6">
       <DashboardHero
@@ -179,7 +240,134 @@ export default async function DashboardHome() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {requiredActions.length > 0 && (
+        <section
+          aria-label="إجراءات مطلوبة منك"
+          className="overflow-hidden rounded-2xl border border-warning/40 bg-gradient-to-l from-warning/10 via-card to-card"
+        >
+          <div className="flex items-center gap-2 border-b border-warning/20 px-5 py-3">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-warning/15 text-warning-foreground">
+              <CircleAlert className="size-4" />
+            </span>
+            <h2 className="font-heading text-sm font-bold text-foreground">
+              مطلوب منك الآن
+            </h2>
+            <span className="ms-auto rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-bold tabular-nums text-warning-foreground">
+              {requiredActions.length.toLocaleString("ar-SA-u-nu-latn")}
+            </span>
+          </div>
+          <ul className="divide-y divide-warning/15">
+            {requiredActions.slice(0, 4).map((a) => (
+              <li key={a.href + a.title}>
+                <Link
+                  href={a.href}
+                  className="group flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-warning/5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{a.title}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{a.desc}</p>
+                  </div>
+                  <ChevronLeft className="size-4 shrink-0 text-warning-foreground/70 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section aria-label="موعدك القادم">
+        {nextAppt ? (
+          <div className="overflow-hidden rounded-2xl border border-success/30 bg-gradient-to-l from-success/8 via-card to-card">
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6">
+              <div className="flex items-center gap-4">
+                <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-success/10 text-success ring-1 ring-success/20">
+                  <span className="font-heading text-xl font-extrabold leading-none tabular-nums">
+                    {new Date(nextAppt.startsAt).toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric" })}
+                  </span>
+                  <span className="mt-1 text-[10px] font-medium uppercase tracking-wider">
+                    {new Date(nextAppt.startsAt).toLocaleDateString("ar-SA-u-nu-latn", { month: "short" })}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-success">
+                    موعدك القادم · {relativeDay(new Date(nextAppt.startsAt))}
+                  </p>
+                  <h2 className="mt-1 truncate font-heading text-lg font-bold text-foreground">
+                    {appointmentTypeAr(nextAppt.type)} مع {nextAppt.counterpartName}
+                  </h2>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="size-3.5" />
+                      {new Date(nextAppt.startsAt).toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" })}
+                      {" – "}
+                      {new Date(nextAppt.endsAt).toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 font-medium text-success">
+                      {appointmentStatusAr(nextAppt.status)}
+                    </span>
+                    {nextAppt.status === "PENDING_PAYMENT" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 font-medium text-warning-foreground">
+                        <CreditCard className="size-3" />
+                        بانتظار إتمام الدفع
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:ms-auto">
+                <Button
+                  size="sm"
+                  render={<Link href="/dashboard/appointments">تفاصيل مواعيدي</Link>}
+                />
+                {nextAppt.caseId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <Link href={`/dashboard/cases/${nextAppt.caseId}`}>
+                        افتح الحالة المرتبطة
+                      </Link>
+                    }
+                  />
+                )}
+              </div>
+            </div>
+            <p className="border-t border-success/15 bg-success/5 px-5 py-2.5 text-xs text-muted-foreground">
+              تحتاج تغيير موعدك أو لديك سؤال؟{" "}
+              <Link href="/contact" className="font-medium text-primary hover:underline">
+                فريقنا يساعدك في أي وقت
+              </Link>
+              .
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-start gap-4 rounded-2xl border border-border/70 bg-card p-5 sm:flex-row sm:items-center">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+              <CalendarClock className="size-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold text-foreground">
+                لا مواعيد قادمة حاليًا
+              </h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                عندما تحجز استشارتك ستجد موعدها هنا مع كل التفاصيل والتذكيرات.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="shrink-0"
+              render={
+                <Link href="/search">
+                  <Search className="size-4" />
+                  اختر طبيبك واحجز
+                </Link>
+              }
+            />
+          </div>
+        )}
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <MetricCard
           icon={FileText}
           label="حالات نشطة"
@@ -187,15 +375,6 @@ export default async function DashboardHome() {
           hint={cases.length > activeCases.length ? `+ ${cases.length - activeCases.length} حالة مغلقة` : "لا توجد حالات مغلقة بعد"}
           href="/dashboard/cases"
           tone="primary"
-          emphasis
-        />
-        <MetricCard
-          icon={CalendarClock}
-          label="موعدك القادم"
-          value={nextAppt ? relativeDay(new Date(nextAppt.startsAt)) : "لا موعد"}
-          hint={nextAppt ? `${appointmentTypeAr(nextAppt.type)} · ${appointmentStatusAr(nextAppt.status)}` : "احجز استشارتك الأولى"}
-          href="/dashboard/appointments"
-          tone={nextAppt ? "success" : "neutral"}
           emphasis
         />
         <MetricCard
@@ -391,6 +570,38 @@ export default async function DashboardHome() {
               )}
             </div>
           </SectionCard>
+
+          <div className="rounded-2xl border border-border/70 bg-card p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-info/10 text-info">
+                <LifeBuoy className="size-5" />
+              </span>
+              <div>
+                <p className="font-heading text-sm font-bold text-foreground">
+                  تحتاج مساعدة؟
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  فريقنا يرافقك في كل خطوة — من اختيار الطبيب حتى ما بعد الإجراء.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    تواصل معنا
+                    <ChevronLeft className="size-3 rtl:rotate-0 ltr:rotate-180" />
+                  </Link>
+                  <Link
+                    href="/faq"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    الأسئلة الشائعة
+                    <ChevronLeft className="size-3 rtl:rotate-0 ltr:rotate-180" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/6 via-card to-card p-5">
             <div className="flex items-start gap-3">

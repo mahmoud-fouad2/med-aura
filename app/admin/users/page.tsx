@@ -1,68 +1,153 @@
-import { UserCog } from "lucide-react"
+import { UserCog, Search } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
-import { PERMISSIONS } from "@/lib/rbac"
-import { listUsersForAdmin } from "@/lib/data/admin-content"
+import { PERMISSIONS, ROLES, hasPermission } from "@/lib/rbac"
+import { listUsersForAdmin, listRolesForAdmin } from "@/lib/data/admin-content"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { UserRoleManager } from "@/components/admin/user-role-manager"
+import { nf } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المستخدمون والصلاحيات" }
 
 const ROLE_LABEL: Record<string, string> = {
   patient: "مريض", doctor: "طبيب", center_owner: "مالك مركز", center_admin: "مدير مركز",
-  center_staff: "طاقم مركز", concierge: "متابعة", compliance_reviewer: "مراجع اعتماد",
+  center_staff: "طاقم مركز", concierge: "فريق المتابعة", compliance_reviewer: "مراجع اعتماد",
   finance_admin: "مالية", support_agent: "دعم", content_admin: "محتوى", super_admin: "مدير النظام",
 }
 
-export default async function AdminUsersPage() {
-  await requirePermissionPage(PERMISSIONS.USER_READ_ANY)
-  const users = await listUsersForAdmin()
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const viewer = await requirePermissionPage(PERMISSIONS.USER_READ_ANY)
+  const { q } = await searchParams
+
+  const [users, allRoles, canAssign] = await Promise.all([
+    listUsersForAdmin({ q }),
+    listRolesForAdmin(),
+    hasPermission(viewer.id, PERMISSIONS.ROLE_ASSIGN),
+  ])
+
+  const staffCount = users.filter(
+    (u) => u.primaryRole !== ROLES.PATIENT || u.roles.some((r) => r.key !== ROLES.PATIENT),
+  ).length
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">المستخدمون والصلاحيات</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{users.length.toLocaleString("ar-SA-u-nu-latn")} مستخدم</p>
-      </div>
+      <PageHeader
+        eyebrow="الحسابات"
+        title="المستخدمون والصلاحيات"
+        description="كل حسابات المنصة في مكان واحد — ابحث، راجع الأدوار، وامنح أو أزل الصلاحيات بأمان مع تسجيل كل تغيير."
+        stats={
+          users.length > 0
+            ? [
+                { label: "النتائج", value: nf(users.length) },
+                { label: "بأدوار تشغيلية", value: nf(staffCount) },
+                { label: "الأدوار المتاحة", value: nf(allRoles.length) },
+              ]
+            : undefined
+        }
+      />
+
+      <form method="get" className="flex max-w-md items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="ابحث بالاسم أو البريد الإلكتروني…"
+            className="ps-9"
+            aria-label="بحث في المستخدمين"
+          />
+        </div>
+        <Button type="submit" variant="outline" size="sm">
+          بحث
+        </Button>
+      </form>
 
       <Card className="overflow-hidden p-0">
         {users.length === 0 ? (
-          <EmptyState icon={UserCog} title="لا يوجد مستخدمون" description="ستظهر هنا حسابات المستخدمين." />
+          <div className="p-10">
+            <EmptyState
+              icon={UserCog}
+              title={q ? "لا نتائج مطابقة" : "لا يوجد مستخدمون"}
+              description={
+                q
+                  ? `لم نعثر على مستخدم يطابق «${q}». جرّب اسمًا أو بريدًا آخر.`
+                  : "ستظهر هنا حسابات المستخدمين فور تسجيلها."
+              }
+              tone="muted"
+            />
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                  <Th>الاسم</Th>
-                  <Th>البريد الإلكتروني</Th>
+                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                  <Th>المستخدم</Th>
                   <Th>الدور الأساسي</Th>
-                  <Th>الأدوار الإضافية</Th>
+                  <Th>أدوار إضافية</Th>
                   <Th>تاريخ التسجيل</Th>
+                  {canAssign && <Th>الأدوار</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border/60">
                 {users.map((u) => (
-                  <tr key={u.id} className="transition-colors hover:bg-muted/30">
-                    <td className="px-4 py-3 font-medium text-foreground">{u.name}</td>
-                    <td dir="ltr" className="px-4 py-3 text-end text-muted-foreground">{u.email}</td>
+                  <tr key={u.id} className="align-top transition-colors hover:bg-muted/25">
                     <td className="px-4 py-3">
-                      <Badge variant="secondary">{ROLE_LABEL[u.primaryRole] ?? u.primaryRole}</Badge>
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-bold text-primary">
+                          {u.name.trim().charAt(0) || "؟"}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{u.name}</p>
+                          <p dir="ltr" className="truncate text-end text-xs text-muted-foreground">
+                            {u.email}
+                          </p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary">
+                        {ROLE_LABEL[u.primaryRole] ?? u.primaryRole}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex max-w-56 flex-wrap gap-1">
                         {u.roles.length === 0 ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
                           u.roles.map((r) => (
-                            <Badge key={r} variant="outline">{r}</Badge>
+                            <Badge key={r.key} variant="outline">
+                              {ROLE_LABEL[r.key] ?? r.nameAr}
+                            </Badge>
                           ))
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                       {new Date(u.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
                     </td>
+                    {canAssign && (
+                      <td className="px-4 py-3">
+                        <UserRoleManager
+                          userId={u.id}
+                          userName={u.name}
+                          currentKeys={u.roles.map((r) => r.key)}
+                          allRoles={allRoles.map((r) => ({
+                            key: r.key,
+                            nameAr: ROLE_LABEL[r.key] ?? r.nameAr,
+                          }))}
+                          selfId={viewer.id}
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -75,5 +160,7 @@ export default async function AdminUsersPage() {
 }
 
 function Th({ children }: { children: React.ReactNode }) {
-  return <th className="px-4 py-2.5 text-start font-medium">{children}</th>
+  return (
+    <th className="px-4 py-2.5 text-start font-medium tracking-wide">{children}</th>
+  )
 }

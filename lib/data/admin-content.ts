@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from "drizzle-orm"
+import { asc, desc, eq, ilike, inArray, or } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { country as countryT, city as cityT, procedureCategory, procedure as procedureT, user as userT, userRole, role as roleT } from "@/lib/db/schema"
 
@@ -126,28 +126,42 @@ export async function listProceduresForAdmin(): Promise<AdminProcedureRow[]> {
     .orderBy(asc(procedureCategory.sortOrder), asc(procedureT.nameAr))
 }
 
-export type AdminUserRow = { id: string; name: string; email: string; primaryRole: string; roles: string[]; createdAt: Date }
+export type AdminUserRoleRef = { key: string; nameAr: string }
+export type AdminUserRow = { id: string; name: string; email: string; primaryRole: string; roles: AdminUserRoleRef[]; createdAt: Date }
 
-export async function listUsersForAdmin(limit = 200): Promise<AdminUserRow[]> {
+export async function listUsersForAdmin(opts?: { q?: string; limit?: number }): Promise<AdminUserRow[]> {
   if (!isDbConfigured) return []
+  const q = opts?.q?.trim()
   const users = await db
     .select({ id: userT.id, name: userT.name, email: userT.email, primaryRole: userT.role, createdAt: userT.createdAt })
     .from(userT)
+    .where(q ? or(ilike(userT.name, `%${q}%`), ilike(userT.email, `%${q}%`)) : undefined)
     .orderBy(desc(userT.createdAt))
-    .limit(limit)
+    .limit(opts?.limit ?? 200)
   if (users.length === 0) return []
 
   const roleRows = await db
-    .select({ userId: userRole.userId, roleName: roleT.nameAr })
+    .select({ userId: userRole.userId, key: roleT.key, nameAr: roleT.nameAr })
     .from(userRole)
     .innerJoin(roleT, eq(userRole.roleId, roleT.id))
     .where(inArray(userRole.userId, users.map((u) => u.id)))
-  const rolesByUser = new Map<string, string[]>()
+  const rolesByUser = new Map<string, AdminUserRoleRef[]>()
   for (const r of roleRows) {
     const list = rolesByUser.get(r.userId) ?? []
-    list.push(r.roleName)
+    if (!list.some((x) => x.key === r.key)) list.push({ key: r.key, nameAr: r.nameAr })
     rolesByUser.set(r.userId, list)
   }
 
   return users.map((u) => ({ ...u, roles: rolesByUser.get(u.id) ?? [] }))
+}
+
+export type AdminRoleOption = { key: string; nameAr: string }
+
+/** All assignable roles, ordered for the role-management panel. */
+export async function listRolesForAdmin(): Promise<AdminRoleOption[]> {
+  if (!isDbConfigured) return []
+  return db
+    .select({ key: roleT.key, nameAr: roleT.nameAr })
+    .from(roleT)
+    .orderBy(asc(roleT.nameAr))
 }

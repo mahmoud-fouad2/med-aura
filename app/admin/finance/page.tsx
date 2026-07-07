@@ -245,7 +245,7 @@ export default async function FinanceDashboardPage() {
           <SectionCard
             icon={Radio}
             title="سجل أحداث الدفع"
-            description="أحداث Webhook من بوابة الدفع مع نتيجة كل معالجة."
+            description="الإشعارات الواردة من بوابة الدفع مع نتيجة معالجة كل منها."
             tone="neutral"
           >
             {webhooks.length === 0 ? (
