@@ -6,6 +6,7 @@ import { UserCog, X, ShieldAlert, Check, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { toggleUserRoleAction } from "@/lib/actions/users"
 
 type RoleOption = { key: string; nameAr: string }
@@ -48,27 +49,25 @@ export function UserRoleManager({
     )
   }
 
-  function toggle(role: RoleOption, has: boolean) {
-    if (role.key === "super_admin") {
-      const message = has
-        ? `إزالة صلاحية «مدير النظام» من ${userName}؟`
-        : `منح ${userName} صلاحية «مدير النظام» الكاملة على المنصة؟`
-      if (!window.confirm(message)) return
-    }
-    setBusyKey(role.key)
-    start(async () => {
-      const res = await toggleUserRoleAction({
-        userId,
-        roleKey: role.key,
-        grant: !has,
+  function toggle(role: RoleOption, has: boolean): Promise<boolean> {
+    return new Promise((resolve) => {
+      setBusyKey(role.key)
+      start(async () => {
+        const res = await toggleUserRoleAction({
+          userId,
+          roleKey: role.key,
+          grant: !has,
+        })
+        setBusyKey(null)
+        if (res.status === "ok") {
+          toast.success(res.message ?? "تم التحديث")
+          router.refresh()
+          resolve(true)
+        } else {
+          toast.error(res.message)
+          resolve(false)
+        }
       })
-      setBusyKey(null)
-      if (res.status === "ok") {
-        toast.success(res.message ?? "تم التحديث")
-        router.refresh()
-      } else {
-        toast.error(res.message)
-      }
     })
   }
 
@@ -92,20 +91,13 @@ export function UserRoleManager({
         {allRoles.map((r) => {
           const has = currentKeys.includes(r.key)
           const busy = pending && busyKey === r.key
-          return (
-            <button
-              key={r.key}
-              type="button"
-              disabled={pending}
-              onClick={() => toggle(r, has)}
-              className={
-                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 " +
-                (has
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground")
-              }
-              aria-pressed={has}
-            >
+          const chipClass =
+            "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 " +
+            (has
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground")
+          const chipContent = (
+            <>
               {busy ? (
                 <span className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : has ? (
@@ -114,6 +106,41 @@ export function UserRoleManager({
                 <Plus className="size-3" />
               )}
               {r.nameAr}
+            </>
+          )
+
+          if (r.key === "super_admin") {
+            return (
+              <ConfirmDialog
+                key={r.key}
+                trigger={
+                  <button type="button" disabled={pending} className={chipClass} aria-pressed={has}>
+                    {chipContent}
+                  </button>
+                }
+                title={has ? `إزالة صلاحية مدير النظام؟` : `منح صلاحية مدير النظام؟`}
+                description={
+                  has
+                    ? `ستفقد ${userName} صلاحية الوصول الكامل للمنصة فورًا.`
+                    : `سيحصل ${userName} على صلاحية الوصول الكامل لكل أقسام المنصة، بما فيها إدارة الأدوار والبيانات الحساسة.`
+                }
+                confirmLabel={has ? "إزالة الصلاحية" : "منح الصلاحية"}
+                tone="destructive"
+                onConfirm={() => toggle(r, has)}
+              />
+            )
+          }
+
+          return (
+            <button
+              key={r.key}
+              type="button"
+              disabled={pending}
+              onClick={() => toggle(r, has)}
+              className={chipClass}
+              aria-pressed={has}
+            >
+              {chipContent}
             </button>
           )
         })}

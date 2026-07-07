@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { UserCheck, X } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   assignTravelRequest,
   cancelTravelRequest,
@@ -42,26 +43,29 @@ export function TravelAssignButton({
 }
 
 export function TravelCancelButton({ requestId }: { requestId: string }) {
-  const [pending, start] = useTransition()
   const router = useRouter()
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      loading={pending}
-      onClick={() => {
-        if (!confirm("سيتم إلغاء طلب السفر. تأكيد؟")) return
-        start(async () => {
-          const res = await cancelTravelRequest(requestId)
-          if (res.ok) {
-            toast.success("تم الإلغاء.")
-            router.refresh()
-          } else toast.error(res.error)
-        })
+    <ConfirmDialog
+      trigger={
+        <Button variant="ghost" size="sm">
+          <X className="size-4" />
+          إلغاء
+        </Button>
+      }
+      title="إلغاء طلب السفر؟"
+      description="سيُلغى طلب السفر وسيُبلَّغ المريض بذلك. يمكن إنشاء طلب جديد لاحقًا عند الحاجة."
+      confirmLabel="إلغاء الطلب"
+      tone="destructive"
+      onConfirm={async () => {
+        const res = await cancelTravelRequest(requestId)
+        if (res.ok) {
+          toast.success("تم الإلغاء.")
+          router.refresh()
+          return true
+        }
+        toast.error(res.error)
+        return false
       }}
-    >
-      <X className="size-4" />
-      إلغاء
-    </Button>
+    />
   )
 }

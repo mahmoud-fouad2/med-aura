@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { CheckCircle2, XCircle, Archive } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   moderateApprove,
   moderateReject,
@@ -59,17 +60,15 @@ export function ModerationActions({
     })
   }
 
-  function onArchive() {
-    if (!confirm("سيتم إخفاء الحالة عن الواجهة العامة. تأكيد؟")) return
-    start(async () => {
-      const res = await archiveBeforeAfterCase(caseId)
-      if (res.ok) {
-        toast.success("تم الأرشفة.")
-        router.refresh()
-      } else {
-        toast.error(res.error)
-      }
-    })
+  async function onArchive() {
+    const res = await archiveBeforeAfterCase(caseId)
+    if (res.ok) {
+      toast.success("تم الأرشفة.")
+      router.refresh()
+      return true
+    }
+    toast.error(res.error)
+    return false
   }
 
   if (status === "SUBMITTED") {
@@ -129,15 +128,18 @@ export function ModerationActions({
 
   if (status === "APPROVED") {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onArchive}
-        loading={pending}
-      >
-        <Archive className="size-4" />
-        أرشفة
-      </Button>
+      <ConfirmDialog
+        trigger={
+          <Button variant="ghost" size="sm">
+            <Archive className="size-4" />
+            أرشفة
+          </Button>
+        }
+        title="أرشفة هذه الحالة؟"
+        description="ستُخفى الحالة عن الواجهة العامة فورًا، ويمكن الرجوع إليها لاحقًا من سجل الأرشيف."
+        confirmLabel="أرشفة"
+        onConfirm={onArchive}
+      />
     )
   }
 

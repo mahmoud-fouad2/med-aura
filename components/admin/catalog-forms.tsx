@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   upsertCategoryAction,
   upsertProcedureAction,
@@ -359,34 +360,39 @@ export function CatalogDeleteButton({
   id: string
   name: string
 }) {
-  const [pending, start] = useTransition()
   const router = useRouter()
+  const kindLabel = kind === "category" ? "القسم" : "الإجراء"
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label="حذف"
-      title="حذف"
-      loading={pending}
-      onClick={() => {
-        if (!confirm(`سيتم حذف "${name}" نهائيًا. هل أنت متأكد؟`)) return
-        start(async () => {
-          const res =
-            kind === "category"
-              ? await deleteCategoryAction(id)
-              : await deleteProcedureAction(id)
-          if (res.status === "ok") {
-            toast.success("تم الحذف.")
-            router.refresh()
-          } else {
-            toast.error(res.message)
-          }
-        })
+    <ConfirmDialog
+      trigger={
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="حذف"
+          title="حذف"
+        >
+          <Trash2 className="size-4 text-destructive" />
+        </Button>
+      }
+      title={`حذف ${kindLabel} "${name}"؟`}
+      description={`سيُحذف "${name}" نهائيًا ولا يمكن التراجع عن هذا الإجراء. إن كان مرتبطًا بحالات مرضى أو أطباء سنمنع الحذف ونوضح لك السبب.`}
+      confirmLabel="حذف نهائيًا"
+      tone="destructive"
+      onConfirm={async () => {
+        const res =
+          kind === "category"
+            ? await deleteCategoryAction(id)
+            : await deleteProcedureAction(id)
+        if (res.status === "ok") {
+          toast.success("تم الحذف.")
+          router.refresh()
+          return true
+        }
+        toast.error(res.message)
+        return false
       }}
-    >
-      <Trash2 className="size-4 text-destructive" />
-    </Button>
+    />
   )
 }
 
