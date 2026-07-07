@@ -1,6 +1,6 @@
 import { asc, desc, eq, ilike, inArray, or } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
-import { country as countryT, city as cityT, procedureCategory, procedure as procedureT, user as userT, userRole, role as roleT } from "@/lib/db/schema"
+import { country as countryT, city as cityT, procedureCategory, procedure as procedureT, user as userT, userRole, role as roleT, session as sessionT } from "@/lib/db/schema"
 
 export type AdminCountryRow = {
   id: string
@@ -10,6 +10,10 @@ export type AdminCountryRow = {
   sortOrder: number
   active: boolean
   cityCount: number
+  callingCode: string | null
+  currencyCode: string | null
+  defaultLanguage: string
+  timezone: string | null
 }
 
 export async function listCountriesForAdmin(): Promise<AdminCountryRow[]> {
@@ -27,6 +31,10 @@ export async function listCountriesForAdmin(): Promise<AdminCountryRow[]> {
     sortOrder: c.sortOrder,
     active: c.active,
     cityCount: countByCountry.get(c.id) ?? 0,
+    callingCode: c.callingCode,
+    currencyCode: c.currencyCode,
+    defaultLanguage: c.defaultLanguage,
+    timezone: c.timezone,
   }))
 }
 
@@ -127,32 +135,72 @@ export async function listProceduresForAdmin(): Promise<AdminProcedureRow[]> {
 }
 
 export type AdminUserRoleRef = { key: string; nameAr: string }
-export type AdminUserRow = { id: string; name: string; email: string; primaryRole: string; roles: AdminUserRoleRef[]; createdAt: Date }
+export type AdminUserRow = {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  status: string
+  primaryRole: string
+  roles: AdminUserRoleRef[]
+  createdAt: Date
+  lastLoginAt: Date | null
+}
 
 export async function listUsersForAdmin(opts?: { q?: string; limit?: number }): Promise<AdminUserRow[]> {
   if (!isDbConfigured) return []
   const q = opts?.q?.trim()
   const users = await db
-    .select({ id: userT.id, name: userT.name, email: userT.email, primaryRole: userT.role, createdAt: userT.createdAt })
+    .select({
+      id: userT.id,
+      name: userT.name,
+      email: userT.email,
+      phone: userT.phone,
+      status: userT.status,
+      primaryRole: userT.role,
+      createdAt: userT.createdAt,
+    })
     .from(userT)
-    .where(q ? or(ilike(userT.name, `%${q}%`), ilike(userT.email, `%${q}%`)) : undefined)
+    .where(
+      q
+        ? or(ilike(userT.name, `%${q}%`), ilike(userT.email, `%${q}%`), ilike(userT.phone, `%${q}%`))
+        : undefined,
+    )
     .orderBy(desc(userT.createdAt))
     .limit(opts?.limit ?? 200)
   if (users.length === 0) return []
 
-  const roleRows = await db
-    .select({ userId: userRole.userId, key: roleT.key, nameAr: roleT.nameAr })
-    .from(userRole)
-    .innerJoin(roleT, eq(userRole.roleId, roleT.id))
-    .where(inArray(userRole.userId, users.map((u) => u.id)))
+  const userIds = users.map((u) => u.id)
+  const [roleRows, sessionRows] = await Promise.all([
+    db
+      .select({ userId: userRole.userId, key: roleT.key, nameAr: roleT.nameAr })
+      .from(userRole)
+      .innerJoin(roleT, eq(userRole.roleId, roleT.id))
+      .where(inArray(userRole.userId, userIds)),
+    db
+      .select({ userId: sessionT.userId, createdAt: sessionT.createdAt })
+      .from(sessionT)
+      .where(inArray(sessionT.userId, userIds))
+      .orderBy(desc(sessionT.createdAt)),
+  ])
+
   const rolesByUser = new Map<string, AdminUserRoleRef[]>()
   for (const r of roleRows) {
     const list = rolesByUser.get(r.userId) ?? []
     if (!list.some((x) => x.key === r.key)) list.push({ key: r.key, nameAr: r.nameAr })
     rolesByUser.set(r.userId, list)
   }
+  // sessionRows is already ordered desc, so the first hit per user is the latest.
+  const lastLoginByUser = new Map<string, Date>()
+  for (const s of sessionRows) {
+    if (!lastLoginByUser.has(s.userId)) lastLoginByUser.set(s.userId, s.createdAt)
+  }
 
-  return users.map((u) => ({ ...u, roles: rolesByUser.get(u.id) ?? [] }))
+  return users.map((u) => ({
+    ...u,
+    roles: rolesByUser.get(u.id) ?? [],
+    lastLoginAt: lastLoginByUser.get(u.id) ?? null,
+  }))
 }
 
 export type AdminRoleOption = { key: string; nameAr: string }

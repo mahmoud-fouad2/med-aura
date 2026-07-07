@@ -15,6 +15,7 @@ import {
   GeoToggleButton,
   GeoDeleteButton,
 } from "@/components/admin/geography-forms"
+import { flagFromCountryCode } from "@/lib/geo"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الدول والمدن" }
@@ -67,6 +68,7 @@ export default async function AdminGeographyPage() {
                 <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
                   <Th>الاسم</Th>
                   <Th>الكود</Th>
+                  <Th>الاتصال والعملة</Th>
                   <Th>الترتيب</Th>
                   <Th>الحالة</Th>
                   <Th>المدن</Th>
@@ -77,13 +79,26 @@ export default async function AdminGeographyPage() {
                 {countries.map((c) => (
                   <tr key={c.id} className="transition-colors hover:bg-muted/25">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{c.nameAr}</div>
+                      <div className="flex items-center gap-1.5 font-medium text-foreground">
+                        <span aria-hidden="true">{flagFromCountryCode(c.code)}</span>
+                        {c.nameAr}
+                      </div>
                       <div dir="ltr" className="text-xs text-muted-foreground">
                         {c.nameEn}
                       </div>
                     </td>
                     <td dir="ltr" className="px-4 py-3 text-end font-mono text-xs text-muted-foreground">
                       {c.code}
+                    </td>
+                    <td dir="ltr" className="px-4 py-3 text-end font-mono text-xs text-muted-foreground">
+                      {c.callingCode || c.currencyCode ? (
+                        <span>
+                          {c.callingCode ?? "—"}
+                          {c.currencyCode ? ` · ${c.currencyCode}` : ""}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">
                       {c.sortOrder}

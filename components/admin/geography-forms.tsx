@@ -2,12 +2,19 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Save, X, Power, Trash2 } from "lucide-react"
+import { Plus, Pencil, Save, X, Power, Trash2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
 import {
   upsertCountryAction,
   toggleCountryActiveAction,
@@ -17,6 +24,7 @@ import {
   deleteCityAction,
   type ActionResult,
 } from "@/lib/actions/geography"
+import { COUNTRY_PRESETS, flagFromCountryCode } from "@/lib/geo"
 
 export type CountryRow = {
   id: string
@@ -25,7 +33,18 @@ export type CountryRow = {
   nameEn: string
   sortOrder: number
   active: boolean
+  callingCode: string | null
+  currencyCode: string | null
+  defaultLanguage: string
+  timezone: string | null
 }
+
+const LANGUAGE_OPTIONS = [
+  { value: "ar", label: "العربية" },
+  { value: "en", label: "الإنجليزية" },
+  { value: "tr", label: "التركية" },
+  { value: "fr", label: "الفرنسية" },
+]
 
 export type CityRow = {
   id: string
@@ -49,6 +68,29 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
   const [pending, start] = useTransition()
   const router = useRouter()
 
+  // Controlled so picking a preset can fill every field at once instead of
+  // asking the admin to type a name, an ISO code, a calling code, a currency
+  // code and a timezone from memory for every single country.
+  const [nameAr, setNameAr] = useState(existing?.nameAr ?? "")
+  const [nameEn, setNameEn] = useState(existing?.nameEn ?? "")
+  const [code, setCode] = useState(existing?.code ?? "")
+  const [callingCode, setCallingCode] = useState(existing?.callingCode ?? "")
+  const [currencyCode, setCurrencyCode] = useState(existing?.currencyCode ?? "")
+  const [defaultLanguage, setDefaultLanguage] = useState(existing?.defaultLanguage ?? "ar")
+  const [timezone, setTimezone] = useState(existing?.timezone ?? "")
+
+  function applyPreset(presetCode: string) {
+    const preset = COUNTRY_PRESETS.find((p) => p.code === presetCode)
+    if (!preset) return
+    setNameAr(preset.nameAr)
+    setNameEn(preset.nameEn)
+    setCode(preset.code)
+    setCallingCode(preset.callingCode)
+    setCurrencyCode(preset.currencyCode)
+    setDefaultLanguage(preset.defaultLanguage)
+    setTimezone(preset.timezone)
+  }
+
   if (!open) {
     return (
       <Button
@@ -63,8 +105,34 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
     )
   }
 
+  const flagPreview = flagFromCountryCode(code)
+
   return (
-    <Card className="space-y-3 border-primary/40 p-4">
+    <Card className="space-y-4 border-primary/40 p-4">
+      {!existing && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <Field label="اختر دولة من القائمة لملء البيانات تلقائيًا">
+            <Select
+              items={COUNTRY_PRESETS.map((p) => ({ value: p.code, label: `${flagFromCountryCode(p.code)}  ${p.nameAr}` }))}
+              onValueChange={(v) => applyPreset(String(v))}
+            >
+              <SelectTrigger className="w-full">
+                <Sparkles className="size-3.5 text-primary" />
+                <SelectValue placeholder="اختياري — أو أدخل البيانات يدويًا أدناه" />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRY_PRESETS.map((p) => (
+                  <SelectItem key={p.code} value={p.code}>
+                    {flagFromCountryCode(p.code)} {p.nameAr}
+                    <span dir="ltr" className="text-xs text-muted-foreground">{p.nameEn}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+      )}
+
       <form
         action={(fd) =>
           start(async () => {
@@ -80,25 +148,83 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
         {existing && <input type="hidden" name="id" value={existing.id} />}
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="الاسم بالعربية">
-            <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required minLength={2} />
+            <Input name="nameAr" value={nameAr} onChange={(e) => setNameAr(e.target.value)} required minLength={2} />
           </Field>
           <Field label="الاسم بالإنجليزية">
-            <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required minLength={2} dir="ltr" />
+            <Input name="nameEn" value={nameEn} onChange={(e) => setNameEn(e.target.value)} required minLength={2} dir="ltr" />
           </Field>
           <Field label="كود الدولة (حرفان)">
+            <div className="flex items-center gap-2">
+              <Input
+                name="code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                required
+                minLength={2}
+                maxLength={2}
+                placeholder="SA"
+                dir="ltr"
+                className="uppercase"
+              />
+              <span
+                aria-hidden="true"
+                title="معاينة العلم — يُشتق تلقائيًا من الكود"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-lg"
+              >
+                {flagPreview || "🏳️"}
+              </span>
+            </div>
+          </Field>
+          <Field label="ترتيب العرض">
+            <Input type="number" name="sortOrder" defaultValue={existing?.sortOrder ?? 0} min={0} max={9999} />
+          </Field>
+          <Field label="رمز الاتصال الدولي (اختياري)">
             <Input
-              name="code"
-              defaultValue={existing?.code ?? ""}
-              required
-              minLength={2}
-              maxLength={2}
-              placeholder="SA"
+              name="callingCode"
+              value={callingCode}
+              onChange={(e) => setCallingCode(e.target.value)}
+              placeholder="+966"
+              dir="ltr"
+            />
+          </Field>
+          <Field label="رمز العملة (اختياري)">
+            <Input
+              name="currencyCode"
+              value={currencyCode}
+              onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
+              placeholder="SAR"
+              maxLength={3}
               dir="ltr"
               className="uppercase"
             />
           </Field>
-          <Field label="ترتيب العرض">
-            <Input type="number" name="sortOrder" defaultValue={existing?.sortOrder ?? 0} min={0} max={9999} />
+          <Field label="اللغة الافتراضية">
+            <Select
+              name="defaultLanguage"
+              items={LANGUAGE_OPTIONS.map((l) => ({ value: l.value, label: l.label }))}
+              value={defaultLanguage}
+              onValueChange={(v) => setDefaultLanguage(String(v))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <SelectItem key={l.value} value={l.value}>
+                    {l.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="المنطقة الزمنية (اختياري)">
+            <Input
+              name="timezone"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              placeholder="Asia/Riyadh"
+              dir="ltr"
+            />
           </Field>
           <Field label="متاحة للاستخدام">
             <label className="flex h-9 items-center gap-2">
@@ -135,6 +261,7 @@ export function CityFormButton({
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
   const router = useRouter()
+  const [countryId, setCountryId] = useState(existing?.countryId ?? "")
 
   if (!open) {
     return (
@@ -167,21 +294,23 @@ export function CityFormButton({
         {existing && <input type="hidden" name="id" value={existing.id} />}
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="الدولة">
-            <select
+            <Select
               name="countryId"
-              defaultValue={existing?.countryId ?? ""}
-              required
-              className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              items={countries.map((c) => ({ value: c.id, label: c.nameAr }))}
+              value={countryId}
+              onValueChange={(v) => setCountryId(String(v))}
             >
-              <option value="" disabled>
-                اختر الدولة…
-              </option>
-              {countries.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nameAr}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="اختر الدولة…" />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nameAr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="متاحة للاستخدام">
             <label className="flex h-9 items-center gap-2">

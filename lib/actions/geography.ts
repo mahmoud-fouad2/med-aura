@@ -40,6 +40,22 @@ const CountrySchema = z.object({
   nameEn: z.string().min(2, "الاسم بالإنجليزية مطلوب").max(120),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
   active: z.coerce.boolean().default(true),
+  callingCode: z
+    .string()
+    .trim()
+    .max(6)
+    .regex(/^\+\d{1,5}$/, "رمز الاتصال بصيغة +رقم مثل ‎+966")
+    .nullable()
+    .or(z.literal("").transform(() => null)),
+  currencyCode: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{3}$/, "رمز العملة 3 أحرف بصيغة ISO مثل SAR")
+    .transform((v) => v.toUpperCase())
+    .nullable()
+    .or(z.literal("").transform(() => null)),
+  defaultLanguage: z.enum(["ar", "en", "tr", "fr"]).default("ar"),
+  timezone: z.string().trim().max(60).nullable().or(z.literal("").transform(() => null)),
 })
 
 function fromForm(fd: FormData) {

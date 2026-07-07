@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { ShieldAlert } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,10 +21,12 @@ export function AuthForm({
   mode,
   dict,
   nextPath,
+  accountDisabled,
 }: {
   mode: "sign-in" | "sign-up"
   dict: AuthDict
   nextPath?: string
+  accountDisabled?: boolean
 }) {
   const router = useRouter()
   const [name, setName] = useState("")
@@ -67,6 +70,19 @@ export function AuthForm({
               {isSignUp ? dict.signUpSubtitle : dict.signInSubtitle}
             </p>
           </div>
+
+          {accountDisabled && (
+            <div
+              role="alert"
+              className="mb-5 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-3 text-sm text-destructive"
+            >
+              <ShieldAlert className="mt-0.5 size-4.5 shrink-0" />
+              <span>
+                تم تعطيل هذا الحساب. إذا كنت تعتقد أن هذا خطأ، تواصل مع فريق
+                الدعم لمراجعة حالة حسابك.
+              </span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {isSignUp && (

@@ -13,9 +13,23 @@ import { Button } from "@/components/ui/button"
  * default). `onConfirm` returning `false` keeps the dialog open (e.g. the
  * server rejected the action) so the caller's toast stays visible and the
  * user can retry without re-opening.
+ *
+ * Two usage modes:
+ * - Uncontrolled (pass `trigger`): the dialog owns its own open state and
+ *   the trigger element opens it directly. Fine as long as the trigger and
+ *   the dialog live in the same part of the tree.
+ * - Controlled (pass `open`/`onOpenChange`, omit `trigger`): for triggers
+ *   that live inside a *different* dismissible layer — e.g. a dropdown menu
+ *   item. Rendering a ConfirmDialog nested inside a Menu.Popup breaks it:
+ *   selecting the item closes the menu, which unmounts the ConfirmDialog
+ *   (and its portal) before it can ever show. Render the dialog as a
+ *   *sibling* of the menu instead, lift the open flag to the parent, and
+ *   have the menu item's onClick just flip that flag.
  */
 export function ConfirmDialog({
   trigger,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
   title,
   description,
   confirmLabel = "تأكيد",
@@ -23,7 +37,9 @@ export function ConfirmDialog({
   tone = "default",
   onConfirm,
 }: {
-  trigger: ReactElement
+  trigger?: ReactElement
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   title: string
   description: string
   confirmLabel?: string
@@ -31,17 +47,22 @@ export function ConfirmDialog({
   tone?: "default" | "destructive"
   onConfirm: () => Promise<boolean | void> | boolean | void
 }) {
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const [pending, start] = useTransition()
 
-  const triggerEl = isValidElement<{ onClick?: (e: unknown) => void }>(trigger)
-    ? cloneElement(trigger, {
-        onClick: (e: unknown) => {
-          ;(trigger.props as { onClick?: (e: unknown) => void }).onClick?.(e)
-          setOpen(true)
-        },
-      })
-    : trigger
+  const isControlled = openProp !== undefined
+  const open = isControlled ? openProp : uncontrolledOpen
+  const setOpen = isControlled ? (onOpenChangeProp ?? (() => {})) : setUncontrolledOpen
+
+  const triggerEl =
+    trigger && isValidElement<{ onClick?: (e: unknown) => void }>(trigger)
+      ? cloneElement(trigger, {
+          onClick: (e: unknown) => {
+            ;(trigger.props as { onClick?: (e: unknown) => void }).onClick?.(e)
+            setOpen(true)
+          },
+        })
+      : trigger
 
   return (
     <DialogPrimitive.Root

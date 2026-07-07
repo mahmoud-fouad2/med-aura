@@ -36,9 +36,20 @@ export async function getSession() {
   }
 }
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+async function getRawSessionUser(): Promise<SessionUser | null> {
   const session = await getSession()
   return (session?.user as SessionUser | undefined) ?? null
+}
+
+/**
+ * A disabled/suspended account keeps a valid Better Auth session (we don't
+ * force-expire it here) but must be treated as signed-out everywhere —
+ * every protected page and server action funnels through this function.
+ */
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const user = await getRawSessionUser()
+  if (user && user.status && user.status !== "active") return null
+  return user
 }
 
 /** For server actions / route handlers: throw if not signed in. */
@@ -52,15 +63,23 @@ export async function getUserId(): Promise<string> {
   return (await requireUser()).id
 }
 
-/** For server components: redirect to sign-in (with return path) if anonymous. */
+/**
+ * For server components: redirect to sign-in (with return path) if anonymous.
+ * A disabled/suspended account gets a distinct `?disabled=1` redirect so the
+ * sign-in page can explain why, instead of silently bouncing them like a
+ * session that simply expired.
+ */
 export async function requireAuthPage(returnTo?: string): Promise<SessionUser> {
-  const user = await getCurrentUser()
-  if (!user) {
+  const raw = await getRawSessionUser()
+  if (raw && raw.status && raw.status !== "active") {
+    redirect("/sign-in?disabled=1")
+  }
+  if (!raw) {
     redirect(
       returnTo ? `/sign-in?next=${encodeURIComponent(returnTo)}` : "/sign-in",
     )
   }
-  return user
+  return raw
 }
 
 /** Throw FORBIDDEN unless the current user holds the permission. */

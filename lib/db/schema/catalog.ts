@@ -17,6 +17,13 @@ export const country = pgTable("country", {
   nameEn: text("nameEn").notNull(),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sortOrder").notNull().default(0),
+  // Reference/display fields — informational only, do not drive payment
+  // currency resolution (finance tables keep their own explicit default).
+  // No flag column: derived from `code` at render time (lib/geo.ts).
+  callingCode: text("callingCode"), // e.g. "+966"
+  currencyCode: text("currencyCode"), // ISO-4217, e.g. "SAR"
+  defaultLanguage: text("defaultLanguage").notNull().default("ar"),
+  timezone: text("timezone"), // IANA, e.g. "Asia/Riyadh"
   ...lifecycle(),
 })
 

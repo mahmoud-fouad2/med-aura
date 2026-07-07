@@ -7,8 +7,10 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { StatusBadge } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { UserRoleManager } from "@/components/admin/user-role-manager"
+import { UserAccountMenu } from "@/components/admin/user-account-menu"
 import { nf } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
@@ -93,8 +95,10 @@ export default async function AdminUsersPage({
                   <Th>المستخدم</Th>
                   <Th>الدور الأساسي</Th>
                   <Th>أدوار إضافية</Th>
-                  <Th>تاريخ التسجيل</Th>
+                  <Th>الحالة</Th>
+                  <Th>آخر دخول</Th>
                   {canAssign && <Th>الأدوار</Th>}
+                  {canAssign && <Th>—</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -131,8 +135,23 @@ export default async function AdminUsersPage({
                         )}
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge
+                        tone={u.status === "active" ? "success" : u.status === "suspended" ? "danger" : "neutral"}
+                        label={
+                          u.status === "active" ? "نشط" : u.status === "suspended" ? "موقوف" : "معطَّل"
+                        }
+                      />
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                      {new Date(u.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
+                      {u.lastLoginAt ? (
+                        new Date(u.lastLoginAt).toLocaleDateString("ar-SA-u-nu-latn", {
+                          day: "numeric",
+                          month: "short",
+                        })
+                      ) : (
+                        <span className="text-muted-foreground/50">لم يسجّل دخول بعد</span>
+                      )}
                     </td>
                     {canAssign && (
                       <td className="px-4 py-3">
@@ -145,6 +164,17 @@ export default async function AdminUsersPage({
                             nameAr: ROLE_LABEL[r.key] ?? r.nameAr,
                           }))}
                           selfId={viewer.id}
+                        />
+                      </td>
+                    )}
+                    {canAssign && (
+                      <td className="px-4 py-3">
+                        <UserAccountMenu
+                          userId={u.id}
+                          userName={u.name}
+                          userPhone={u.phone}
+                          isActive={u.status === "active"}
+                          isSelf={u.id === viewer.id}
                         />
                       </td>
                     )}
