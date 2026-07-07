@@ -9,6 +9,7 @@ import {
   CategoryFormButton,
   ProcedureFormButton,
   ToggleVisibleButton,
+  CatalogDeleteButton,
 } from "@/components/admin/catalog-forms"
 
 export const dynamic = "force-dynamic"
@@ -79,6 +80,7 @@ export default async function AdminProceduresPage() {
                       <div className="flex items-center gap-1">
                         <CategoryFormButton existing={c} />
                         <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
+                        <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
                       </div>
                     </td>
                   </tr>
@@ -141,6 +143,7 @@ export default async function AdminProceduresPage() {
                       <div className="flex items-center gap-1">
                         <ProcedureFormButton existing={p} categories={categoryOptions} />
                         <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
+                        <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
                       </div>
                     </td>
                   </tr>

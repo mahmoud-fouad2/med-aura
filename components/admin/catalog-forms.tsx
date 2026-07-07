@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Save, X, EyeOff, Eye } from "lucide-react"
+import { Plus, Pencil, Save, X, EyeOff, Eye, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,8 @@ import {
   upsertProcedureAction,
   toggleCategoryVisibleAction,
   toggleProcedureVisibleAction,
+  deleteCategoryAction,
+  deleteProcedureAction,
   type ActionResult,
 } from "@/lib/actions/catalog"
 
@@ -344,6 +346,46 @@ export function ToggleVisibleButton({
       }
     >
       {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+    </Button>
+  )
+}
+
+export function CatalogDeleteButton({
+  kind,
+  id,
+  name,
+}: {
+  kind: "category" | "procedure"
+  id: string
+  name: string
+}) {
+  const [pending, start] = useTransition()
+  const router = useRouter()
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      aria-label="حذف"
+      title="حذف"
+      loading={pending}
+      onClick={() => {
+        if (!confirm(`سيتم حذف "${name}" نهائيًا. هل أنت متأكد؟`)) return
+        start(async () => {
+          const res =
+            kind === "category"
+              ? await deleteCategoryAction(id)
+              : await deleteProcedureAction(id)
+          if (res.status === "ok") {
+            toast.success("تم الحذف.")
+            router.refresh()
+          } else {
+            toast.error(res.message)
+          }
+        })
+      }}
+    >
+      <Trash2 className="size-4 text-destructive" />
     </Button>
   )
 }

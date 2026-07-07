@@ -1,10 +1,16 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { eq } from "drizzle-orm"
+import { count, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { procedureCategory, procedure } from "@/lib/db/schema"
+import {
+  procedureCategory,
+  procedure,
+  aestheticCase,
+  doctorProcedure,
+  beforeAfterCase,
+} from "@/lib/db/schema"
 import { requirePermissionOrThrow } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
@@ -219,5 +225,88 @@ export async function toggleProcedureVisibleAction(id: string): Promise<ActionRe
   revalidatePath("/admin/procedures")
   revalidatePath("/procedures")
   revalidatePath(`/procedures/${current.slug}`)
+  return { status: "ok" }
+}
+
+/**
+ * Hard deletes below are refused while anything still references the row —
+ * patient cases, doctor offerings, and published results all outlive catalog
+ * housekeeping. The refusal message tells the admin what is attached and to
+ * hide the item instead, so no raw FK error ever reaches the UI.
+ */
+
+export async function deleteCategoryAction(id: string): Promise<ActionResult> {
+  const user = await requirePermissionOrThrow(PERMISSIONS.CATALOG_MANAGE)
+  const [existing] = await db
+    .select({ nameAr: procedureCategory.nameAr })
+    .from(procedureCategory)
+    .where(eq(procedureCategory.id, id))
+    .limit(1)
+  if (!existing) return { status: "error", message: "القسم غير موجود" }
+
+  const [procedures] = await db
+    .select({ n: count() })
+    .from(procedure)
+    .where(eq(procedure.categoryId, id))
+  if ((procedures?.n ?? 0) > 0) {
+    return {
+      status: "error",
+      message: `لا يمكن حذف «${existing.nameAr}»: يضم ${procedures.n} إجراءً. انقل الإجراءات لقسم آخر أو أخفِ القسم بدلًا من حذفه.`,
+    }
+  }
+
+  await db.delete(procedureCategory).where(eq(procedureCategory.id, id))
+  const meta = await requestMeta()
+  await writeAudit({
+    action: "catalog.category.delete",
+    actorUserId: user.id,
+    entityType: "procedure_category",
+    entityId: id,
+    metadata: { nameAr: existing.nameAr },
+    ...meta,
+  })
+  revalidatePath("/admin/procedures")
+  revalidatePath("/procedures")
+  return { status: "ok" }
+}
+
+export async function deleteProcedureAction(id: string): Promise<ActionResult> {
+  const user = await requirePermissionOrThrow(PERMISSIONS.CATALOG_MANAGE)
+  const [existing] = await db
+    .select({ nameAr: procedure.nameAr, slug: procedure.slug })
+    .from(procedure)
+    .where(eq(procedure.id, id))
+    .limit(1)
+  if (!existing) return { status: "error", message: "الإجراء غير موجود" }
+
+  const [[cases], [doctors], [results]] = await Promise.all([
+    db.select({ n: count() }).from(aestheticCase).where(eq(aestheticCase.procedureId, id)),
+    db.select({ n: count() }).from(doctorProcedure).where(eq(doctorProcedure.procedureId, id)),
+    db.select({ n: count() }).from(beforeAfterCase).where(eq(beforeAfterCase.procedureId, id)),
+  ])
+  const blockers: string[] = []
+  if ((cases?.n ?? 0) > 0) blockers.push(`${cases.n} حالة مريض`)
+  if ((doctors?.n ?? 0) > 0) blockers.push(`${doctors.n} طبيب يقدّمه`)
+  if ((results?.n ?? 0) > 0) blockers.push(`${results.n} نتيجة قبل/بعد`)
+  if (blockers.length > 0) {
+    return {
+      status: "error",
+      message: `لا يمكن حذف «${existing.nameAr}»: مرتبط بـ ${blockers.join(" و")}. أخفِ الإجراء بدلًا من حذفه للحفاظ على السجلات.`,
+    }
+  }
+
+  await db.delete(procedure).where(eq(procedure.id, id))
+  const meta = await requestMeta()
+  await writeAudit({
+    action: "catalog.procedure.delete",
+    actorUserId: user.id,
+    entityType: "procedure",
+    entityId: id,
+    metadata: { nameAr: existing.nameAr, slug: existing.slug },
+    ...meta,
+  })
+  revalidatePath("/admin/procedures")
+  revalidatePath("/procedures")
+  revalidatePath(`/procedures/${existing.slug}`)
   return { status: "ok" }
 }
