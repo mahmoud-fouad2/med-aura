@@ -10,8 +10,15 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { FadeIn } from "@/components/motion"
+import type { Dictionary } from "@/lib/i18n"
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({
+  home,
+  authShell,
+}: {
+  home: Dictionary["home"]
+  authShell: Dictionary["authShell"]
+}) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -35,7 +42,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <AuthShell>
+    <AuthShell home={home} authShell={authShell}>
       <FadeIn>
         <Card className="p-6 shadow-elegant sm:p-8">
           {sent ? (

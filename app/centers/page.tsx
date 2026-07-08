@@ -51,7 +51,7 @@ export default async function CentersPage() {
         <PageHero
           eyebrow="المراكز"
           title="مراكز التجميل المعتمدة"
-          subtitle="مراكز تم التحقق من تراخيصها، تضم نخبة من أطباء التجميل."
+          subtitle="مراكز تم التحقق من تراخيصها الطبية، بأطباء تجميل معتمدين في كل تخصص."
         />
 
         <section className="bg-background">

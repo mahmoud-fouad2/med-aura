@@ -154,6 +154,11 @@
     font-feature-settings: "ss01", "cv01", "kern";
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    /* Notched/rounded-corner screens (viewport-fit=cover in the metadata):
+       side and bottom safe areas guard against a future fixed bottom nav or
+       landscape notch; the sticky headers handle their own top inset. */
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   html {
     @apply font-sans;

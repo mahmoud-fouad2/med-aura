@@ -32,7 +32,7 @@ const ar = {
   home: {
     heroTitle: "رحلتك التجميلية تبدأ بقرار موثوق",
     heroSubtitle:
-      "استشر نخبة من أطباء ومراكز التجميل المعتمدين، شارك حالتك بأمان، واستلم خطة وسعرًا واضحًا قبل اتخاذ القرار.",
+      "استشر أطباء ومراكز تجميل معتمدين ومرخّصين، شارك حالتك بأمان، واستلم خطة وسعرًا واضحًا قبل اتخاذ القرار.",
     searchPlaceholder: "ابحث عن إجراء أو طبيب أو مركز…",
     exploreByArea: "اكتشف حسب المنطقة",
     popularProcedures: "الإجراءات الأكثر طلبًا",
@@ -40,6 +40,12 @@ const ar = {
     verifiedCenters: "المراكز الموثقة",
     howItWorks: "كيف تعمل Med Aura",
     noDataYet: "لا يوجد محتوى منشور بعد في هذا القسم.",
+  },
+  authShell: {
+    licenseCheck: "تحقق موثّق من تراخيص كل مقدّم خدمة",
+    fileProtection: "حماية كاملة لصورك وملفاتك الطبية",
+    verifiedReviews: "تقييمات من معاملات موثّقة فقط",
+    backHome: "العودة إلى الرئيسية",
   },
   search: {
     title: "ابحث عن طبيب أو إجراء",
@@ -103,6 +109,12 @@ const en: Dictionary = {
     verifiedCenters: "Verified centers",
     howItWorks: "How Med Aura works",
     noDataYet: "No published content in this section yet.",
+  },
+  authShell: {
+    licenseCheck: "Verified license check for every provider",
+    fileProtection: "Full protection for your photos and medical files",
+    verifiedReviews: "Reviews from verified transactions only",
+    backHome: "Back to home",
   },
   search: {
     title: "Find a doctor or procedure",

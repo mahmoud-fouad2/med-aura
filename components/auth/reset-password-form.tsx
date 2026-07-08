@@ -11,8 +11,17 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { FadeIn } from "@/components/motion"
+import type { Dictionary } from "@/lib/i18n"
 
-export function ResetPasswordForm({ token }: { token: string | null }) {
+export function ResetPasswordForm({
+  token,
+  home,
+  authShell,
+}: {
+  token: string | null
+  home: Dictionary["home"]
+  authShell: Dictionary["authShell"]
+}) {
   const router = useRouter()
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
@@ -46,7 +55,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell home={home} authShell={authShell}>
       <FadeIn>
         <Card className="p-6 shadow-elegant sm:p-8">
           {!token ? (

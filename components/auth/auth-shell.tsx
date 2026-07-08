@@ -1,9 +1,20 @@
 import Link from "next/link"
 import { ShieldCheck, FileLock2, Star, ArrowRight } from "lucide-react"
 import { Logo, LogoMark } from "@/components/brand/logo"
+import type { Dictionary } from "@/lib/i18n"
 
-/** Premium two-panel auth layout: brand story (left) + form (right). */
-export function AuthShell({ children }: { children: React.ReactNode }) {
+/** Premium two-panel auth layout: brand story (left) + form (right).
+ * Rendered from inside AuthForm ("use client"), so it can't call getI18n()
+ * itself — the caller passes the dictionary slices down instead. */
+export function AuthShell({
+  children,
+  home,
+  authShell,
+}: {
+  children: React.ReactNode
+  home: Dictionary["home"]
+  authShell: Dictionary["authShell"]
+}) {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       {/* brand panel */}
@@ -22,16 +33,13 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 
         <div className="relative max-w-md space-y-6">
           <h2 className="font-heading text-3xl font-extrabold leading-tight">
-            رحلتك التجميلية تبدأ بقرار موثوق
+            {home.heroTitle}
           </h2>
-          <p className="text-white/80">
-            استشر نخبة من أطباء ومراكز التجميل المعتمدين، وشارك حالتك بأمان،
-            واستلم خطة وسعرًا واضحًا قبل اتخاذ القرار.
-          </p>
+          <p className="text-white/80">{home.heroSubtitle}</p>
           <ul className="space-y-3 text-sm">
-            <Bullet icon={ShieldCheck} text="تحقق موثّق من تراخيص كل مقدّم خدمة" />
-            <Bullet icon={FileLock2} text="حماية كاملة لصورك وملفاتك الطبية" />
-            <Bullet icon={Star} text="تقييمات من معاملات موثّقة فقط" />
+            <Bullet icon={ShieldCheck} text={authShell.licenseCheck} />
+            <Bullet icon={FileLock2} text={authShell.fileProtection} />
+            <Bullet icon={Star} text={authShell.verifiedReviews} />
           </ul>
         </div>
 
@@ -39,8 +47,8 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           href="/"
           className="relative inline-flex w-fit items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
         >
-          <ArrowRight className="size-4" />
-          العودة إلى الرئيسية
+          <ArrowRight className="size-4 ltr:rotate-180" />
+          {authShell.backHome}
         </Link>
       </aside>
 

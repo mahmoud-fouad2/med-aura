@@ -24,7 +24,7 @@ export async function FeaturedDoctors() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             align="start"
-            eyebrow={isAr ? "نخبة موثّقة" : "Verified Selection"}
+            eyebrow={isAr ? "أطباء موثّقون" : "Verified Selection"}
             title={t.home.verifiedDoctors}
             subtitle={isAr ? "يظهر هنا الأطباء المعتمدون فقط، بعد التحقق من تراخيصهم." : "Only verified, accredited doctors are displayed here after strict license checks."}
           />

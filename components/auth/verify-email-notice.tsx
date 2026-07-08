@@ -10,8 +10,17 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { FadeIn } from "@/components/motion"
+import type { Dictionary } from "@/lib/i18n"
 
-export function VerifyEmailNotice({ defaultEmail }: { defaultEmail?: string }) {
+export function VerifyEmailNotice({
+  defaultEmail,
+  home,
+  authShell,
+}: {
+  defaultEmail?: string
+  home: Dictionary["home"]
+  authShell: Dictionary["authShell"]
+}) {
   const [email, setEmail] = useState(defaultEmail ?? "")
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -34,7 +43,7 @@ export function VerifyEmailNotice({ defaultEmail }: { defaultEmail?: string }) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell home={home} authShell={authShell}>
       <FadeIn>
         <Card className="p-6 shadow-elegant sm:p-8">
           <div className="flex flex-col items-center gap-4 text-center">

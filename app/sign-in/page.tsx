@@ -16,5 +16,14 @@ export default async function SignInPage({
   const { next, disabled } = await searchParams
   if (user) redirect(next || "/dashboard")
   const { t } = await getI18n()
-  return <AuthForm mode="sign-in" dict={t.auth} nextPath={next} accountDisabled={disabled === "1"} />
+  return (
+    <AuthForm
+      mode="sign-in"
+      dict={t.auth}
+      home={t.home}
+      authShell={t.authShell}
+      nextPath={next}
+      accountDisabled={disabled === "1"}
+    />
+  )
 }

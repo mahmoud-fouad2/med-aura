@@ -79,12 +79,31 @@ export async function upsertCountryAction(fd: FormData): Promise<ActionResult> {
 
   // A duplicate ISO code would make two "countries" collide everywhere the
   // code is used as the reference key.
-  const dup = await db
+  const dupCode = await db
     .select({ id: country.id })
     .from(country)
     .where(id ? and(eq(country.code, values.code), ne(country.id, id)) : eq(country.code, values.code))
     .limit(1)
-  if (dup[0]) return { status: "error", message: "كود الدولة مستخدم بالفعل" }
+  if (dupCode[0]) {
+    return {
+      status: "error",
+      message: "هذه الدولة مضافة بالفعل. يمكنك تعديل بياناتها من القائمة.",
+    }
+  }
+
+  // Same guard on the Arabic display name — a duplicate name is confusing
+  // for admins even when the ISO code differs.
+  const dupName = await db
+    .select({ id: country.id })
+    .from(country)
+    .where(id ? and(eq(country.nameAr, values.nameAr), ne(country.id, id)) : eq(country.nameAr, values.nameAr))
+    .limit(1)
+  if (dupName[0]) {
+    return {
+      status: "error",
+      message: "هذه الدولة مضافة بالفعل. يمكنك تعديل بياناتها من القائمة.",
+    }
+  }
 
   const meta = await requestMeta()
   if (id) {

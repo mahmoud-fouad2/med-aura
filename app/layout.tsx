@@ -41,13 +41,29 @@ export const metadata: Metadata = {
   description:
     "Med Aura منصة متخصصة في التجميل الطبي تربطك بأطباء ومراكز معتمدة، تدير رحلتك من الاستشارة حتى المتابعة بعد الإجراء بأمان وموثوقية.",
   applicationName: "Med Aura",
+  manifest: "/manifest.json",
   icons: {
-    icon: "/medaura-mark.svg",
-    apple: "/medaura-mark.svg",
+    icon: [
+      { url: "/medaura-mark.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Med Aura",
   },
 }
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Lets the app draw edge-to-edge on notched/rounded-corner phones once
+  // wrapped in a native shell — content itself still respects safe areas via
+  // env(safe-area-inset-*) wherever the shell (header/bottom nav) needs it.
+  viewportFit: "cover",
   colorScheme: "light",
   themeColor: "#1A1740",
 }

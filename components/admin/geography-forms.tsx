@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Save, X, Power, Trash2, Sparkles } from "lucide-react"
+import { Plus, Pencil, Save, X, Power, Trash2, RotateCcw, Check } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select"
+import { CountryCombobox } from "@/components/admin/country-combobox"
+import { TimezoneCombobox } from "@/components/admin/timezone-combobox"
 import {
   upsertCountryAction,
   toggleCountryActiveAction,
@@ -24,7 +26,7 @@ import {
   deleteCityAction,
   type ActionResult,
 } from "@/lib/actions/geography"
-import { COUNTRY_PRESETS, flagFromCountryCode } from "@/lib/geo"
+import { flagFromCountryCode, type CountryPreset } from "@/lib/geo"
 
 export type CountryRow = {
   id: string
@@ -78,10 +80,13 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
   const [currencyCode, setCurrencyCode] = useState(existing?.currencyCode ?? "")
   const [defaultLanguage, setDefaultLanguage] = useState(existing?.defaultLanguage ?? "ar")
   const [timezone, setTimezone] = useState(existing?.timezone ?? "")
+  // A country picked from the combobox that hasn't been applied to the form
+  // yet — staged instead of applied instantly whenever there's something to
+  // lose (edit mode, or add mode after the admin already typed something),
+  // so picking a country never silently overwrites in-progress edits.
+  const [pendingPreset, setPendingPreset] = useState<CountryPreset | null>(null)
 
-  function applyPreset(presetCode: string) {
-    const preset = COUNTRY_PRESETS.find((p) => p.code === presetCode)
-    if (!preset) return
+  function applyPreset(preset: CountryPreset) {
     setNameAr(preset.nameAr)
     setNameEn(preset.nameEn)
     setCode(preset.code)
@@ -89,6 +94,16 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
     setCurrencyCode(preset.currencyCode)
     setDefaultLanguage(preset.defaultLanguage)
     setTimezone(preset.timezone)
+    setPendingPreset(null)
+  }
+
+  function handlePick(preset: CountryPreset) {
+    const isPristine = !nameAr && !nameEn && !code && !callingCode && !currencyCode && !timezone
+    if (!existing && isPristine) {
+      applyPreset(preset)
+    } else {
+      setPendingPreset(preset)
+    }
   }
 
   if (!open) {
@@ -108,30 +123,29 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
   const flagPreview = flagFromCountryCode(code)
 
   return (
-    <Card className="space-y-4 border-primary/40 p-4">
-      {!existing && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-          <Field label="اختر دولة من القائمة لملء البيانات تلقائيًا">
-            <Select
-              items={COUNTRY_PRESETS.map((p) => ({ value: p.code, label: `${flagFromCountryCode(p.code)}  ${p.nameAr}` }))}
-              onValueChange={(v) => applyPreset(String(v))}
-            >
-              <SelectTrigger className="w-full">
-                <Sparkles className="size-3.5 text-primary" />
-                <SelectValue placeholder="اختياري — أو أدخل البيانات يدويًا أدناه" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRY_PRESETS.map((p) => (
-                  <SelectItem key={p.code} value={p.code}>
-                    {flagFromCountryCode(p.code)} {p.nameAr}
-                    <span dir="ltr" className="text-xs text-muted-foreground">{p.nameEn}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
-      )}
+    <Card className="space-y-5 border-primary/40 p-4 sm:p-5">
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+        <Field label={existing ? "البحث عن دولة لتطبيق بياناتها الجاهزة" : "اختر دولة من القائمة لملء البيانات تلقائيًا"}>
+          <CountryCombobox onSelect={handlePick} />
+        </Field>
+
+        {pendingPreset && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-background p-2.5 text-xs">
+            <span aria-hidden="true" className="text-base leading-none">
+              {flagFromCountryCode(pendingPreset.code)}
+            </span>
+            <span className="flex-1 text-foreground">
+              تطبيق بيانات <strong>{pendingPreset.nameAr}</strong> سيستبدل القيم الحالية في الحقول أدناه.
+            </span>
+            <Button type="button" size="xs" onClick={() => applyPreset(pendingPreset)}>
+              <Check className="size-3.5" /> تطبيق
+            </Button>
+            <Button type="button" size="xs" variant="ghost" onClick={() => setPendingPreset(null)}>
+              تجاهل
+            </Button>
+          </div>
+        )}
+      </div>
 
       <form
         action={(fd) =>
@@ -143,111 +157,130 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
             })
           })
         }
-        className="space-y-3"
+        className="space-y-5"
       >
         {existing && <input type="hidden" name="id" value={existing.id} />}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="الاسم بالعربية">
-            <Input name="nameAr" value={nameAr} onChange={(e) => setNameAr(e.target.value)} required minLength={2} />
-          </Field>
-          <Field label="الاسم بالإنجليزية">
-            <Input name="nameEn" value={nameEn} onChange={(e) => setNameEn(e.target.value)} required minLength={2} dir="ltr" />
-          </Field>
-          <Field label="كود الدولة (حرفان)">
-            <div className="flex items-center gap-2">
-              <Input
-                name="code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                required
-                minLength={2}
-                maxLength={2}
-                placeholder="SA"
-                dir="ltr"
-                className="uppercase"
-              />
-              <span
-                aria-hidden="true"
-                title="معاينة العلم — يُشتق تلقائيًا من الكود"
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-lg"
-              >
-                {flagPreview || "🏳️"}
-              </span>
-            </div>
-          </Field>
-          <Field label="ترتيب العرض">
-            <Input type="number" name="sortOrder" defaultValue={existing?.sortOrder ?? 0} min={0} max={9999} />
-          </Field>
-          <Field label="رمز الاتصال الدولي (اختياري)">
+
+        <FormSection title="معلومات أساسية">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="الاسم بالعربية">
+              <Input name="nameAr" value={nameAr} onChange={(e) => setNameAr(e.target.value)} required minLength={2} />
+            </Field>
+            <Field label="الاسم بالإنجليزية">
+              <Input name="nameEn" value={nameEn} onChange={(e) => setNameEn(e.target.value)} required minLength={2} dir="ltr" />
+            </Field>
+            <Field label="كود الدولة (ISO، حرفان)" hint="يُشتق العلم منه تلقائيًا — لا حاجة لاختياره يدويًا.">
+              <div className="flex items-center gap-2">
+                <Input
+                  name="code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  required
+                  minLength={2}
+                  maxLength={2}
+                  placeholder="SA"
+                  dir="ltr"
+                  className="uppercase"
+                />
+                <span
+                  aria-hidden="true"
+                  title="معاينة العلم"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-lg"
+                >
+                  {flagPreview || "🏳️"}
+                </span>
+              </div>
+            </Field>
+            <Field label="ترتيب العرض">
+              <Input type="number" name="sortOrder" defaultValue={existing?.sortOrder ?? 0} min={0} max={9999} />
+            </Field>
+          </div>
+        </FormSection>
+
+        <FormSection title="الاتصال">
+          <Field label="رمز الاتصال الدولي (اختياري)" hint="بصيغة +رقم — يبقى بالاتجاه الصحيح داخل الواجهة العربية.">
             <Input
               name="callingCode"
               value={callingCode}
               onChange={(e) => setCallingCode(e.target.value)}
               placeholder="+966"
               dir="ltr"
+              className="max-w-40"
             />
           </Field>
-          <Field label="رمز العملة (اختياري)">
-            <Input
-              name="currencyCode"
-              value={currencyCode}
-              onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-              placeholder="SAR"
-              maxLength={3}
-              dir="ltr"
-              className="uppercase"
-            />
-          </Field>
-          <Field label="اللغة الافتراضية">
-            <Select
-              name="defaultLanguage"
-              items={LANGUAGE_OPTIONS.map((l) => ({ value: l.value, label: l.label }))}
-              value={defaultLanguage}
-              onValueChange={(v) => setDefaultLanguage(String(v))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LANGUAGE_OPTIONS.map((l) => (
-                  <SelectItem key={l.value} value={l.value}>
-                    {l.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="المنطقة الزمنية (اختياري)">
-            <Input
-              name="timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="Asia/Riyadh"
-              dir="ltr"
-            />
-          </Field>
-          <Field label="متاحة للاستخدام">
-            <label className="flex h-9 items-center gap-2">
-              <input
-                type="checkbox"
-                name="active"
-                defaultChecked={existing?.active ?? true}
-                className="size-4 accent-primary"
+        </FormSection>
+
+        <FormSection title="الإعدادات المحلية">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="رمز العملة (اختياري)">
+              <Input
+                name="currencyCode"
+                value={currencyCode}
+                onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
+                placeholder="SAR"
+                maxLength={3}
+                dir="ltr"
+                className="uppercase"
               />
-              <span className="text-sm text-muted-foreground">نشطة</span>
-            </label>
-          </Field>
-        </div>
-        <div className="flex justify-end gap-2">
+            </Field>
+            <Field label="اللغة الأساسية">
+              <Select
+                name="defaultLanguage"
+                items={LANGUAGE_OPTIONS.map((l) => ({ value: l.value, label: l.label }))}
+                value={defaultLanguage}
+                onValueChange={(v) => setDefaultLanguage(String(v))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGE_OPTIONS.map((l) => (
+                    <SelectItem key={l.value} value={l.value}>
+                      {l.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="المنطقة الزمنية الأساسية (اختياري)" full hint="لدول متعددة المناطق الزمنية، اختر المنطقة الأكثر استخدامًا — يبقى الحقل قابلًا للتعديل لاحقًا.">
+              <TimezoneCombobox name="timezone" value={timezone} onValueChange={setTimezone} />
+            </Field>
+          </div>
+        </FormSection>
+
+        <FormSection title="حالة الدولة">
+          <label className="flex h-9 items-center gap-2">
+            <input
+              type="checkbox"
+              name="active"
+              defaultChecked={existing?.active ?? true}
+              className="size-4 accent-primary"
+            />
+            <span className="text-sm text-muted-foreground">متاحة للاستخدام على المنصة</span>
+          </label>
+        </FormSection>
+
+        <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
           <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={pending}>
             <X className="size-4" /> إلغاء
           </Button>
-          <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
+          <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…" disabled={pending}>
             <Save className="size-4" /> حفظ
           </Button>
         </div>
       </form>
     </Card>
+  )
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2.5">
+      <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
+      {children}
+    </div>
   )
 }
 
@@ -420,11 +453,22 @@ export function GeoDeleteButton({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  full,
+  children,
+}: {
+  label: string
+  hint?: string
+  full?: boolean
+  children: React.ReactNode
+}) {
   return (
-    <label className="space-y-1">
+    <label className={"space-y-1 " + (full ? "sm:col-span-2" : "")}>
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
+      {hint && <span className="block text-[11px] leading-relaxed text-muted-foreground/80">{hint}</span>}
     </label>
   )
 }

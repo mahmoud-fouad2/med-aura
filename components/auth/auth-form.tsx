@@ -20,11 +20,15 @@ type AuthDict = Dictionary["auth"]
 export function AuthForm({
   mode,
   dict,
+  home,
+  authShell,
   nextPath,
   accountDisabled,
 }: {
   mode: "sign-in" | "sign-up"
   dict: AuthDict
+  home: Dictionary["home"]
+  authShell: Dictionary["authShell"]
   nextPath?: string
   accountDisabled?: boolean
 }) {
@@ -59,7 +63,7 @@ export function AuthForm({
   }
 
   return (
-    <AuthShell>
+    <AuthShell home={home} authShell={authShell}>
       <FadeIn>
         <Card className="p-6 shadow-elegant sm:p-8">
           <div className="mb-6 text-center">

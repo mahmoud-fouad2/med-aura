@@ -36,7 +36,7 @@ export async function PopularProcedures() {
         <SectionHeading
           eyebrow="الإجراءات"
           title="الإجراءات الأكثر طلبًا"
-          subtitle="نخبة من إجراءات التجميل الجراحية وغير الجراحية، يقدّمها مختصون معتمدون."
+          subtitle="إجراءات تجميل جراحية وغير جراحية، يقدّمها أطباء ومراكز معتمدون."
         />
 
         {res.status !== "ok" ? (
