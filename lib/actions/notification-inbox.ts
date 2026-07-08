@@ -44,6 +44,38 @@ export async function markAllNotificationsRead(): Promise<ActionResult> {
   }
 }
 
+async function setArchived(notificationId: string, archived: boolean): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const n = (
+      await db
+        .select({ userId: notification.userId })
+        .from(notification)
+        .where(eq(notification.id, notificationId))
+        .limit(1)
+    )[0]
+    if (!n) throw new AppError("NOT_FOUND")
+    if (n.userId !== user.id) throw forbidden()
+    await db
+      .update(notification)
+      .set({ archivedAt: archived ? new Date() : null })
+      .where(eq(notification.id, notificationId))
+    revalidatePath("/dashboard/notifications")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+export async function archiveNotification(notificationId: string): Promise<ActionResult> {
+  return setArchived(notificationId, true)
+}
+
+export async function unarchiveNotification(notificationId: string): Promise<ActionResult> {
+  return setArchived(notificationId, false)
+}
+
 /**
  * Retry a failed/unconfigured email delivery. Rebuilds a simple email from the
  * notification's own title/body/href (the original rich template isn't

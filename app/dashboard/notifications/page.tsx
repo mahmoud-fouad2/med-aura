@@ -7,10 +7,16 @@ import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>
+}) {
+  const { view } = await searchParams
+  const archived = view === "archived"
   const user = (await getCurrentUser())!
   const [items, emailEnabled] = await Promise.all([
-    listNotifications(user.id),
+    listNotifications(user.id, { archived }),
     getEmailPreference(user.id),
   ])
 
@@ -31,7 +37,27 @@ export default async function NotificationsPage() {
           }
         />
       </div>
-      <NotificationInbox items={items} emailEnabled={emailEnabled} />
+      <div className="flex gap-1 rounded-lg bg-muted/50 p-1 text-sm">
+        <Link
+          href="/dashboard/notifications"
+          className={
+            "flex-1 rounded-md px-3 py-1.5 text-center font-medium transition-colors " +
+            (!archived ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")
+          }
+        >
+          الوارد
+        </Link>
+        <Link
+          href="/dashboard/notifications?view=archived"
+          className={
+            "flex-1 rounded-md px-3 py-1.5 text-center font-medium transition-colors " +
+            (archived ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")
+          }
+        >
+          الأرشيف
+        </Link>
+      </div>
+      <NotificationInbox items={items} emailEnabled={emailEnabled} archived={archived} />
     </div>
   )
 }

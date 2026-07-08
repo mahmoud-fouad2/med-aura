@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { FavoriteToggle } from "@/components/favorites/favorite-toggle"
 import { currencyAr, countryNameAr } from "@/lib/status-labels"
 import type { DoctorCard as DoctorCardData } from "@/lib/data/doctors"
@@ -28,7 +28,7 @@ export function DoctorCard({
   const showRating = doctor.reviewCount > 0 && doctor.rating
 
   return (
-    <Card className="group relative flex h-full flex-col overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_2px_4px_rgba(20,20,60,0.05),0_12px_28px_-12px_rgba(20,20,60,0.16)]">
+    <Card className="group relative flex h-full flex-col overflow-hidden p-0 border-white/60 bg-card/85 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant-lg">
       {/* Top gradient accent bar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
 
@@ -46,6 +46,7 @@ export function DoctorCard({
       <div className="flex-1 space-y-4 p-5 pt-6">
         <div className="flex items-start gap-3 pe-10">
           <Avatar className="size-14 shrink-0 ring-2 ring-primary/10">
+            {doctor.photoUrl && <AvatarImage src={doctor.photoUrl} alt={doctor.name} />}
             <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-lg font-heading font-bold text-primary">
               {initials}
             </AvatarFallback>

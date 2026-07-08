@@ -10,7 +10,8 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from "@/components/ui/combobox"
-import { COUNTRY_PRESETS, flagFromCountryCode, type CountryPreset } from "@/lib/geo"
+import { CountryFlag } from "@/components/ui/country-flag"
+import { COUNTRY_PRESETS, type CountryPreset } from "@/lib/geo"
 
 /**
  * Searchable country picker — matches Arabic name, English name, ISO code,
@@ -63,9 +64,7 @@ export function CountryCombobox({
         </ComboboxEmpty>
         {filtered.map((p) => (
           <ComboboxItem key={p.code} value={p}>
-            <span aria-hidden="true" className="text-base leading-none">
-              {flagFromCountryCode(p.code)}
-            </span>
+            <CountryFlag code={p.code} className="h-4 w-6" />
             <span className="min-w-0 flex-1 truncate">{p.nameAr}</span>
             <span dir="ltr" className="shrink-0 text-xs text-muted-foreground">
               {p.nameEn} · {p.callingCode}

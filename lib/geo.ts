@@ -1,19 +1,3 @@
-/**
- * Country flag emoji, derived purely from a 2-letter ISO-3166 code — never
- * stored. Each letter maps to a Unicode "regional indicator symbol"
- * (U+1F1E6..U+1F1FF, offset +127397 from its uppercase ASCII codepoint), and
- * two of them together render as that country's flag in every modern font.
- * Works for any valid code, so a newly-added country never needs anyone to
- * hunt down and paste an emoji by hand.
- */
-export function flagFromCountryCode(code: string): string {
-  const upper = code.trim().toUpperCase()
-  if (!/^[A-Z]{2}$/.test(upper)) return ""
-  return String.fromCodePoint(
-    ...Array.from(upper, (ch) => 127397 + ch.charCodeAt(0)),
-  )
-}
-
 export type CountryPreset = {
   code: string
   nameAr: string

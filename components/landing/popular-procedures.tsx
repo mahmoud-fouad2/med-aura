@@ -60,20 +60,20 @@ export async function PopularProcedures() {
               <StaggerItem key={p.slug}>
                 <Link
                   href={`/search?procedure=${p.slug}`}
-                  className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
+                  className="group flex h-full flex-col gap-3.5 rounded-2xl border border-white/60 bg-card/85 p-5 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm"
                 >
                   <div className="flex items-center justify-between">
-                    <CategoryIconBadge icon={p.categoryIcon} className="size-10" iconClassName="size-5" />
-                    <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1 group-hover:text-primary" />
+                    <CategoryIconBadge icon={p.categoryIcon} className="size-10 ring-1 ring-primary/10 transition-transform duration-300 group-hover:scale-105" iconClassName="size-5" />
+                    <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1 group-hover:text-primary" />
                   </div>
                   <h3 className="font-heading text-lg font-bold text-foreground">
                     {p.nameAr}
                   </h3>
-                  <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit">
+                  <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit font-medium">
                     <Syringe className="size-3" />
                     {p.isSurgical ? "جراحي" : "غير جراحي"}
                   </Badge>
-                  <p className="mt-auto text-sm text-muted-foreground">
+                  <p className="mt-auto text-xs text-muted-foreground font-medium pt-2 border-t border-border/40">
                     {p.categoryNameAr}
                     {p.recoveryDays != null && p.recoveryDays > 0
                       ? ` · تعافٍ تقديري ${p.recoveryDays} يوم`

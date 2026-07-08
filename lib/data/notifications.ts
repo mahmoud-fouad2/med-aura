@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull, isNotNull } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { notification, notificationDelivery, notificationPreference } from "@/lib/db/schema"
 
@@ -16,19 +16,26 @@ export type NotificationView = {
   caseId: string | null
   href: string | null
   readAt: Date | null
+  archivedAt: Date | null
   createdAt: Date
   deliveries: NotificationDeliveryView[]
 }
 
 export async function listNotifications(
   userId: string,
-  limit = 50,
+  options: { limit?: number; archived?: boolean } = {},
 ): Promise<NotificationView[]> {
+  const { limit = 50, archived = false } = options
   if (!isDbConfigured) return []
   const rows = await db
     .select()
     .from(notification)
-    .where(eq(notification.userId, userId))
+    .where(
+      and(
+        eq(notification.userId, userId),
+        archived ? isNotNull(notification.archivedAt) : isNull(notification.archivedAt),
+      ),
+    )
     .orderBy(desc(notification.createdAt))
     .limit(limit)
   if (rows.length === 0) return []
@@ -52,6 +59,7 @@ export async function listNotifications(
     caseId: r.caseId,
     href: r.href,
     readAt: r.readAt,
+    archivedAt: r.archivedAt,
     createdAt: r.createdAt,
     deliveries: byNotification.get(r.id) ?? [],
   }))
@@ -62,7 +70,13 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
   const rows = await db
     .select({ id: notification.id })
     .from(notification)
-    .where(and(eq(notification.userId, userId), isNull(notification.readAt)))
+    .where(
+      and(
+        eq(notification.userId, userId),
+        isNull(notification.readAt),
+        isNull(notification.archivedAt),
+      ),
+    )
   return rows.length
 }
 

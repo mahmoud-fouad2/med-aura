@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import {
   MoreVertical,
   Pencil,
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { FormDialog } from "@/components/ui/form-dialog"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -176,58 +176,53 @@ function EditUserDialog({
 }) {
   const [pending, start] = useTransition()
   const router = useRouter()
+  const formId = `edit-user-form-${userId}`
+
+  function submit(fd: FormData) {
+    start(async () => {
+      const res = await updateUserAction({
+        userId,
+        name: String(fd.get("name") ?? ""),
+        phone: String(fd.get("phone") ?? ""),
+      })
+      if (res.status === "ok") {
+        toast.success(res.message)
+        onOpenChange(false)
+        router.refresh()
+      } else {
+        toast.error(res.message)
+      }
+    })
+  }
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/30 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 w-[92vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-5 shadow-elegant-lg outline-none transition duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
-          <DialogPrimitive.Title className="font-heading text-base font-bold text-foreground">
-            تعديل بيانات المستخدم
-          </DialogPrimitive.Title>
-          <DialogPrimitive.Description className="mt-1 text-sm text-muted-foreground">
-            الاسم ورقم الهاتف فقط — البريد الإلكتروني وكلمة المرور يديرهما المستخدم بنفسه.
-          </DialogPrimitive.Description>
-          <form
-            className="mt-4 space-y-3"
-            action={(fd) =>
-              start(async () => {
-                const res = await updateUserAction({
-                  userId,
-                  name: String(fd.get("name") ?? ""),
-                  phone: String(fd.get("phone") ?? ""),
-                })
-                if (res.status === "ok") {
-                  toast.success(res.message)
-                  onOpenChange(false)
-                  router.refresh()
-                } else {
-                  toast.error(res.message)
-                }
-              })
-            }
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-user-name">الاسم الكامل</Label>
-              <Input id="edit-user-name" name="name" defaultValue={name} required minLength={2} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-user-phone">رقم الهاتف (اختياري)</Label>
-              <Input id="edit-user-phone" name="phone" defaultValue={phone ?? ""} dir="ltr" />
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <DialogPrimitive.Close
-                render={<Button type="button" variant="ghost" size="sm" disabled={pending} />}
-              >
-                إلغاء
-              </DialogPrimitive.Close>
-              <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
-                <Save className="size-4" /> حفظ
-              </Button>
-            </div>
-          </form>
-        </DialogPrimitive.Popup>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="تعديل بيانات المستخدم"
+      description="الاسم ورقم الهاتف فقط — البريد الإلكتروني وكلمة المرور يديرهما المستخدم بنفسه."
+      preventClose={pending}
+      footer={
+        <>
+          <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => onOpenChange(false)}>
+            إلغاء
+          </Button>
+          <Button type="submit" form={formId} size="sm" loading={pending} loadingText="جارٍ الحفظ…">
+            <Save className="size-4" /> حفظ
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} className="space-y-3" action={submit}>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-user-name">الاسم الكامل</Label>
+          <Input id="edit-user-name" name="name" defaultValue={name} required minLength={2} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-user-phone">رقم الهاتف (اختياري)</Label>
+          <Input id="edit-user-phone" name="phone" defaultValue={phone ?? ""} dir="ltr" />
+        </div>
+      </form>
+    </FormDialog>
   )
 }

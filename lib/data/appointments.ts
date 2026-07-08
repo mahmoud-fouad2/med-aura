@@ -6,6 +6,7 @@ import {
   payment,
   user as userT,
 } from "@/lib/db/schema"
+import { getPublicUrl } from "@/lib/storage/r2"
 
 export type AppointmentRow = {
   id: string
@@ -17,6 +18,7 @@ export type AppointmentRow = {
   priceAmount: string | null
   currency: string
   counterpartName: string
+  counterpartPhotoUrl?: string | null
   paymentStatus: string | null
   caseId: string | null
 }
@@ -24,7 +26,7 @@ export type AppointmentRow = {
 export async function listPatientAppointments(
   userId: string,
 ): Promise<AppointmentRow[]> {
-  return db
+  const rows = await db
     .select({
       id: appointment.id,
       reference: appointment.reference,
@@ -35,6 +37,7 @@ export async function listPatientAppointments(
       priceAmount: appointment.priceAmount,
       currency: appointment.currency,
       counterpartName: doctorProfile.name,
+      counterpartPhotoKey: doctorProfile.photoKey,
       paymentStatus: payment.status,
       caseId: appointment.caseId,
     })
@@ -43,6 +46,11 @@ export async function listPatientAppointments(
     .leftJoin(payment, eq(payment.appointmentId, appointment.id))
     .where(eq(appointment.patientUserId, userId))
     .orderBy(desc(appointment.startsAt))
+
+  return rows.map(({ counterpartPhotoKey, ...r }) => ({
+    ...r,
+    counterpartPhotoUrl: counterpartPhotoKey ? getPublicUrl(counterpartPhotoKey) : null,
+  }))
 }
 
 /** Resolve a doctor's profile id from their user id (or null if not a doctor). */

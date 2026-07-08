@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { and, count, eq, ne } from "drizzle-orm"
+import { and, count, eq, ilike, ne, or } from "drizzle-orm"
+import type { AnyPgColumn } from "drizzle-orm/pg-core"
 import { z } from "zod"
 import { db } from "@/lib/db"
 import {
@@ -310,11 +311,37 @@ export async function toggleCityActiveAction(id: string): Promise<ActionResult> 
 export async function deleteCityAction(id: string): Promise<ActionResult> {
   const user = await requirePermissionOrThrow(PERMISSIONS.CATALOG_MANAGE)
   const [row] = await db
-    .select({ nameAr: city.nameAr })
+    .select({ nameAr: city.nameAr, nameEn: city.nameEn })
     .from(city)
     .where(eq(city.id, id))
     .limit(1)
   if (!row) return { status: "error", message: "المدينة غير موجودة" }
+
+  // Centers/doctors/patients store their city as free text (no FK to this
+  // table), so there's no constraint to catch this — match by name instead,
+  // same safety intent as the country guard above.
+  const nameMatch = (col: AnyPgColumn) => or(ilike(col, row.nameAr), ilike(col, row.nameEn))
+  const [centers] = await db.select({ n: count() }).from(center).where(nameMatch(center.city))
+  if (Number(centers?.n ?? 0) > 0) {
+    return {
+      status: "error",
+      message: `لا يمكن حذف ${row.nameAr}: يوجد ${centers.n} مركز مرتبط بها. عطّل المدينة بدلًا من حذفها.`,
+    }
+  }
+  const [doctors] = await db.select({ n: count() }).from(doctorProfile).where(nameMatch(doctorProfile.city))
+  if (Number(doctors?.n ?? 0) > 0) {
+    return {
+      status: "error",
+      message: `لا يمكن حذف ${row.nameAr}: يوجد ${doctors.n} طبيب مرتبط بها. عطّل المدينة بدلًا من حذفها.`,
+    }
+  }
+  const [patients] = await db.select({ n: count() }).from(patientProfile).where(nameMatch(patientProfile.city))
+  if (Number(patients?.n ?? 0) > 0) {
+    return {
+      status: "error",
+      message: `لا يمكن حذف ${row.nameAr}: يوجد مرضى مسجّلون فيها. عطّل المدينة بدلًا من حذفها.`,
+    }
+  }
 
   await db.delete(city).where(eq(city.id, id))
   const meta = await requestMeta()

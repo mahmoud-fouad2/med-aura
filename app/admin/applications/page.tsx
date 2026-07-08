@@ -249,7 +249,7 @@ export default async function ApplicationsPage() {
 
                   {open && (
                     <div className="mt-4 border-t border-border/60 pt-4">
-                      <ApplicationReview applicationId={r.id} />
+                      <ApplicationReview applicationId={r.id} isDoctor={isDoctor} />
                     </div>
                   )}
                 </div>

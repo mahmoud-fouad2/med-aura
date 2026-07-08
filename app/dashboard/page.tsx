@@ -28,6 +28,7 @@ import { DashboardHero } from "@/components/dashboard/hero-banner"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
 import { Button } from "@/components/ui/button"
+import { PersonAvatar } from "@/components/ui/person-avatar"
 import {
   caseStatusAr,
   appointmentStatusAr,
@@ -202,13 +203,22 @@ export default async function DashboardHome() {
                 <BadgeCheck className="size-3.5" />
                 حالتك الحالية
               </div>
-              <div>
-                <p className="font-heading text-lg font-bold leading-snug text-foreground">
-                  {currentCase.procedureName}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {currentCase.doctorName ?? "بانتظار تعيين الطبيب"} · {currentCase.reference}
-                </p>
+              <div className="flex items-start gap-2.5">
+                {currentCase.doctorName && (
+                  <PersonAvatar
+                    src={currentCase.doctorPhotoUrl}
+                    name={currentCase.doctorName}
+                    className="mt-0.5"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="font-heading text-lg font-bold leading-snug text-foreground">
+                    {currentCase.procedureName}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {currentCase.doctorName ?? "بانتظار تعيين الطبيب"} · {currentCase.reference}
+                  </p>
+                </div>
               </div>
               <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
                 {caseStatusAr(currentCase.status)}
@@ -292,8 +302,15 @@ export default async function DashboardHome() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-success">
                     موعدك القادم · {relativeDay(new Date(nextAppt.startsAt))}
                   </p>
-                  <h2 className="mt-1 truncate font-heading text-lg font-bold text-foreground">
-                    {appointmentTypeAr(nextAppt.type)} مع {nextAppt.counterpartName}
+                  <h2 className="mt-1 flex items-center gap-2 truncate font-heading text-lg font-bold text-foreground">
+                    <PersonAvatar
+                      src={nextAppt.counterpartPhotoUrl}
+                      name={nextAppt.counterpartName}
+                      size="sm"
+                    />
+                    <span className="truncate">
+                      {appointmentTypeAr(nextAppt.type)} مع {nextAppt.counterpartName}
+                    </span>
                   </h2>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
@@ -435,6 +452,7 @@ export default async function DashboardHome() {
                             {new Date(a.startsAt).toLocaleDateString("ar-SA-u-nu-latn", { month: "short" })}
                           </span>
                         </div>
+                        <PersonAvatar src={a.counterpartPhotoUrl} name={a.counterpartName} size="sm" className="shrink-0" />
                         <div className="min-w-0">
                           <p className="truncate font-medium text-foreground">
                             {appointmentTypeAr(a.type)} — {a.counterpartName}
@@ -485,13 +503,18 @@ export default async function DashboardHome() {
                       href={`/dashboard/cases/${c.id}`}
                       className="group flex items-center justify-between gap-4 px-5 py-3 text-sm transition-colors hover:bg-muted/30"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">
-                          {c.procedureName}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {c.doctorName ?? "بانتظار تعيين طبيب"} · {c.reference}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-3">
+                        {c.doctorName && (
+                          <PersonAvatar src={c.doctorPhotoUrl} name={c.doctorName} size="sm" className="shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">
+                            {c.procedureName}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {c.doctorName ?? "بانتظار تعيين طبيب"} · {c.reference}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <span

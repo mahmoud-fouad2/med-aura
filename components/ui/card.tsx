@@ -2,17 +2,35 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const CARD_VARIANTS = {
+  // plain white/card surface — the original look, still the right choice for
+  // dense data (tables, forms) where the content itself needs the contrast.
+  default: "bg-card ring-1 ring-foreground/10",
+  // soft tinted surface — for lower-emphasis grouping (sidebars of info,
+  // secondary panels) where a flat white box would blend into every other
+  // flat white box on the page.
+  soft: "bg-gradient-to-b from-primary/[.06] to-transparent ring-1 ring-primary/10",
+  // lifted surface — for the single most important card on a page (e.g. a
+  // hero stat, the next-appointment card) that should visually come forward.
+  elevated: "bg-card shadow-elegant ring-1 ring-foreground/[.06]",
+} as const
+
 function Card({
   className,
   size = "default",
+  variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & {
+  size?: "default" | "sm"
+  variant?: keyof typeof CARD_VARIANTS
+}) {
   return (
     <div
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl py-(--card-spacing) text-sm text-card-foreground [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        CARD_VARIANTS[variant],
         className
       )}
       {...props}

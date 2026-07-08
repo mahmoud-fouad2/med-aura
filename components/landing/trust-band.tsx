@@ -54,20 +54,20 @@ export function TrustBand() {
         <Stagger className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {pillars.map((p) => (
             <StaggerItem key={p.title}>
-              <div className="group relative isolate flex h-full flex-col gap-4 overflow-hidden rounded-2xl border border-border/70 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_2px_4px_rgba(20,20,60,0.05),0_12px_28px_-12px_rgba(20,20,60,0.16)]">
+              <div className="group relative isolate flex h-full flex-col gap-5 overflow-hidden rounded-2xl border border-white/60 bg-card/85 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm">
                 {/* Top gradient accent */}
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
                 {/* Large watermark number in the corner */}
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-4 -end-2 font-heading text-[110px] font-black leading-none text-primary/[.04] tabular-nums"
+                  className="pointer-events-none absolute -bottom-4 -end-2 font-heading text-[110px] font-black leading-none text-primary/[.04] tabular-nums transition-transform duration-500 group-hover:scale-105"
                 >
                   {p.hint}
                 </span>
 
                 <div className="flex items-start justify-between gap-3">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 shadow-sm shadow-primary/5">
                     <p.icon className="size-6" />
                   </span>
                   <span className="font-heading text-xs font-semibold tracking-[0.14em] text-primary/70 tabular-nums">

@@ -46,9 +46,9 @@ export function CosmeticAreas({
             <StaggerItem key={a.slug}>
               <Link
                 href={`/search?category=${a.slug}`}
-                className="group flex h-full flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
+                className="group flex h-full flex-col items-center gap-4 rounded-2xl border border-white/60 bg-card/85 p-6 text-center shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm"
               >
-                <span className="relative flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/12 to-accent text-primary transition-transform duration-300 group-hover:scale-105">
+                <span className="relative flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/12 to-accent text-primary ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105">
                   <a.icon className="size-7" />
                 </span>
                 <span className="font-heading font-semibold text-foreground">

@@ -14,6 +14,8 @@ import {
   userRole,
   role as roleT,
   user as userT,
+  center,
+  centerStaff,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS, ROLES } from "@/lib/rbac"
@@ -232,11 +234,11 @@ async function getRoleId(key: string): Promise<string | undefined> {
   return r[0]?.id
 }
 
-/** Compliance approves a doctor application → publishes profile + grants role. */
+/** Compliance approves a doctor OR center application → publishes profile/center + grants role. */
 export async function approveApplication(
   applicationId: string,
   note?: string,
-): Promise<ActionResult<{ doctorId: string }>> {
+): Promise<ActionResult<{ doctorId?: string; centerId?: string }>> {
   try {
     const reviewer = await requireUser()
     await requirePermission(reviewer.id, PERMISSIONS.PROVIDER_APPROVE)
@@ -248,10 +250,12 @@ export async function approveApplication(
       .limit(1)
     const application = appRows[0]
     if (!application) throw new AppError("NOT_FOUND")
-    if (application.kind !== "DOCTOR")
-      throw validation("نوع الطلب غير مدعوم حاليًا.")
     if (["APPROVED", "REJECTED"].includes(application.status))
       throw new AppError("CONFLICT", { userMessage: "تمت معالجة هذا الطلب مسبقًا." })
+
+    if (application.kind === "CENTER") {
+      return await approveCenterApplication(application, reviewer.id, note)
+    }
 
     const data = doctorApplicationSchema.parse(application.payload)
     const doctorRoleId = await getRoleId(ROLES.DOCTOR)
@@ -357,6 +361,98 @@ export async function approveApplication(
     revalidatePath("/admin/applications")
     revalidatePath("/search")
     return { ok: true, data: { doctorId } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+/** Compliance approves a center application → publishes the center + grants CENTER_ADMIN to the applicant. */
+async function approveCenterApplication(
+  application: typeof providerApplication.$inferSelect,
+  reviewerId: string,
+  note?: string,
+): Promise<ActionResult<{ centerId: string }>> {
+  try {
+    const data = application.payload as CenterApplicationInput
+    const centerRoleId = await getRoleId(ROLES.CENTER_ADMIN)
+    if (!centerRoleId) throw new AppError("INTERNAL")
+
+    const slug = `center-${crypto.randomUUID().slice(0, 8)}`
+
+    const centerId = await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(center)
+        .values({
+          ownerId: application.applicantUserId,
+          legalName: data.legalName,
+          name: data.name,
+          slug,
+          country: data.country,
+          city: data.city,
+          address: data.address || null,
+          phone: data.phone,
+          email: data.email,
+          website: data.website || null,
+          languages: data.languages,
+          verified: true,
+          published: true,
+          status: "approved",
+          createdBy: reviewerId,
+        })
+        .returning({ id: center.id })
+      const newCenterId = inserted[0].id
+
+      await tx.insert(centerStaff).values({
+        centerId: newCenterId,
+        userId: application.applicantUserId,
+        role: "owner",
+      })
+
+      await tx
+        .insert(userRole)
+        .values({ userId: application.applicantUserId, roleId: centerRoleId, grantedBy: reviewerId })
+        .onConflictDoNothing()
+      await tx
+        .update(userT)
+        .set({ role: ROLES.CENTER_ADMIN })
+        .where(eq(userT.id, application.applicantUserId))
+
+      await tx
+        .update(providerApplication)
+        .set({
+          status: "APPROVED",
+          decidedAt: new Date(),
+          resultingCenterId: newCenterId,
+          reviewerNotes: note,
+          updatedBy: reviewerId,
+        })
+        .where(eq(providerApplication.id, application.id))
+
+      await tx.insert(verificationReview).values({
+        applicationId: application.id,
+        reviewerId,
+        action: "approve",
+        note,
+      })
+
+      await writeAudit(
+        {
+          action: "provider.approve",
+          actorUserId: reviewerId,
+          entityType: "provider_application",
+          entityId: application.id,
+          metadata: { centerId: newCenterId },
+        },
+        tx,
+      )
+
+      return newCenterId
+    })
+
+    revalidatePath("/admin/applications")
+    revalidatePath("/centers")
+    return { ok: true, data: { centerId } }
   } catch (err) {
     const safe = toSafeError(err)
     return { ok: false, error: safe.userMessage, code: safe.code }

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/admin/status-badge"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { UserRoleManager } from "@/components/admin/user-role-manager"
 import { UserAccountMenu } from "@/components/admin/user-account-menu"
@@ -88,7 +89,66 @@ export default async function AdminUsersPage({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {users.map((u) => (
+                <MobileDataCard
+                  key={u.id}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 font-heading text-xs font-bold text-primary">
+                        {u.name.trim().charAt(0) || "؟"}
+                      </span>
+                      <span className="truncate">{u.name}</span>
+                    </span>
+                  }
+                  subtitle={
+                    <span dir="ltr" className="inline-block truncate">
+                      {u.email}
+                    </span>
+                  }
+                  badge={
+                    <StatusBadge
+                      tone={u.status === "active" ? "success" : u.status === "suspended" ? "danger" : "neutral"}
+                      label={u.status === "active" ? "نشط" : u.status === "suspended" ? "موقوف" : "معطَّل"}
+                    />
+                  }
+                  rows={[
+                    { label: "الدور الأساسي", value: ROLE_LABEL[u.primaryRole] ?? u.primaryRole },
+                    {
+                      label: "آخر دخول",
+                      value: u.lastLoginAt
+                        ? new Date(u.lastLoginAt).toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short" })
+                        : "لم يسجّل دخول بعد",
+                    },
+                  ]}
+                  actions={
+                    canAssign ? (
+                      <>
+                        <UserRoleManager
+                          userId={u.id}
+                          userName={u.name}
+                          currentKeys={u.roles.map((r) => r.key)}
+                          allRoles={allRoles.map((r) => ({
+                            key: r.key,
+                            nameAr: ROLE_LABEL[r.key] ?? r.nameAr,
+                          }))}
+                          selfId={viewer.id}
+                        />
+                        <UserAccountMenu
+                          userId={u.id}
+                          userName={u.name}
+                          userPhone={u.phone}
+                          isActive={u.status === "active"}
+                          isSelf={u.id === viewer.id}
+                        />
+                      </>
+                    ) : undefined
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
@@ -182,7 +242,8 @@ export default async function AdminUsersPage({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </Card>
     </div>

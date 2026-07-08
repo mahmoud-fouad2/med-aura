@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { Search, Phone } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -12,6 +12,8 @@ import type { ConciergeCaseRow } from "@/lib/data/concierge"
 export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
   const [q, setQ] = useState("")
   const filtered = cases.filter((c) => {
+    const digits = q.replace(/[^\d+]/g, "")
+    if (digits.length >= 3 && c.patientPhone?.replace(/[^\d+]/g, "").includes(digits)) return true
     const haystack = `${c.patientName} ${c.procedureName} ${c.doctorName ?? ""} ${c.centerName ?? ""} ${c.reference}`
     return haystack.toLowerCase().includes(q.toLowerCase())
   })
@@ -21,7 +23,7 @@ export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
       <div className="relative max-w-sm">
         <Search className="absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="بحث بالمريض أو الإجراء أو الطبيب أو المركز…"
+          placeholder="بحث بالمريض أو رقم الهاتف أو الإجراء أو الطبيب…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="pr-9"
@@ -36,6 +38,7 @@ export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
             <thead className="bg-muted/40 text-muted-foreground">
               <tr className="text-right">
                 <th className="p-3">المريض</th>
+                <th className="p-3">الهاتف</th>
                 <th className="p-3">الإجراء</th>
                 <th className="p-3">الطبيب</th>
                 <th className="p-3">المركز</th>
@@ -50,6 +53,20 @@ export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
                     <Link href={`/dashboard/cases/${c.id}`} className="font-medium text-primary hover:underline">
                       {c.patientName}
                     </Link>
+                  </td>
+                  <td className="p-3">
+                    {c.patientPhone ? (
+                      <a
+                        href={`tel:${c.patientPhone}`}
+                        dir="ltr"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+                      >
+                        <Phone className="size-3" />
+                        {c.patientPhone}
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground/50">—</span>
+                    )}
                   </td>
                   <td className="p-3">{c.procedureName}</td>
                   <td className="p-3 text-muted-foreground">{c.doctorName ?? "—"}</td>

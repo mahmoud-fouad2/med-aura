@@ -19,6 +19,7 @@ import {
   procedureCategory,
   center,
 } from "@/lib/db/schema"
+import { getPublicUrl } from "@/lib/storage/r2"
 
 export type DoctorCard = {
   id: string
@@ -35,6 +36,7 @@ export type DoctorCard = {
   verified: boolean
   rating: string | null
   reviewCount: number
+  photoUrl: string | null
   procedures: string[]
 }
 
@@ -141,6 +143,7 @@ export async function searchDoctors(
         verified: doctorProfile.verified,
         rating: doctorProfile.rating,
         reviewCount: doctorProfile.reviewCount,
+        photoKey: doctorProfile.photoKey,
       })
       .from(doctorProfile)
       .where(where)
@@ -170,7 +173,11 @@ export async function searchDoctors(
   }
 
   return {
-    results: rows.map((r) => ({ ...r, procedures: procMap.get(r.id) ?? [] })),
+    results: rows.map(({ photoKey, ...r }) => ({
+      ...r,
+      photoUrl: photoKey ? getPublicUrl(photoKey) : null,
+      procedures: procMap.get(r.id) ?? [],
+    })),
     total: totalRows[0]?.n ?? 0,
   }
 }
@@ -208,6 +215,7 @@ export async function getPublicDoctorBySlug(
       verified: doctorProfile.verified,
       rating: doctorProfile.rating,
       reviewCount: doctorProfile.reviewCount,
+      photoKey: doctorProfile.photoKey,
       centerName: center.name,
       centerCity: center.city,
     })
@@ -218,6 +226,7 @@ export async function getPublicDoctorBySlug(
 
   const row = rows[0]
   if (!row) return null
+  const photoUrl = row.photoKey ? getPublicUrl(row.photoKey) : null
 
   const [procs, license] = await Promise.all([
     db
@@ -238,8 +247,10 @@ export async function getPublicDoctorBySlug(
       .limit(1),
   ])
 
+  const { photoKey: _photoKey, ...publicRow } = row
   return {
-    ...row,
+    ...publicRow,
+    photoUrl,
     procedures: procs.map((p) => p.nameAr),
     licenseAuthority: license[0]?.issuingAuthority ?? null,
     licenseLast4: license[0]?.numberLast4 ?? null,

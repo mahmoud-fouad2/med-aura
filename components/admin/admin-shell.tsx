@@ -42,15 +42,15 @@ export function AdminShell({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-border bg-background transition-[width] duration-200 md:flex",
+          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-sidebar ease-premium transition-[width] duration-200 md:flex",
           collapsed ? "w-[76px]" : "w-72",
         )}
       >
-        <SidebarInner nav={nav} pathname={pathname} collapsed={collapsed} />
+        <SidebarInner nav={nav} pathname={pathname} collapsed={collapsed} user={user} />
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center justify-center gap-2 border-t border-border py-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex items-center justify-center gap-2 border-t border-sidebar-border py-3 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
         >
           {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -69,7 +69,13 @@ export function AdminShell({
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
-            <SidebarInner nav={nav} pathname={pathname} collapsed={false} onNavigate={() => setMobileOpen(false)} />
+            <SidebarInner
+              nav={nav}
+              pathname={pathname}
+              collapsed={false}
+              user={user}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </div>
         </SheetContent>
       </Sheet>
@@ -134,16 +140,18 @@ function SidebarInner({
   nav,
   pathname,
   collapsed,
+  user,
   onNavigate,
 }: {
   nav: AdminNavGroup[]
   pathname: string
   collapsed: boolean
+  user: { name: string; email: string }
   onNavigate?: () => void
 }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className={cn("flex h-16 items-center border-b border-border px-4", collapsed && "justify-center px-2")}>
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
         <Link href="/admin" aria-label="Med Aura" onClick={onNavigate}>
           {collapsed ? <LogoMark className="size-8 text-primary" /> : <Logo className="h-8" />}
         </Link>
@@ -166,13 +174,16 @@ function SidebarInner({
                       aria-current={active ? "page" : undefined}
                       title={collapsed ? item.label : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                         collapsed && "justify-center px-0",
                         active
                           ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                          : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       )}
                     >
+                      {active && (
+                        <span className="absolute inset-y-1 -start-3 w-1 rounded-full bg-primary" />
+                      )}
                       <AdminIcon name={item.icon} className="size-[18px] shrink-0" />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </Link>
@@ -183,6 +194,13 @@ function SidebarInner({
           </div>
         ))}
       </nav>
+      <div className={cn("border-t border-sidebar-border p-2", collapsed && "flex justify-center p-2")}>
+        {collapsed ? (
+          <UserMenu name={user.name} email={user.email} />
+        ) : (
+          <UserMenu name={user.name} email={user.email} layout="row" />
+        )}
+      </div>
     </div>
   )
 }

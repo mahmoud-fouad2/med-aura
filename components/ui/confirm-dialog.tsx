@@ -73,8 +73,8 @@ export function ConfirmDialog({
     >
       {triggerEl}
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/30 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 w-[92vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-5 shadow-elegant-lg outline-none transition duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[3px] ease-premium transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0" />
+        <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 w-[92vw] max-w-sm rounded-2xl border border-border bg-card p-5 shadow-elegant-lg outline-none ease-premium transition-all duration-200 [transform:translate(-50%,-50%)] data-ending-style:opacity-0 data-ending-style:[transform:translate(-50%,calc(-50%+0.5rem))_scale(0.97)] data-starting-style:opacity-0 data-starting-style:[transform:translate(-50%,calc(-50%+0.5rem))_scale(0.97)]">
           <div className="flex items-start gap-3">
             {tone === "destructive" && (
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">

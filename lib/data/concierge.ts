@@ -6,6 +6,7 @@ import {
   doctorProfile,
   center,
   user as userT,
+  patientProfile,
   internalTask,
   caseStatusHistory,
   userRole,
@@ -19,6 +20,7 @@ export type ConciergeCaseRow = {
   status: string
   procedureName: string
   patientName: string
+  patientPhone: string | null
   doctorName: string | null
   centerName: string | null
   updatedAt: Date
@@ -32,6 +34,7 @@ export async function listAllCasesForConcierge(limit = 100): Promise<ConciergeCa
       status: aestheticCase.status,
       procedureName: procedureT.nameAr,
       patientName: userT.name,
+      patientPhone: patientProfile.phone,
       doctorName: doctorProfile.name,
       centerName: center.name,
       updatedAt: aestheticCase.updatedAt,
@@ -39,6 +42,7 @@ export async function listAllCasesForConcierge(limit = 100): Promise<ConciergeCa
     .from(aestheticCase)
     .innerJoin(procedureT, eq(aestheticCase.procedureId, procedureT.id))
     .innerJoin(userT, eq(aestheticCase.patientUserId, userT.id))
+    .leftJoin(patientProfile, eq(patientProfile.userId, aestheticCase.patientUserId))
     .leftJoin(doctorProfile, eq(aestheticCase.doctorId, doctorProfile.id))
     .leftJoin(center, eq(aestheticCase.centerId, center.id))
     .orderBy(desc(aestheticCase.updatedAt))

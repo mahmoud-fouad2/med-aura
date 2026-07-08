@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/schema"
 import { canAccessCase } from "@/lib/rbac"
 import { getDoctorProfileId } from "@/lib/data/appointments"
+import { getPublicUrl } from "@/lib/storage/r2"
 
 export type CaseListItem = {
   id: string
@@ -18,6 +19,7 @@ export type CaseListItem = {
   status: string
   procedureName: string
   doctorName: string | null
+  doctorPhotoUrl: string | null
   createdAt: Date
 }
 
@@ -31,6 +33,7 @@ export async function listCasesForPatient(
       status: aestheticCase.status,
       procedureName: procedureT.nameAr,
       doctorName: doctorProfile.name,
+      doctorPhotoKey: doctorProfile.photoKey,
       createdAt: aestheticCase.createdAt,
     })
     .from(aestheticCase)
@@ -40,7 +43,10 @@ export async function listCasesForPatient(
       and(eq(aestheticCase.patientUserId, userId), isNull(aestheticCase.deletedAt)),
     )
     .orderBy(desc(aestheticCase.createdAt))
-  return rows
+  return rows.map(({ doctorPhotoKey, ...r }) => ({
+    ...r,
+    doctorPhotoUrl: doctorPhotoKey ? getPublicUrl(doctorPhotoKey) : null,
+  }))
 }
 
 export type CaseDocument = {

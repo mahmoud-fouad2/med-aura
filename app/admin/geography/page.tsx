@@ -15,7 +15,8 @@ import {
   GeoToggleButton,
   GeoDeleteButton,
 } from "@/components/admin/geography-forms"
-import { flagFromCountryCode } from "@/lib/geo"
+import { CountryFlag } from "@/components/ui/country-flag"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الدول والمدن" }
@@ -62,70 +63,116 @@ export default async function AdminGeographyPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                  <Th>الاسم</Th>
-                  <Th>الكود</Th>
-                  <Th>الاتصال والعملة</Th>
-                  <Th>الترتيب</Th>
-                  <Th>الحالة</Th>
-                  <Th>المدن</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {countries.map((c) => (
-                  <tr key={c.id} className="transition-colors hover:bg-muted/25">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 font-medium text-foreground">
-                        <span aria-hidden="true">{flagFromCountryCode(c.code)}</span>
-                        {c.nameAr}
-                      </div>
-                      <div dir="ltr" className="text-xs text-muted-foreground">
-                        {c.nameEn}
-                      </div>
-                    </td>
-                    <td dir="ltr" className="px-4 py-3 text-end font-mono text-xs text-muted-foreground">
-                      {c.code}
-                    </td>
-                    <td dir="ltr" className="px-4 py-3 text-end font-mono text-xs text-muted-foreground">
-                      {c.callingCode || c.currencyCode ? (
-                        <span>
-                          {c.callingCode ?? "—"}
-                          {c.currencyCode ? ` · ${c.currencyCode}` : ""}
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {countries.map((c) => (
+                <MobileDataCard
+                  key={c.id}
+                  title={
+                    <span className="flex items-center gap-1.5">
+                      <CountryFlag code={c.code} className="h-4 w-6" />
+                      {c.nameAr}
+                    </span>
+                  }
+                  subtitle={
+                    <span dir="ltr" className="inline-block">
+                      {c.nameEn} · {c.code}
+                    </span>
+                  }
+                  badge={
+                    <StatusBadge
+                      tone={c.active ? "success" : "neutral"}
+                      label={c.active ? "نشطة" : "معطَّلة"}
+                    />
+                  }
+                  rows={[
+                    {
+                      label: "الاتصال والعملة",
+                      value: (
+                        <span dir="ltr">
+                          {c.callingCode || c.currencyCode
+                            ? `${c.callingCode ?? "—"}${c.currencyCode ? ` · ${c.currencyCode}` : ""}`
+                            : "—"}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground/50">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                      {c.sortOrder}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        tone={c.active ? "success" : "neutral"}
-                        label={c.active ? "نشطة" : "معطَّلة"}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
-                        {c.cityCount.toLocaleString("ar-SA-u-nu-latn")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <CountryFormButton existing={c} />
-                        <GeoToggleButton kind="country" id={c.id} active={c.active} />
-                        <GeoDeleteButton kind="country" id={c.id} name={c.nameAr} />
-                      </div>
-                    </td>
+                      ),
+                    },
+                    { label: "المدن", value: c.cityCount.toLocaleString("ar-SA-u-nu-latn") },
+                  ]}
+                  actions={
+                    <>
+                      <CountryFormButton existing={c} />
+                      <GeoToggleButton kind="country" id={c.id} active={c.active} />
+                      <GeoDeleteButton kind="country" id={c.id} name={c.nameAr} />
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                    <Th>الاسم</Th>
+                    <Th>الكود</Th>
+                    <Th>الاتصال والعملة</Th>
+                    <Th>الترتيب</Th>
+                    <Th>الحالة</Th>
+                    <Th>المدن</Th>
+                    <Th>—</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {countries.map((c) => (
+                    <tr key={c.id} className="transition-colors hover:bg-muted/25">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5 font-medium text-foreground">
+                          <CountryFlag code={c.code} className="h-4 w-6" />
+                          {c.nameAr}
+                        </div>
+                        <div dir="ltr" className="text-xs text-muted-foreground">
+                          {c.nameEn}
+                        </div>
+                      </td>
+                      <td dir="ltr" className="px-4 py-3 text-end font-mono text-xs text-muted-foreground">
+                        {c.code}
+                      </td>
+                      <td dir="ltr" className="px-4 py-3 text-end font-mono text-xs text-muted-foreground">
+                        {c.callingCode || c.currencyCode ? (
+                          <span>
+                            {c.callingCode ?? "—"}
+                            {c.currencyCode ? ` · ${c.currencyCode}` : ""}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/50">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                        {c.sortOrder}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          tone={c.active ? "success" : "neutral"}
+                          label={c.active ? "نشطة" : "معطَّلة"}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
+                          {c.cityCount.toLocaleString("ar-SA-u-nu-latn")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <CountryFormButton existing={c} />
+                          <GeoToggleButton kind="country" id={c.id} active={c.active} />
+                          <GeoDeleteButton kind="country" id={c.id} name={c.nameAr} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
 
@@ -144,44 +191,73 @@ export default async function AdminGeographyPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                  <Th>المدينة</Th>
-                  <Th>الدولة</Th>
-                  <Th>الحالة</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {cities.map((c) => (
-                  <tr key={c.id} className="transition-colors hover:bg-muted/25">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{c.nameAr}</div>
-                      <div dir="ltr" className="text-xs text-muted-foreground">
-                        {c.nameEn}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.countryNameAr}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        tone={c.active ? "success" : "neutral"}
-                        label={c.active ? "نشطة" : "معطَّلة"}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <CityFormButton existing={c} countries={countryOptions} />
-                        <GeoToggleButton kind="city" id={c.id} active={c.active} />
-                        <GeoDeleteButton kind="city" id={c.id} name={c.nameAr} />
-                      </div>
-                    </td>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {cities.map((c) => (
+                <MobileDataCard
+                  key={c.id}
+                  title={c.nameAr}
+                  subtitle={
+                    <span dir="ltr" className="inline-block">
+                      {c.nameEn}
+                    </span>
+                  }
+                  badge={
+                    <StatusBadge
+                      tone={c.active ? "success" : "neutral"}
+                      label={c.active ? "نشطة" : "معطَّلة"}
+                    />
+                  }
+                  rows={[{ label: "الدولة", value: c.countryNameAr }]}
+                  actions={
+                    <>
+                      <CityFormButton existing={c} countries={countryOptions} />
+                      <GeoToggleButton kind="city" id={c.id} active={c.active} />
+                      <GeoDeleteButton kind="city" id={c.id} name={c.nameAr} />
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                    <Th>المدينة</Th>
+                    <Th>الدولة</Th>
+                    <Th>الحالة</Th>
+                    <Th>—</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {cities.map((c) => (
+                    <tr key={c.id} className="transition-colors hover:bg-muted/25">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-foreground">{c.nameAr}</div>
+                        <div dir="ltr" className="text-xs text-muted-foreground">
+                          {c.nameEn}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{c.countryNameAr}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          tone={c.active ? "success" : "neutral"}
+                          label={c.active ? "نشطة" : "معطَّلة"}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <CityFormButton existing={c} countries={countryOptions} />
+                          <GeoToggleButton kind="city" id={c.id} active={c.active} />
+                          <GeoDeleteButton kind="city" id={c.id} name={c.nameAr} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

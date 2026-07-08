@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { approveApplication, rejectApplication } from "@/lib/actions/provider"
 
-export function ApplicationReview({ applicationId }: { applicationId: string }) {
+export function ApplicationReview({
+  applicationId,
+  isDoctor = true,
+}: {
+  applicationId: string
+  isDoctor?: boolean
+}) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [rejecting, setRejecting] = useState(false)
@@ -65,7 +71,7 @@ export function ApplicationReview({ applicationId }: { applicationId: string }) 
       ) : (
         <div className="flex gap-2">
           <Button size="sm" disabled={busy} onClick={approve}>
-            {busy ? "جارٍ المعالجة…" : "اعتماد ونشر الطبيب"}
+            {busy ? "جارٍ المعالجة…" : isDoctor ? "اعتماد ونشر الطبيب" : "اعتماد ونشر المركز"}
           </Button>
           <Button
             variant="outline"

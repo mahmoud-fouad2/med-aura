@@ -250,6 +250,45 @@
   .focus-ring {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
+
+  /* shared "premium" easing for modals/menus/dropdowns/etc — a gentle
+     expo-out that settles quickly without any bounce or overshoot. */
+  .ease-premium {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* soft alternating section background — breaks up long stretches of flat
+     page background without introducing a hard edge or a new card shape. */
+  .bg-section-soft {
+    background-image: radial-gradient(
+        50rem 26rem at 15% 0%,
+        color-mix(in oklab, var(--primary) 5%, transparent),
+        transparent 65%
+      ),
+      radial-gradient(
+        40rem 24rem at 100% 100%,
+        color-mix(in oklab, var(--accent) 45%, transparent),
+        transparent 60%
+      );
+  }
+
+  /* gentle lift for interactive cards (doctor/service/appointment cards) */
+  .card-interactive {
+    @apply transition-all;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: 220ms;
+  }
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 2px -1px color-mix(in oklab, var(--foreground) 8%, transparent),
+      0 20px 40px -20px color-mix(in oklab, oklch(0.47 0.17 292) 30%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-interactive:hover {
+      transform: none;
+    }
+  }
 }
 
 /* skeleton shimmer */

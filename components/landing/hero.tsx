@@ -91,7 +91,7 @@ export function Hero({
         {/* elegant branded visual (no stock/placeholder photography) */}
         <FadeIn delay={0.15} className="relative hidden lg:block">
           <div className="relative mx-auto aspect-square w-full max-w-md">
-            <div className="absolute inset-0 rounded-[2.5rem] border border-border bg-gradient-to-br from-card via-secondary to-background shadow-elegant-lg" />
+            <div className="absolute inset-0 rounded-[2.5rem] border border-border bg-gradient-to-br from-card via-secondary/75 to-background shadow-elegant-lg" />
             <div className="absolute inset-6 rounded-[2rem] border border-primary/10" />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-primary/85 animate-pulse-gentle">
@@ -99,16 +99,16 @@ export function Hero({
               </div>
             </div>
             {/* floating trust card */}
-            <div className="absolute -bottom-5 left-1/2 flex w-[88%] -translate-x-1/2 items-center gap-3 rounded-2xl border border-border bg-card/90 p-4 shadow-elegant backdrop-blur">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <ShieldCheck className="size-5" />
+            <div className="absolute -bottom-6 left-1/2 flex w-[90%] -translate-x-1/2 items-center gap-4 rounded-2xl border border-white/60 bg-card/85 p-5 shadow-elegant-lg backdrop-blur-md transition-all hover:scale-[1.02]">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-sm shadow-primary/5 animate-pulse-gentle">
+                <ShieldCheck className="size-6" />
               </span>
               <div className="text-start">
-                <p className="text-sm font-semibold text-foreground">
-                  {isAr ? "اعتماد موثّق لكل مقدّم خدمة" : "Accredited Credentials"}
+                <p className="text-sm font-bold text-foreground">
+                  {isAr ? "اعتماد موثّق وصارم لكل طبيب" : "Accredited Credentials"}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {isAr ? "لا يظهر طبيب إلا بترخيص ساري" : "Only active, licensed doctors listed"}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr ? "لا يظهر أي طبيب إلا بترخيص سارٍ معتمد" : "Only active, licensed doctors listed"}
                 </p>
               </div>
             </div>

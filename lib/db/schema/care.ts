@@ -764,6 +764,7 @@ export const notification = pgTable(
     caseId: text("caseId").references(() => aestheticCase.id, { onDelete: "set null" }),
     href: text("href"),
     readAt: timestamp("readAt", { withTimezone: true }),
+    archivedAt: timestamp("archivedAt", { withTimezone: true }),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("notification_user_idx").on(t.userId), index("notification_read_idx").on(t.readAt)],

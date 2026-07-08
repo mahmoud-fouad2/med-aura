@@ -26,7 +26,8 @@ import {
   deleteCityAction,
   type ActionResult,
 } from "@/lib/actions/geography"
-import { flagFromCountryCode, type CountryPreset } from "@/lib/geo"
+import { CountryFlag } from "@/components/ui/country-flag"
+import type { CountryPreset } from "@/lib/geo"
 
 export type CountryRow = {
   id: string
@@ -120,8 +121,6 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
     )
   }
 
-  const flagPreview = flagFromCountryCode(code)
-
   return (
     <Card className="space-y-5 border-primary/40 p-4 sm:p-5">
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
@@ -131,9 +130,7 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
 
         {pendingPreset && (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-background p-2.5 text-xs">
-            <span aria-hidden="true" className="text-base leading-none">
-              {flagFromCountryCode(pendingPreset.code)}
-            </span>
+            <CountryFlag code={pendingPreset.code} className="h-4 w-6" />
             <span className="flex-1 text-foreground">
               تطبيق بيانات <strong>{pendingPreset.nameAr}</strong> سيستبدل القيم الحالية في الحقول أدناه.
             </span>
@@ -183,11 +180,10 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
                   className="uppercase"
                 />
                 <span
-                  aria-hidden="true"
-                  title="معاينة العلم"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-lg"
+                  title="معاينة رمز الدولة"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-border"
                 >
-                  {flagPreview || "🏳️"}
+                  <CountryFlag code={code} className="h-5 w-8 text-[11px]" />
                 </span>
               </div>
             </Field>

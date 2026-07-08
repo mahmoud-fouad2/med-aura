@@ -17,10 +17,12 @@ export function Toaster() {
       toastOptions={{
         classNames: {
           toast:
-            "font-sans border border-border bg-background text-foreground shadow-lg",
+            "font-sans rounded-xl border border-border/70 bg-card text-foreground shadow-elegant-lg",
+          title: "font-medium",
           description: "text-muted-foreground",
-          actionButton: "bg-primary text-primary-foreground",
-          cancelButton: "bg-muted text-muted-foreground",
+          actionButton: "bg-primary text-primary-foreground rounded-lg",
+          cancelButton: "bg-muted text-muted-foreground rounded-lg",
+          closeButton: "border-border/70 bg-card text-muted-foreground hover:text-foreground",
         },
       }}
     />

@@ -11,6 +11,8 @@ import {
   RotateCw,
   Settings2,
   ChevronLeft,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -20,6 +22,8 @@ import {
   markAllNotificationsRead,
   retryNotificationDelivery,
   setEmailNotificationPreference,
+  archiveNotification,
+  unarchiveNotification,
 } from "@/lib/actions/notification-inbox"
 import type { NotificationView } from "@/lib/data/notifications"
 
@@ -46,9 +50,11 @@ function relativeTime(d: Date): string {
 export function NotificationInbox({
   items,
   emailEnabled,
+  archived = false,
 }: {
   items: NotificationView[]
   emailEnabled: boolean
+  archived?: boolean
 }) {
   const router = useRouter()
   const [busyAll, setBusyAll] = useState(false)
@@ -144,16 +150,20 @@ export function NotificationInbox({
       {items.length === 0 ? (
         <Card className="p-10">
           <EmptyState
-            icon={Bell}
-            title="لا توجد إشعارات بعد"
-            description="ستظهر هنا إشعاراتك أولًا بأول: تحديثات الحالة، تذكيرات المواعيد، وإشعارات الدفع."
+            icon={archived ? Archive : Bell}
+            title={archived ? "لا توجد إشعارات مؤرشفة" : "لا توجد إشعارات بعد"}
+            description={
+              archived
+                ? "الإشعارات التي تؤرشفها من الوارد تظهر هنا."
+                : "ستظهر هنا إشعاراتك أولًا بأول: تحديثات الحالة، تذكيرات المواعيد، وإشعارات الدفع."
+            }
           />
         </Card>
       ) : (
         <Card className="overflow-hidden p-0">
           <ul className="divide-y divide-border/60">
             {items.map((n) => (
-              <NotificationRow key={n.id} item={n} />
+              <NotificationRow key={n.id} item={n} archived={archived} />
             ))}
           </ul>
         </Card>
@@ -162,7 +172,7 @@ export function NotificationInbox({
   )
 }
 
-function NotificationRow({ item }: { item: NotificationView }) {
+function NotificationRow({ item, archived }: { item: NotificationView; archived: boolean }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const emailDelivery = item.deliveries.find((d) => d.channel === "EMAIL")
@@ -182,6 +192,15 @@ function NotificationRow({ item }: { item: NotificationView }) {
     e.stopPropagation()
     setBusy(true)
     await retryNotificationDelivery(emailDelivery!.id)
+    setBusy(false)
+    router.refresh()
+  }
+
+  async function onToggleArchive(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setBusy(true)
+    await (archived ? unarchiveNotification(item.id) : archiveNotification(item.id))
     setBusy(false)
     router.refresh()
   }
@@ -211,8 +230,24 @@ function NotificationRow({ item }: { item: NotificationView }) {
           >
             {item.title}
           </p>
-          <span className="shrink-0 text-[11px] text-muted-foreground">
-            {relativeTime(new Date(item.createdAt))}
+          <span className="flex shrink-0 items-center gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              {relativeTime(new Date(item.createdAt))}
+            </span>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onToggleArchive}
+              aria-label={archived ? "إلغاء أرشفة الإشعار" : "أرشفة الإشعار"}
+              title={archived ? "إلغاء الأرشفة" : "أرشفة"}
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+            >
+              {archived ? (
+                <ArchiveRestore className="size-3.5" />
+              ) : (
+                <Archive className="size-3.5" />
+              )}
+            </button>
           </span>
         </div>
         {item.body && (
