@@ -5,6 +5,7 @@ import { getI18n } from "@/lib/i18n"
 import { Logo } from "@/components/brand/logo"
 import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { MobileNav } from "@/components/layout/mobile-nav"
 
 export async function SiteHeader() {
@@ -40,6 +41,7 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle className="hidden sm:inline-flex" />
           <LanguageSwitcher locale={locale} />
           <div className="hidden md:flex md:items-center md:gap-2">
             {user ? (

@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { DataState } from "@/components/ui/data-state"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
@@ -152,12 +153,17 @@ export default async function DoctorProfilePage({
                 <div className="p-6 sm:p-8">
                   {/* Dynamic relative avatar container that shifts on screens */}
                   <div className="-mt-20 sm:-mt-24 flex flex-col sm:flex-row sm:items-end justify-between items-start gap-4">
-                    <Avatar className="size-28 sm:size-32 shrink-0 ring-4 sm:ring-[6px] ring-background shadow-elegant-lg">
-                      {doctor.photoUrl && <AvatarImage src={doctor.photoUrl} alt={doctor.name} />}
-                      <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-4xl font-heading font-bold text-primary">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative shrink-0">
+                      <Avatar className="size-28 sm:size-32 ring-4 sm:ring-[6px] ring-background shadow-elegant-lg">
+                        {doctor.photoUrl && <AvatarImage src={doctor.photoUrl} alt={doctor.name} />}
+                        <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-4xl font-heading font-bold text-primary">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      {doctor.verified && doctor.photoUrl && (
+                        <VerifiedBadge className="absolute top-1 start-1" />
+                      )}
+                    </div>
                     <div className="pb-1">
                       {doctor.verified && (
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm shadow-primary/5 animate-pulse-gentle">

@@ -1,6 +1,9 @@
 import "./_load-env"
+import { readFile } from "node:fs/promises"
+import path from "node:path"
 import { eq, and } from "drizzle-orm"
 import { db, pool } from "@/lib/db"
+import { putObjectBuffer, isR2Configured } from "@/lib/storage/r2"
 import {
   role as roleT,
   permission as permT,
@@ -258,6 +261,28 @@ type DemoDoctorInput = {
   centerName: string
   centerDescription: string
   procedureSlugs: string[]
+  /** Filename under public/demo-doctors/ — a licensed placeholder photo,
+   *  superseded automatically once the doctor uploads their own. */
+  photoFileName?: string
+}
+
+/**
+ * Uploads a local demo-doctor placeholder photo to R2 and returns its key,
+ * or null if R2 isn't configured (CI/local-without-credentials) — seeding
+ * must still succeed cleanly either way, just without the photo.
+ */
+async function seedDemoDoctorPhoto(fileName: string): Promise<string | null> {
+  if (!isR2Configured()) return null
+  try {
+    const filePath = path.join(process.cwd(), "public", "demo-doctors", fileName)
+    const buffer = await readFile(filePath)
+    const key = `demo-doctors/${fileName}`
+    await putObjectBuffer(key, buffer, "image/jpeg")
+    return key
+  } catch (err) {
+    console.warn(`  ⚠ could not seed demo photo ${fileName}:`, err)
+    return null
+  }
 }
 
 /** Idempotent: creates the doctor + their center (as owner) + license + procedures + availability. */
@@ -363,6 +388,15 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
       })
     }
   }
+
+  // Placeholder photo — never overwrites a real upload (own or reseed).
+  if (input.photoFileName && !doc.photoKey) {
+    const photoKey = await seedDemoDoctorPhoto(input.photoFileName)
+    if (photoKey) {
+      await db.update(doctorProfile).set({ photoKey }).where(eq(doctorProfile.id, doc.id))
+    }
+  }
+
   return doc.id
 }
 
@@ -392,6 +426,7 @@ async function seedUsersAndProviders() {
     centerName: "مركز نور للتجميل",
     centerDescription: "مركز متخصص في جراحات وإجراءات التجميل، معتمد ومرخّص.",
     procedureSlugs: ["rhinoplasty", "facelift", "botox", "dermal-fillers"],
+    photoFileName: "dr-sara-alotaibi.jpg",
   })
 
   await ensureApprovedDoctorWithCenter({
@@ -411,6 +446,7 @@ async function seedUsersAndProviders() {
     centerName: "مركز الأمل للتجميل",
     centerDescription: "مركز معتمد متخصص في جراحات نحت وشد الجسم.",
     procedureSlugs: ["liposuction", "tummy-tuck", "breast-augmentation", "mommy-makeover"],
+    photoFileName: "dr-noura-alqahtani.jpg",
   })
 
   await ensureApprovedDoctorWithCenter({
@@ -430,6 +466,7 @@ async function seedUsersAndProviders() {
     centerName: "مركز إسطنبول للتجميل",
     centerDescription: "مركز دولي معتمد لزراعة الشعر وجراحات التجميل.",
     procedureSlugs: ["hair-transplant", "prp-hair", "rhinoplasty"],
+    photoFileName: "dr-ahmet-yilmaz.jpg",
   })
 
   const pendingDoctorId = await ensureUser(

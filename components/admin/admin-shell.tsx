@@ -9,6 +9,7 @@ import { AdminIcon } from "@/components/admin/admin-icon"
 import { CommandPalette } from "@/components/admin/command-palette"
 import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
@@ -113,6 +114,7 @@ export function AdminShell({
             </div>
 
             <div className="flex items-center gap-1">
+              <ThemeToggle />
               <Link
                 href="/dashboard/notifications"
                 aria-label="الإشعارات"

@@ -1,8 +1,8 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Search, ShieldCheck, FileLock2, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LogoMark } from "@/components/brand/logo"
 import { FadeIn } from "@/components/motion"
 import type { Dictionary, Locale } from "@/lib/i18n"
 
@@ -88,29 +88,29 @@ export function Hero({
           </div>
         </FadeIn>
 
-        {/* elegant branded visual (no stock/placeholder photography) */}
         <FadeIn delay={0.15} className="relative hidden lg:block">
-          <div className="relative mx-auto aspect-square w-full max-w-md">
-            <div className="absolute inset-0 rounded-[2.5rem] border border-border bg-gradient-to-br from-card via-secondary/75 to-background shadow-elegant-lg" />
-            <div className="absolute inset-6 rounded-[2rem] border border-primary/10" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-primary/85 animate-pulse-gentle">
-                <LogoMark className="size-44" />
-              </div>
-            </div>
-            {/* floating trust card */}
-            <div className="absolute -bottom-6 left-1/2 flex w-[90%] -translate-x-1/2 items-center gap-4 rounded-2xl border border-white/60 bg-card/85 p-5 shadow-elegant-lg backdrop-blur-md transition-all hover:scale-[1.02]">
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-sm shadow-primary/5 animate-pulse-gentle">
-                <ShieldCheck className="size-6" />
-              </span>
-              <div className="text-start">
-                <p className="text-sm font-bold text-foreground">
-                  {isAr ? "اعتماد موثّق وصارم لكل طبيب" : "Accredited Credentials"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr ? "لا يظهر أي طبيب إلا بترخيص سارٍ معتمد" : "Only active, licensed doctors listed"}
-                </p>
-              </div>
+          <div className="relative mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border shadow-elegant-lg">
+            <Image
+              src="/hero-clinic.png"
+              alt={isAr ? "استشارة تجميلية مع طبيبة معتمدة" : "Aesthetic consultation with an accredited doctor"}
+              fill
+              priority
+              className="object-cover"
+              sizes="(min-width: 1024px) 28rem, 0px"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+          </div>
+          <div className="relative mx-auto -mt-10 flex w-[90%] max-w-md items-center gap-4 rounded-2xl border border-white/60 bg-card/85 p-5 shadow-elegant-lg backdrop-blur-md transition-all hover:scale-[1.02]">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-sm shadow-primary/5 animate-pulse-gentle">
+              <ShieldCheck className="size-6" />
+            </span>
+            <div className="text-start">
+              <p className="text-sm font-bold text-foreground">
+                {isAr ? "اعتماد موثّق وصارم لكل طبيب" : "Accredited Credentials"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr ? "لا يظهر أي طبيب إلا بترخيص سارٍ معتمد" : "Only active, licensed doctors listed"}
+              </p>
             </div>
           </div>
         </FadeIn>

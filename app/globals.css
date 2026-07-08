@@ -289,6 +289,21 @@
       transform: none;
     }
   }
+
+  /* Critical-alert emphasis for dark mode (admin night-shift monitoring) —
+     light mode already reads fine with a flat tone background, but the same
+     flat tint disappears against a dark surface, so overdue/urgent items
+     need an actual glow to stay the first thing your eye catches. */
+  .dark .alert-glow-danger {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--destructive) 35%, transparent),
+      0 0 24px color-mix(in oklab, var(--destructive) 22%, transparent);
+  }
+  .dark .alert-glow-warning {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--warning) 35%, transparent),
+      0 0 24px color-mix(in oklab, var(--warning) 20%, transparent);
+  }
 }
 
 /* skeleton shimmer */

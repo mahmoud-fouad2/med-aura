@@ -2,12 +2,20 @@ import Link from "next/link"
 import { ArrowLeft, Stethoscope, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SiteFooter } from "@/components/layout/site-footer"
+import { AvatarCluster } from "@/components/ui/avatar-cluster"
 import { Reveal } from "@/components/motion"
 import { getI18n } from "@/lib/i18n"
+import { searchDoctors } from "@/lib/data/doctors"
+import { query } from "@/lib/db/query"
 
 export async function CtaFooter() {
-  const { locale } = await getI18n()
+  const [{ locale }, res] = await Promise.all([
+    getI18n(),
+    query(() => searchDoctors({ pageSize: 4 })),
+  ])
   const isAr = locale === "ar"
+  const doctors = res.status === "ok" ? res.data.results : []
+  const totalDoctors = res.status === "ok" ? res.data.total : 0
 
   return (
     <>
@@ -51,6 +59,16 @@ export async function CtaFooter() {
                     }
                   />
                 </div>
+                {totalDoctors > 0 && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <AvatarCluster names={doctors.map((d) => d.name)} />
+                    <p className="text-sm text-primary-foreground/85">
+                      {isAr
+                        ? `انضم إلى ${totalDoctors.toLocaleString("ar-SA-u-nu-latn")} طبيبًا موثّقًا بالفعل على المنصة`
+                        : `Join ${totalDoctors.toLocaleString("en-US")} verified doctors already on the platform`}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </Reveal>

@@ -44,16 +44,16 @@ export function Features({
             <StaggerItem key={step.title} className="relative">
               {i < steps.length - 1 && (
                 <span
-                  className="absolute top-9 hidden h-px w-full lg:block bg-gradient-to-l from-primary/30 to-transparent ltr:bg-gradient-to-r ltr:right-0 ltr:translate-x-1/2 rtl:left-0 rtl:-translate-x-1/2"
+                  className="absolute top-9 hidden h-px w-full lg:block bg-gradient-to-l from-gold/50 to-transparent ltr:bg-gradient-to-r ltr:right-0 ltr:translate-x-1/2 rtl:left-0 rtl:-translate-x-1/2"
                   aria-hidden
                 />
               )}
               <div className="relative flex h-full flex-col gap-4.5 rounded-2xl border border-white/60 bg-card/85 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.4_0.15_300)] text-primary-foreground shadow-elegant ring-1 ring-primary/20 transition-transform duration-300 group-hover/feature:scale-105">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[oklch(0.82_0.08_85)] to-[oklch(0.62_0.11_75)] text-white shadow-elegant ring-1 ring-gold/30 transition-transform duration-300 group-hover/feature:scale-105">
                   <step.icon className="size-6" />
                 </span>
                 <div>
-                  <span className="font-heading text-sm font-bold text-primary/75">
+                  <span className="font-heading text-sm font-bold" style={{ color: "oklch(0.52 0.1 85)" }}>
                     {`٠${i + 1}`}
                   </span>
                   <h3 className="font-heading text-lg font-bold text-foreground mt-1">

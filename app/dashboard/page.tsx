@@ -29,6 +29,7 @@ import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
 import { Button } from "@/components/ui/button"
 import { PersonAvatar } from "@/components/ui/person-avatar"
+import { FadeIn, Reveal, Stagger, StaggerItem } from "@/components/motion"
 import {
   caseStatusAr,
   appointmentStatusAr,
@@ -169,6 +170,7 @@ export default async function DashboardHome() {
 
   return (
     <div className="space-y-6">
+      <FadeIn>
       <DashboardHero
         eyebrow="لوحة الرحلة التجميلية"
         greeting={`أهلًا ${firstName} 👋`}
@@ -249,8 +251,10 @@ export default async function DashboardHome() {
           )
         }
       />
+      </FadeIn>
 
       {requiredActions.length > 0 && (
+        <Reveal>
         <section
           aria-label="إجراءات مطلوبة منك"
           className="overflow-hidden rounded-2xl border border-warning/40 bg-gradient-to-l from-warning/10 via-card to-card"
@@ -283,8 +287,10 @@ export default async function DashboardHome() {
             ))}
           </ul>
         </section>
+        </Reveal>
       )}
 
+      <Reveal delay={0.1}>
       <section aria-label="موعدك القادم">
         {nextAppt ? (
           <div className="overflow-hidden rounded-2xl border border-success/30 bg-gradient-to-l from-success/8 via-card to-card">
@@ -383,8 +389,10 @@ export default async function DashboardHome() {
           </div>
         )}
       </section>
+      </Reveal>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <Stagger className="grid gap-4 sm:grid-cols-3">
+        <StaggerItem>
         <MetricCard
           icon={FileText}
           label="حالات نشطة"
@@ -394,6 +402,8 @@ export default async function DashboardHome() {
           tone="primary"
           emphasis
         />
+        </StaggerItem>
+        <StaggerItem>
         <MetricCard
           icon={Bell}
           label="إشعارات غير مقروءة"
@@ -402,6 +412,8 @@ export default async function DashboardHome() {
           href="/dashboard/notifications"
           tone={unread > 0 ? "warning" : "neutral"}
         />
+        </StaggerItem>
+        <StaggerItem>
         <MetricCard
           icon={Heart}
           label="المفضلة"
@@ -410,8 +422,10 @@ export default async function DashboardHome() {
           href="/dashboard/favorites"
           tone="neutral"
         />
-      </div>
+        </StaggerItem>
+      </Stagger>
 
+      <Reveal delay={0.15}>
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <SectionCard
@@ -650,6 +664,7 @@ export default async function DashboardHome() {
           </div>
         </div>
       </div>
+      </Reveal>
     </div>
   )
 }

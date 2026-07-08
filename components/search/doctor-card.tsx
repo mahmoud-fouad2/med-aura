@@ -10,6 +10,7 @@ import {
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { FavoriteToggle } from "@/components/favorites/favorite-toggle"
 import { currencyAr, countryNameAr } from "@/lib/status-labels"
 import type { DoctorCard as DoctorCardData } from "@/lib/data/doctors"
@@ -45,12 +46,17 @@ export function DoctorCard({
 
       <div className="flex-1 space-y-4 p-5 pt-6">
         <div className="flex items-start gap-3 pe-10">
-          <Avatar className="size-14 shrink-0 ring-2 ring-primary/10">
-            {doctor.photoUrl && <AvatarImage src={doctor.photoUrl} alt={doctor.name} />}
-            <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-lg font-heading font-bold text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative shrink-0">
+            <Avatar className="size-14 ring-2 ring-primary/10">
+              {doctor.photoUrl && <AvatarImage src={doctor.photoUrl} alt={doctor.name} />}
+              <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-lg font-heading font-bold text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            {doctor.verified && doctor.photoUrl && (
+              <VerifiedBadge className="absolute -bottom-1.5 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 px-1.5 py-0.5 text-[9px] gap-0.5 [&_svg]:size-2.5" />
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-1.5">
               <Link

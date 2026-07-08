@@ -68,6 +68,37 @@ export function getPublicUrl(key: string): string | null {
   return `${env.R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}`
 }
 
+/** Downloads an object's raw bytes — used server-side only (e.g. to
+ *  watermark an upload before it's re-stored under its public key). */
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+  const res = await getClient().send(
+    new GetObjectCommand({ Bucket: env.R2_BUCKET, Key: key }),
+  )
+  const body = res.Body
+  if (!body) throw new Error(`R2 object has no body: ${key}`)
+  const chunks: Uint8Array[] = []
+  for await (const chunk of body as AsyncIterable<Uint8Array>) {
+    chunks.push(chunk)
+  }
+  return Buffer.concat(chunks)
+}
+
+/** Uploads raw bytes directly from the server (no presigned round trip). */
+export async function putObjectBuffer(
+  key: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
+  await getClient().send(
+    new PutObjectCommand({
+      Bucket: env.R2_BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  )
+}
+
 export async function objectExists(key: string): Promise<boolean> {
   try {
     await getClient().send(

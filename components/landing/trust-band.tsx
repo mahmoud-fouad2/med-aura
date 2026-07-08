@@ -67,7 +67,10 @@ export function TrustBand() {
                 </span>
 
                 <div className="flex items-start justify-between gap-3">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 shadow-sm shadow-primary/5">
+                  <span
+                    className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gold/20 ring-1 ring-gold/35 transition-transform duration-300 group-hover:scale-105 shadow-sm"
+                    style={{ color: "oklch(0.52 0.1 85)" }}
+                  >
                     <p.icon className="size-6" />
                   </span>
                   <span className="font-heading text-xs font-semibold tracking-[0.14em] text-primary/70 tabular-nums">

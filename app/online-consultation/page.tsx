@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Video, FileLock2, ClipboardList, ShieldCheck } from "lucide-react"
+import { Video, FileLock2, ClipboardList, ShieldCheck, Mic, PhoneOff, Lock } from "lucide-react"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHero } from "@/components/marketing/page-hero"
@@ -77,6 +77,26 @@ export default function OnlineConsultationPage() {
                 className="object-cover"
                 sizes="(min-width: 1024px) 28rem, 90vw"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/25" />
+
+              {/* secure-call badge */}
+              <div className="absolute top-4 start-4 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
+                <Lock className="size-3.5" />
+                اتصال آمن ومشفّر
+              </div>
+
+              {/* illustrative video-call control bar */}
+              <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur-md">
+                  <Mic className="size-4.5" />
+                </span>
+                <span className="flex size-12 items-center justify-center rounded-full bg-destructive text-white shadow-elegant">
+                  <PhoneOff className="size-5" />
+                </span>
+                <span className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur-md">
+                  <Video className="size-4.5" />
+                </span>
+              </div>
             </div>
           </div>
         </section>

@@ -82,6 +82,8 @@ export function MetricCard({
           ? cn("hover:-translate-y-1 hover:border-primary/30", t.shadow)
           : "shadow-[0_1px_2px_rgba(20,20,60,0.02),0_4px_16px_-8px_rgba(20,20,60,0.06)]",
         emphasis && "sm:p-6",
+        emphasis && tone === "danger" && "alert-glow-danger",
+        emphasis && tone === "warning" && "alert-glow-warning",
       )}
     >
       {/* Subtle top gradient accent */}
