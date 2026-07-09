@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Search, ShieldCheck, FileLock2, Star } from "lucide-react"
+import { Search, ShieldCheck, FileLock2, Star, ClipboardList, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FadeIn } from "@/components/motion"
@@ -23,6 +23,24 @@ export function Hero({
   locale: Locale
 }) {
   const isAr = locale === "ar"
+
+  const heroHighlights = [
+    {
+      icon: ClipboardList,
+      title: isAr ? "خطة وسعر واضح" : "Clear Plan & Price",
+      desc: isAr ? "تقييم وعرض سعر بعد الاستشارة" : "Assessment & quote after consult",
+    },
+    {
+      icon: Video,
+      title: isAr ? "استشارة فيديو" : "Video Consultation",
+      desc: isAr ? "تواصل مباشر دون عناء السفر" : "Direct contact, no travel",
+    },
+    {
+      icon: ShieldCheck,
+      title: isAr ? "طبيب موثّق" : "Verified Doctor",
+      desc: isAr ? "ترخيص تم التحقق منه فعليًا" : "Actually license-checked",
+    },
+  ]
 
   return (
     <section className="relative overflow-hidden border-b border-border bg-mesh">
@@ -100,18 +118,23 @@ export function Hero({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
           </div>
-          <div className="relative mx-auto -mt-10 flex w-[90%] max-w-md items-center gap-4 rounded-2xl border border-white/60 bg-card/85 p-5 shadow-elegant-lg backdrop-blur-md transition-all hover:scale-[1.02]">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-sm shadow-primary/5 animate-pulse-gentle">
-              <ShieldCheck className="size-6" />
-            </span>
-            <div className="text-start">
-              <p className="text-sm font-bold text-foreground">
-                {isAr ? "اعتماد موثّق وصارم لكل طبيب" : "Accredited Credentials"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isAr ? "لا يظهر أي طبيب إلا بترخيص سارٍ معتمد" : "Only active, licensed doctors listed"}
-              </p>
-            </div>
+          <div className="relative mx-auto -mt-10 grid w-[92%] max-w-md grid-cols-3 gap-2.5">
+            {heroHighlights.map((h) => (
+              <div
+                key={h.title}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/60 bg-card/90 px-2.5 py-4 text-center shadow-elegant-lg backdrop-blur-md transition-all hover:-translate-y-1"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                  <h.icon className="size-4.5" />
+                </span>
+                <p className="text-[11px] font-bold leading-tight text-foreground">
+                  {h.title}
+                </p>
+                <p className="text-[10px] leading-snug text-muted-foreground">
+                  {h.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </FadeIn>
       </div>
