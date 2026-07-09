@@ -28,18 +28,30 @@ export function Hero({
     {
       icon: ClipboardList,
       title: isAr ? "خطة وسعر واضح" : "Clear Plan & Price",
-      desc: isAr ? "تقييم وعرض سعر بعد الاستشارة" : "Assessment & quote after consult",
+      desc: isAr
+        ? "تعرف على خطة العلاج والسعر قبل اتخاذ القرار"
+        : "See your treatment plan and price before deciding",
     },
     {
       icon: Video,
       title: isAr ? "استشارة فيديو" : "Video Consultation",
-      desc: isAr ? "تواصل مباشر دون عناء السفر" : "Direct contact, no travel",
+      desc: isAr
+        ? "تحدث مع الطبيب من راحتك وفي وقت يناسبك"
+        : "Talk to your doctor from home, on your schedule",
     },
     {
       icon: ShieldCheck,
       title: isAr ? "طبيب موثّق" : "Verified Doctor",
-      desc: isAr ? "ترخيص تم التحقق منه فعليًا" : "Actually license-checked",
+      desc: isAr
+        ? "أطباء معتمدون ومراجعون بدقة"
+        : "Accredited doctors, carefully reviewed",
     },
+  ]
+
+  const trustPoints = [
+    { icon: Star, label: isAr ? "تقييمات موثّقة" : "Verified Reviews" },
+    { icon: FileLock2, label: isAr ? "حماية ملفاتك الطبية" : "Medical File Protection" },
+    { icon: ShieldCheck, label: isAr ? "تحقّق من التراخيص" : "License Verification" },
   ]
 
   return (
@@ -48,7 +60,7 @@ export function Hero({
       <div className="pointer-events-none absolute -top-32 left-1/4 size-[28rem] rounded-full bg-primary/15 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-40 right-0 size-[26rem] rounded-full bg-accent/40 blur-[120px]" />
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10 lg:px-8 lg:py-28">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-10 lg:px-8 lg:py-28">
         <FadeIn className="flex flex-col gap-6">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary backdrop-blur">
             <ShieldCheck className="size-4" />
@@ -99,40 +111,42 @@ export function Hero({
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2 text-sm text-muted-foreground">
-            <TrustPoint icon={ShieldCheck} label={isAr ? "تحقّق من التراخيص" : "License Verification"} />
-            <TrustPoint icon={FileLock2} label={isAr ? "حماية ملفاتك الطبية" : "Medical File Protection"} />
-            <TrustPoint icon={Star} label={isAr ? "تقييمات موثّقة" : "Verified Reviews"} />
+          <div className="grid max-w-xl grid-cols-3 gap-3 border-t border-border/60 pt-6">
+            {trustPoints.map((tp) => (
+              <TrustPoint key={tp.label} icon={tp.icon} label={tp.label} />
+            ))}
           </div>
         </FadeIn>
 
         <FadeIn delay={0.15} className="relative hidden lg:block">
-          <div className="relative mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border shadow-elegant-lg">
+          <div className="relative mx-auto aspect-4/5 w-full max-w-lg overflow-hidden rounded-[2.5rem] border border-border shadow-elegant-lg">
             <Image
               src="/hero-clinic.png"
               alt={isAr ? "استشارة تجميلية مع طبيبة معتمدة" : "Aesthetic consultation with an accredited doctor"}
               fill
               priority
               className="object-cover"
-              sizes="(min-width: 1024px) 28rem, 0px"
+              sizes="(min-width: 1024px) 32rem, 0px"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
           </div>
-          <div className="relative mx-auto -mt-10 grid w-[92%] max-w-md grid-cols-3 gap-2.5">
+          <div className="relative mx-auto -mt-14 grid w-[94%] max-w-lg grid-cols-3 gap-3">
             {heroHighlights.map((h) => (
               <div
                 key={h.title}
-                className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/60 bg-card/90 px-2.5 py-4 text-center shadow-elegant-lg backdrop-blur-md transition-all hover:-translate-y-1"
+                className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/60 bg-card/95 px-3 py-5 text-center shadow-elegant-lg backdrop-blur-md transition-all hover:-translate-y-1"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-                  <h.icon className="size-4.5" />
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shadow-primary/30">
+                  <h.icon className="size-5" />
                 </span>
-                <p className="text-[11px] font-bold leading-tight text-foreground">
-                  {h.title}
-                </p>
-                <p className="text-[10px] leading-snug text-muted-foreground">
-                  {h.desc}
-                </p>
+                <div>
+                  <p className="text-xs font-bold leading-snug text-foreground">
+                    {h.title}
+                  </p>
+                  <p className="mt-1 text-[10.5px] leading-snug text-muted-foreground">
+                    {h.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -146,13 +160,19 @@ function TrustPoint({
   icon: Icon,
   label,
 }: {
-  icon: React.ComponentType<{ className?: string }>
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
   label: string
 }) {
   return (
-    <span className="inline-flex items-center gap-2">
-      <Icon className="size-4 text-primary" aria-hidden="true" />
-      {label}
-    </span>
+    <div className="flex flex-col items-center gap-2 text-center">
+      <Icon
+        className="size-6"
+        style={{ color: "oklch(0.6 0.1 85)" }}
+        aria-hidden="true"
+      />
+      <span className="text-xs font-medium leading-snug text-foreground/80 sm:text-[13px]">
+        {label}
+      </span>
+    </div>
   )
 }
