@@ -42,9 +42,9 @@ const ar = {
     noDataYet: "لا يوجد محتوى منشور بعد في هذا القسم.",
   },
   authShell: {
-    licenseCheck: "تحقق موثّق من تراخيص كل مقدّم خدمة",
-    fileProtection: "حماية كاملة لصورك وملفاتك الطبية",
-    verifiedReviews: "تقييمات من معاملات موثّقة فقط",
+    licenseCheck: "أطباء ومراكز يتم قبولهم بعناية",
+    fileProtection: "مشاركة صورك وملفاتك بإذنك",
+    verifiedReviews: "آراء وتجارب تساعدك على المقارنة",
     backHome: "العودة إلى الرئيسية",
   },
   search: {
@@ -111,9 +111,9 @@ const en: Dictionary = {
     noDataYet: "No published content in this section yet.",
   },
   authShell: {
-    licenseCheck: "Verified license check for every provider",
-    fileProtection: "Full protection for your photos and medical files",
-    verifiedReviews: "Reviews from verified transactions only",
+    licenseCheck: "Carefully accepted doctors and centers",
+    fileProtection: "Share photos and files with your permission",
+    verifiedReviews: "Reviews and experiences that help comparison",
     backHome: "Back to home",
   },
   search: {

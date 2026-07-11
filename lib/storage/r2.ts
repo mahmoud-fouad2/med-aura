@@ -64,6 +64,13 @@ export async function getSignedReadUrl(
 
 /** Public URL for non-sensitive assets only (requires R2_PUBLIC_BASE_URL). */
 export function getPublicUrl(key: string): string | null {
+  if (
+    key.startsWith("demo-doctors/") ||
+    key.startsWith("demo-services/") ||
+    key.startsWith("brand/")
+  ) {
+    return `/${key}`
+  }
   if (!env.R2_PUBLIC_BASE_URL) return null
   return `${env.R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}`
 }

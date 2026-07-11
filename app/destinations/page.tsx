@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Globe2, MapPin, Users, Building2 } from "lucide-react"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -21,6 +22,8 @@ export const metadata = {
 export default async function DestinationsPage() {
   const res = await query(() => listDestinations())
   const destinations = res.status === "ok" ? res.data : []
+  const doctorsTotal = destinations.reduce((sum, d) => sum + d.approvedDoctors, 0)
+  const centersTotal = destinations.reduce((sum, d) => sum + d.approvedCenters, 0)
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -28,11 +31,18 @@ export default async function DestinationsPage() {
       <main className="flex-1">
         <PageHero
           eyebrow="الوجهات"
-          title="اختر وجهتك التجميلية"
-          subtitle="دول بها أطباء ومراكز معتمدة على Med Aura. لكل وجهة إحصائيات لحظية لعدد الأطباء والمراكز واللغات."
+          title="اختر وجهتك التجميلية بوضوح"
+          subtitle="قارن بين الدول المتاحة حسب الأطباء والمراكز واللغات، ثم ابدأ من الوجهة التي تناسب خطتك وميزانيتك."
+          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
+          imageAlt="عيادة تجميل حديثة"
+          stats={[
+            { label: "وجهات", value: destinations.length.toLocaleString("ar-SA-u-nu-latn") },
+            { label: "أطباء", value: doctorsTotal.toLocaleString("ar-SA-u-nu-latn") },
+            { label: "مراكز", value: centersTotal.toLocaleString("ar-SA-u-nu-latn") },
+          ]}
         />
 
-        <section className="bg-background">
+        <section className="bg-section-soft">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             {res.status !== "ok" ? (
               <DataState
@@ -58,64 +68,62 @@ export default async function DestinationsPage() {
                       >
                         <Card
                           className={
-                            "h-full p-6 transition-all duration-300 " +
+                            "h-full overflow-hidden p-0 transition-all duration-300 " +
                             (inactive
                               ? "opacity-60"
                               : "hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant")
                           }
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <div className="relative h-32 bg-muted">
+                            <Image
+                              src="/demo-services/aesthetic-clinic-lounge.png"
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+                            <span className="absolute bottom-3 right-3 flex size-12 items-center justify-center rounded-2xl bg-white/92 text-primary ring-1 ring-white/50 shadow-elegant backdrop-blur">
                               <MapPin className="size-6" />
                             </span>
                             <span
                               dir="ltr"
-                              className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground"
+                              className="absolute left-3 top-3 rounded-full bg-white/88 px-2 py-0.5 font-mono text-[10px] font-medium text-foreground shadow-sm backdrop-blur"
                             >
                               {d.code}
                             </span>
                           </div>
-                          <h3 className="mt-4 font-heading text-lg font-bold text-foreground">
-                            {d.nameAr}
-                          </h3>
-                          <p dir="ltr" className="text-right text-xs text-muted-foreground">
-                            {d.nameEn}
-                          </p>
-                          <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
-                            <Stat
-                              icon={Users}
-                              value={d.approvedDoctors}
-                              label="طبيب"
-                            />
-                            <Stat
-                              icon={Building2}
-                              value={d.approvedCenters}
-                              label="مركز"
-                            />
-                            <Stat
-                              icon={Globe2}
-                              value={d.citiesCount}
-                              label="مدينة"
-                            />
-                          </dl>
-                          {d.languagesTop.length > 0 && (
-                            <p className="mt-4 flex flex-wrap gap-1 text-xs text-muted-foreground">
-                              اللغات:
-                              {d.languagesTop.map((l) => (
-                                <span
-                                  key={l}
-                                  className="rounded-full bg-muted px-2 py-0.5 font-medium"
-                                >
-                                  {l}
-                                </span>
-                              ))}
+                          <div className="p-6">
+                            <h3 className="font-heading text-lg font-bold text-foreground">
+                              {d.nameAr}
+                            </h3>
+                            <p dir="ltr" className="text-right text-xs text-muted-foreground">
+                              {d.nameEn}
                             </p>
-                          )}
-                          {inactive && (
-                            <p className="mt-4 text-xs text-muted-foreground">
-                              لا يوجد مقدّم خدمة معتمد بعد
-                            </p>
-                          )}
+                            <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
+                              <Stat icon={Users} value={d.approvedDoctors} label="طبيب" />
+                              <Stat icon={Building2} value={d.approvedCenters} label="مركز" />
+                              <Stat icon={Globe2} value={d.citiesCount} label="مدينة" />
+                            </dl>
+                            {d.languagesTop.length > 0 && (
+                              <p className="mt-4 flex flex-wrap gap-1 text-xs text-muted-foreground">
+                                اللغات:
+                                {d.languagesTop.map((l) => (
+                                  <span
+                                    key={l}
+                                    className="rounded-full bg-muted px-2 py-0.5 font-medium"
+                                  >
+                                    {l}
+                                  </span>
+                                ))}
+                              </p>
+                            )}
+                            {inactive && (
+                              <p className="mt-4 text-xs text-muted-foreground">
+                                لا يوجد مقدّم خدمة معتمد بعد
+                              </p>
+                            )}
+                          </div>
                         </Card>
                       </Link>
                     </StaggerItem>

@@ -41,6 +41,8 @@ export default async function FaqPage() {
           eyebrow="الأسئلة الشائعة"
           title="إجابات لأسئلتك"
           subtitle="جمعنا أكثر الأسئلة شيوعًا حول المنصة. لم تجد إجابتك؟ تواصل معنا."
+          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
+          imageAlt="مساحة استقبال هادئة في مركز تجميل"
         />
 
         <section className="bg-background">
@@ -54,7 +56,7 @@ export default async function FaqPage() {
               <EmptyState
                 icon={HelpCircle}
                 title="سيتم نشر الأسئلة قريبًا"
-                description="تُدار الأسئلة الشائعة من لوحة الإدارة وتظهر فور إضافتها."
+                description="نحضّر إجابات مختصرة وواضحة للأسئلة الأكثر تكرارًا."
               />
             ) : (
               <div className="space-y-3">

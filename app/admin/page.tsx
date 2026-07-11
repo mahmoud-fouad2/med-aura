@@ -58,7 +58,7 @@ export default async function AdminOverviewPage() {
       <PageHeader
         eyebrow="نظرة عامة تشغيلية"
         title={`مرحبًا، ${user.name}`}
-        description="ملخّص حيّ للمنصة — الأرقام محسوبة مباشرة من قاعدة البيانات، والأقسام تُخفى بحسب صلاحياتك."
+        description="ملخّص واضح لحركة المنصة والمهام التي تحتاج متابعة، مع عرض الأقسام المناسبة لصلاحياتك."
       />
 
       {/* Hero metrics — larger, more prominent */}
@@ -185,7 +185,7 @@ export default async function AdminOverviewPage() {
         <SectionCard
           icon={Activity}
           title="النشاط خلال آخر 30 يومًا"
-          description="حالات جديدة ودفعات ناجحة — بيانات حقيقية من قاعدة البيانات."
+          description="حالات جديدة ودفعات ناجحة خلال الفترة الأخيرة."
         >
           <div className="p-5">
             <ActivityChart data={activity30d} showFinance={canFinance} />
@@ -301,12 +301,12 @@ export default async function AdminOverviewPage() {
           <SectionCard
             icon={Database}
             title="حالة النظام"
-            description="التكاملات الخارجية وقاعدة البيانات."
+            description="جاهزية الخدمات الأساسية للمنصة."
             viewAllHref="/admin/system-health"
             tone="success"
           >
             <div className="space-y-2 p-5 text-sm">
-              <StatusRow label="قاعدة البيانات" ok={dbStatus.connected && dbStatus.ready} />
+              <StatusRow label="حفظ البيانات" ok={dbStatus.connected && dbStatus.ready} />
               <StatusRow label="بوابة الدفع الإلكتروني" ok={isStripeConfigured()} />
               <StatusRow label="التخزين السحابي للملفات" ok={isR2Configured()} />
               <StatusRow label="البريد" ok={isEmailConfigured()} />

@@ -270,9 +270,8 @@ export function CenterApplicationForm({
 
       <Section title="التراخيص والسجلات">
         <p className="mb-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          تُخزَّن أرقام السجل التجاري وترخيص المنشأة مشفَّرة، ويظهر آخر 4 أرقام
-          فقط في لوحة الإدارة. سيطلب فريق المراجعة والاعتماد المستندات الأصلية
-          أثناء المراجعة.
+          نحفظ أرقام السجل والترخيص بعناية، ولا يظهر لفريق المراجعة إلا آخر 4
+          أرقام. قد نطلب المستندات الأصلية أثناء مراجعة الطلب.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="رقم السجل التجاري" required>

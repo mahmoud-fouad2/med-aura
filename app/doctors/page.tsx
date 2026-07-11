@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation"
+import SearchPage, { metadata } from "@/app/search/page"
 
-// /doctors is the search experience filtered to doctors.
-export default function DoctorsIndex() {
-  redirect("/search")
-}
+export { metadata }
+export const dynamic = "force-dynamic"
+
+export default SearchPage

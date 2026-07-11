@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import {
   Building2,
   MapPin,
@@ -43,6 +44,7 @@ export default async function CentersPage() {
         }),
   ])
   const centers = res.status === "ok" ? res.data : []
+  const doctorsTotal = centers.reduce((sum, c) => sum + c.doctorCount, 0)
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -50,11 +52,18 @@ export default async function CentersPage() {
       <main className="flex-1">
         <PageHero
           eyebrow="المراكز"
-          title="مراكز التجميل المعتمدة"
-          subtitle="مراكز تم التحقق من تراخيصها الطبية، بأطباء تجميل معتمدين في كل تخصص."
+          title="مراكز مختارة لرحلة أكثر اطمئنانًا"
+          subtitle="تعرّف على المراكز التي تجمع بين أطباء معتمدين، بيئة عناية واضحة، وخدمات مناسبة لكل مرحلة من رحلتك."
+          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
+          imageAlt="استقبال مركز تجميل حديث"
+          stats={[
+            { label: "مراكز", value: centers.length.toLocaleString("ar-SA-u-nu-latn") },
+            { label: "أطباء", value: doctorsTotal.toLocaleString("ar-SA-u-nu-latn") },
+            { label: "الحجز", value: "مباشر" },
+          ]}
         />
 
-        <section className="bg-background">
+        <section className="bg-section-soft">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             {res.status !== "ok" ? (
               <DataState
@@ -86,10 +95,8 @@ export default async function CentersPage() {
                 {centers.map((c) => (
                   <StaggerItem key={c.id}>
                     <Card className="group relative flex h-full flex-col overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_2px_4px_rgba(20,20,60,0.05),0_12px_28px_-12px_rgba(20,20,60,0.16)]">
-                      {/* Top gradient accent */}
                       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
 
-                      {/* Favorite heart */}
                       <div className="absolute end-3 top-3 z-10">
                         <FavoriteToggle
                           kind="center"
@@ -100,9 +107,16 @@ export default async function CentersPage() {
                         />
                       </div>
 
-                      {/* Cover strip with icon */}
-                      <div className="relative flex h-24 items-end bg-gradient-to-br from-primary/8 via-secondary/40 to-background px-5 pb-3 pt-5">
-                        <span className="flex size-14 items-center justify-center rounded-2xl bg-background text-primary ring-1 ring-primary/15 shadow-[0_4px_16px_-8px_rgba(74,29,150,0.28)]">
+                      <div className="relative flex h-36 items-end overflow-hidden bg-muted px-5 pb-3 pt-5">
+                        <Image
+                          src="/demo-services/aesthetic-clinic-lounge.png"
+                          alt=""
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+                        <span className="relative flex size-14 items-center justify-center rounded-2xl bg-white/92 text-primary ring-1 ring-white/50 shadow-elegant backdrop-blur">
                           <Building2 className="size-6" />
                         </span>
                       </div>

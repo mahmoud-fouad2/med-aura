@@ -11,9 +11,8 @@ import { MobileNav } from "@/components/layout/mobile-nav"
 export async function SiteHeader() {
   const [user, { locale, t }] = await Promise.all([getCurrentUser(), getI18n()])
 
-  // Only link to routes that actually exist (no 404s).
   const navLinks = [
-    { href: "/search", label: t.nav.doctors },
+    { href: "/doctors", label: t.nav.doctors },
     { href: "/procedures", label: t.nav.procedures },
     { href: "/centers", label: t.nav.centers },
     { href: "/destinations", label: "الوجهات" },

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowLeft, Syringe, Sparkles } from "lucide-react"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -23,6 +24,8 @@ export default async function ProceduresPage() {
   const res = await query(() => listProceduresGrouped())
   const groups = res.status === "ok" ? res.data : []
   const hasAny = groups.some((g) => g.procedures.length > 0)
+  const visibleGroups = groups.filter((g) => g.procedures.length > 0)
+  const procedureCount = visibleGroups.reduce((sum, g) => sum + g.procedures.length, 0)
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -30,11 +33,18 @@ export default async function ProceduresPage() {
       <main className="flex-1">
         <PageHero
           eyebrow="الإجراءات"
-          title="إجراءات التجميل"
-          subtitle="استكشف الإجراءات الجراحية وغير الجراحية حسب المنطقة، واختر ما يناسبك مع طبيب معتمد."
+          title="اختَر الإجراء وأنت فاهم الخطوة"
+          subtitle="استكشف الإجراءات الجراحية وغير الجراحية بصورة أوضح: ما طبيعتها، كم تحتاج للتعافي، ومن الأطباء المناسبين لها."
+          imageSrc="/demo-services/aesthetic-treatment-room.png"
+          imageAlt="غرفة علاج تجميلي حديثة"
+          stats={[
+            { label: "تصنيفات", value: visibleGroups.length.toLocaleString("ar-SA-u-nu-latn") },
+            { label: "إجراءات", value: procedureCount.toLocaleString("ar-SA-u-nu-latn") },
+            { label: "استشارة أولى", value: "واضحة" },
+          ]}
         />
 
-        <section className="bg-background">
+        <section className="bg-section-soft">
           <div className="mx-auto max-w-7xl space-y-16 px-4 py-16 sm:px-6 lg:px-8">
             {res.status !== "ok" ? (
               <DataState
@@ -45,11 +55,10 @@ export default async function ProceduresPage() {
               <EmptyState
                 icon={Sparkles}
                 title="سيتم عرض الإجراءات قريبًا"
-                description="تُدار قائمة الإجراءات من لوحة الإدارة وتظهر فور إضافتها."
+                description="نحضّر قائمة الإجراءات بعناية لتظهر لك بشكل واضح ومفيد."
               />
             ) : (
-              groups
-                .filter((g) => g.procedures.length > 0)
+              visibleGroups
                 .map((g) => (
                   <div key={g.slug}>
                     <div className="mb-6 flex items-center gap-4">
@@ -68,24 +77,36 @@ export default async function ProceduresPage() {
                         <StaggerItem key={p.slug}>
                           <Link
                             href={`/procedures/${p.slug}`}
-                            className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
+                            className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
                           >
-                            <div className="flex items-center justify-between">
-                              <CategoryIconBadge icon={g.icon} className="size-10" iconClassName="size-5" />
-                              <ArrowLeft className="size-4 text-muted-foreground transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1 group-hover:text-primary" />
+                            <div className="relative h-32 overflow-hidden bg-muted">
+                              <Image
+                                src={procedureImageForCategory(g.slug)}
+                                alt=""
+                                fill
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                              <div className="absolute bottom-3 right-3">
+                                <CategoryIconBadge icon={g.icon} className="size-10 bg-white/92" iconClassName="size-5" />
+                              </div>
+                              <ArrowLeft className="absolute bottom-5 left-4 size-4 text-white transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1" />
                             </div>
-                            <h3 className="font-heading text-lg font-bold text-foreground">
-                              {p.nameAr}
-                            </h3>
-                            <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit">
-                              <Syringe className="size-3" />
-                              {p.isSurgical ? "جراحي" : "غير جراحي"}
-                            </Badge>
-                            {p.recoveryDays != null && p.recoveryDays > 0 && (
+                            <div className="flex flex-1 flex-col gap-3 p-5">
+                              <h3 className="font-heading text-lg font-bold text-foreground">
+                                {p.nameAr}
+                              </h3>
+                              <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit">
+                                <Syringe className="size-3" />
+                                {p.isSurgical ? "جراحي" : "غير جراحي"}
+                              </Badge>
                               <p className="mt-auto text-sm text-muted-foreground">
-                                تعافٍ تقديري {p.recoveryDays} يوم
+                                {p.recoveryDays != null && p.recoveryDays > 0
+                                  ? `تعافٍ تقديري ${p.recoveryDays} يوم`
+                                  : "عودة أسرع للروتين اليومي"}
                               </p>
-                            )}
+                            </div>
                           </Link>
                         </StaggerItem>
                       ))}
@@ -99,4 +120,9 @@ export default async function ProceduresPage() {
       <SiteFooter />
     </div>
   )
+}
+
+function procedureImageForCategory(slug: string): string {
+  if (slug === "dental" || slug === "hair") return "/demo-services/aesthetic-clinic-lounge.png"
+  return "/demo-services/aesthetic-treatment-room.png"
 }

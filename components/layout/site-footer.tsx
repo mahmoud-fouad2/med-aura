@@ -7,7 +7,6 @@ export function SiteFooter() {
 
   return (
     <footer className="relative isolate overflow-hidden border-t border-border bg-gradient-to-b from-secondary/40 via-background to-background">
-      {/* Faint dotted pattern for depth */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 opacity-40"
@@ -32,7 +31,6 @@ export function SiteFooter() {
 
       <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          {/* Brand column */}
           <div className="flex flex-col gap-4">
             <Link href="/" aria-label="Med Aura" className="w-fit">
               <Logo />
@@ -60,7 +58,7 @@ export function SiteFooter() {
           <FooterCol
             title="المنصة"
             links={[
-              { href: "/search", label: "ابحث عن طبيب" },
+              { href: "/doctors", label: "ابحث عن طبيب" },
               { href: "/procedures", label: "الإجراءات" },
               { href: "/centers", label: "المراكز" },
               { href: "/destinations", label: "الوجهات" },

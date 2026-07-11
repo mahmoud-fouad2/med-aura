@@ -52,6 +52,16 @@ export type SearchParams = {
   pageSize?: number
 }
 
+const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
+  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi-generated.png",
+  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alharbi-generated.png",
+  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmed-alshammari-generated.png",
+}
+
+function doctorPhotoUrl(slug: string, photoKey: string | null): string | null {
+  return (photoKey ? getPublicUrl(photoKey) : null) ?? DEMO_DOCTOR_PHOTOS[slug] ?? null
+}
+
 function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -175,7 +185,7 @@ export async function searchDoctors(
   return {
     results: rows.map(({ photoKey, ...r }) => ({
       ...r,
-      photoUrl: photoKey ? getPublicUrl(photoKey) : null,
+      photoUrl: doctorPhotoUrl(r.slug, photoKey),
       procedures: procMap.get(r.id) ?? [],
     })),
     total: totalRows[0]?.n ?? 0,
@@ -226,7 +236,7 @@ export async function getPublicDoctorBySlug(
 
   const row = rows[0]
   if (!row) return null
-  const photoUrl = row.photoKey ? getPublicUrl(row.photoKey) : null
+  const photoUrl = doctorPhotoUrl(row.slug, row.photoKey)
 
   const [procs, license] = await Promise.all([
     db

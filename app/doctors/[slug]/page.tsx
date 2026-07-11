@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import {
@@ -76,8 +77,6 @@ export default async function DoctorProfilePage({
 
   const initials = doctor.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
 
-  // Schema.org — Physician. Every field is real; ratings only surface when
-  // there's actual review volume (no fake averages).
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Physician",
@@ -114,39 +113,23 @@ export default async function DoctorProfilePage({
         <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-6">
-              {/* Premium Card with elegant purple border-hint and modern soft drop shadows */}
               <Card className="relative overflow-hidden p-0 border-white/60 bg-card/85 backdrop-blur-md shadow-elegant-lg">
-                {/* Editorial glowing aura bar */}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent" />
                 
-                {/* Taller Luxury cover banner with mesh-gradient-like visual and radial overlay */}
-                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-primary/18 via-primary/5 to-secondary/35">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/30 via-transparent to-transparent opacity-70" />
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-overlay"
-                  >
-                    <svg
-                      className="h-full w-full text-foreground"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <defs>
-                        <pattern
-                          id="doc-dots"
-                          width="16"
-                          height="16"
-                          patternUnits="userSpaceOnUse"
-                        >
-                          <circle cx="2" cy="2" r="1.5" fill="currentColor" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#doc-dots)" />
-                    </svg>
-                  </div>
+                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/15 via-background to-secondary/25 sm:h-60">
+                  {doctor.photoUrl && (
+                    <Image
+                      src={doctor.photoUrl}
+                      alt=""
+                      fill
+                      className="scale-110 object-cover object-center opacity-25 blur-sm"
+                      sizes="(max-width: 1024px) 100vw, 720px"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-l from-background/85 via-background/45 to-transparent" />
                 </div>
 
                 <div className="p-6 sm:p-8">
-                  {/* Dynamic relative avatar container that shifts on screens */}
                   <div className="-mt-20 sm:-mt-24 flex flex-col sm:flex-row sm:items-end justify-between items-start gap-4">
                     <div className="relative shrink-0">
                       <Avatar className="size-28 sm:size-32 ring-4 sm:ring-[6px] ring-background shadow-elegant-lg">
@@ -161,7 +144,7 @@ export default async function DoctorProfilePage({
                     </div>
                     <div className="pb-1">
                       {doctor.verified && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm shadow-primary/5 animate-pulse-gentle">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm shadow-primary/5">
                           <BadgeCheck className="size-4" />
                           طبيب موثّق
                         </span>
@@ -249,7 +232,7 @@ export default async function DoctorProfilePage({
               <Card className="p-6">
                 <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-bold text-foreground">
                   <ShieldCheck className="size-5 text-primary" />
-                  {isAr ? "التحقق والاعتماد" : "Acquisition & License Verification"}
+                  {isAr ? "التحقق والاعتماد" : "Verification & License"}
                 </h2>
                 <dl className="space-y-2 text-sm">
                   <Row label={isAr ? "حالة التحقق" : "Verification Status"} value={doctor.verified ? (isAr ? "موثّق" : "Verified") : "—"} />
@@ -273,7 +256,6 @@ export default async function DoctorProfilePage({
               </Card>
             </div>
 
-            {/* Booking sidebar */}
             <aside className="space-y-4">
               <Card className="sticky top-24 p-6 sm:p-7 border-white/60 bg-gradient-to-b from-card to-secondary/5 shadow-elegant-lg backdrop-blur-md">
                 <div className="mb-5 rounded-2xl bg-primary/5 p-4 border border-primary/10">
@@ -320,19 +302,18 @@ export default async function DoctorProfilePage({
                   )}
                 </div>
                 
-                {/* Optimized Conversion Path UI */}
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
                     <Button
                       className="w-full h-12 text-base font-bold shadow-elegant hover:scale-[1.01] transition-transform"
                       render={
                         <Link href={`/doctors/${doctor.slug}/book`}>
-                          {isAr ? "حجز استشارة مباشر" : "Book Direct Appointment"}
+                          {isAr ? "احجز استشارتك" : "Book Consultation"}
                         </Link>
                       }
                     />
                     <p className="text-[11px] text-muted-foreground text-center px-1">
-                      {isAr ? "احصل على استشارة فورية مع طبيبك وناقش خياراتك" : "Select an instant slot and consult your doctor directly"}
+                      {isAr ? "اختر الوقت المناسب وناقش خياراتك مع الطبيب." : "Choose a suitable time and discuss your options."}
                     </p>
                   </div>
                   
@@ -348,12 +329,12 @@ export default async function DoctorProfilePage({
                       className="w-full h-12 text-base font-semibold transition-all hover:bg-muted/80 hover:scale-[1.01]"
                       render={
                         <Link href={`/dashboard/cases/new?doctor=${doctor.id}`}>
-                          {isAr ? "ابدأ دراسة حالة بأمان" : "Start Case Study Safely"}
+                          {isAr ? "شارك حالتك للطبيب" : "Share Your Case"}
                         </Link>
                       }
                     />
                     <p className="text-[11px] text-muted-foreground text-center px-1">
-                      {isAr ? "شارك صورك وبياناتك للحصول على خطة مخصصة وتقدير سعر" : "Share photos & details for a custom plan and price from the doctor"}
+                      {isAr ? "أرسل التفاصيل والصور المطلوبة للحصول على تقييم أوضح." : "Send details and photos for a clearer evaluation."}
                     </p>
                   </div>
                 </div>

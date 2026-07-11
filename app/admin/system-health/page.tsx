@@ -13,7 +13,7 @@ import {
 import { Card } from "@/components/ui/card"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "صحة النظام" }
+export const metadata = { title: "جاهزية المنصة" }
 
 export default async function SystemHealthPage() {
   await requirePermissionPage(PERMISSIONS.ADMIN_ACCESS)
@@ -21,16 +21,16 @@ export default async function SystemHealthPage() {
 
   const integrations = [
     { label: "بوابة الدفع الإلكتروني", ok: isStripeConfigured() },
-    { label: "تحقق إشعارات الدفع الفورية", ok: isStripeWebhookConfigured() },
+    { label: "تحديثات الدفع التلقائية", ok: isStripeWebhookConfigured() },
     { label: "التخزين السحابي للملفات", ok: isR2Configured() },
     { label: "البريد", ok: isEmailConfigured() },
     { label: "الفيديو", ok: isVideoConfigured() },
-    { label: "الحماية من الروبوتات", ok: isRecaptchaConfigured() },
+    { label: "حماية النماذج", ok: isRecaptchaConfigured() },
   ]
 
   return (
     <div className="space-y-6">
-      <h1 className="font-heading text-2xl font-bold text-foreground">صحة النظام</h1>
+      <h1 className="font-heading text-2xl font-bold text-foreground">جاهزية المنصة</h1>
 
       {db.configured && db.connected && !db.ready && (
         <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
@@ -40,9 +40,8 @@ export default async function SystemHealthPage() {
               تحديثات بنية بانتظار التطبيق
             </p>
             <p className="text-muted-foreground">
-              توجد {db.pending} تحديثات لم تُطبَّق بعد على قاعدة البيانات.
-              تواصل مع فريق الإعداد لإكمال النشر قبل استخدام الميزات
-              الجديدة.
+              توجد {db.pending} تحديثات لم تكتمل بعد. تواصل مع فريق الإعداد
+              لإكمال التجهيز قبل استخدام الميزات الجديدة.
             </p>
           </div>
         </div>
@@ -50,7 +49,7 @@ export default async function SystemHealthPage() {
 
       <Card className="space-y-4 p-6">
         <h2 className="flex items-center gap-2 font-heading text-lg font-bold text-foreground">
-          <Database className="size-5 text-primary" /> قاعدة البيانات
+          <Database className="size-5 text-primary" /> حفظ البيانات
         </h2>
         <dl className="space-y-2 text-sm">
           <HealthRow label="الإعداد الأساسي" ok={db.configured} />
@@ -58,10 +57,10 @@ export default async function SystemHealthPage() {
             label="الاتصال"
             ok={db.connected}
             detail={
-              db.connected ? undefined : "تعذّر الوصول لقاعدة البيانات حاليًا"
+              db.connected ? undefined : "تعذّر الوصول لخدمة حفظ البيانات حاليًا"
             }
           />
-          <Row label="تحديثات البنية المطبَّقة" value={`${db.appliedCount} / ${db.journalCount}`} />
+          <Row label="التحديثات المكتملة" value={`${db.appliedCount} / ${db.journalCount}`} />
           <Row label="بانتظار التطبيق" value={String(db.pending)} />
           <HealthRow label="جاهزة" ok={db.ready} />
         </dl>
@@ -69,7 +68,7 @@ export default async function SystemHealthPage() {
 
       <Card className="space-y-4 p-6">
         <h2 className="flex items-center gap-2 font-heading text-lg font-bold text-foreground">
-          <Plug className="size-5 text-primary" /> التكاملات الخارجية
+          <Plug className="size-5 text-primary" /> الخدمات الأساسية
         </h2>
         <dl className="space-y-2 text-sm">
           {integrations.map((i) => (

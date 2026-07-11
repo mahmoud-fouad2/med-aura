@@ -37,18 +37,18 @@ export default async function AdminSettingsPage() {
 
   const integrations: { label: string; ok: boolean; hint?: string }[] = [
     {
-      label: "قاعدة البيانات",
+      label: "حفظ البيانات",
       ok: db.configured && db.connected && db.ready,
       hint: db.ready
-        ? `${db.appliedCount}/${db.journalCount} ترحيل مطبَّق`
+        ? `${db.appliedCount}/${db.journalCount} تحديث مكتمل`
         : "غير جاهزة",
     },
     { label: "بوابة الدفع الإلكتروني", ok: isStripeConfigured() },
-    { label: "إشعارات الدفع الفورية", ok: isStripeWebhookConfigured() },
+    { label: "تحديثات الدفع التلقائية", ok: isStripeWebhookConfigured() },
     { label: "التخزين السحابي للملفات", ok: isR2Configured() },
     { label: "خدمة البريد الإلكتروني", ok: isEmailConfigured() },
     { label: "الفيديو للاستشارة", ok: isVideoConfigured() },
-    { label: "الحماية من الروبوتات", ok: isRecaptchaConfigured() },
+    { label: "حماية النماذج", ok: isRecaptchaConfigured() },
   ]
   const activeCount = integrations.filter((i) => i.ok).length
 
@@ -75,9 +75,9 @@ export default async function AdminSettingsPage() {
     },
     {
       href: "/admin/system-health",
-      label: "صحة النظام",
+      label: "جاهزية المنصة",
       icon: Activity,
-      desc: "حالة قاعدة البيانات والخدمات المتصلة.",
+      desc: "حالة الخدمات الأساسية وتجهيزاتها.",
     },
     {
       href: "/dashboard/notifications",
@@ -100,13 +100,13 @@ export default async function AdminSettingsPage() {
       <PageHeader
         eyebrow="مركز التحكم"
         title="الإعدادات"
-        description="مركز التحكم في المحتوى، الصلاحيات، والتكاملات الخارجية للمنصة."
+        description="مركز التحكم في المحتوى، الصلاحيات، والخدمات الأساسية للمنصة."
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <MetricCard
           icon={Plug}
-          label="تكاملات مفعّلة"
+          label="خدمات جاهزة"
           value={`${activeCount} / ${integrations.length}`}
           hint={
             activeIntegrations
@@ -188,7 +188,7 @@ export default async function AdminSettingsPage() {
         <SectionCard
           icon={Plug}
           title="حالة التكاملات"
-          description="التكاملات الخارجية وحالة تهيئتها. لا يتم عرض أي مفاتيح."
+          description="الخدمات الأساسية وحالة جاهزيتها."
           tone={activeIntegrations ? "success" : "warning"}
         >
           <ul className="divide-y divide-border/60">

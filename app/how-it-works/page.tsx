@@ -19,12 +19,12 @@ export const metadata = {
 }
 
 const steps: { icon: LucideIcon; title: string; desc: string }[] = [
-  { icon: Search, title: "اختر الإجراء والطبيب", desc: "تصفّح إجراءات التجميل وقارن بين أطباء ومراكز معتمدين ظهروا بعد التحقق من تراخيصهم." },
-  { icon: FileLock2, title: "أنشئ حالتك بأمان", desc: "أجب عن أسئلة الإجراء وارفع صورك وتقاريرك في مساحة خاصة لا يطّلع عليها أحد إلا بإذنك." },
-  { icon: ShieldCheck, title: "امنح الطبيب صلاحية الاطلاع", desc: "أنت من يقرر مَن يرى ملفك، ويمكنك سحب الإذن في أي وقت." },
-  { icon: CalendarCheck, title: "احجز الاستشارة وادفع رسومها", desc: "اختر موعدًا متاحًا وادفع رسوم الاستشارة عبر بوابة دفع آمنة." },
-  { icon: ClipboardList, title: "مراجعة الطبيب وإصدار الخطة", desc: "بعد الاستشارة يصدر الطبيب خطة علاجية، ويُصدر المركز عرض سعر واضحًا." },
-  { icon: HeartHandshake, title: "تأكيد الإجراء والمتابعة", desc: "بعد الاعتماد الطبي وتأكيد الموعد، تتم العملية وتبدأ خطة المتابعة بعدها." },
+  { icon: Search, title: "اختيار واعي", desc: "ابدأ بالإجراء الذي يهمك، ثم قارن بين الأطباء والمراكز حسب الخبرة والموقع ونوع الاستشارة." },
+  { icon: FileLock2, title: "مشاركة منظّمة", desc: "أضف تفاصيل حالتك والصور المطلوبة في ملف واحد واضح يسهّل على الطبيب فهم احتياجك." },
+  { icon: ShieldCheck, title: "تحكم بخصوصيتك", desc: "أنت تختار الطبيب الذي يرى ملفك، وتستطيع إيقاف المشاركة عندما تحتاج." },
+  { icon: CalendarCheck, title: "استشارة مناسبة", desc: "اختر موعدًا يناسبك، وتعرّف على الخيارات الممكنة قبل أي التزام." },
+  { icon: ClipboardList, title: "خطة وسعر", desc: "تحصل على تصور أوضح للخطوات والتكلفة، لتتخذ قرارك بهدوء." },
+  { icon: HeartHandshake, title: "متابعة بعد الإجراء", desc: "بعد الحجز والتنفيذ، تبقى خطوات المتابعة والتنبيهات في مكان واحد." },
 ]
 
 export default function HowItWorksPage() {
@@ -36,6 +36,13 @@ export default function HowItWorksPage() {
           eyebrow="رحلة واضحة"
           title="كيف تعمل Med Aura"
           subtitle="نرافقك في كل خطوة من رحلتك التجميلية، مع وضوح في المعلومات وحماية لبياناتك."
+          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
+          imageAlt="مساحة استقبال عيادة تجميلية"
+          stats={[
+            { label: "الاختيار", value: "أسهل" },
+            { label: "الملف", value: "منظّم" },
+            { label: "المتابعة", value: "مستمرة" },
+          ]}
         />
 
         <section className="border-b border-border bg-background">
@@ -43,7 +50,7 @@ export default function HowItWorksPage() {
             <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {steps.map((step, i) => (
                 <StaggerItem key={step.title}>
-                  <div className="relative flex h-full flex-col gap-4.5 rounded-2xl border border-white/60 bg-card/85 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm">
+                  <div className="group/feature relative flex h-full flex-col gap-4.5 rounded-2xl border border-white/60 bg-card/85 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm">
                     <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[oklch(0.82_0.08_85)] to-[oklch(0.62_0.11_75)] text-white shadow-elegant ring-1 ring-gold/30 transition-transform duration-300 group-hover/feature:scale-105">
                       <step.icon className="size-6" />
                     </span>

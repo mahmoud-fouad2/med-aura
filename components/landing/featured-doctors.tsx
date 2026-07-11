@@ -63,7 +63,7 @@ export async function FeaturedDoctors() {
           <Stagger className="mt-10 grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
             {results.map((d) => (
               <StaggerItem key={d.id}>
-                <DoctorCard doctor={d} />
+                <DoctorCard doctor={d} variant="featured" />
               </StaggerItem>
             ))}
           </Stagger>

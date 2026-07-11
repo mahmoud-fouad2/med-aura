@@ -261,7 +261,7 @@ type DemoDoctorInput = {
   centerName: string
   centerDescription: string
   procedureSlugs: string[]
-  /** Filename under public/demo-doctors/ — a licensed placeholder photo,
+  /** Filename under public/demo-doctors/ — a polished local placeholder photo,
    *  superseded automatically once the doctor uploads their own. */
   photoFileName?: string
 }
@@ -272,12 +272,15 @@ type DemoDoctorInput = {
  * must still succeed cleanly either way, just without the photo.
  */
 async function seedDemoDoctorPhoto(fileName: string): Promise<string | null> {
-  if (!isR2Configured()) return null
+  const key = `demo-doctors/${fileName}`
+  if (!isR2Configured()) return key
   try {
     const filePath = path.join(process.cwd(), "public", "demo-doctors", fileName)
     const buffer = await readFile(filePath)
-    const key = `demo-doctors/${fileName}`
-    await putObjectBuffer(key, buffer, "image/jpeg")
+    const contentType = fileName.toLowerCase().endsWith(".png")
+      ? "image/png"
+      : "image/jpeg"
+    await putObjectBuffer(key, buffer, contentType)
     return key
   } catch (err) {
     console.warn(`  ⚠ could not seed demo photo ${fileName}:`, err)
@@ -414,7 +417,7 @@ async function seedUsersAndProviders() {
     name: "د. سارة العتيبي",
     doctorSlug: "dr-sara-alotaibi",
     title: "استشارية جراحة تجميل",
-    bio: "استشارية جراحة تجميل بخبرة واسعة في تجميل الأنف والوجه.",
+    bio: "استشارية جراحة تجميل تركز على النتائج الطبيعية وخطط العلاج الواضحة، بخبرة في تجميل الأنف وشد الوجه والإجراءات غير الجراحية.",
     country: "SA",
     city: "الرياض",
     yearsExperience: 12,
@@ -424,9 +427,9 @@ async function seedUsersAndProviders() {
     centerSlug: "noor-aesthetic-center",
     centerLegalName: "مركز نور للطب التجميلي",
     centerName: "مركز نور للتجميل",
-    centerDescription: "مركز متخصص في جراحات وإجراءات التجميل، معتمد ومرخّص.",
+    centerDescription: "مركز عناية تجميلية حديث يجمع بين الاستشارة الدقيقة، تجهيزات آمنة، ومتابعة واضحة بعد الإجراء.",
     procedureSlugs: ["rhinoplasty", "facelift", "botox", "dermal-fillers"],
-    photoFileName: "dr-sara-alotaibi.jpg",
+    photoFileName: "dr-sara-alotaibi-generated.png",
   })
 
   await ensureApprovedDoctorWithCenter({
@@ -434,7 +437,7 @@ async function seedUsersAndProviders() {
     name: "د. نورة القحطاني",
     doctorSlug: "dr-noura-alqahtani",
     title: "استشارية جراحة تجميل الجسم",
-    bio: "استشارية متخصصة في نحت وشد الجسم وتكبير الثدي.",
+    bio: "استشارية تجميل جسم تهتم بتوازن القوام وسلامة التعافي، مع خبرة في نحت الجسم وشد البطن وإجراءات ما بعد الولادة.",
     country: "SA",
     city: "جدة",
     yearsExperience: 9,
@@ -444,9 +447,9 @@ async function seedUsersAndProviders() {
     centerSlug: "amal-cosmetic-center",
     centerLegalName: "مركز الأمل للطب التجميلي",
     centerName: "مركز الأمل للتجميل",
-    centerDescription: "مركز معتمد متخصص في جراحات نحت وشد الجسم.",
+    centerDescription: "مركز متخصص في جراحات نحت وشد الجسم، مع مسار متابعة منظم قبل وبعد الإجراء.",
     procedureSlugs: ["liposuction", "tummy-tuck", "breast-augmentation", "mommy-makeover"],
-    photoFileName: "dr-noura-alqahtani.jpg",
+    photoFileName: "dr-noura-alharbi-generated.png",
   })
 
   await ensureApprovedDoctorWithCenter({
@@ -454,7 +457,7 @@ async function seedUsersAndProviders() {
     name: "د. أحمد يلماز",
     doctorSlug: "dr-ahmet-yilmaz",
     title: "استشاري زراعة الشعر وتجميل الوجه",
-    bio: "استشاري زراعة شعر بخبرة دولية، ومتخصص في تجميل الأنف.",
+    bio: "استشاري زراعة شعر وتجميل وجه بخبرة دولية، يقدّم تقييمًا دقيقًا وخطة علاج مفهومة قبل اتخاذ القرار.",
     country: "TR",
     city: "إسطنبول",
     yearsExperience: 15,
@@ -464,9 +467,9 @@ async function seedUsersAndProviders() {
     centerSlug: "istanbul-aesthetic-center",
     centerLegalName: "Istanbul Aesthetic Medical Center",
     centerName: "مركز إسطنبول للتجميل",
-    centerDescription: "مركز دولي معتمد لزراعة الشعر وجراحات التجميل.",
+    centerDescription: "مركز دولي معتمد لزراعة الشعر وجراحات التجميل، مناسب للمرضى الباحثين عن رحلة علاج واضحة.",
     procedureSlugs: ["hair-transplant", "prp-hair", "rhinoplasty"],
-    photoFileName: "dr-ahmet-yilmaz.jpg",
+    photoFileName: "dr-ahmed-alshammari-generated.png",
   })
 
   const pendingDoctorId = await ensureUser(

@@ -52,7 +52,7 @@ export default async function FinanceDashboardPage() {
       <PageHeader
         eyebrow="المالية"
         title="لوحة المالية"
-        description="المدفوعات، الفواتير، الاسترجاعات، والنزاعات — بيانات لحظية من قاعدة البيانات."
+        description="متابعة المدفوعات والفواتير والاسترجاعات بواجهة واضحة للفريق المالي."
         actions={
           <Button
             variant="outline"
@@ -121,7 +121,7 @@ export default async function FinanceDashboardPage() {
             النزاعات ({disputedPayments.length})
           </TabsTrigger>
           <TabsTrigger value="webhooks">
-            سجل الأحداث ({webhooks.length})
+            تحديثات الدفع ({webhooks.length})
           </TabsTrigger>
         </TabsList>
 
@@ -244,16 +244,16 @@ export default async function FinanceDashboardPage() {
         <TabsContent value="webhooks" className="mt-4">
           <SectionCard
             icon={Radio}
-            title="سجل أحداث الدفع"
-            description="الإشعارات الواردة من بوابة الدفع مع نتيجة معالجة كل منها."
+            title="تحديثات الدفع"
+            description="آخر التحديثات الواردة من بوابة الدفع وحالة التعامل معها."
             tone="neutral"
           >
             {webhooks.length === 0 ? (
               <div className="p-8">
                 <EmptyState
                   icon={Radio}
-                  title="لا يوجد سجل أحداث بعد"
-                  description="ستظهر هنا أحداث بوابة الدفع بمجرد وصولها."
+                  title="لا توجد تحديثات دفع بعد"
+                  description="ستظهر هنا التحديثات الجديدة عند وصولها."
                 />
               </div>
             ) : (

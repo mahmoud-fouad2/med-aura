@@ -1,6 +1,7 @@
 import { and, eq, desc, isNull, count } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { center, doctorProfile } from "@/lib/db/schema"
+import { getPublicUrl } from "@/lib/storage/r2"
 
 export type CenterCard = {
   id: string
@@ -64,7 +65,13 @@ export async function listPublishedCenters(): Promise<CenterCard[]> {
 export type CenterDetail = CenterCard & {
   address: string | null
   languages: string[]
-  doctors: { slug: string; name: string; title: string | null }[]
+  doctors: { slug: string; name: string; title: string | null; photoUrl: string | null }[]
+}
+
+const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
+  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi-generated.png",
+  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alharbi-generated.png",
+  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmed-alshammari-generated.png",
 }
 
 export async function getCenterBySlug(slug: string): Promise<CenterDetail | null> {
@@ -94,6 +101,7 @@ export async function getCenterBySlug(slug: string): Promise<CenterDetail | null
       slug: doctorProfile.slug,
       name: doctorProfile.name,
       title: doctorProfile.title,
+      photoKey: doctorProfile.photoKey,
     })
     .from(doctorProfile)
     .where(
@@ -104,5 +112,12 @@ export async function getCenterBySlug(slug: string): Promise<CenterDetail | null
       ),
     )
 
-  return { ...c, doctorCount: docs.length, doctors: docs }
+  return {
+    ...c,
+    doctorCount: docs.length,
+    doctors: docs.map(({ photoKey, ...d }) => ({
+      ...d,
+      photoUrl: (photoKey ? getPublicUrl(photoKey) : null) ?? DEMO_DOCTOR_PHOTOS[d.slug] ?? null,
+    })),
+  }
 }

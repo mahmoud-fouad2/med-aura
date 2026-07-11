@@ -601,7 +601,7 @@ export default async function DashboardHome() {
                 <QuickLink
                   href="/admin"
                   icon={ShieldCheck}
-                  title="لوحة الإدارة"
+                  title="مركز الإدارة"
                   desc="إشراف على المنصة."
                 />
               )}

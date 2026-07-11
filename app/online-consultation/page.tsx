@@ -14,10 +14,10 @@ export const metadata = {
 }
 
 const features = [
-  { icon: Video, title: "استشارة فيديو", desc: "تحدّث مع طبيبك مباشرة من مكانك، دون عناء السفر للاستشارة الأولى." },
-  { icon: FileLock2, title: "شارك حالتك بأمان", desc: "ارفع صورك وتقاريرك في مساحة خاصة، وامنح الطبيب الإذن قبل الاطلاع." },
-  { icon: ClipboardList, title: "خطة وسعر واضح", desc: "استلم تقييم الطبيب وخطة العلاج وعرض السعر بعد الاستشارة." },
-  { icon: ShieldCheck, title: "أطباء معتمدون فقط", desc: "كل طبيب على المنصة تم التحقق من ترخيصه قبل ظهوره." },
+  { icon: Video, title: "لقاء مريح من مكانك", desc: "تحدّث مع الطبيب في موعد يناسبك قبل السفر أو زيارة المركز." },
+  { icon: FileLock2, title: "مشاركة مطمئنة", desc: "أرسل الصور والتقارير المطلوبة، واختر من يستطيع الاطلاع عليها." },
+  { icon: ClipboardList, title: "خطة مفهومة", desc: "بعد الاستشارة تعرف الخيارات المناسبة والتكلفة المتوقعة بوضوح." },
+  { icon: ShieldCheck, title: "أطباء مختارون بعناية", desc: "لا يظهر الطبيب إلا بعد مراجعة بياناته المهنية وترخيصه." },
 ]
 
 const steps = [
@@ -41,6 +41,13 @@ export default function OnlineConsultationPage() {
           subtitle="احجز استشارة فيديو مع طبيب معتمد، وشارك حالتك بخصوصية تامة، واحصل على خطة وسعر واضح قبل أي خطوة."
           primary={{ href: "/search?consultation=VIDEO_CONSULTATION", label: "ابحث عن طبيب للاستشارة" }}
           secondary={{ href: "/how-it-works", label: "كيف تعمل المنصة" }}
+          imageSrc="/hero-medaura-consultation.png"
+          imageAlt="استشارة تجميلية في عيادة حديثة"
+          stats={[
+            { label: "الاختيار", value: "طبيب مناسب" },
+            { label: "المشاركة", value: "بإذنك" },
+            { label: "القرار", value: "أوضح" },
+          ]}
         />
 
         <section className="border-b border-border bg-background">
@@ -79,13 +86,11 @@ export default function OnlineConsultationPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/25" />
 
-              {/* secure-call badge */}
               <div className="absolute top-4 start-4 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
                 <Lock className="size-3.5" />
                 اتصال آمن ومشفّر
               </div>
 
-              {/* illustrative video-call control bar */}
               <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">
                 <span className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur-md">
                   <Mic className="size-4.5" />

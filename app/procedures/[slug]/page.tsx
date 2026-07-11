@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Clock, Syringe, ChevronLeft, Stethoscope } from "lucide-react"
@@ -86,9 +87,19 @@ export default async function ProcedureDetailPage({
       />
       <SiteHeader />
       <main className="flex-1">
-        {/* header band */}
-        <section className="border-b border-border bg-mesh">
-          <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden border-b border-border bg-background">
+          <div className="absolute inset-0">
+            <Image
+              src="/demo-services/aesthetic-treatment-room.png"
+              alt=""
+              fill
+              priority
+              className="object-cover object-center"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-l from-background via-background/94 to-background/70" />
+          </div>
+          <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
             <nav className="mb-4 flex items-center gap-1 text-sm text-muted-foreground">
               <Link href="/procedures" className="hover:text-primary">
                 {t.nav.procedures}
@@ -134,8 +145,7 @@ export default async function ProcedureDetailPage({
           </div>
         </section>
 
-        {/* doctors */}
-        <section className="bg-background">
+        <section className="bg-section-soft">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <h2 className="mb-8 font-heading text-2xl font-bold text-foreground">
               {isAr ? "أطباء يقدّمون هذا الإجراء" : "Accredited Doctors Performing This Procedure"}
@@ -153,7 +163,7 @@ export default async function ProcedureDetailPage({
                 action={<Button render={<Link href="/procedures">{isAr ? "كل الإجراءات" : "All Procedures"}</Link>} />}
               />
             ) : (
-              <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <Stagger className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {results.map((d) => (
                   <StaggerItem key={d.id}>
                     <DoctorCard doctor={d} />
