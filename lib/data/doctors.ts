@@ -53,9 +53,9 @@ export type SearchParams = {
 }
 
 const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
-  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi-generated.png",
-  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alharbi-generated.png",
-  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmed-alshammari-generated.png",
+  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi.jpg",
+  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alqahtani.jpg",
+  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmet-yilmaz.jpg",
 }
 
 function doctorPhotoUrl(slug: string, photoKey: string | null): string | null {

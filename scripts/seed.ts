@@ -261,7 +261,7 @@ type DemoDoctorInput = {
   centerName: string
   centerDescription: string
   procedureSlugs: string[]
-  /** Filename under public/demo-doctors/ — a polished local placeholder photo,
+  /** Filename under public/demo-doctors/ — a licensed placeholder photo,
    *  superseded automatically once the doctor uploads their own. */
   photoFileName?: string
 }
@@ -429,7 +429,7 @@ async function seedUsersAndProviders() {
     centerName: "مركز نور للتجميل",
     centerDescription: "مركز عناية تجميلية حديث يجمع بين الاستشارة الدقيقة، تجهيزات آمنة، ومتابعة واضحة بعد الإجراء.",
     procedureSlugs: ["rhinoplasty", "facelift", "botox", "dermal-fillers"],
-    photoFileName: "dr-sara-alotaibi-generated.png",
+    photoFileName: "dr-sara-alotaibi.jpg",
   })
 
   await ensureApprovedDoctorWithCenter({
@@ -449,7 +449,7 @@ async function seedUsersAndProviders() {
     centerName: "مركز الأمل للتجميل",
     centerDescription: "مركز متخصص في جراحات نحت وشد الجسم، مع مسار متابعة منظم قبل وبعد الإجراء.",
     procedureSlugs: ["liposuction", "tummy-tuck", "breast-augmentation", "mommy-makeover"],
-    photoFileName: "dr-noura-alharbi-generated.png",
+    photoFileName: "dr-noura-alqahtani.jpg",
   })
 
   await ensureApprovedDoctorWithCenter({
@@ -469,7 +469,7 @@ async function seedUsersAndProviders() {
     centerName: "مركز إسطنبول للتجميل",
     centerDescription: "مركز دولي معتمد لزراعة الشعر وجراحات التجميل، مناسب للمرضى الباحثين عن رحلة علاج واضحة.",
     procedureSlugs: ["hair-transplant", "prp-hair", "rhinoplasty"],
-    photoFileName: "dr-ahmed-alshammari-generated.png",
+    photoFileName: "dr-ahmet-yilmaz.jpg",
   })
 
   const pendingDoctorId = await ensureUser(
