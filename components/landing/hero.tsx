@@ -139,12 +139,12 @@ export function Hero({
           {heroHighlights.map((h) => (
             <div
               key={h.title}
-              className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/70 bg-card/88 p-4 text-center shadow-elegant backdrop-blur-md"
+              className="flex items-center gap-3 rounded-2xl border border-white/70 bg-card/88 p-4 shadow-elegant backdrop-blur-md"
             >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shadow-primary/30">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shadow-primary/30">
                 <h.icon className="size-5" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="font-heading text-sm font-bold leading-snug text-foreground">
                   {h.title}
                 </p>
@@ -168,13 +168,13 @@ function TrustPoint({
   label: string
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 text-center">
+    <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-card/82 p-4 shadow-sm backdrop-blur-md">
       <Icon
-        className="size-6"
+        className="size-6 shrink-0"
         style={{ color: "oklch(0.6 0.1 85)" }}
         aria-hidden="true"
       />
-      <span className="text-xs font-medium leading-snug text-foreground/80 sm:text-[13px]">
+      <span className="text-sm font-semibold leading-snug text-foreground/85">
         {label}
       </span>
     </div>

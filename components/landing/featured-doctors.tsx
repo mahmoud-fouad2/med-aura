@@ -60,7 +60,7 @@ export async function FeaturedDoctors() {
             />
           </div>
         ) : (
-          <Stagger className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Stagger className="mt-10 grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
             {results.map((d) => (
               <StaggerItem key={d.id}>
                 <DoctorCard doctor={d} />

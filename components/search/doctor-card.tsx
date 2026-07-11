@@ -46,18 +46,14 @@ export function DoctorCard({
   const ConsultationIcon = doctor.offersVideo ? Video : Building2
 
   return (
-    <Card className="group relative flex h-full flex-col overflow-hidden p-0 border-white/60 bg-card/85 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant-lg">
-      {/* Photo header — fills the top of the card like a profile portrait,
-          not a small avatar, matching how the reference design presents
-          doctors. Falls back to a soft tinted initial block, never a blank
-          gray box. */}
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
+    <Card dir="ltr" className="group relative grid h-full overflow-hidden border-white/70 bg-card/90 p-0 shadow-elegant backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant-lg sm:grid-cols-[44%_1fr]">
+      <div className="relative min-h-64 w-full shrink-0 overflow-hidden sm:min-h-full sm:rounded-e-[2.4rem]">
         {doctor.photoUrl ? (
           <Image
             src={doctor.photoUrl}
             alt={doctor.name}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
@@ -75,12 +71,12 @@ export function DoctorCard({
             </span>
           </div>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/5" />
 
         {doctor.verified && (
-          <VerifiedBadge className="absolute start-3 top-3" />
+          <VerifiedBadge className="absolute left-3 top-3" />
         )}
-        <div className="absolute end-3 top-3 z-10">
+        <div className="absolute right-3 top-3 z-10">
           <FavoriteToggle
             kind="doctor"
             refId={doctor.id}
@@ -91,113 +87,116 @@ export function DoctorCard({
         </div>
       </div>
 
-      <div className="flex-1 space-y-3.5 p-5">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Link
-              href={`/doctors/${doctor.slug}`}
-              className="line-clamp-2 font-heading text-base font-bold leading-tight text-foreground transition-colors hover:text-primary"
-            >
-              {doctor.name}
-            </Link>
-            {doctor.verified && (
-              <BadgeCheck
-                className="size-4 shrink-0 text-primary"
-                aria-label="طبيب موثّق"
-              />
-            )}
-            {showRating && (
-              <span className="ms-auto inline-flex items-center gap-0.5 rounded-full bg-gold/12 px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                <Star className="size-3 fill-current text-gold" />
-                <span className="tabular-nums">{doctor.rating}</span>
-              </span>
-            )}
-          </div>
-          {doctor.title && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {doctor.title}
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-1.5 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <MapPin className="size-3.5 shrink-0 text-primary/70" />
-            <span className="truncate">
-              {[doctor.city, countryNameAr(doctor.country)]
-                .filter(Boolean)
-                .join("، ")}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Stethoscope className="size-3.5 shrink-0 text-primary/70" />
-            خبرة {doctor.yearsExperience} سنة
-          </div>
-        </div>
-
-        {doctor.procedures.length > 0 && (
-          <div>
-            <p className="mb-1.5 text-[11px] font-bold text-foreground">
-              أبرز الإجراءات:
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {doctor.procedures.slice(0, 3).map((p) => (
-                <span
-                  key={p}
-                  className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                >
-                  {p}
-                </span>
-              ))}
-              {doctor.procedures.length > 3 && (
-                <span className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  +{doctor.procedures.length - 3}
+      <div dir="rtl" className="flex min-w-0 flex-col">
+        <div className="flex-1 space-y-3.5 p-5">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Link
+                href={`/doctors/${doctor.slug}`}
+                className="line-clamp-2 font-heading text-lg font-bold leading-tight text-foreground transition-colors hover:text-primary"
+              >
+                {doctor.name}
+              </Link>
+              {doctor.verified && (
+                <BadgeCheck
+                  className="size-4 shrink-0 text-primary"
+                  aria-label="طبيب موثّق"
+                />
+              )}
+              {showRating && (
+                <span className="ms-auto inline-flex items-center gap-0.5 rounded-full bg-gold/12 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                  <Star className="size-3 fill-current text-gold" />
+                  <span className="tabular-nums">{doctor.rating}</span>
                 </span>
               )}
             </div>
+            {doctor.title && (
+              <p className="mt-1 truncate text-sm text-muted-foreground">
+                {doctor.title}
+              </p>
+            )}
           </div>
-        )}
 
-        {consultationLabel && (
-          <div className="border-t border-border/60 pt-3">
-            <p className="mb-1 text-[11px] font-bold text-foreground">
-              نوع الاستشارة
-            </p>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <ConsultationIcon className="size-3.5 text-primary/70" />
-              {consultationLabel}
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <MapPin className="size-4 shrink-0 text-primary/70" />
+              <span className="truncate">
+                {[doctor.city, countryNameAr(doctor.country)]
+                  .filter(Boolean)
+                  .join("، ")}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Stethoscope className="size-4 shrink-0 text-primary/70" />
+              خبرة {doctor.yearsExperience} سنة
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/20 px-5 py-3.5">
-        <div className="min-w-0 text-sm">
-          <p className="text-[10px] font-medium text-muted-foreground">
-            رسوم الاستشارة
-          </p>
-          {doctor.consultationFee ? (
-            <p>
-              <span className="font-heading text-base font-bold tabular-nums text-foreground">
-                {Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")}
-              </span>
-              <span className="ms-1 text-xs text-muted-foreground">
-                {currencyAr(doctor.currency)}
-              </span>
-            </p>
-          ) : (
-            <span className="text-xs text-muted-foreground">عند الحجز</span>
+          {doctor.procedures.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-bold text-foreground">
+                أبرز الإجراءات
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {doctor.procedures.slice(0, 3).map((p) => (
+                  <span
+                    key={p}
+                    className="rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
+                  >
+                    {p}
+                  </span>
+                ))}
+                {doctor.procedures.length > 3 && (
+                  <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                    +{doctor.procedures.length - 3}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {consultationLabel && (
+            <div className="border-t border-border/60 pt-3">
+              <p className="mb-1 text-xs font-bold text-foreground">
+                نوع الاستشارة
+              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ConsultationIcon className="size-4 text-primary/70" />
+                {consultationLabel}
+              </div>
+            </div>
           )}
         </div>
-        <Button
-          size="sm"
-          render={
-            <Link href={`/doctors/${doctor.slug}`}>
-              عرض الملف
-              <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
-            </Link>
-          }
-        />
+
+        <div className="flex flex-col items-start gap-3 border-t border-border/60 bg-background/70 px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0 text-sm">
+            <p className="text-[10px] font-medium text-muted-foreground">
+              رسوم الاستشارة
+            </p>
+            {doctor.consultationFee ? (
+              <p>
+                <span className="font-heading text-xl font-bold tabular-nums text-foreground">
+                  {Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")}
+                </span>
+                <span className="ms-1 text-xs text-muted-foreground">
+                  {currencyAr(doctor.currency)}
+                </span>
+              </p>
+            ) : (
+              <span className="text-xs text-muted-foreground">عند الحجز</span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            className="w-full rounded-xl px-4 xl:w-auto"
+            render={
+              <Link href={`/doctors/${doctor.slug}`}>
+                عرض الملف
+                <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
+              </Link>
+            }
+          />
+        </div>
       </div>
     </Card>
   )
