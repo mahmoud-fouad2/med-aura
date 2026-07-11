@@ -121,7 +121,10 @@ export default async function AdminConsultationsPage({
                   <tr key={r.id} className="transition-colors hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {r.caseId ? (
-                        <Link href={`/admin/cases/${r.caseId}`} className="text-primary hover:underline">
+                        <Link
+                          href={`/admin/cases?q=${encodeURIComponent(r.reference)}`}
+                          className="text-primary hover:underline"
+                        >
                           {r.reference}
                         </Link>
                       ) : (

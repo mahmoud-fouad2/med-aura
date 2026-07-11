@@ -169,6 +169,15 @@ const CENTER_ROLE: Record<string, string> = {
   staff: "طاقم",
 }
 
+/** approved/pending/rejected/suspended — shared by admin doctor + center listings. */
+const PROVIDER_STATUS: Record<string, string> = {
+  pending: "قيد المراجعة",
+  approved: "معتمد",
+  rejected: "مرفوض",
+  suspended: "موقوف",
+}
+export const PROVIDER_STATUSES = Object.keys(PROVIDER_STATUS)
+
 const FOLLOW_UP_TASK: Record<string, string> = {
   SCHEDULED: "مجدولة",
   DUE: "مستحقة الآن",
@@ -202,3 +211,4 @@ export const paymentPurposeAr = (s: string): string => PAYMENT_PURPOSE[s] ?? s
 export const quoteStatusAr = (s: string): string => QUOTE[s] ?? s
 export const procedureBookingStatusAr = (s: string): string => PROCEDURE_BOOKING[s] ?? s
 export const centerRoleAr = (s: string): string => CENTER_ROLE[s] ?? s
+export const providerStatusAr = (s: string): string => PROVIDER_STATUS[s] ?? s

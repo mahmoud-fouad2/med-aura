@@ -19,6 +19,13 @@ const TONE_ICONS: Record<StatusTone, React.ComponentType<{ className?: string }>
   neutral: Circle,
 }
 
+/** approved/pending/rejected/suspended — shared by admin doctor + center listings. */
+export function providerStatusTone(status: string): StatusTone {
+  if (status === "approved") return "success"
+  if (status === "suspended" || status === "rejected") return "danger"
+  return "warning"
+}
+
 /**
  * Status badge that never relies on color alone: every tone pairs a fixed
  * icon with the label, so severity/state reads correctly even without color

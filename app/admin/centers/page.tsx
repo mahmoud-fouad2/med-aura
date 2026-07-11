@@ -15,26 +15,13 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
+import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { countryNameAr } from "@/lib/status-labels"
+import { countryNameAr, providerStatusAr, PROVIDER_STATUSES } from "@/lib/status-labels"
 import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المراكز" }
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "قيد المراجعة",
-  approved: "معتمد",
-  rejected: "مرفوض",
-  suspended: "موقوف",
-}
-
-function statusTone(status: string): StatusTone {
-  if (status === "approved") return "success"
-  if (status === "suspended" || status === "rejected") return "danger"
-  return "warning"
-}
 
 
 export default async function AdminCentersPage({
@@ -63,7 +50,7 @@ export default async function AdminCentersPage({
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="المراكز"
-        description={`${centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز${status ? ` — ${STATUS_LABEL[status]}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
+        description={`${centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز${status ? ` — ${providerStatusAr(status)}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
         stats={
           !status && centers.length > 0
             ? [
@@ -95,9 +82,9 @@ export default async function AdminCentersPage({
           <TabLink active={!status} href={buildHref(undefined)}>
             الكل ({centers.length.toLocaleString("ar-SA-u-nu-latn")})
           </TabLink>
-          {Object.entries(STATUS_LABEL).map(([k, label]) => (
+          {PROVIDER_STATUSES.map((k) => (
             <TabLink key={k} active={status === k} href={buildHref(k)}>
-              {label}
+              {providerStatusAr(k)}
             </TabLink>
           ))}
         </div>
@@ -150,8 +137,8 @@ export default async function AdminCentersPage({
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge
-                          tone={statusTone(c.status)}
-                          label={STATUS_LABEL[c.status] ?? c.status}
+                          tone={providerStatusTone(c.status)}
+                          label={providerStatusAr(c.status)}
                         />
                       </td>
                       <td className="px-4 py-3">
