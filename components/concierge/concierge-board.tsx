@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { createInternalTask, updateInternalTaskStatus, assignInternalTask } from "@/lib/actions/concierge"
 import type { InternalTaskRow, AssignableUser } from "@/lib/data/concierge"
 
@@ -113,47 +114,83 @@ export function ConciergeBoard({
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-muted-foreground">
-              <tr className="text-right">
-                <th className="p-3">المهمة</th>
-                <th className="p-3">الحالة</th>
-                <th className="p-3">الأولوية</th>
-                <th className="p-3">المسؤول</th>
-                <th className="p-3">الاستحقاق</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-t border-border hover:bg-muted/30">
-                  <td className="p-3">
-                    <p className="font-medium text-foreground">{t.title}</p>
-                    {t.caseId && (
-                      <Link href={`/dashboard/cases/${t.caseId}`} className="text-xs text-primary hover:underline">
-                        {t.patientName} — {t.procedureName}
-                      </Link>
-                    )}
-                  </td>
-                  <td className="p-3">{COLUMNS.find((c) => c.key === t.status)?.label ?? t.status}</td>
-                  <td className="p-3">
-                    <Badge variant={PRIORITY_VARIANT[t.priority] ?? "outline"}>{PRIORITY_LABEL[t.priority] ?? t.priority}</Badge>
-                  </td>
-                  <td className="p-3 text-muted-foreground">{t.assigneeName ?? "غير مُسندة"}</td>
-                  <td className="p-3">
-                    {t.dueAt ? (
-                      <span className={isOverdue(t) ? "font-medium text-destructive" : "text-muted-foreground"}>
+        <>
+          <div className="space-y-2 sm:hidden">
+            {filtered.map((t) => (
+              <MobileDataCard
+                key={t.id}
+                title={t.title}
+                subtitle={
+                  t.caseId ? (
+                    <Link href={`/dashboard/cases/${t.caseId}`} className="text-primary hover:underline">
+                      {t.patientName} — {t.procedureName}
+                    </Link>
+                  ) : undefined
+                }
+                badge={
+                  <Badge variant={PRIORITY_VARIANT[t.priority] ?? "outline"}>
+                    {PRIORITY_LABEL[t.priority] ?? t.priority}
+                  </Badge>
+                }
+                rows={[
+                  { label: "الحالة", value: COLUMNS.find((c) => c.key === t.status)?.label ?? t.status },
+                  { label: "المسؤول", value: t.assigneeName ?? "غير مُسندة" },
+                  {
+                    label: "الاستحقاق",
+                    value: t.dueAt ? (
+                      <span className={isOverdue(t) ? "font-medium text-destructive" : undefined}>
                         {new Date(t.dueAt).toLocaleDateString("ar-SA-u-nu-latn")}
                       </span>
                     ) : (
                       "—"
-                    )}
-                  </td>
+                    ),
+                  },
+                ]}
+              />
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto rounded-xl border border-border sm:block">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-muted-foreground">
+                <tr className="text-right">
+                  <th className="p-3">المهمة</th>
+                  <th className="p-3">الحالة</th>
+                  <th className="p-3">الأولوية</th>
+                  <th className="p-3">المسؤول</th>
+                  <th className="p-3">الاستحقاق</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((t) => (
+                  <tr key={t.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="p-3">
+                      <p className="font-medium text-foreground">{t.title}</p>
+                      {t.caseId && (
+                        <Link href={`/dashboard/cases/${t.caseId}`} className="text-xs text-primary hover:underline">
+                          {t.patientName} — {t.procedureName}
+                        </Link>
+                      )}
+                    </td>
+                    <td className="p-3">{COLUMNS.find((c) => c.key === t.status)?.label ?? t.status}</td>
+                    <td className="p-3">
+                      <Badge variant={PRIORITY_VARIANT[t.priority] ?? "outline"}>{PRIORITY_LABEL[t.priority] ?? t.priority}</Badge>
+                    </td>
+                    <td className="p-3 text-muted-foreground">{t.assigneeName ?? "غير مُسندة"}</td>
+                    <td className="p-3">
+                      {t.dueAt ? (
+                        <span className={isOverdue(t) ? "font-medium text-destructive" : "text-muted-foreground"}>
+                          {new Date(t.dueAt).toLocaleDateString("ar-SA-u-nu-latn")}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

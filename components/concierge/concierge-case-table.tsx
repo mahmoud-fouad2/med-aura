@@ -6,6 +6,7 @@ import { Search, Phone } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { caseStatusAr } from "@/lib/status-labels"
 import type { ConciergeCaseRow } from "@/lib/data/concierge"
 
@@ -33,7 +34,41 @@ export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
       {filtered.length === 0 ? (
         <EmptyState icon={Search} title="لا توجد نتائج" description="جرّب كلمة بحث مختلفة." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <>
+          <div className="space-y-2 sm:hidden">
+            {filtered.map((c) => (
+              <MobileDataCard
+                key={c.id}
+                title={
+                  <Link href={`/dashboard/cases/${c.id}`} className="text-primary hover:underline">
+                    {c.patientName}
+                  </Link>
+                }
+                subtitle={c.procedureName}
+                badge={<Badge variant="secondary">{caseStatusAr(c.status)}</Badge>}
+                rows={[
+                  {
+                    label: "الهاتف",
+                    value: c.patientPhone ? (
+                      <a href={`tel:${c.patientPhone}`} dir="ltr" className="inline-flex items-center gap-1 text-primary">
+                        <Phone className="size-3" />
+                        {c.patientPhone}
+                      </a>
+                    ) : (
+                      "—"
+                    ),
+                  },
+                  { label: "الطبيب", value: c.doctorName ?? "—" },
+                  { label: "المركز", value: c.centerName ?? "—" },
+                  {
+                    label: "آخر تحديث",
+                    value: new Date(c.updatedAt).toLocaleDateString("ar-SA-u-nu-latn"),
+                  },
+                ]}
+              />
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto rounded-xl border border-border sm:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-muted-foreground">
               <tr className="text-right">
@@ -81,7 +116,8 @@ export function ConciergeCaseTable({ cases }: { cases: ConciergeCaseRow[] }) {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   )

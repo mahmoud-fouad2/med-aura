@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { FileText, CheckCircle2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { acceptQuote, markQuoteViewed } from "@/lib/actions/quote"
 import { currencyAr } from "@/lib/status-labels"
 import type { CarePlan, CareQuote } from "@/lib/data/care"
@@ -115,7 +116,21 @@ function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean })
         </Badge>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="space-y-2 sm:hidden">
+        {quote.items.map((it, i) => (
+          <MobileDataCard
+            key={i}
+            title={it.descriptionAr}
+            subtitle={CAT_LABELS[it.category] ?? it.category}
+            rows={[
+              { label: "الكمية", value: it.quantity },
+              { label: "السعر", value: money(it.unitPrice) },
+              { label: "الإجمالي", value: money(it.total) },
+            ]}
+          />
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-sm">
           <thead className="text-muted-foreground">
             <tr className="border-b border-border text-right">
