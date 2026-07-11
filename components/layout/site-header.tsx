@@ -22,18 +22,18 @@ export async function SiteHeader() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/65">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 bg-background/70 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-[96rem] items-center justify-between gap-4 rounded-[1.65rem] border border-border/70 bg-card/92 px-4 shadow-elegant sm:px-6 lg:px-8">
         <Link href="/" aria-label="Med Aura">
-          <Logo className="h-9 sm:h-10" />
+          <Logo className="h-10 sm:h-12" />
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground/74 transition-colors hover:bg-secondary hover:text-primary"
             >
               {link.label}
             </Link>
@@ -43,7 +43,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-2">
           <ThemeToggle className="hidden sm:inline-flex" />
           <LanguageSwitcher locale={locale} />
-          <div className="hidden md:flex md:items-center md:gap-2">
+          <div className="hidden lg:flex lg:items-center lg:gap-2">
             {user ? (
               <UserMenu name={user.name} email={user.email} />
             ) : (
@@ -51,10 +51,12 @@ export async function SiteHeader() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="rounded-full px-4"
                   render={<Link href="/sign-in">{t.nav.signIn}</Link>}
                 />
                 <Button
                   size="sm"
+                  className="rounded-full px-5 shadow-sm shadow-primary/20"
                   render={
                     <Link href="/sign-up">{t.nav.startConsultation}</Link>
                   }

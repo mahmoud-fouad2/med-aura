@@ -77,7 +77,7 @@ export function MetricCard({
   const body = (
     <div
       className={cn(
-        "group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-5 backdrop-blur-sm transition-all duration-300",
+        "group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-white/70 bg-card/88 p-5 shadow-sm backdrop-blur-md transition-all duration-300",
         href
           ? cn("hover:-translate-y-1 hover:border-primary/30", t.shadow)
           : "shadow-[0_1px_2px_rgba(20,20,60,0.02),0_4px_16px_-8px_rgba(20,20,60,0.06)]",
@@ -120,7 +120,7 @@ export function MetricCard({
       </div>
 
       <div className="space-y-1">
-        <p className={cn("text-xs font-semibold text-muted-foreground/90")}>
+        <p className={cn("text-xs font-bold text-muted-foreground/90")}>
           {label}
         </p>
         <p

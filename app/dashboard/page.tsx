@@ -173,8 +173,8 @@ export default async function DashboardHome() {
       <FadeIn>
       <DashboardHero
         eyebrow="لوحة الرحلة التجميلية"
-        greeting={`أهلًا ${firstName} 👋`}
-        subtitle="من هنا تدير حالاتك، تتابع مواعيدك، وترى تقدّمك خطوة بخطوة. كل شيء تحت سيطرتك وبأمان تام."
+        greeting={`أهلًا ${firstName}`}
+        subtitle="كل ما يخص رحلتك في مكان واحد: الحالات، المواعيد، الرسائل، والخطوات المطلوبة منك."
         actions={
           <>
             <Button

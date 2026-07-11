@@ -62,19 +62,19 @@
    very faint gold for refined details. */
 :root {
   color-scheme: light;
-  --background: oklch(0.992 0.005 95); /* warm ivory */
+  --background: oklch(0.991 0.008 92); /* warm ivory */
   --foreground: oklch(0.24 0.05 280); /* deep navy */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.24 0.05 280);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.24 0.05 280);
-  --primary: oklch(0.47 0.17 292); /* royal purple */
+  --primary: oklch(0.45 0.17 292); /* royal purple */
   --primary-foreground: oklch(0.99 0.01 95);
-  --secondary: oklch(0.96 0.025 300); /* soft lavender */
+  --secondary: oklch(0.965 0.024 302); /* soft lavender */
   --secondary-foreground: oklch(0.36 0.11 292);
   --muted: oklch(0.97 0.012 295);
   --muted-foreground: oklch(0.52 0.03 285);
-  --accent: oklch(0.94 0.04 300); /* lavender accent */
+  --accent: oklch(0.945 0.038 300); /* lavender accent */
   --accent-foreground: oklch(0.33 0.12 292);
   --destructive: oklch(0.58 0.22 25);
   --success: oklch(0.6 0.13 155);
@@ -83,7 +83,7 @@
   --warning-foreground: oklch(0.28 0.06 70);
   --info: oklch(0.58 0.15 240);
   --info-foreground: oklch(0.99 0.01 95);
-  --gold: oklch(0.82 0.08 85);
+  --gold: oklch(0.76 0.095 82);
   --border: oklch(0.91 0.014 290);
   --input: oklch(0.91 0.014 290);
   --ring: oklch(0.47 0.17 292);
@@ -92,7 +92,7 @@
   --chart-3: oklch(0.7 0.1 270);
   --chart-4: oklch(0.55 0.13 330);
   --chart-5: oklch(0.4 0.12 285);
-  --radius: 0.85rem;
+  --radius: 0.78rem;
   --sidebar: oklch(0.985 0.008 295);
   --sidebar-foreground: oklch(0.24 0.05 280);
   --sidebar-primary: oklch(0.47 0.17 292);
@@ -216,15 +216,15 @@
   /* soft mesh background for hero / feature bands */
   .bg-mesh {
     background-image:
-      radial-gradient(
-        40rem 40rem at 85% -10%,
-        color-mix(in oklab, var(--primary) 16%, transparent),
-        transparent 60%
+      linear-gradient(
+        130deg,
+        color-mix(in oklab, var(--accent) 46%, transparent) 0%,
+        transparent 38%
       ),
-      radial-gradient(
-        32rem 32rem at 0% 10%,
-        color-mix(in oklab, var(--accent) 60%, transparent),
-        transparent 55%
+      linear-gradient(
+        25deg,
+        color-mix(in oklab, var(--gold) 10%, transparent) 0%,
+        transparent 42%
       );
   }
 

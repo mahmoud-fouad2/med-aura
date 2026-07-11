@@ -110,12 +110,7 @@ export default async function DoctorProfilePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* Premium ambient layout with elegant glowing background orbs */}
-      <main className="relative flex-1 bg-muted/20 overflow-hidden">
-        {/* Soft glowing auras */}
-        <div className="pointer-events-none absolute -top-48 left-1/3 size-[30rem] rounded-full bg-primary/8 blur-[120px]" />
-        <div className="pointer-events-none absolute top-1/2 right-1/4 size-[25rem] rounded-full bg-accent/30 blur-[130px]" />
-        
+      <main className="relative flex-1 overflow-hidden bg-section-soft">
         <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-6">

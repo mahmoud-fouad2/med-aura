@@ -35,11 +35,11 @@ const inter = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
   title: {
-    default: "Med Aura | منصة التجميل الطبي الموثوقة",
+    default: "Med Aura | رحلتك التجميلية تبدأ بقرار موثوق",
     template: "%s | Med Aura",
   },
   description:
-    "Med Aura منصة متخصصة في التجميل الطبي تربطك بأطباء ومراكز معتمدة، تدير رحلتك من الاستشارة حتى المتابعة بعد الإجراء بأمان وموثوقية.",
+    "استشر أطباء ومراكز تجميل موثوقين، قارن الخيارات، واحصل على خطة واضحة قبل اتخاذ قرارك.",
   applicationName: "Med Aura",
   manifest: "/manifest.json",
   icons: {
@@ -65,7 +65,7 @@ export const viewport: Viewport = {
   // env(safe-area-inset-*) wherever the shell (header/bottom nav) needs it.
   viewportFit: "cover",
   colorScheme: "light",
-  themeColor: "#1A1740",
+  themeColor: "#FFFCF7",
 }
 
 export default async function RootLayout({

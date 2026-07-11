@@ -96,7 +96,7 @@ export function DoctorCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <Link
               href={`/doctors/${doctor.slug}`}
-              className="line-clamp-2 font-heading text-[15px] font-bold leading-tight text-foreground transition-colors hover:text-primary"
+              className="line-clamp-2 font-heading text-base font-bold leading-tight text-foreground transition-colors hover:text-primary"
             >
               {doctor.name}
             </Link>
@@ -107,8 +107,8 @@ export function DoctorCard({
               />
             )}
             {showRating && (
-              <span className="ms-auto inline-flex items-center gap-0.5 text-[11px] font-semibold text-foreground">
-                <Star className="size-3 fill-current text-warning-foreground" />
+              <span className="ms-auto inline-flex items-center gap-0.5 rounded-full bg-gold/12 px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                <Star className="size-3 fill-current text-gold" />
                 <span className="tabular-nums">{doctor.rating}</span>
               </span>
             )}
@@ -144,13 +144,13 @@ export function DoctorCard({
               {doctor.procedures.slice(0, 3).map((p) => (
                 <span
                   key={p}
-                  className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                 >
                   {p}
                 </span>
               ))}
               {doctor.procedures.length > 3 && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <span className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                   +{doctor.procedures.length - 3}
                 </span>
               )}

@@ -19,14 +19,14 @@ export async function FeaturedDoctors() {
   const isAr = locale === "ar"
 
   return (
-    <section className="border-b border-border bg-secondary/30">
+    <section className="border-b border-border bg-section-soft">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             align="start"
-            eyebrow={isAr ? "أطباء موثّقون" : "Verified Selection"}
+            eyebrow={isAr ? "اختيارات موثوقة" : "Verified Selection"}
             title={t.home.verifiedDoctors}
-            subtitle={isAr ? "يظهر هنا الأطباء المعتمدون فقط، بعد التحقق من تراخيصهم." : "Only verified, accredited doctors are displayed here after strict license checks."}
+            subtitle={isAr ? "اختيارك لخبير موثوق هو أول خطوة نحو نتيجة آمنة ومرضية." : "Start with a trusted expert before making your treatment decision."}
           />
           {results.length > 0 && (
             <Button
@@ -60,7 +60,7 @@ export async function FeaturedDoctors() {
             />
           </div>
         ) : (
-          <Stagger className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Stagger className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((d) => (
               <StaggerItem key={d.id}>
                 <DoctorCard doctor={d} />

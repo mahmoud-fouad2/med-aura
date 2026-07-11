@@ -41,7 +41,7 @@ export default async function SystemHealthPage() {
             </p>
             <p className="text-muted-foreground">
               توجد {db.pending} تحديثات لم تُطبَّق بعد على قاعدة البيانات.
-              تواصل مع المسؤول التقني لإكمال النشر قبل استخدام الميزات
+              تواصل مع فريق الإعداد لإكمال النشر قبل استخدام الميزات
               الجديدة.
             </p>
           </div>

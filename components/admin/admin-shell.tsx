@@ -39,11 +39,11 @@ export function AdminShell({
     ?.label
 
   return (
-    <div className="flex min-h-svh bg-muted/20">
+    <div className="flex min-h-svh bg-section-soft">
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-sidebar ease-premium transition-[width] duration-200 md:flex",
+          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-card/92 shadow-elegant ease-premium transition-[width] duration-200 backdrop-blur md:flex",
           collapsed ? "w-[76px]" : "w-72",
         )}
       >
@@ -83,8 +83,8 @@ export function AdminShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-backdrop-filter:bg-background/80">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-30 bg-background/72 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl">
+          <div className="flex h-[4.5rem] items-center gap-3 rounded-[1.45rem] border border-border/70 bg-card/92 px-4 shadow-elegant sm:px-6">
             <Button
               variant="ghost"
               size="icon"
@@ -114,11 +114,10 @@ export function AdminShell({
             </div>
 
             <div className="flex items-center gap-1">
-              <ThemeToggle />
               <Link
                 href="/dashboard/notifications"
                 aria-label="الإشعارات"
-                className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="relative flex size-10 items-center justify-center rounded-full border border-border/60 bg-background/70 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
               >
                 <Bell className="size-5" />
                 {unreadNotifications > 0 && (
@@ -127,6 +126,7 @@ export function AdminShell({
                   </span>
                 )}
               </Link>
+              <ThemeToggle />
               <LanguageSwitcher locale={locale} />
               <UserMenu name={user.name} email={user.email} />
             </div>
@@ -152,7 +152,7 @@ function SidebarInner({
   onNavigate?: () => void
 }) {
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full flex-col bg-card/92 text-sidebar-foreground">
       <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
         <Link href="/admin" aria-label="Med Aura" onClick={onNavigate}>
           {collapsed ? <LogoMark className="size-8 text-primary" /> : <Logo className="h-8" />}
@@ -179,8 +179,8 @@ function SidebarInner({
                         "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                         collapsed && "justify-center px-0",
                         active
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          ? "bg-primary/10 text-primary shadow-sm"
+                          : "text-muted-foreground hover:bg-secondary hover:text-primary",
                       )}
                     >
                       {active && (

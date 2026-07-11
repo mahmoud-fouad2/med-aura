@@ -1,12 +1,12 @@
 import Link from "next/link"
-import { ShieldCheck, Sparkles, Globe2 } from "lucide-react"
+import { HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 
 export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="relative isolate overflow-hidden border-t border-border bg-gradient-to-b from-secondary/30 to-background">
+    <footer className="relative isolate overflow-hidden border-t border-border bg-gradient-to-b from-secondary/40 via-background to-background">
       {/* Faint dotted pattern for depth */}
       <div
         aria-hidden="true"
@@ -38,21 +38,21 @@ export function SiteFooter() {
               <Logo />
             </Link>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-              منصة متخصصة في التجميل الطبي تدير رحلتك من الاستشارة حتى المتابعة
-              بأمان وموثوقية.
+              منصة تساعدك على اختيار طبيب أو مركز تجميل بثقة، ومتابعة رحلتك
+              من أول استشارة حتى الاطمئنان بعد الإجراء.
             </p>
-            <div className="flex flex-col gap-1.5 text-[11px] text-muted-foreground">
+            <div className="flex flex-col gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5 text-primary" />
-                تحقق موثّق من كل مقدّم خدمة
+                <ShieldCheck className="size-4 text-primary" />
+                أطباء ومراكز يتم قبولهم بعناية
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Sparkles className="size-3.5 text-primary" />
-                تجميلي حصريًا — لا تخصصات عامة
+                <Sparkles className="size-4 text-gold" />
+                تجربة واضحة من البحث حتى الحجز
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Globe2 className="size-3.5 text-primary" />
-                عربي/إنجليزي · RTL/LTR
+                <HeartHandshake className="size-4 text-primary" />
+                دعم إنساني عندما تحتاج المساعدة
               </span>
             </div>
           </div>
@@ -96,9 +96,9 @@ export function SiteFooter() {
           <p className="inline-flex items-center gap-1.5">
             <span
               aria-hidden="true"
-              className="size-1.5 rounded-full bg-success animate-pulse"
+              className="size-1.5 rounded-full bg-primary"
             />
-            جميع الخدمات تعمل بشكل طبيعي
+            رعاية أوضح وقرار أهدأ
           </p>
         </div>
       </div>

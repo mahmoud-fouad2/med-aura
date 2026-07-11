@@ -21,12 +21,12 @@ export async function AppShell({
 }) {
   const locale = await getLocale()
   return (
-    <div className="flex min-h-svh flex-col bg-muted/30">
-      <header className="sticky top-0 z-40 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-svh flex-col bg-section-soft">
+      <header className="sticky top-0 z-40 bg-background/72 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between gap-4 rounded-[1.45rem] border border-border/70 bg-card/92 px-4 shadow-elegant sm:px-6 lg:px-8">
           <div className="flex items-center gap-6">
             <Link href="/dashboard" aria-label="Med Aura">
-              <Logo className="h-8" />
+              <Logo className="h-9" />
             </Link>
             <NavLinks links={nav} className="hidden items-center gap-1 md:flex" />
           </div>
@@ -34,7 +34,7 @@ export async function AppShell({
             <Link
               href="/dashboard/notifications"
               aria-label="الإشعارات"
-              className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="relative flex size-10 items-center justify-center rounded-full border border-border/60 bg-background/70 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
             >
               <Bell className="size-5" />
               {unreadNotifications > 0 && (
@@ -49,7 +49,7 @@ export async function AppShell({
         </div>
         <NavLinks
           links={nav}
-          className="flex items-center gap-1 overflow-x-auto border-t border-border px-4 py-2 md:hidden"
+          className="mx-auto mt-2 flex max-w-7xl items-center gap-1 overflow-x-auto rounded-2xl border border-border/70 bg-card/85 px-3 py-2 shadow-sm md:hidden"
           itemClassName="whitespace-nowrap"
         />
       </header>
