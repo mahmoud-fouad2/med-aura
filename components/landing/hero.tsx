@@ -63,7 +63,7 @@ export function Hero({
   ]
 
   return (
-    <section className="relative isolate min-h-[760px] overflow-hidden border-b border-border bg-background lg:min-h-[820px]">
+    <section className="relative isolate min-h-svh overflow-hidden border-b border-border bg-background">
       <Image
         src="/hero-medaura-consultation.png"
         alt={isAr ? "استشارة تجميلية في عيادة Med Aura" : "Aesthetic consultation at Med Aura"}
@@ -77,7 +77,7 @@ export function Hero({
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,transparent_0%,color-mix(in_oklab,var(--background)_78%,transparent)_43%,var(--background)_68%,var(--background)_100%)] ltr:bg-[linear-gradient(270deg,transparent_0%,color-mix(in_oklab,var(--background)_78%,transparent)_43%,var(--background)_68%,var(--background)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
 
-      <div className="mx-auto flex min-h-[760px] max-w-7xl flex-col justify-center gap-8 px-4 pb-10 pt-20 sm:px-6 lg:min-h-[820px] lg:px-8 lg:pt-28">
+      <div className="mx-auto flex min-h-svh max-w-7xl flex-col justify-center gap-8 px-4 py-24 sm:px-6 lg:px-8">
         <FadeIn className="me-auto flex w-full max-w-2xl flex-col gap-6">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-3.5 py-1.5 text-sm font-semibold text-primary shadow-sm backdrop-blur-md">
             <Sparkles className="size-4 text-gold" />

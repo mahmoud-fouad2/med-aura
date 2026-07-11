@@ -3,9 +3,11 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const CARD_VARIANTS = {
-  // plain white/card surface — the original look, still the right choice for
-  // dense data (tables, forms) where the content itself needs the contrast.
-  default: "bg-card ring-1 ring-foreground/10",
+  // plain white/card surface — still the right choice for dense data
+  // (tables, forms) where the content itself needs the contrast, but with
+  // the same soft rim-light border + a small lift the rest of the app uses
+  // instead of sitting completely flat next to the polished shell around it.
+  default: "border border-white/70 bg-card shadow-sm",
   // soft tinted surface — for lower-emphasis grouping (sidebars of info,
   // secondary panels) where a flat white box would blend into every other
   // flat white box on the page.
