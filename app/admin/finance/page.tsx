@@ -19,6 +19,7 @@ import {
 } from "@/lib/data/finance"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { RefundReviewPanel } from "@/components/finance/refund-review-panel"
@@ -146,8 +147,8 @@ export default async function FinanceDashboardPage() {
                 columns={[
                   { header: "المرجع", cell: (p) => <span dir="ltr" className="font-mono text-xs">{p.reference}</span> },
                   { header: "الغرض", cell: (p) => paymentPurposeAr(p.purpose) },
-                  { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span> },
-                  { header: "الحالة", cell: (p) => <PaymentStatusPill status={p.status} /> },
+                  { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span>, mobile: "title" },
+                  { header: "الحالة", cell: (p) => <PaymentStatusPill status={p.status} />, mobile: "badge" },
                   { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-foreground">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
                   { header: "التاريخ", cell: (p) => <span className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}</span> },
                 ]}
@@ -175,8 +176,8 @@ export default async function FinanceDashboardPage() {
                 rows={invoices}
                 columns={[
                   { header: "الرقم", cell: (i) => <span dir="ltr" className="font-mono text-xs">{i.invoiceNumber}</span> },
-                  { header: "المريض", cell: (i) => <span className="font-medium text-foreground">{i.patientName}</span> },
-                  { header: "الحالة", cell: (i) => <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge> },
+                  { header: "المريض", cell: (i) => <span className="font-medium text-foreground">{i.patientName}</span>, mobile: "title" },
+                  { header: "الحالة", cell: (i) => <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge>, mobile: "badge" },
                   { header: "الإجمالي", cell: (i) => <span className="tabular-nums font-medium text-foreground">{Number(i.total).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(i.currency)}</span> },
                   {
                     header: "المتبقي",
@@ -233,7 +234,7 @@ export default async function FinanceDashboardPage() {
                 rows={disputedPayments}
                 columns={[
                   { header: "المرجع", cell: (p) => <span dir="ltr" className="font-mono text-xs">{p.reference}</span> },
-                  { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span> },
+                  { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span>, mobile: "title" },
                   { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-destructive">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
                 ]}
               />
@@ -261,7 +262,7 @@ export default async function FinanceDashboardPage() {
                 rows={webhooks}
                 columns={[
                   { header: "المزود", cell: (w) => <span dir="ltr" className="font-mono text-xs text-muted-foreground">{w.provider}</span> },
-                  { header: "النوع", cell: (w) => <span dir="ltr" className="font-mono text-xs">{w.type}</span> },
+                  { header: "النوع", cell: (w) => <span dir="ltr" className="font-mono text-xs">{w.type}</span>, mobile: "title" },
                   {
                     header: "الحالة",
                     cell: (w) =>
@@ -276,6 +277,7 @@ export default async function FinanceDashboardPage() {
                           قيد الانتظار
                         </span>
                       ),
+                    mobile: "badge",
                   },
                   { header: "التاريخ", cell: (w) => <span className="text-xs text-muted-foreground">{new Date(w.createdAt).toLocaleString("ar-SA-u-nu-latn")}</span> },
                 ]}
@@ -314,35 +316,55 @@ function DataTable<T>({
   columns,
 }: {
   rows: T[]
-  columns: { header: string; cell: (row: T) => React.ReactNode }[]
+  columns: {
+    header: string
+    cell: (row: T) => React.ReactNode
+    mobile?: "title" | "badge"
+  }[]
 }) {
+  const titleCol = columns.find((c) => c.mobile === "title") ?? columns[0]
+  const badgeCol = columns.find((c) => c.mobile === "badge")
+  const rowCols = columns.filter((c) => c !== titleCol && c !== badgeCol)
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-            {columns.map((c) => (
-              <th
-                key={c.header}
-                className="px-4 py-2.5 text-start font-medium"
-              >
-                {c.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border/60">
-          {rows.map((row, i) => (
-            <tr key={i} className="transition-colors hover:bg-muted/25">
+    <>
+      <div className="space-y-2 p-3 sm:hidden">
+        {rows.map((row, i) => (
+          <MobileDataCard
+            key={i}
+            title={titleCol.cell(row)}
+            badge={badgeCol?.cell(row)}
+            rows={rowCols.map((c) => ({ label: c.header, value: c.cell(row) }))}
+          />
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
               {columns.map((c) => (
-                <td key={c.header} className="px-4 py-3">
-                  {c.cell(row)}
-                </td>
+                <th
+                  key={c.header}
+                  className="px-4 py-2.5 text-start font-medium"
+                >
+                  {c.header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-border/60">
+            {rows.map((row, i) => (
+              <tr key={i} className="transition-colors hover:bg-muted/25">
+                {columns.map((c) => (
+                  <td key={c.header} className="px-4 py-3">
+                    {c.cell(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

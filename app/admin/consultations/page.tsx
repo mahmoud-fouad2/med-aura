@@ -5,6 +5,7 @@ import { PERMISSIONS } from "@/lib/rbac"
 import { listAppointmentsForAdmin } from "@/lib/data/appointments"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import {
   appointmentStatusAr,
@@ -102,57 +103,95 @@ export default async function AdminConsultationsPage({
             description="جرّب تعديل الفلاتر أو انتظر تسجيل مواعيد جديدة."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                  <Th>المرجع</Th>
-                  <Th>النوع</Th>
-                  <Th>الحالة</Th>
-                  <Th>المريض</Th>
-                  <Th>الطبيب</Th>
-                  <Th>الموعد</Th>
-                  <Th>السعر</Th>
-                  <Th>الدفع</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rows.map((r) => (
-                  <tr key={r.id} className="transition-colors hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                      {r.caseId ? (
-                        <Link
-                          href={`/admin/cases?q=${encodeURIComponent(r.reference)}`}
-                          className="text-primary hover:underline"
-                        >
-                          {r.reference}
-                        </Link>
-                      ) : (
-                        r.reference
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{appointmentTypeAr(r.type)}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />
-                    </td>
-                    <td className="px-4 py-3 font-medium text-foreground">{r.patientName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.counterpartName}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                      {fmtDateTime(new Date(r.startsAt))}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {r.priceAmount
-                        ? `${r.priceAmount} ${currencyAr(r.currency)}`
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {r.paymentStatus ? paymentStatusAr(r.paymentStatus) : "—"}
-                    </td>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {rows.map((r) => (
+                <MobileDataCard
+                  key={r.id}
+                  title={r.patientName}
+                  subtitle={r.counterpartName}
+                  badge={
+                    <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />
+                  }
+                  rows={[
+                    { label: "النوع", value: appointmentTypeAr(r.type) },
+                    { label: "الموعد", value: fmtDateTime(new Date(r.startsAt)) },
+                    {
+                      label: "السعر",
+                      value: r.priceAmount ? `${r.priceAmount} ${currencyAr(r.currency)}` : "—",
+                    },
+                    {
+                      label: "الدفع",
+                      value: r.paymentStatus ? paymentStatusAr(r.paymentStatus) : "—",
+                    },
+                  ]}
+                  actions={
+                    r.caseId ? (
+                      <Link
+                        href={`/admin/cases?q=${encodeURIComponent(r.reference)}`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        فتح الحالة {r.reference}
+                      </Link>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">{r.reference}</span>
+                    )
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
+                    <Th>المرجع</Th>
+                    <Th>النوع</Th>
+                    <Th>الحالة</Th>
+                    <Th>المريض</Th>
+                    <Th>الطبيب</Th>
+                    <Th>الموعد</Th>
+                    <Th>السعر</Th>
+                    <Th>الدفع</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {rows.map((r) => (
+                    <tr key={r.id} className="transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {r.caseId ? (
+                          <Link
+                            href={`/admin/cases?q=${encodeURIComponent(r.reference)}`}
+                            className="text-primary hover:underline"
+                          >
+                            {r.reference}
+                          </Link>
+                        ) : (
+                          r.reference
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{appointmentTypeAr(r.type)}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">{r.patientName}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{r.counterpartName}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {fmtDateTime(new Date(r.startsAt))}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {r.priceAmount
+                          ? `${r.priceAmount} ${currencyAr(r.currency)}`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {r.paymentStatus ? paymentStatusAr(r.paymentStatus) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

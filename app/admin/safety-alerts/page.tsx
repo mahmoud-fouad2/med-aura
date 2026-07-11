@@ -15,6 +15,7 @@ import {
 } from "@/lib/data/admin-safety"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { SafetyAssignSelect } from "@/components/admin/safety-assign-select"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -152,8 +153,69 @@ export default async function AdminSafetyAlertsPage({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {alerts.map((a) => {
+                const patientInitial = a.patientName.trim().charAt(0) || "؟"
+                const isCritical = a.severity === "CRITICAL" || a.severity === "HIGH"
+                return (
+                  <MobileDataCard
+                    key={a.id}
+                    title={
+                      <span className="flex items-center gap-2">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary ring-1 ring-primary/15">
+                          {patientInitial}
+                        </span>
+                        <span className="truncate">{a.patientName}</span>
+                        {isCritical && (
+                          <Siren
+                            className="size-4 shrink-0 animate-pulse text-destructive"
+                            aria-label="حرجة"
+                          />
+                        )}
+                      </span>
+                    }
+                    subtitle={a.procedureName}
+                    badge={
+                      <span className="flex flex-wrap items-center justify-end gap-1">
+                        <StatusBadge tone={severityTone(a.severity)} label={safetyAlertSeverityAr(a.severity)} />
+                        <StatusBadge tone={statusTone(a.status)} label={safetyAlertStatusAr(a.status)} />
+                      </span>
+                    }
+                    rows={[
+                      { label: "المرجع", value: <span dir="ltr">{a.caseReference}</span> },
+                      { label: "الوصف", value: a.summary ?? "—" },
+                      {
+                        label: "المصدر",
+                        value: a.fromSymptomReport ? "بلاغ من المريض" : "أُنشئ إداريًا",
+                      },
+                      {
+                        label: "التاريخ",
+                        value: new Date(a.createdAt).toLocaleDateString("ar-SA-u-nu-latn"),
+                      },
+                    ]}
+                    actions={
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <SafetyAssignSelect
+                          alertId={a.id}
+                          currentAssigneeId={a.assignedTo}
+                          options={assignees}
+                        />
+                        <Link
+                          href={`/dashboard/cases/${a.caseId}`}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          <ShieldAlert className="size-3.5" />
+                          فتح
+                        </Link>
+                      </div>
+                    }
+                  />
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
                   <Th>الخطورة</Th>
@@ -283,8 +345,9 @@ export default async function AdminSafetyAlertsPage({
                   )
                 })}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

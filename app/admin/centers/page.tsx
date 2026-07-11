@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr, providerStatusAr, PROVIDER_STATUSES } from "@/lib/status-labels"
@@ -105,81 +106,124 @@ export default async function AdminCentersPage({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                  <Th>الاسم</Th>
-                  <Th>الحالة</Th>
-                  <Th>الملف</Th>
-                  <Th>الموقع</Th>
-                  <Th>الأطباء</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {centers.map((c) => {
-                  const initial = c.name.trim().charAt(0) || "م"
-                  return (
-                    <tr
-                      key={c.id}
-                      className="transition-colors hover:bg-muted/25"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                            {initial}
-                          </span>
-                          <span className="font-medium text-foreground">
-                            {c.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge
-                          tone={providerStatusTone(c.status)}
-                          label={providerStatusAr(c.status)}
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        {c.published ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
-                            <Eye className="size-3" />
-                            ظاهر
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            <EyeOff className="size-3" />
-                            مخفي
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {c.city ? `${c.city}، ` : ""}
-                        {countryNameAr(c.country)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
-                          <UsersIcon className="size-3" />
-                          {c.doctorCount.toLocaleString("ar-SA-u-nu-latn")}
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {centers.map((c) => {
+                const initial = c.name.trim().charAt(0) || "م"
+                return (
+                  <MobileDataCard
+                    key={c.id}
+                    title={
+                      <span className="flex items-center gap-2">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
+                          {initial}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/centers/${c.slug}`}
-                          className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          الملف
-                          <ExternalLink className="size-3" />
-                          <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <span className="truncate">{c.name}</span>
+                      </span>
+                    }
+                    badge={
+                      <StatusBadge
+                        tone={providerStatusTone(c.status)}
+                        label={providerStatusAr(c.status)}
+                      />
+                    }
+                    rows={[
+                      { label: "الظهور", value: c.published ? "ظاهر" : "مخفي" },
+                      {
+                        label: "الموقع",
+                        value: `${c.city ? `${c.city}، ` : ""}${countryNameAr(c.country)}`,
+                      },
+                      { label: "الأطباء", value: c.doctorCount.toLocaleString("ar-SA-u-nu-latn") },
+                    ]}
+                    actions={
+                      <Link
+                        href={`/centers/${c.slug}`}
+                        className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        عرض الملف
+                        <ExternalLink className="size-3" />
+                      </Link>
+                    }
+                  />
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                    <Th>الاسم</Th>
+                    <Th>الحالة</Th>
+                    <Th>الملف</Th>
+                    <Th>الموقع</Th>
+                    <Th>الأطباء</Th>
+                    <Th>—</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {centers.map((c) => {
+                    const initial = c.name.trim().charAt(0) || "م"
+                    return (
+                      <tr
+                        key={c.id}
+                        className="transition-colors hover:bg-muted/25"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
+                              {initial}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {c.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge
+                            tone={providerStatusTone(c.status)}
+                            label={providerStatusAr(c.status)}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.published ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+                              <Eye className="size-3" />
+                              ظاهر
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                              <EyeOff className="size-3" />
+                              مخفي
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {c.city ? `${c.city}، ` : ""}
+                          {countryNameAr(c.country)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
+                            <UsersIcon className="size-3" />
+                            {c.doctorCount.toLocaleString("ar-SA-u-nu-latn")}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/centers/${c.slug}`}
+                            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            الملف
+                            <ExternalLink className="size-3" />
+                            <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

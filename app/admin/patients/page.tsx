@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr } from "@/lib/status-labels"
 import { firstParam } from "@/lib/utils"
@@ -89,7 +90,49 @@ export default async function AdminPatientsPage({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {patients.map((p) => {
+                const initial = p.name.trim().charAt(0) || "؟"
+                return (
+                  <MobileDataCard
+                    key={p.userId}
+                    title={
+                      <span className="flex items-center gap-2">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
+                          {initial}
+                        </span>
+                        <span className="truncate">{p.name}</span>
+                      </span>
+                    }
+                    subtitle={<span dir="ltr">{p.email}</span>}
+                    rows={[
+                      {
+                        label: "الموقع",
+                        value: `${p.city ? `${p.city}، ` : ""}${p.residenceCountry ? countryNameAr(p.residenceCountry) : "—"}`,
+                      },
+                      {
+                        label: "تاريخ التسجيل",
+                        value: new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn"),
+                      },
+                    ]}
+                    actions={
+                      p.caseCount > 0 ? (
+                        <Link
+                          href={`/admin/cases?q=${encodeURIComponent(p.name)}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-primary hover:bg-primary/15"
+                        >
+                          {p.caseCount.toLocaleString("ar-SA-u-nu-latn")} حالة
+                        </Link>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground/60">لا توجد حالات</span>
+                      )
+                    }
+                  />
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
@@ -156,7 +199,8 @@ export default async function AdminPatientsPage({
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </Card>
     </div>

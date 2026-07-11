@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr, providerStatusAr, PROVIDER_STATUSES } from "@/lib/status-labels"
@@ -104,83 +105,128 @@ export default async function AdminDoctorsPage({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                  <Th>الاسم</Th>
-                  <Th>الحالة</Th>
-                  <Th>الملف</Th>
-                  <Th>المركز</Th>
-                  <Th>الموقع</Th>
-                  <Th>الخبرة</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {doctors.map((d) => {
-                  const initial =
-                    d.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
-                  return (
-                    <tr
-                      key={d.id}
-                      className="transition-colors hover:bg-muted/25"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                            {initial}
-                          </span>
-                          <span className="font-medium text-foreground">
-                            {d.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge
-                          tone={providerStatusTone(d.status)}
-                          label={providerStatusAr(d.status)}
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        {d.published ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
-                            <Eye className="size-3" />
-                            ظاهر
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            <EyeOff className="size-3" />
-                            مخفي
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {d.centerName ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {d.city ? `${d.city}، ` : ""}
-                        {countryNameAr(d.country)}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground tabular-nums">
-                        {d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/doctors/${d.slug}`}
-                          className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          الملف
-                          <ExternalLink className="size-3" />
-                          <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {doctors.map((d) => {
+                const initial =
+                  d.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
+                return (
+                  <MobileDataCard
+                    key={d.id}
+                    title={
+                      <span className="flex items-center gap-2">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
+                          {initial}
+                        </span>
+                        <span className="truncate">{d.name}</span>
+                      </span>
+                    }
+                    subtitle={d.centerName ?? undefined}
+                    badge={
+                      <StatusBadge
+                        tone={providerStatusTone(d.status)}
+                        label={providerStatusAr(d.status)}
+                      />
+                    }
+                    rows={[
+                      { label: "الظهور", value: d.published ? "ظاهر" : "مخفي" },
+                      {
+                        label: "الموقع",
+                        value: `${d.city ? `${d.city}، ` : ""}${countryNameAr(d.country)}`,
+                      },
+                      { label: "الخبرة", value: `${d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة` },
+                    ]}
+                    actions={
+                      <Link
+                        href={`/doctors/${d.slug}`}
+                        className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        عرض الملف
+                        <ExternalLink className="size-3" />
+                      </Link>
+                    }
+                  />
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                    <Th>الاسم</Th>
+                    <Th>الحالة</Th>
+                    <Th>الملف</Th>
+                    <Th>المركز</Th>
+                    <Th>الموقع</Th>
+                    <Th>الخبرة</Th>
+                    <Th>—</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {doctors.map((d) => {
+                    const initial =
+                      d.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
+                    return (
+                      <tr
+                        key={d.id}
+                        className="transition-colors hover:bg-muted/25"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
+                              {initial}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {d.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge
+                            tone={providerStatusTone(d.status)}
+                            label={providerStatusAr(d.status)}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          {d.published ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+                              <Eye className="size-3" />
+                              ظاهر
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                              <EyeOff className="size-3" />
+                              مخفي
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {d.centerName ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {d.city ? `${d.city}، ` : ""}
+                          {countryNameAr(d.country)}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground tabular-nums">
+                          {d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/doctors/${d.slug}`}
+                            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            الملف
+                            <ExternalLink className="size-3" />
+                            <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

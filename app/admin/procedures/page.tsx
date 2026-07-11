@@ -4,6 +4,7 @@ import { PERMISSIONS } from "@/lib/rbac"
 import { listCategoriesForAdmin, listProceduresForAdmin } from "@/lib/data/admin-content"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge } from "@/components/admin/status-badge"
 import {
   CategoryFormButton,
@@ -46,48 +47,79 @@ export default async function AdminProceduresPage() {
             description="ابدأ بإضافة قسم جديد من الأعلى."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                  <Th>القسم</Th>
-                  <Th>الحالة</Th>
-                  <Th>ترتيب</Th>
-                  <Th>عدد الإجراءات</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {categories.map((c) => (
-                  <tr key={c.id} className="transition-colors hover:bg-muted/30">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{c.nameAr}</div>
-                      <div dir="ltr" className="text-xs text-muted-foreground">
-                        /{c.slug}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        tone={c.visible ? "success" : "neutral"}
-                        label={c.visible ? "ظاهر" : "مخفي"}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.sortOrder}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {c.procedureCount.toLocaleString("ar-SA-u-nu-latn")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <CategoryFormButton existing={c} />
-                        <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
-                        <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
-                      </div>
-                    </td>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {categories.map((c) => (
+                <MobileDataCard
+                  key={c.id}
+                  title={c.nameAr}
+                  subtitle={<span dir="ltr">/{c.slug}</span>}
+                  badge={
+                    <StatusBadge
+                      tone={c.visible ? "success" : "neutral"}
+                      label={c.visible ? "ظاهر" : "مخفي"}
+                    />
+                  }
+                  rows={[
+                    { label: "ترتيب", value: c.sortOrder },
+                    {
+                      label: "عدد الإجراءات",
+                      value: c.procedureCount.toLocaleString("ar-SA-u-nu-latn"),
+                    },
+                  ]}
+                  actions={
+                    <div className="flex items-center gap-1">
+                      <CategoryFormButton existing={c} />
+                      <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
+                      <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
+                    </div>
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
+                    <Th>القسم</Th>
+                    <Th>الحالة</Th>
+                    <Th>ترتيب</Th>
+                    <Th>عدد الإجراءات</Th>
+                    <Th>—</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {categories.map((c) => (
+                    <tr key={c.id} className="transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-foreground">{c.nameAr}</div>
+                        <div dir="ltr" className="text-xs text-muted-foreground">
+                          /{c.slug}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          tone={c.visible ? "success" : "neutral"}
+                          label={c.visible ? "ظاهر" : "مخفي"}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{c.sortOrder}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {c.procedureCount.toLocaleString("ar-SA-u-nu-latn")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <CategoryFormButton existing={c} />
+                          <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
+                          <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
 
@@ -103,54 +135,89 @@ export default async function AdminProceduresPage() {
             description="ابدأ بإضافة إجراء جديد من الأعلى."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                  <Th>الإجراء</Th>
-                  <Th>القسم</Th>
-                  <Th>النوع</Th>
-                  <Th>الحالة</Th>
-                  <Th>النقاهة</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {procedures.map((p) => (
-                  <tr key={p.id} className="transition-colors hover:bg-muted/30">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{p.nameAr}</div>
-                      <div dir="ltr" className="text-xs text-muted-foreground">
-                        /{p.slug}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{p.categoryNameAr}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {p.isSurgical ? "جراحي" : "غير جراحي"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        tone={p.visible ? "success" : "neutral"}
-                        label={p.visible ? "ظاهر" : "مخفي"}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {p.recoveryDays != null
-                        ? `${p.recoveryDays.toLocaleString("ar-SA-u-nu-latn")} يوم`
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <ProcedureFormButton existing={p} categories={categoryOptions} />
-                        <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
-                        <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
-                      </div>
-                    </td>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {procedures.map((p) => (
+                <MobileDataCard
+                  key={p.id}
+                  title={p.nameAr}
+                  subtitle={<span dir="ltr">/{p.slug}</span>}
+                  badge={
+                    <StatusBadge
+                      tone={p.visible ? "success" : "neutral"}
+                      label={p.visible ? "ظاهر" : "مخفي"}
+                    />
+                  }
+                  rows={[
+                    { label: "القسم", value: p.categoryNameAr },
+                    { label: "النوع", value: p.isSurgical ? "جراحي" : "غير جراحي" },
+                    {
+                      label: "النقاهة",
+                      value:
+                        p.recoveryDays != null
+                          ? `${p.recoveryDays.toLocaleString("ar-SA-u-nu-latn")} يوم`
+                          : "—",
+                    },
+                  ]}
+                  actions={
+                    <div className="flex items-center gap-1">
+                      <ProcedureFormButton existing={p} categories={categoryOptions} />
+                      <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
+                      <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
+                    </div>
+                  }
+                />
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
+                    <Th>الإجراء</Th>
+                    <Th>القسم</Th>
+                    <Th>النوع</Th>
+                    <Th>الحالة</Th>
+                    <Th>النقاهة</Th>
+                    <Th>—</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {procedures.map((p) => (
+                    <tr key={p.id} className="transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-foreground">{p.nameAr}</div>
+                        <div dir="ltr" className="text-xs text-muted-foreground">
+                          /{p.slug}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{p.categoryNameAr}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {p.isSurgical ? "جراحي" : "غير جراحي"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          tone={p.visible ? "success" : "neutral"}
+                          label={p.visible ? "ظاهر" : "مخفي"}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {p.recoveryDays != null
+                          ? `${p.recoveryDays.toLocaleString("ar-SA-u-nu-latn")} يوم`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <ProcedureFormButton existing={p} categories={categoryOptions} />
+                          <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
+                          <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </div>

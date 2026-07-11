@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { AdminPagination } from "@/components/admin/pagination"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -227,7 +228,54 @@ export default async function AdminCasesPage({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="space-y-2 p-3 sm:hidden">
+              {rows.map((r) => {
+                const patientInitial = r.patientName.trim().charAt(0) || "؟"
+                return (
+                  <MobileDataCard
+                    key={r.id}
+                    title={
+                      <span className="flex items-center gap-2">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary ring-1 ring-primary/15">
+                          {patientInitial}
+                        </span>
+                        <span className="truncate">{r.patientName}</span>
+                      </span>
+                    }
+                    subtitle={r.procedureName}
+                    badge={
+                      <StatusBadge tone={caseStatusTone(r.status)} label={caseStatusAr(r.status)} />
+                    }
+                    rows={[
+                      { label: "المرجع", value: <span dir="ltr">{r.reference}</span> },
+                      { label: "الطبيب", value: r.doctorName ?? "—" },
+                      { label: "المركز", value: r.centerName ?? "—" },
+                      {
+                        label: "الخطورة",
+                        value: r.severity ? safetyAlertSeverityAr(r.severity) : "—",
+                      },
+                      {
+                        label: "الدفع",
+                        value: r.paymentStatus ? invoiceStatusAr(r.paymentStatus) : "—",
+                      },
+                      {
+                        label: "آخر تحديث",
+                        value: new Date(r.updatedAt).toLocaleDateString("ar-SA-u-nu-latn"),
+                      },
+                    ]}
+                    actions={
+                      <Link
+                        href={`/dashboard/cases/${r.id}`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        فتح الحالة
+                      </Link>
+                    }
+                  />
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">

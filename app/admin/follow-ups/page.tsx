@@ -13,6 +13,7 @@ import {
 } from "@/lib/data/admin-followups"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
+import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { followUpTaskStatusAr } from "@/lib/status-labels"
@@ -113,21 +114,73 @@ export default async function AdminFollowUpsPage({
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                  <Th>المهمة</Th>
-                  <Th>النوع</Th>
-                  <Th>الحالة</Th>
-                  <Th>المريض</Th>
-                  <Th>الطبيب</Th>
-                  <Th>الاستحقاق</Th>
-                  <Th>—</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {tasks.map((t) => {
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {tasks.map((t) => {
+                const patientInitial = t.patientName.trim().charAt(0) || "؟"
+                return (
+                  <MobileDataCard
+                    key={t.id}
+                    title={
+                      <span className="flex items-center gap-2">
+                        {t.overdue && (
+                          <AlertTriangle
+                            className="size-4 shrink-0 text-destructive"
+                            aria-label="متأخرة"
+                          />
+                        )}
+                        <span className="truncate">{t.title}</span>
+                      </span>
+                    }
+                    subtitle={t.patientName}
+                    badge={
+                      <StatusBadge
+                        tone={statusTone(t.status, t.overdue)}
+                        label={
+                          t.overdue && t.status !== "MISSED"
+                            ? "متأخرة"
+                            : followUpTaskStatusAr(t.status)
+                        }
+                      />
+                    }
+                    rows={[
+                      { label: "النوع", value: TYPE_LABELS[t.type] ?? t.type },
+                      { label: "الطبيب", value: t.doctorName ?? "—" },
+                      {
+                        label: "الاستحقاق",
+                        value: t.dueAt
+                          ? new Date(t.dueAt).toLocaleDateString("ar-SA-u-nu-latn")
+                          : "—",
+                      },
+                    ]}
+                    actions={
+                      <Link
+                        href={`/dashboard/cases/${t.caseId}`}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        <ClipboardList className="size-3.5" />
+                        فتح الحالة
+                      </Link>
+                    }
+                  />
+                )
+              })}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
+                    <Th>المهمة</Th>
+                    <Th>النوع</Th>
+                    <Th>الحالة</Th>
+                    <Th>المريض</Th>
+                    <Th>الطبيب</Th>
+                    <Th>الاستحقاق</Th>
+                    <Th>—</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {tasks.map((t) => {
                   const patientInitial = t.patientName.trim().charAt(0) || "؟"
                   return (
                     <tr
@@ -212,7 +265,8 @@ export default async function AdminFollowUpsPage({
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </Card>
     </div>
