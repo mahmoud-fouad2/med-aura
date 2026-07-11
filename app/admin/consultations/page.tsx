@@ -12,6 +12,7 @@ import {
   currencyAr,
   paymentStatusAr,
 } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "طلبات الاستشارة" }
@@ -39,10 +40,6 @@ function statusTone(s: string): StatusTone {
   return "neutral"
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 function fmtDateTime(d: Date): string {
   return new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
@@ -58,7 +55,7 @@ export default async function AdminConsultationsPage({
 }) {
   await requirePermissionPage(PERMISSIONS.APPOINTMENT_READ_ANY)
   const sp = await searchParams
-  const status = str(sp.status)
+  const status = firstParam(sp.status)
 
   const rows = await listAppointmentsForAdmin({ status })
 

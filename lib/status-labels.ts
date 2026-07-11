@@ -171,8 +171,8 @@ const CENTER_ROLE: Record<string, string> = {
 
 const FOLLOW_UP_TASK: Record<string, string> = {
   SCHEDULED: "مجدولة",
-  DUE: "مستحقة",
-  SUBMITTED: "أُرسلت",
+  DUE: "مستحقة الآن",
+  SUBMITTED: "بانتظار مراجعة الطبيب",
   UNDER_REVIEW: "قيد المراجعة",
   COMPLETED: "مكتملة",
   MISSED: "فائتة",

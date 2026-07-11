@@ -14,14 +14,11 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { PageHeader } from "@/components/dashboard/page-header"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "سجل النشاط" }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 /**
  * Maps action namespaces to a colored dot so a reviewer scanning the log
@@ -88,10 +85,10 @@ export default async function AdminActivityPage({
   const sp = await searchParams
 
   const filter: ActivityFilter = {
-    action: str(sp.action),
-    actorName: str(sp.actorName),
-    from: str(sp.from),
-    to: str(sp.to),
+    action: firstParam(sp.action),
+    actorName: firstParam(sp.actorName),
+    from: firstParam(sp.from),
+    to: firstParam(sp.to),
   }
 
   const entries = await searchActivity(filter, 200)

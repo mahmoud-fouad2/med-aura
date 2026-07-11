@@ -18,6 +18,7 @@ import {
   TravelCancelButton,
 } from "@/components/admin/travel-actions"
 import { countryNameAr } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "طلبات السفر" }
@@ -54,10 +55,6 @@ function statusTone(s: string): StatusTone {
   return "neutral"
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 export default async function AdminTravelPage({
   searchParams,
@@ -66,7 +63,7 @@ export default async function AdminTravelPage({
 }) {
   await requirePermissionPage(PERMISSIONS.TRAVEL_OFFER_MANAGE)
   const sp = await searchParams
-  const status = str(sp.status)
+  const status = firstParam(sp.status)
   const items = await listTravelQueue(status)
 
   return (

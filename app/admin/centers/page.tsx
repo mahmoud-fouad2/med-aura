@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المراكز" }
@@ -35,10 +36,6 @@ function statusTone(status: string): StatusTone {
   return "warning"
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 export default async function AdminCentersPage({
   searchParams,
@@ -47,8 +44,8 @@ export default async function AdminCentersPage({
 }) {
   await requirePermissionPage(PERMISSIONS.PROVIDER_REVIEW)
   const sp = await searchParams
-  const q = str(sp.q)
-  const status = str(sp.status)
+  const q = firstParam(sp.q)
+  const status = firstParam(sp.status)
 
   const centers = await listCentersForAdmin({ q, status })
   const approved = centers.filter((c) => c.status === "approved").length

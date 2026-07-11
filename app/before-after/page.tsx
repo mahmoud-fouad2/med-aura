@@ -9,6 +9,7 @@ import { Stagger, StaggerItem } from "@/components/motion"
 import { listPublicBeforeAfter } from "@/lib/data/before-after"
 import { listProceduresGrouped } from "@/lib/data/procedures"
 import { BeforeAfterGalleryCard } from "@/components/before-after/gallery-card"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -18,10 +19,6 @@ export const metadata = {
     "معرض حالات تجميلية موافق عليها بموجب موافقة موثقة من المرضى، من أطباء ومراكز معتمدين على Med Aura.",
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 export default async function BeforeAfterPage({
   searchParams,
@@ -29,7 +26,7 @@ export default async function BeforeAfterPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const sp = await searchParams
-  const procedureSlug = str(sp.procedure)
+  const procedureSlug = firstParam(sp.procedure)
 
   const [items, categories] = await Promise.all([
     listPublicBeforeAfter({ procedureSlug, limit: 60 }),

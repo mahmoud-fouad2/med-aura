@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { ModerationActions } from "@/components/admin/before-after-moderation"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "قبل وبعد — المراجعة" }
@@ -38,10 +39,6 @@ function statusTone(s: string): StatusTone {
   return "neutral"
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 export default async function AdminBeforeAfterPage({
   searchParams,
@@ -50,7 +47,7 @@ export default async function AdminBeforeAfterPage({
 }) {
   await requirePermissionPage(PERMISSIONS.BEFORE_AFTER_MODERATE)
   const sp = await searchParams
-  const status = str(sp.status) ?? "SUBMITTED"
+  const status = firstParam(sp.status) ?? "SUBMITTED"
 
   const items = await listBeforeAfterQueue(status)
 

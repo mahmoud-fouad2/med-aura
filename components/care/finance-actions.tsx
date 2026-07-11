@@ -11,13 +11,8 @@ import { Label } from "@/components/ui/label"
 import { createFinalPayment } from "@/lib/actions/payment"
 import { requestRefund } from "@/lib/actions/refund"
 import { closeCase, reopenCase, type ClosureEligibility } from "@/lib/actions/case-closure"
-import { currencyAr } from "@/lib/status-labels"
+import { currencyAr, invoiceStatusAr } from "@/lib/status-labels"
 import type { InvoiceView } from "@/lib/data/care"
-
-const INVOICE_STATUS_LABEL: Record<string, string> = {
-  DRAFT: "مسودة", ISSUED: "مستحقة", PARTIALLY_PAID: "مدفوعة جزئيًا", PAID: "مدفوعة بالكامل",
-  OVERDUE: "متأخرة", CANCELLED: "ملغاة", REFUNDED: "مستردة", PARTIALLY_REFUNDED: "مستردة جزئيًا",
-}
 
 /** Patient: pay the remaining balance shown on the case's invoice. Staff/admin can view the same breakdown read-only. */
 export function RemainingBalanceCard({
@@ -58,7 +53,7 @@ export function RemainingBalanceCard({
           <CreditCard className="size-4 text-primary" /> فاتورة {invoice.invoiceNumber}
         </h3>
         <Badge variant={invoice.status === "PAID" ? "default" : "secondary"}>
-          {INVOICE_STATUS_LABEL[invoice.status] ?? invoice.status}
+          {invoiceStatusAr(invoice.status)}
         </Badge>
       </div>
       <dl className="space-y-1 text-sm">

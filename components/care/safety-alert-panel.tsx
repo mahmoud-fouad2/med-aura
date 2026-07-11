@@ -14,6 +14,7 @@ import {
   resolveSafetyAlert,
 } from "@/lib/actions/safety"
 import { WARNING_SIGNS } from "@/lib/care/warning-signs"
+import { safetyAlertSeverityAr, safetyAlertStatusAr } from "@/lib/status-labels"
 import type { SafetyAlertView } from "@/lib/data/care"
 
 const SEVERITY_VARIANT: Record<string, "secondary" | "default" | "destructive" | "outline"> = {
@@ -21,18 +22,6 @@ const SEVERITY_VARIANT: Record<string, "secondary" | "default" | "destructive" |
   MEDIUM: "secondary",
   HIGH: "destructive",
   CRITICAL: "destructive",
-}
-const SEVERITY_LABEL: Record<string, string> = {
-  LOW: "منخفضة", MEDIUM: "متوسطة", HIGH: "عالية", CRITICAL: "حرجة",
-}
-const STATUS_LABEL: Record<string, string> = {
-  OPEN: "مفتوح",
-  ACKNOWLEDGED: "تم الإقرار",
-  CONTACTED: "تم التواصل مع المريض",
-  PROVIDER_REVIEWED: "راجعه مقدّم الخدمة",
-  RESOLVED: "تم الحل",
-  REFERRED_TO_EMERGENCY: "أُحيل للطوارئ",
-  FALSE_ALARM: "إنذار كاذب",
 }
 
 /** Patient-facing: report symptoms. Never suggests a diagnosis — only routes to the care team. */
@@ -165,9 +154,9 @@ function AlertCard({ alert }: { alert: SafetyAlertView }) {
     <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Badge variant={SEVERITY_VARIANT[alert.severity] ?? "outline"}>
-          {SEVERITY_LABEL[alert.severity] ?? alert.severity}
+          {safetyAlertSeverityAr(alert.severity)}
         </Badge>
-        <Badge variant="outline">{STATUS_LABEL[alert.status] ?? alert.status}</Badge>
+        <Badge variant="outline">{safetyAlertStatusAr(alert.status)}</Badge>
       </div>
       {alert.summary && <p className="text-sm text-foreground">{alert.summary}</p>}
       <p className="text-xs text-muted-foreground">

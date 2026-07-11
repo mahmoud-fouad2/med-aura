@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { followUpTaskStatusAr } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المتابعات" }
@@ -30,10 +31,6 @@ const TYPE_LABELS: Record<string, string> = {
   DOCTOR_REVIEW: "مراجعة الطبيب",
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 function statusTone(status: string, overdue: boolean): StatusTone {
   if (overdue || status === "MISSED") return "danger"
@@ -50,7 +47,7 @@ export default async function AdminFollowUpsPage({
 }) {
   await requirePermissionPage(PERMISSIONS.CASE_READ_ANY)
   const sp = await searchParams
-  const filters: FollowUpFilters = { status: str(sp.status) ?? "open" }
+  const filters: FollowUpFilters = { status: firstParam(sp.status) ?? "open" }
 
   const tasks = await listFollowUpsForAdmin(filters)
   const overdueCount = tasks.filter((t) => t.overdue).length

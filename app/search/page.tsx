@@ -27,6 +27,7 @@ import { procedureCategory, country as countryT } from "@/lib/db/schema"
 import { getI18n } from "@/lib/i18n"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -35,9 +36,6 @@ export const metadata = {
   description: "قارن بين أطباء تجميل معتمدين حسب الإجراء والمدينة ونوع الاستشارة.",
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  return Array.isArray(v) ? v[0] : v
-}
 
 export default async function SearchPage({
   searchParams,
@@ -48,14 +46,14 @@ export default async function SearchPage({
   const { t } = await getI18n()
 
   const params: SearchParams = {
-    q: str(sp.q),
-    procedure: str(sp.procedure),
-    category: str(sp.category),
-    country: str(sp.country),
-    city: str(sp.city),
-    consultation: str(sp.consultation) as SearchParams["consultation"],
-    surgical: str(sp.surgical) as SearchParams["surgical"],
-    page: Number(str(sp.page) ?? "1") || 1,
+    q: firstParam(sp.q),
+    procedure: firstParam(sp.procedure),
+    category: firstParam(sp.category),
+    country: firstParam(sp.country),
+    city: firstParam(sp.city),
+    consultation: firstParam(sp.consultation) as SearchParams["consultation"],
+    surgical: firstParam(sp.surgical) as SearchParams["surgical"],
+    page: Number(firstParam(sp.page) ?? "1") || 1,
   }
 
   const user = await getCurrentUser()
@@ -97,7 +95,7 @@ export default async function SearchPage({
   const buildPageHref = (p: number) => {
     const q = new URLSearchParams()
     for (const [k, v] of Object.entries(sp)) {
-      const val = str(v)
+      const val = firstParam(v)
       if (val) q.set(k, val)
     }
     q.set("page", String(p))

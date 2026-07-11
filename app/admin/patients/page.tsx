@@ -9,14 +9,11 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المرضى" }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 export default async function AdminPatientsPage({
   searchParams,
@@ -25,7 +22,7 @@ export default async function AdminPatientsPage({
 }) {
   await requirePermissionPage(PERMISSIONS.USER_READ_ANY)
   const sp = await searchParams
-  const q = str(sp.q)
+  const q = firstParam(sp.q)
 
   const patients = await listPatientsForAdmin(q)
   const withCases = patients.filter((p) => p.caseCount > 0)

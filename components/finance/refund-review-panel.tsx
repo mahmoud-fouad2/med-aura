@@ -10,19 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Undo2 } from "lucide-react"
 import { reviewRefundRequest, providerConfirmRefund, processRefund } from "@/lib/actions/refund"
-import { currencyAr } from "@/lib/status-labels"
+import { currencyAr, refundStatusAr } from "@/lib/status-labels"
 import type { FinanceRefundRow } from "@/lib/data/finance"
-
-const STATUS_LABEL: Record<string, string> = {
-  REQUESTED: "بانتظار المراجعة",
-  UNDER_REVIEW: "قيد المراجعة",
-  APPROVED: "معتمد — بانتظار المعالجة",
-  REJECTED: "مرفوض",
-  PROVIDER_CONFIRMED: "أكّده مقدّم الخدمة",
-  PROCESSED: "تمت المعالجة",
-  FAILED: "فشلت المعالجة",
-  CANCELLED: "ملغى",
-}
 
 export function RefundReviewPanel({ refunds }: { refunds: FinanceRefundRow[] }) {
   if (refunds.length === 0) {
@@ -63,7 +52,7 @@ function RefundCard({ refund }: { refund: FinanceRefundRow }) {
             فاتورة {refund.invoiceNumber}
           </Link>
         </div>
-        <Badge variant="outline">{STATUS_LABEL[refund.status] ?? refund.status}</Badge>
+        <Badge variant="outline">{refundStatusAr(refund.status)}</Badge>
       </div>
       <p className="text-sm text-muted-foreground">{refund.reason}</p>
       {error && <p className="text-sm text-destructive">{error}</p>}

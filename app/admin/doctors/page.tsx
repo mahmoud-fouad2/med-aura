@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الأطباء" }
@@ -34,10 +35,6 @@ function statusTone(status: string): StatusTone {
   return "warning"
 }
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 export default async function AdminDoctorsPage({
   searchParams,
@@ -46,8 +43,8 @@ export default async function AdminDoctorsPage({
 }) {
   await requirePermissionPage(PERMISSIONS.PROVIDER_REVIEW)
   const sp = await searchParams
-  const q = str(sp.q)
-  const status = str(sp.status)
+  const q = firstParam(sp.q)
+  const status = firstParam(sp.status)
 
   const doctors = await listDoctorsForAdmin({ q, status })
   const approved = doctors.filter((d) => d.status === "approved").length

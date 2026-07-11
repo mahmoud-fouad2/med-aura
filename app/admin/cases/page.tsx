@@ -15,6 +15,7 @@ import {
   invoiceStatusAr,
   safetyAlertSeverityAr,
 } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الحالات الطبية" }
@@ -31,10 +32,6 @@ const CASE_STATUSES = [
 const PAYMENT_STATUSES = ["DRAFT", "ISSUED", "PARTIALLY_PAID", "PAID", "OVERDUE", "CANCELLED", "REFUNDED", "PARTIALLY_REFUNDED"] as const
 const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 function caseStatusTone(status: string): StatusTone {
   if (["CLOSED"].includes(status)) return "neutral"
@@ -66,19 +63,19 @@ export default async function AdminCasesPage({
   const sp = await searchParams
 
   const filters: CaseListFilters = {
-    q: str(sp.q),
-    status: str(sp.status),
-    doctorId: str(sp.doctorId),
-    centerId: str(sp.centerId),
-    procedureId: str(sp.procedureId),
-    country: str(sp.country),
-    paymentStatus: str(sp.paymentStatus),
-    severity: str(sp.severity),
-    from: str(sp.from),
-    to: str(sp.to),
-    sort: (str(sp.sort) as CaseListFilters["sort"]) ?? "newest",
+    q: firstParam(sp.q),
+    status: firstParam(sp.status),
+    doctorId: firstParam(sp.doctorId),
+    centerId: firstParam(sp.centerId),
+    procedureId: firstParam(sp.procedureId),
+    country: firstParam(sp.country),
+    paymentStatus: firstParam(sp.paymentStatus),
+    severity: firstParam(sp.severity),
+    from: firstParam(sp.from),
+    to: firstParam(sp.to),
+    sort: (firstParam(sp.sort) as CaseListFilters["sort"]) ?? "newest",
   }
-  const page = Math.max(1, Number(str(sp.page) ?? "1") || 1)
+  const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1)
 
   const [{ rows, totalCount, totalPages }, options] = await Promise.all([
     listCasesForAdmin(filters, page),

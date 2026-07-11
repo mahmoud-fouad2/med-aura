@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { submitFollowUpTask, reviewFollowUpTask } from "@/lib/actions/follow-up"
 import { MAX_FILE_BYTES, isAllowedMime } from "@/lib/uploads"
+import { followUpTaskStatusAr } from "@/lib/status-labels"
 import type { FollowUpTaskView } from "@/lib/data/care"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -30,15 +31,15 @@ const TYPE_LABELS: Record<string, string> = {
   GENERAL_CHECK: "متابعة عامة",
   DOCTOR_REVIEW: "مراجعة الطبيب",
 }
-const STATUS_LABELS: Record<string, { label: string; variant: "secondary" | "default" | "destructive" | "outline" }> = {
-  SCHEDULED: { label: "مجدولة", variant: "outline" },
-  DUE: { label: "مستحقة الآن", variant: "secondary" },
-  MISSED: { label: "فاتت", variant: "destructive" },
-  SUBMITTED: { label: "بانتظار مراجعة الطبيب", variant: "secondary" },
-  UNDER_REVIEW: { label: "قيد المراجعة", variant: "secondary" },
-  COMPLETED: { label: "مكتملة", variant: "default" },
-  ESCALATED: { label: "تم التصعيد", variant: "destructive" },
-  CANCELLED: { label: "ملغاة", variant: "outline" },
+const STATUS_VARIANT: Record<string, "secondary" | "default" | "destructive" | "outline"> = {
+  SCHEDULED: "outline",
+  DUE: "secondary",
+  MISSED: "destructive",
+  SUBMITTED: "secondary",
+  UNDER_REVIEW: "secondary",
+  COMPLETED: "default",
+  ESCALATED: "destructive",
+  CANCELLED: "outline",
 }
 
 export function FollowUpPanel({
@@ -78,7 +79,7 @@ function TaskCard({
   canSubmit: boolean
   canReview: boolean
 }) {
-  const status = STATUS_LABELS[task.status] ?? { label: task.status, variant: "outline" as const }
+  const statusVariant = STATUS_VARIANT[task.status] ?? "outline"
   const showSubmitForm = canSubmit && ["SCHEDULED", "DUE", "MISSED"].includes(task.status)
   const showReview = canReview && ["SUBMITTED", "UNDER_REVIEW"].includes(task.status)
 
@@ -90,7 +91,7 @@ function TaskCard({
           <span className="font-medium text-foreground">{task.title}</span>
           <Badge variant="outline">{TYPE_LABELS[task.type] ?? task.type}</Badge>
         </div>
-        <Badge variant={status.variant}>{status.label}</Badge>
+        <Badge variant={statusVariant}>{followUpTaskStatusAr(task.status)}</Badge>
       </div>
       {task.instructions && (
         <p className="mt-2 text-sm text-muted-foreground">{task.instructions}</p>

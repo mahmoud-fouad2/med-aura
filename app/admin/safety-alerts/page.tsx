@@ -22,16 +22,13 @@ import {
   safetyAlertSeverityAr,
   safetyAlertStatusAr,
 } from "@/lib/status-labels"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "تنبيهات السلامة" }
 
 const SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const
 
-function str(v: string | string[] | undefined): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v
-  return s?.trim() ? s : undefined
-}
 
 function severityTone(sev: string): StatusTone {
   if (sev === "CRITICAL" || sev === "HIGH") return "danger"
@@ -57,8 +54,8 @@ export default async function AdminSafetyAlertsPage({
   const sp = await searchParams
 
   const filters: SafetyAlertFilters = {
-    status: str(sp.status) ?? "open",
-    severity: str(sp.severity),
+    status: firstParam(sp.status) ?? "open",
+    severity: firstParam(sp.severity),
   }
 
   const [alerts, assignees] = await Promise.all([
