@@ -50,18 +50,19 @@ export function DoctorCard({
   const ConsultationIcon = doctor.offersVideo ? Video : Building2
 
   return (
+    <div className="@container h-full">
     <Card
       dir="ltr"
       className={
         "group relative h-full overflow-hidden border-white/75 bg-card/95 p-0 shadow-elegant backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant-lg " +
-        (isFeatured ? "md:grid md:grid-cols-[43%_1fr]" : "flex flex-col")
+        (isFeatured ? "@lg:grid @lg:grid-cols-[43%_1fr]" : "flex flex-col")
       }
     >
       <div
         className={
           "relative shrink-0 overflow-hidden bg-muted " +
           (isFeatured
-            ? "min-h-72 md:min-h-full md:rounded-e-[2.35rem]"
+            ? "min-h-72 @lg:min-h-full @lg:rounded-e-[2.35rem]"
             : "aspect-[4/3] rounded-b-[2rem]")
         }
       >
@@ -227,6 +228,7 @@ export function DoctorCard({
         </div>
       </div>
     </Card>
+    </div>
   )
 }
 

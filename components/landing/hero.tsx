@@ -77,8 +77,8 @@ export function Hero({
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,transparent_0%,color-mix(in_oklab,var(--background)_78%,transparent)_43%,var(--background)_68%,var(--background)_100%)] ltr:bg-[linear-gradient(270deg,transparent_0%,color-mix(in_oklab,var(--background)_78%,transparent)_43%,var(--background)_68%,var(--background)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
 
-      <div className="mx-auto flex min-h-[760px] max-w-7xl flex-col px-4 pb-10 pt-20 sm:px-6 lg:min-h-[820px] lg:px-8 lg:pt-28">
-        <FadeIn className="me-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6">
+      <div className="mx-auto flex min-h-[760px] max-w-7xl flex-col justify-center gap-8 px-4 pb-10 pt-20 sm:px-6 lg:min-h-[820px] lg:px-8 lg:pt-28">
+        <FadeIn className="me-auto flex w-full max-w-2xl flex-col gap-6">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-3.5 py-1.5 text-sm font-semibold text-primary shadow-sm backdrop-blur-md">
             <Sparkles className="size-4 text-gold" />
             {isAr ? "اختيارك الجمالي يبدأ بخبير موثوق" : "Trusted aesthetic care, clearly guided"}
@@ -135,7 +135,7 @@ export function Hero({
           </div>
         </FadeIn>
 
-        <FadeIn delay={0.15} className="mt-8 grid gap-3 sm:grid-cols-3 lg:absolute lg:bottom-10 lg:end-8 lg:mt-0 lg:w-[44rem]">
+        <FadeIn delay={0.15} className="me-auto grid w-full max-w-2xl gap-3 sm:grid-cols-3 lg:w-[44rem]">
           {heroHighlights.map((h) => (
             <div
               key={h.title}
