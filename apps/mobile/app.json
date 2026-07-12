@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Med Aura",
+    "slug": "med-aura",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/brand/icon.png",
+    "scheme": "medaura",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFCF7",
+    "ios": {
+      "bundleIdentifier": "com.medaura.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "android": {
+      "package": "com.medaura.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FCFAFB",
+        "foregroundImage": "./assets/brand/adaptive-foreground.png"
+      },
+      "predictiveBackGestureEnabled": true
+    },
+    "extra": {
+      "supportsRTL": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFCF7",
+          "image": "./assets/brand/splash-logo.png",
+          "imageWidth": 180
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

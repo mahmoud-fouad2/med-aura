@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth"
+import { expo } from "@better-auth/expo"
 import { eq } from "drizzle-orm"
 import { pool, db } from "@/lib/db"
 import { patientProfile, role as roleTable, userRole } from "@/lib/db/schema"
@@ -82,7 +83,11 @@ export const auth = betterAuth({
     // login on http://localhost. Better Auth's defaults are correct per-env.
   },
 
-  trustedOrigins: [appUrl()],
+  // The native app authenticates over the same endpoints; its custom scheme
+  // must be trusted or Better Auth's CSRF origin check rejects it.
+  trustedOrigins: [appUrl(), "medaura://"],
+
+  plugins: [expo()],
 
   databaseHooks: {
     user: {
