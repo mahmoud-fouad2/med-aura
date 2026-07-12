@@ -9,9 +9,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = appUrl().replace(/\/$/, "")
   const routes = [
     "",
+    "/doctors",
     "/search",
     "/procedures",
     "/centers",
+    "/destinations",
     "/online-consultation",
     "/how-it-works",
     "/trust-and-safety",

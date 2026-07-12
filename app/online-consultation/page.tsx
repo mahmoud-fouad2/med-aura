@@ -6,12 +6,15 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { FeatureGrid } from "@/components/marketing/feature-grid"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
+import { SITE_NAME, absoluteUrl, breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo"
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "الاستشارة أونلاين",
   description:
-    "احجز استشارة تجميلية عبر الفيديو مع أطباء معتمدين، وشارك حالتك بأمان قبل اتخاذ قرارك.",
-}
+    "احجز استشارة تجميلية عبر الفيديو مع أطباء معتمدين، وشارك حالتك بخصوصية قبل اتخاذ قرارك.",
+  path: "/online-consultation",
+  image: "/demo-services/service-online-consultation.png",
+})
 
 const features = [
   { icon: Video, title: "لقاء مريح من مكانك", desc: "تحدّث مع الطبيب في موعد يناسبك قبل السفر أو زيارة المركز." },
@@ -31,8 +34,41 @@ const steps = [
 export const dynamic = "force-dynamic"
 
 export default function OnlineConsultationPage() {
+  const structuredData = [
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "الاستشارة أونلاين", url: absoluteUrl("/online-consultation") },
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: "الاستشارة التجميلية أونلاين",
+      alternateName: "Online aesthetic consultation",
+      description:
+        "استشارة فيديو مع طبيب تجميل معتمد، مع مشاركة آمنة للصور والتقارير وخطة واضحة قبل القرار.",
+      image: absoluteUrl("/demo-services/service-online-consultation.png"),
+      url: absoluteUrl("/online-consultation"),
+      provider: {
+        "@type": "Organization",
+        name: SITE_NAME,
+        url: absoluteUrl("/"),
+      },
+      serviceType: "Online medical consultation",
+      availableChannel: {
+        "@type": "ServiceChannel",
+        serviceUrl: absoluteUrl("/search?consultation=VIDEO_CONSULTATION"),
+      },
+      areaServed: ["Saudi Arabia", "United Arab Emirates", "Türkiye"],
+      inLanguage: ["ar", "en"],
+    },
+  ]
+
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <PageHero
@@ -41,7 +77,7 @@ export default function OnlineConsultationPage() {
           subtitle="احجز استشارة فيديو مع طبيب معتمد، وشارك حالتك بخصوصية تامة، واحصل على خطة وسعر واضح قبل أي خطوة."
           primary={{ href: "/search?consultation=VIDEO_CONSULTATION", label: "ابحث عن طبيب للاستشارة" }}
           secondary={{ href: "/how-it-works", label: "كيف تعمل المنصة" }}
-          imageSrc="/hero-medaura-consultation.png"
+          imageSrc="/demo-services/service-online-consultation.png"
           imageAlt="استشارة تجميلية في عيادة حديثة"
           stats={[
             { label: "الاختيار", value: "طبيب مناسب" },
@@ -78,7 +114,7 @@ export default function OnlineConsultationPage() {
             </div>
             <div className="relative order-first mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-[2rem] border border-border shadow-elegant-lg lg:order-last">
               <Image
-                src="/hero-clinic.png"
+                src="/demo-services/service-online-consultation.png"
                 alt="استشارة تجميلية عبر الفيديو مع طبيب معتمد"
                 fill
                 className="object-cover"

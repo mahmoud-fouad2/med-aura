@@ -15,8 +15,13 @@ import { getCenterBySlug } from "@/lib/data/centers"
 import { query } from "@/lib/db/query"
 import { countryNameAr } from "@/lib/status-labels"
 import { Stethoscope } from "lucide-react"
-import { appUrl } from "@/lib/env"
 import { getI18n } from "@/lib/i18n"
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  geoCoordinatesJsonLd,
+} from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -30,10 +35,14 @@ export async function generateMetadata({
   const r = await query(() => getCenterBySlug(slug))
   const c = r.status === "ok" ? r.data : null
   if (!c) return { title: t.common.none }
-  return {
+  return buildPageMetadata({
     title: c.name,
-    description: c.description ?? `${c.name} on Med Aura.`,
-  }
+    description:
+      c.description ??
+      `${c.name} على Med Aura: أطباء معتمدون، بيانات واضحة، وحجز استشارة تجميلية بثقة.`,
+    path: `/centers/${c.slug}`,
+    image: "/demo-services/aesthetic-clinic-lounge.png",
+  })
 }
 
 export default async function CenterDetailPage({
@@ -67,15 +76,55 @@ export default async function CenterDetailPage({
     "@context": "https://schema.org",
     "@type": "MedicalClinic",
     name: c.name,
-    address: [c.city, countryNameAr(c.country)].filter(Boolean).join("، ") || undefined,
-    url: `${appUrl()}/centers/${c.slug}`,
+    ...(c.description ? { description: c.description } : {}),
+    image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+    address: {
+      "@type": "PostalAddress",
+      ...(c.address ? { streetAddress: c.address } : {}),
+      ...(c.city ? { addressLocality: c.city } : {}),
+      addressCountry: countryNameAr(c.country) || c.country,
+    },
+    ...(geoCoordinatesJsonLd(c.country) ? { geo: geoCoordinatesJsonLd(c.country) } : {}),
+    url: absoluteUrl(`/centers/${c.slug}`),
+    medicalSpecialty: "Aesthetic Medicine",
+    areaServed: {
+      "@type": "Country",
+      name: countryNameAr(c.country) || c.country,
+    },
+    ...(c.languages.length ? { knowsLanguage: c.languages } : {}),
+    ...(c.doctors.length
+      ? {
+          employee: c.doctors.map((doctor) => ({
+            "@type": "Physician",
+            name: doctor.name,
+            url: absoluteUrl(`/doctors/${doctor.slug}`),
+            ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
+          })),
+        }
+      : {}),
   }
+  if (c.reviewCount > 0 && c.rating) {
+    Object.assign(jsonLd, {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: c.rating,
+        reviewCount: c.reviewCount,
+        bestRating: "5",
+        worstRating: "1",
+      },
+    })
+  }
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "الرئيسية", url: absoluteUrl("/") },
+    { name: "المراكز", url: absoluteUrl("/centers") },
+    { name: c.name, url: absoluteUrl(`/centers/${c.slug}`) },
+  ])
 
   return (
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumb]) }}
       />
       <SiteHeader />
       <main className="flex-1">

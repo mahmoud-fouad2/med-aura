@@ -23,7 +23,7 @@ import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
 import { currencyAr, countryNameAr } from "@/lib/status-labels"
 import { getI18n } from "@/lib/i18n"
-import { appUrl } from "@/lib/env"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -38,12 +38,19 @@ export async function generateMetadata({
   const r = await query(() => getPublicDoctorBySlug(slug))
   const doctor = r.status === "ok" ? r.data : null
   if (!doctor) return { title: isAr ? "الطبيب غير موجود" : "Doctor not found" }
-  return {
-    title: isAr 
+  return buildPageMetadata({
+    title: isAr
       ? `${doctor.name} — ${doctor.title ?? "طبيب تجميل"}`
       : `${doctor.name} — ${doctor.title ?? "Aesthetic Doctor"}`,
-    description: doctor.bio ?? `${doctor.name}، ${doctor.title ?? ""} on Med Aura.`,
-  }
+    description:
+      doctor.bio ??
+      (isAr
+        ? `${doctor.name} على Med Aura: بيانات واضحة، تراخيص موثقة، واستشارة تجميلية مناسبة.`
+        : `${doctor.name} on Med Aura: verified profile, clear services, and aesthetic consultation options.`),
+    path: `/doctors/${doctor.slug}`,
+    image: doctor.photoUrl ?? "/hero-medaura-consultation.png",
+    locale: isAr ? "ar" : "en",
+  })
 }
 
 export default async function DoctorProfilePage({
@@ -83,14 +90,33 @@ export default async function DoctorProfilePage({
     name: doctor.name,
     ...(doctor.title ? { jobTitle: doctor.title } : {}),
     ...(doctor.bio ? { description: doctor.bio } : {}),
-    url: `${appUrl()}/doctors/${doctor.slug}`,
+    url: absoluteUrl(`/doctors/${doctor.slug}`),
+    ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
     address: {
       "@type": "PostalAddress",
-      addressCountry: doctor.country,
+      addressCountry: countryNameAr(doctor.country) || doctor.country,
       ...(doctor.city ? { addressLocality: doctor.city } : {}),
+    },
+    areaServed: {
+      "@type": "Country",
+      name: countryNameAr(doctor.country) || doctor.country,
     },
     ...(doctor.languages?.length ? { knowsLanguage: doctor.languages } : {}),
     medicalSpecialty: "Plastic Surgery",
+    ...(doctor.procedures.length
+      ? {
+          availableService: doctor.procedures.map((name) => ({
+            "@type": "MedicalProcedure",
+            name,
+          })),
+        }
+      : {}),
+    ...(doctor.consultationFee
+      ? {
+          priceRange: `${doctor.consultationFee} ${doctor.currency}`,
+          currenciesAccepted: doctor.currency,
+        }
+      : {}),
   }
   if (doctor.reviewCount > 0 && doctor.rating) {
     jsonLd.aggregateRating = {
@@ -101,13 +127,18 @@ export default async function DoctorProfilePage({
       worstRating: "1",
     }
   }
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "الرئيسية", url: absoluteUrl("/") },
+    { name: "الأطباء", url: absoluteUrl("/doctors") },
+    { name: doctor.name, url: absoluteUrl(`/doctors/${doctor.slug}`) },
+  ])
 
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumb]) }}
       />
       <main className="relative flex-1 overflow-hidden bg-section-soft">
         <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">

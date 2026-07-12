@@ -3,6 +3,14 @@ import localFont from "next/font/local"
 import "./globals.css"
 import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
+import {
+  DEFAULT_DESCRIPTION_AR,
+  DEFAULT_TITLE,
+  SITE_NAME,
+  absoluteUrl,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "@/lib/seo"
 import { Toaster } from "@/components/ui/toaster"
 
 const alexandria = localFont({
@@ -35,13 +43,43 @@ const inter = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
   title: {
-    default: "Med Aura | رحلتك التجميلية تبدأ بقرار موثوق",
+    default: DEFAULT_TITLE,
     template: "%s | Med Aura",
   },
-  description:
-    "استشر أطباء ومراكز تجميل موثوقين، قارن الخيارات، واحصل على خطة واضحة قبل اتخاذ قرارك.",
-  applicationName: "Med Aura",
+  description: DEFAULT_DESCRIPTION_AR,
+  applicationName: SITE_NAME,
   manifest: "/manifest.json",
+  alternates: {
+    canonical: absoluteUrl("/"),
+    languages: {
+      ar: absoluteUrl("/"),
+      en: absoluteUrl("/"),
+      "x-default": absoluteUrl("/"),
+    },
+  },
+  openGraph: {
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION_AR,
+    url: absoluteUrl("/"),
+    siteName: SITE_NAME,
+    locale: "ar_SA",
+    alternateLocale: ["en_US"],
+    type: "website",
+    images: [
+      {
+        url: absoluteUrl("/hero-medaura-consultation.png"),
+        width: 1600,
+        height: 900,
+        alt: DEFAULT_TITLE,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION_AR,
+    images: [absoluteUrl("/hero-medaura-consultation.png")],
+  },
   icons: {
     icon: [
       { url: "/medaura-mark.svg", type: "image/svg+xml" },
@@ -83,13 +121,19 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Applies the persisted theme before paint — prevents a flash of the
-            wrong theme that a React-mounted toggle couldn't avoid. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
               "(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t==='dark')}catch(e){}})()",
           }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
         />
       </head>
       <body className="font-sans antialiased">

@@ -11,12 +11,15 @@ import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Stagger, StaggerItem } from "@/components/motion"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo"
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "كيف تعمل المنصة",
   description:
-    "تعرّف على رحلتك في Med Aura خطوة بخطوة: من اختيار الإجراء حتى المتابعة بعد العملية.",
-}
+    "تعرّف على رحلتك في Med Aura خطوة بخطوة: من اختيار الطبيب أو المركز حتى الاستشارة والمتابعة.",
+  path: "/how-it-works",
+  image: "/demo-services/aesthetic-clinic-lounge.png",
+})
 
 const steps: { icon: LucideIcon; title: string; desc: string }[] = [
   { icon: Search, title: "اختيار واعي", desc: "ابدأ بالإجراء الذي يهمك، ثم قارن بين الأطباء والمراكز حسب الخبرة والموقع ونوع الاستشارة." },
@@ -28,8 +31,33 @@ const steps: { icon: LucideIcon; title: string; desc: string }[] = [
 ]
 
 export default function HowItWorksPage() {
+  const structuredData = [
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "كيف تعمل المنصة", url: absoluteUrl("/how-it-works") },
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      name: "كيف تعمل Med Aura",
+      description:
+        "خطوات اختيار طبيب أو مركز تجميل، مشاركة الحالة، حجز الاستشارة، ومتابعة الرحلة.",
+      image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+      step: steps.map((step, index) => ({
+        "@type": "HowToStep",
+        position: index + 1,
+        name: step.title,
+        text: step.desc,
+      })),
+    },
+  ]
+
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <PageHero

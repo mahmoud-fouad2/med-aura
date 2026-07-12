@@ -11,14 +11,23 @@ import { Stagger, StaggerItem } from "@/components/motion"
 import { CategoryIconBadge } from "@/components/marketing/category-icon"
 import { listProceduresGrouped } from "@/lib/data/procedures"
 import { query } from "@/lib/db/query"
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  itemListJsonLd,
+  serviceImageForCategory,
+} from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "إجراءات التجميل",
   description:
-    "تصفّح إجراءات التجميل الجراحية وغير الجراحية على Med Aura، مصنّفة حسب المنطقة، وابدأ رحلتك مع طبيب معتمد.",
-}
+    "تصفّح إجراءات التجميل الجراحية وغير الجراحية على Med Aura، حسب المنطقة والتعافي ونوع الاستشارة.",
+  path: "/procedures",
+  image: "/demo-services/service-face-neck.png",
+})
 
 export default async function ProceduresPage() {
   const res = await query(() => listProceduresGrouped())
@@ -26,16 +35,34 @@ export default async function ProceduresPage() {
   const hasAny = groups.some((g) => g.procedures.length > 0)
   const visibleGroups = groups.filter((g) => g.procedures.length > 0)
   const procedureCount = visibleGroups.reduce((sum, g) => sum + g.procedures.length, 0)
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "الرئيسية", url: absoluteUrl("/") },
+    { name: "إجراءات التجميل", url: absoluteUrl("/procedures") },
+  ])
+  const listJsonLd = itemListJsonLd({
+    name: "إجراءات التجميل على Med Aura",
+    items: visibleGroups.flatMap((g) =>
+      g.procedures.map((p) => ({
+        name: p.nameAr,
+        url: absoluteUrl(`/procedures/${p.slug}`),
+        image: absoluteUrl(serviceImageForCategory(g.slug)),
+      })),
+    ),
+  })
 
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([breadcrumb, listJsonLd]) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <PageHero
           eyebrow="الإجراءات"
           title="اختَر الإجراء وأنت فاهم الخطوة"
           subtitle="استكشف الإجراءات الجراحية وغير الجراحية بصورة أوضح: ما طبيعتها، كم تحتاج للتعافي، ومن الأطباء المناسبين لها."
-          imageSrc="/demo-services/aesthetic-treatment-room.png"
+          imageSrc="/demo-services/service-face-neck.png"
           imageAlt="غرفة علاج تجميلي حديثة"
           stats={[
             { label: "تصنيفات", value: visibleGroups.length.toLocaleString("ar-SA-u-nu-latn") },
@@ -81,7 +108,7 @@ export default async function ProceduresPage() {
                           >
                             <div className="relative h-32 overflow-hidden bg-muted">
                               <Image
-                                src={procedureImageForCategory(g.slug)}
+                                src={serviceImageForCategory(g.slug)}
                                 alt=""
                                 fill
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -120,9 +147,4 @@ export default async function ProceduresPage() {
       <SiteFooter />
     </div>
   )
-}
-
-function procedureImageForCategory(slug: string): string {
-  if (slug === "dental" || slug === "hair") return "/demo-services/aesthetic-clinic-lounge.png"
-  return "/demo-services/aesthetic-treatment-room.png"
 }

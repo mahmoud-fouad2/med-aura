@@ -22,14 +22,17 @@ import { query } from "@/lib/db/query"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
 import { countryNameAr } from "@/lib/status-labels"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "مراكز التجميل",
   description:
-    "تصفّح مراكز التجميل المعتمدة على Med Aura واطّلع على أطبائها وخدماتها.",
-}
+    "تصفّح مراكز التجميل المعتمدة على Med Aura، وقارن الأطباء والخدمات والتقييمات قبل الحجز.",
+  path: "/centers",
+  image: "/demo-services/aesthetic-clinic-lounge.png",
+})
 
 export default async function CentersPage() {
   const user = await getCurrentUser()
@@ -45,9 +48,27 @@ export default async function CentersPage() {
   ])
   const centers = res.status === "ok" ? res.data : []
   const doctorsTotal = centers.reduce((sum, c) => sum + c.doctorCount, 0)
+  const structuredData = [
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "المراكز", url: absoluteUrl("/centers") },
+    ]),
+    itemListJsonLd({
+      name: "مراكز التجميل على Med Aura",
+      items: centers.map((c) => ({
+        name: c.name,
+        url: absoluteUrl(`/centers/${c.slug}`),
+        image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+      })),
+    }),
+  ]
 
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <PageHero

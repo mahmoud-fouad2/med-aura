@@ -14,7 +14,13 @@ import { Stagger, StaggerItem, Reveal } from "@/components/motion"
 import { getProcedureBySlug } from "@/lib/data/procedures"
 import { searchDoctors } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
-import { appUrl } from "@/lib/env"
+import {
+  SITE_NAME,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  serviceImageForProcedure,
+} from "@/lib/seo"
 
 import { getI18n } from "@/lib/i18n"
 
@@ -26,16 +32,20 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const { t } = await getI18n()
+  const { t, locale } = await getI18n()
   const r = await query(() => getProcedureBySlug(slug))
   const p = r.status === "ok" ? r.data : null
   if (!p) return { title: t.common.none }
-  return {
+  return buildPageMetadata({
     title: `${p.nameAr} — ${p.categoryNameAr}`,
     description:
       p.descriptionAr ??
-      `Learn about ${p.nameAr} and book a consultation with a certified plastic surgeon on Med Aura.`,
-  }
+      `تعرّف على ${p.nameAr} وقارن بين الأطباء المناسبين قبل حجز الاستشارة.`,
+    path: `/procedures/${p.slug}`,
+    image: serviceImageForProcedure(p.categorySlug),
+    locale: locale === "en" ? "en" : "ar",
+    type: "article",
+  })
 }
 
 export default async function ProcedureDetailPage({
@@ -68,6 +78,7 @@ export default async function ProcedureDetailPage({
 
   const doctorsRes = await query(() => searchDoctors({ procedure: slug, pageSize: 6 }))
   const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
+  const procedureImage = serviceImageForProcedure(procedure.categorySlug)
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -76,21 +87,36 @@ export default async function ProcedureDetailPage({
     alternateName: procedure.nameEn,
     category: procedure.categoryNameAr,
     description: procedure.descriptionAr ?? undefined,
-    url: `${appUrl()}/procedures/${procedure.slug}`,
+    image: absoluteUrl(procedureImage),
+    url: absoluteUrl(`/procedures/${procedure.slug}`),
+    provider: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: absoluteUrl("/"),
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${absoluteUrl("/search")}?procedure=${procedure.slug}`,
+    },
   }
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "الرئيسية", url: absoluteUrl("/") },
+    { name: "إجراءات التجميل", url: absoluteUrl("/procedures") },
+    { name: procedure.nameAr, url: absoluteUrl(`/procedures/${procedure.slug}`) },
+  ])
 
   return (
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumb]) }}
       />
       <SiteHeader />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border bg-background">
           <div className="absolute inset-0">
             <Image
-              src="/demo-services/aesthetic-treatment-room.png"
+              src={procedureImage}
               alt=""
               fill
               priority

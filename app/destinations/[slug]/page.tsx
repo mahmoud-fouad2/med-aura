@@ -16,7 +16,13 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { getDestinationBySlug } from "@/lib/data/destinations"
-import { appUrl } from "@/lib/env"
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  geoCoordinatesJsonLd,
+  itemListJsonLd,
+} from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -28,13 +34,12 @@ export async function generateMetadata({
   const { slug } = await params
   const d = await getDestinationBySlug(slug)
   if (!d) return { title: "الوجهة غير موجودة" }
-  return {
+  return buildPageMetadata({
     title: `${d.nameAr} — وجهة تجميلية`,
     description: `الأطباء والمراكز التجميلية المعتمدون في ${d.nameAr} على Med Aura.`,
-    alternates: {
-      canonical: `${appUrl()}/destinations/${d.code.toLowerCase()}`,
-    },
-  }
+    path: `/destinations/${d.code.toLowerCase()}`,
+    image: "/demo-services/aesthetic-clinic-lounge.png",
+  })
 }
 
 export default async function DestinationDetailPage({
@@ -51,16 +56,47 @@ export default async function DestinationDetailPage({
     "@type": "Place",
     name: d.nameAr,
     alternateName: d.nameEn,
+    image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
     address: { "@type": "PostalAddress", addressCountry: d.code },
-    url: `${appUrl()}/destinations/${d.code.toLowerCase()}`,
+    ...(geoCoordinatesJsonLd(d.code) ? { geo: geoCoordinatesJsonLd(d.code) } : {}),
+    url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`),
+    containsPlace: d.cities.map((city) => ({
+      "@type": "City",
+      name: city.nameAr,
+      alternateName: city.nameEn,
+    })),
   }
+  const structuredData = [
+    jsonLd,
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "الوجهات", url: absoluteUrl("/destinations") },
+      { name: d.nameAr, url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`) },
+    ]),
+    itemListJsonLd({
+      name: `المراكز المعتمدة في ${d.nameAr}`,
+      items: d.centers.map((c) => ({
+        name: c.name,
+        url: absoluteUrl(`/centers/${c.slug}`),
+        image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+      })),
+    }),
+    itemListJsonLd({
+      name: `الأطباء المعتمدون في ${d.nameAr}`,
+      items: d.doctors.map((doctor) => ({
+        name: doctor.name,
+        url: absoluteUrl(`/doctors/${doctor.slug}`),
+        ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
+      })),
+    }),
+  ]
 
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border bg-background">

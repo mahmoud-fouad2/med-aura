@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { CategoryIconBadge } from "@/components/marketing/category-icon"
+import { serviceImageForCategory } from "@/lib/seo"
 
 export async function PopularProcedures() {
   const res = await query(() =>
@@ -22,6 +23,7 @@ export async function PopularProcedures() {
         recoveryDays: procedureT.recoveryDays,
         categoryNameAr: procedureCategory.nameAr,
         categoryIcon: procedureCategory.icon,
+        categorySlug: procedureCategory.slug,
       })
       .from(procedureT)
       .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
@@ -65,7 +67,7 @@ export async function PopularProcedures() {
                 >
                   <div className="relative h-28 overflow-hidden bg-muted">
                     <Image
-                      src="/demo-services/aesthetic-treatment-room.png"
+                      src={serviceImageForCategory(p.categorySlug)}
                       alt=""
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

@@ -10,23 +10,44 @@ import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listDestinations } from "@/lib/data/destinations"
 import { query } from "@/lib/db/query"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = {
-  title: "الوجهات",
+export const metadata = buildPageMetadata({
+  title: "الوجهات التجميلية",
   description:
-    "استكشف الدول التي تعتمد فيها Med Aura أطباء ومراكز تجميل موثقة، واختر وجهتك المناسبة لرحلتك التجميلية.",
-}
+    "استكشف الدول التي تضم أطباء ومراكز تجميل معتمدة على Med Aura، وقارن الوجهات حسب المدن والخدمات المتاحة.",
+  path: "/destinations",
+  image: "/demo-services/aesthetic-clinic-lounge.png",
+})
 
 export default async function DestinationsPage() {
   const res = await query(() => listDestinations())
   const destinations = res.status === "ok" ? res.data : []
   const doctorsTotal = destinations.reduce((sum, d) => sum + d.approvedDoctors, 0)
   const centersTotal = destinations.reduce((sum, d) => sum + d.approvedCenters, 0)
+  const structuredData = [
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "الوجهات", url: absoluteUrl("/destinations") },
+    ]),
+    itemListJsonLd({
+      name: "الوجهات التجميلية على Med Aura",
+      items: destinations.map((d) => ({
+        name: d.nameAr,
+        url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`),
+        image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+      })),
+    }),
+  ]
 
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <PageHero

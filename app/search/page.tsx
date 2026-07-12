@@ -28,13 +28,16 @@ import { getI18n } from "@/lib/i18n"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
 import { firstParam } from "@/lib/utils"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "ابحث عن طبيب تجميل",
-  description: "قارن بين أطباء تجميل معتمدين حسب الإجراء والمدينة ونوع الاستشارة.",
-}
+  description: "قارن بين أطباء تجميل معتمدين حسب الإجراء والمدينة ونوع الاستشارة والتقييمات المتاحة.",
+  path: "/search",
+  image: "/hero-medaura-consultation.png",
+})
 
 
 export default async function SearchPage({
@@ -110,9 +113,27 @@ export default async function SearchPage({
     params.surgical,
     params.q,
   ].filter(Boolean).length
+  const structuredData = [
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "الأطباء", url: absoluteUrl("/search") },
+    ]),
+    itemListJsonLd({
+      name: "أطباء التجميل على Med Aura",
+      items: results.map((doctor) => ({
+        name: doctor.name,
+        url: absoluteUrl(`/doctors/${doctor.slug}`),
+        ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
+      })),
+    }),
+  ]
 
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <main className="flex-1 bg-section-soft">
         <section className="relative overflow-hidden border-b border-border bg-background">
