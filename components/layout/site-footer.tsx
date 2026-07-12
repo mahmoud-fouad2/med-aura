@@ -1,6 +1,10 @@
 import Link from "next/link"
-import { HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
+import { HeartHandshake, ShieldCheck, Smartphone, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
+
+/** Fixed-tag release asset kept fresh by the "Android APK" workflow. */
+const APK_DOWNLOAD_URL =
+  "https://github.com/mahmoud-fouad2/med-aura/releases/download/apk-latest/med-aura.apk"
 
 export function SiteFooter() {
   const year = new Date().getFullYear()
@@ -53,6 +57,18 @@ export function SiteFooter() {
                 دعم إنساني عندما تحتاج المساعدة
               </span>
             </div>
+            <a
+              href={APK_DOWNLOAD_URL}
+              className="group inline-flex w-fit items-center gap-2.5 rounded-xl border border-primary/25 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:border-primary/45 hover:bg-primary/10"
+            >
+              <Smartphone className="size-4.5 transition-transform duration-300 group-hover:-rotate-6" />
+              <span className="flex flex-col text-start leading-tight">
+                <span>حمّل تطبيق Med Aura</span>
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  أندرويد — ملف APK مباشر
+                </span>
+              </span>
+            </a>
           </div>
 
           <FooterCol

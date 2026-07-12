@@ -33,6 +33,9 @@ const COUNTRY: Record<string, string> = {
  * (e.g. a value already spelled out in Arabic) for anything not in the map. */
 export const countryNameAr = (value: string): string => COUNTRY[value] ?? value
 
+/** ISO codes of the countries the platform serves — signup/profile selects. */
+export const COUNTRY_CODES = Object.keys(COUNTRY)
+
 const CASE: Record<string, string> = {
   DRAFT: "مسودة",
   SUBMITTED: "تم الإرسال",

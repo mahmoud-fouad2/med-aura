@@ -69,16 +69,3 @@ export function LogoMark({
     </svg>
   )
 }
-
-export function Wordmark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "font-heading text-xl font-extrabold tracking-[0.18em] text-foreground",
-        className,
-      )}
-    >
-      MED<span className="text-primary"> AURA</span>
-    </span>
-  )
-}

@@ -39,7 +39,7 @@ export default function ForDoctorsPage() {
           eyebrow="لمقدّمي الخدمة"
           title="انضم إلى Med Aura كطبيب تجميل"
           subtitle="اعرض خبرتك أمام مرضى يبحثون عن رعاية موثوقة، وأدِر رحلتهم من الاستشارة حتى المتابعة — بعد التحقق من ترخيصك."
-          primary={{ href: "/sign-up?next=/dashboard/provider/apply", label: "ابدأ طلب الانضمام" }}
+          primary={{ href: "/sign-up?type=doctor", label: "ابدأ طلب الانضمام" }}
           secondary={{ href: "/how-it-works", label: "كيف تعمل المنصة" }}
         />
 
