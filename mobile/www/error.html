@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>لا يوجد اتصال — Med Aura</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #fffcf7;
+        color: #1a1740;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      h1 { font-size: 20px; margin: 0; }
+      p { margin: 0; max-width: 320px; line-height: 1.7; color: #6b6884; font-size: 14px; }
+      button {
+        margin-top: 10px;
+        border: 0;
+        border-radius: 12px;
+        background: #4a1d96;
+        color: #fff;
+        padding: 12px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>لا يوجد اتصال بالإنترنت</h1>
+    <p>تعذّر الوصول إلى Med Aura الآن. تحقّق من اتصالك بالشبكة ثم أعد المحاولة.</p>
+    <button onclick="window.location.replace('https://med-aura.onrender.com')">إعادة المحاولة</button>
+  </body>
+</html>

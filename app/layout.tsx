@@ -12,6 +12,8 @@ import {
   websiteJsonLd,
 } from "@/lib/seo"
 import { Toaster } from "@/components/ui/toaster"
+import { ServiceWorkerRegistration } from "@/components/pwa/sw-registration"
+import { NativeBridge } from "@/components/mobile/native-bridge"
 
 const alexandria = localFont({
   src: "../public/fonts/Alexandria-Variable.woff2",
@@ -139,6 +141,8 @@ export default async function RootLayout({
       <body className="font-sans antialiased">
         {children}
         <Toaster />
+        <ServiceWorkerRegistration />
+        <NativeBridge />
       </body>
     </html>
   )
