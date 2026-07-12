@@ -228,6 +228,15 @@
       );
   }
 
+  /* gold badge gradient — trust-flavored numbered/icon badges */
+  .bg-gold-gradient {
+    background-image: linear-gradient(
+      to bottom right,
+      oklch(0.82 0.08 85),
+      oklch(0.62 0.11 75)
+    );
+  }
+
   /* elegant, slightly purple-tinted elevation */
   .shadow-elegant {
     box-shadow:

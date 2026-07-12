@@ -79,7 +79,7 @@ export default function HowItWorksPage() {
               {steps.map((step, i) => (
                 <StaggerItem key={step.title}>
                   <div className="group/feature relative flex h-full flex-col gap-4.5 rounded-2xl border border-white/60 bg-card/85 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[oklch(0.82_0.08_85)] to-[oklch(0.62_0.11_75)] text-white shadow-elegant ring-1 ring-gold/30 transition-transform duration-300 group-hover/feature:scale-105">
+                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gold-gradient text-white shadow-elegant ring-1 ring-gold/30 transition-transform duration-300 group-hover/feature:scale-105">
                       <step.icon className="size-6" />
                     </span>
                     <div>

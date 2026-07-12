@@ -216,7 +216,7 @@ function ReviewForm({ caseId }: { caseId: string }) {
             onClick={() => setOverall(n)}
             className="p-1"
           >
-            <Star className={`size-7 ${n <= overall ? "fill-[var(--gold)] text-[var(--gold)]" : "text-muted-foreground"}`} />
+            <Star className={`size-7 ${n <= overall ? "fill-current text-gold" : "text-muted-foreground"}`} />
           </button>
         ))}
       </div>

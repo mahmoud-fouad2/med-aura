@@ -178,7 +178,7 @@ export default async function CentersPage() {
                           </span>
                           {c.reviewCount > 0 && c.rating ? (
                             <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                              <Star className="size-3 fill-current text-warning-foreground" />
+                              <Star className="size-3 fill-current text-gold" />
                               <span className="tabular-nums">{c.rating}</span>
                               <span className="text-muted-foreground">
                                 ({c.reviewCount})
