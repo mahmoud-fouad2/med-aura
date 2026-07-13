@@ -40,9 +40,15 @@ test("search shows only the approved, valid-license doctor", async ({ page }) =>
 test("a visitor can register a patient account (real DB write)", async ({ page }) => {
   const email = `e2e+${Date.now()}@medaura.test`
   await page.goto("/sign-up")
+  // Step 1: the account-type choice
+  await page.getByRole("button", { name: /أنا مريض/ }).click()
+  // Step 2: the full profile form
   await page.getByLabel("الاسم الكامل").fill("مريض اختبار")
   await page.getByLabel("البريد الإلكتروني").fill(email)
   await page.getByLabel("كلمة المرور").fill("E2ePassw0rd!")
+  await page.getByLabel("رقم الجوال").fill("+966501234567")
+  await page.getByLabel(/دولة الإقامة/).selectOption("SA")
+  await page.getByRole("checkbox").check()
   await page.getByRole("button", { name: /أنشئ|إنشاء|تسجيل/ }).click()
   // auto sign-in → dashboard greets the patient by first name
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })

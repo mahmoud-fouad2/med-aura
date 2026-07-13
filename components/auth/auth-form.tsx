@@ -103,13 +103,17 @@ export function AuthForm({
       residenceCountry: country,
       city: city || undefined,
     })
-    setLoading(false)
     if (!profile.ok) {
+      setLoading(false)
       setError(profile.error)
       return
     }
-    router.push(nextPath || profile.next)
-    router.refresh()
+    // Hard navigation on purpose: right after the server action resolves,
+    // router.push + router.refresh race each other (refresh re-renders the
+    // current route and cancels the pending push, leaving the user stuck on
+    // /sign-up). A full document load also picks up the fresh session
+    // server-side in one step. Loading stays on until the page unloads.
+    window.location.assign(nextPath || profile.next)
   }
 
   // Sign-up starts by choosing the account type (unless preselected via URL).
