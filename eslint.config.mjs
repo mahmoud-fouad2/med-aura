@@ -16,6 +16,9 @@ const eslintConfig = [
       "e2e/**",
       "*.config.mjs",
       "*.config.ts",
+      // The native app lints/typechecks inside its own package (apps/mobile),
+      // with its own dependencies — the web toolchain must not walk into it.
+      "apps/**",
     ],
   },
   {
