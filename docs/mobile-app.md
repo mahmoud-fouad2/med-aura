@@ -37,10 +37,31 @@ the web uses (`lib/mobile-api.ts`). `lib/auth.ts` runs the Better Auth
 
 - Dev: `cd apps/mobile && npm install && npx expo start` (point
   `EXPO_PUBLIC_API_URL` at a LAN dev server if not using production).
-- **APK from CI**: Actions → **Native App Android** → artifact
-  `med-aura-native-apk`. Native folders are generated on the runner
+- **APK**: the **Native App Android** workflow builds `assembleRelease`
+  and publishes it to the fixed `apk-latest` release — the same URL the
+  site footer links. Native folders are generated on the runner
   (`expo prebuild`) and never committed.
 - iOS: same codebase; `npx expo prebuild -p ios` on a Mac with Xcode.
+
+### Signing (read before store release)
+
+Release APKs are signed with `apps/mobile/signing/medaura-dist.p12` via
+`scripts/apply-release-signing.mjs` (post-prebuild). This keystore is
+**deliberately committed** so every CI build carries the SAME signature —
+rotating debug keys were why phones refused to install/update the APK.
+Because the repo is public, treat it strictly as a **testing-distribution
+key**: before publishing to Google Play, generate a private keystore
+(kept in Actions secrets, never committed) and enroll in Play App
+Signing. Installing on a device: enable "install from unknown sources"
+for the browser, and uninstall any previously installed Med Aura build
+once (older builds carry a different signature).
+
+### Install troubleshooting
+
+- "App not installed / cannot install": uninstall any previous Med Aura
+  app first (signature mismatch), then reinstall.
+- Download the APK from the footer link (a direct `.apk`). The Actions
+  *artifact* downloads as a `.zip` — unzip it first if you use that path.
 
 ### Next milestones
 
