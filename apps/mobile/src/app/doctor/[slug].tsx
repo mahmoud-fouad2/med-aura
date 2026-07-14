@@ -1,7 +1,6 @@
 import { Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
 import {
   AppText,
@@ -12,7 +11,6 @@ import {
   Skeleton,
 } from "../../components/ui"
 import { useDoctor } from "../../lib/api"
-import { API_URL } from "../../lib/config"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
 
@@ -191,11 +189,7 @@ export default function DoctorProfile() {
           <Button
             label={t.doctor.book}
             icon="calendar"
-            onPress={() =>
-              void WebBrowser.openBrowserAsync(
-                `${API_URL}/doctors/${doctor.data!.slug}/book`,
-              )
-            }
+            onPress={() => router.push(`/booking/${doctor.data!.slug}`)}
           />
           <AppText variant="caption" color={colors.textFaint} style={{ textAlign: "center" }}>
             {t.doctor.bookNote}

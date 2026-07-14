@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# distribution-testing keystore is intentionally committed (see docs/mobile-app.md)
+!signing/medaura-dist.p12

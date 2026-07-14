@@ -90,6 +90,21 @@ async function request<T>(
   return body.data
 }
 
+export type ConsultationType = "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
+
+export type SlotsResponse = {
+  doctorId: string
+  consultationFee: string | null
+  currency: string
+  slots: { startsAt: string; endsAt: string }[]
+}
+
+export type BookingResult = {
+  appointmentId: string
+  paymentConfigured: boolean
+  checkoutUrl?: string
+}
+
 export const api = {
   me: () => request<Me>("/api/mobile/v1/me"),
   home: () => request<HomeData>("/api/mobile/v1/home"),
@@ -106,6 +121,16 @@ export const api = {
   },
   doctor: (slug: string) =>
     request<DoctorDetail>(`/api/mobile/v1/doctors/${slug}`, { auth: false }),
+  slots: (slug: string, type: ConsultationType) =>
+    request<SlotsResponse>(
+      `/api/mobile/v1/doctors/${slug}/slots?type=${type}`,
+      { auth: false },
+    ),
+  book: (input: { doctorId: string; startsAt: string; type: ConsultationType }) =>
+    request<BookingResult>("/api/mobile/v1/bookings", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
   completeSignupProfile: (input: {
     accountType: "patient" | "doctor"
     phone: string
@@ -140,6 +165,14 @@ export const useDoctor = (slug: string) =>
     queryKey: ["doctor", slug],
     queryFn: () => api.doctor(slug),
     staleTime: 60_000,
+  })
+
+export const useSlots = (slug: string, type: ConsultationType) =>
+  useQuery({
+    queryKey: ["slots", slug, type],
+    queryFn: () => api.slots(slug, type),
+    // Availability is time-sensitive; keep it fresh.
+    staleTime: 15_000,
   })
 
 export const useMe = () =>

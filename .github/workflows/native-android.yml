@@ -14,6 +14,8 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # publishes the APK to the fixed "apk-latest" release
     defaults:
       run:
         working-directory: apps/mobile
@@ -44,13 +46,33 @@ jobs:
         env:
           CI: "true"
 
-      - name: Build debug APK
+      - name: Apply release signing (consistent distribution key)
+        run: node scripts/apply-release-signing.mjs
+
+      - name: Build release APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APK for release
+        run: cp android/app/build/outputs/apk/release/app-release.apk med-aura.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: med-aura-native-apk
-          path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          path: apps/mobile/med-aura.apk
           retention-days: 30
+
+      # The site footer links this fixed asset:
+      # https://github.com/mahmoud-fouad2/med-aura/releases/download/apk-latest/med-aura.apk
+      - name: Publish APK to the apk-latest release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: تطبيق Med Aura للأندرويد
+          body: >
+            تطبيق Med Aura الأصلي للأندرويد — أحدث نسخة تُبنى تلقائيًا.
+            حمّل med-aura.apk وثبّته مباشرة (فعّل "التثبيت من مصادر غير
+            معروفة"، واحذف أي نسخة قديمة أولًا إن وُجدت).
+          files: apps/mobile/med-aura.apk
