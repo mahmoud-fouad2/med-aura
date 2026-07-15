@@ -1,37 +1,33 @@
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import {
   Dimensions,
   FlatList,
+  I18nManager,
   Pressable,
   View,
   type ViewToken,
 } from "react-native"
 import { router } from "expo-router"
+import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as SecureStore from "expo-secure-store"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated"
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import { AppText, Button } from "../components/ui"
+import { Logo, onboardingArt } from "../components/brand"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 import { ONBOARDING_KEY } from "./index"
 
 const { width: SCREEN_W } = Dimensions.get("window")
 
-const SLIDE_ICONS = [
-  "shield-checkmark",
-  "videocam",
-  "calendar",
-  "lock-closed",
+const SLIDE_ART = [
+  onboardingArt.trust,
+  onboardingArt.consult,
+  onboardingArt.journey,
+  onboardingArt.privacy,
 ] as const
-
-const SLIDE_TINTS = ["#F3EEFC", "#FBF1DE", "#E8F0FB", "#E5F5EC"] as const
 
 export default function Onboarding() {
   const { t } = useI18n()
@@ -51,12 +47,16 @@ export default function Onboarding() {
     listRef.current?.scrollToIndex({ index: i, animated: true })
   }
 
-  const onViewableItemsChanged = useRef(
+  // FlatList requires this callback to keep a stable identity for its whole
+  // life; useCallback with no deps gives that without reading a ref during
+  // render (which the compiler rejects).
+  const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       const first = viewableItems[0]
       if (first?.index != null) setIndex(first.index)
     },
-  ).current
+    [],
+  )
 
   return (
     <View
@@ -67,13 +67,17 @@ export default function Onboarding() {
         paddingBottom: insets.bottom + spacing.lg,
       }}
     >
+      {/* Brand bar: the logo is present from the very first screen. */}
       <View
         style={{
           flexDirection: "row",
-          justifyContent: "flex-end",
+          alignItems: "center",
+          justifyContent: "space-between",
           paddingHorizontal: spacing.screen,
+          paddingVertical: spacing.sm,
         }}
       >
+        <Logo height={30} />
         <Pressable onPress={() => void finish()} hitSlop={12}>
           <AppText variant="sub" weight="medium" color={colors.textMuted}>
             {t.common.skip}
@@ -97,10 +101,21 @@ export default function Onboarding() {
               paddingHorizontal: spacing.xl,
               alignItems: "center",
               justifyContent: "center",
-              gap: spacing.xl,
+              gap: spacing.lg,
             }}
           >
-            <SlideVisual icon={SLIDE_ICONS[i]} tint={SLIDE_TINTS[i]} />
+            <Image
+              source={SLIDE_ART[i]}
+              style={{
+                width: Math.min(SCREEN_W - spacing.xl * 2, 320),
+                height: Math.min(SCREEN_W - spacing.xl * 2, 320),
+              }}
+              contentFit="contain"
+              transition={260}
+              // Decorative: the title/body below already carry the meaning.
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            />
             <View style={{ gap: spacing.sm, alignItems: "center" }}>
               <AppText variant="title" weight="heavy" style={{ textAlign: "center" }}>
                 {item.title}
@@ -108,7 +123,7 @@ export default function Onboarding() {
               <AppText
                 variant="body"
                 color={colors.textMuted}
-                style={{ textAlign: "center", maxWidth: 300 }}
+                style={{ textAlign: "center", maxWidth: 320 }}
               >
                 {item.body}
               </AppText>
@@ -134,6 +149,8 @@ export default function Onboarding() {
           {index > 0 ? (
             <Pressable
               onPress={() => goTo(index - 1)}
+              accessibilityRole="button"
+              accessibilityLabel={t.common.back}
               style={{
                 width: 52,
                 height: 52,
@@ -144,8 +161,10 @@ export default function Onboarding() {
                 justifyContent: "center",
               }}
             >
+              {/* "Back" points at the previous slide, which sits to the right
+                  in Arabic and to the left in English. */}
               <Ionicons
-                name="arrow-forward"
+                name={I18nManager.isRTL ? "arrow-forward" : "arrow-back"}
                 size={20}
                 color={colors.textMuted}
               />
@@ -162,67 +181,12 @@ export default function Onboarding() {
   )
 }
 
-/** Layered brand visual — soft tinted disc, ring, and a bold icon. */
-function SlideVisual({
-  icon,
-  tint,
-}: {
-  icon: (typeof SLIDE_ICONS)[number]
-  tint: string
-}) {
-  const scale = useSharedValue(0.9)
-  scale.value = withSpring(1, { damping: 14, stiffness: 120 })
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }))
-  return (
-    <Animated.View
-      style={[
-        {
-          width: 220,
-          height: 220,
-          borderRadius: 110,
-          backgroundColor: tint,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        style,
-      ]}
-    >
-      <View
-        style={{
-          width: 160,
-          height: 160,
-          borderRadius: 80,
-          backgroundColor: "#FFFFFF",
-          alignItems: "center",
-          justifyContent: "center",
-          borderWidth: 1,
-          borderColor: colors.border,
-        }}
-      >
-        <Ionicons name={icon} size={64} color={colors.primary} />
-      </View>
-      <View
-        style={{
-          position: "absolute",
-          top: 18,
-          right: 26,
-          width: 22,
-          height: 22,
-          borderRadius: 11,
-          backgroundColor: colors.gold,
-          opacity: 0.85,
-        }}
-      />
-    </Animated.View>
-  )
-}
-
 function Dot({ active }: { active: boolean }) {
   const style = useAnimatedStyle(() => ({
     width: withTiming(active ? 22 : 8, { duration: 200 }),
-    backgroundColor: active ? colors.primary : colors.border,
+    backgroundColor: withTiming(active ? colors.primary : colors.border, {
+      duration: 200,
+    }),
   }))
   return <Animated.View style={[{ height: 8, borderRadius: 4 }, style]} />
 }

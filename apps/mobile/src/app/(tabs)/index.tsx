@@ -1,5 +1,6 @@
 import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { router } from "expo-router"
+import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -11,6 +12,7 @@ import {
   Skeleton,
   StatusPill,
 } from "../../components/ui"
+import { brandAssets, Logo, stateArt } from "../../components/brand"
 import { useHome, type Appointment, type Doctor } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing } from "../../theme"
@@ -35,39 +37,24 @@ export default function Home() {
         />
       }
     >
-      {/* Hero */}
+      {/* Hero — brand artwork behind the greeting, not a flat colour block. */}
       <View
         style={{
-          backgroundColor: colors.primary,
-          paddingTop: insets.top + spacing.lg,
+          paddingTop: insets.top + spacing.md,
           paddingBottom: spacing.xxl + spacing.lg,
           paddingHorizontal: spacing.screen,
           borderBottomLeftRadius: 28,
           borderBottomRightRadius: 28,
+          backgroundColor: colors.primary,
+          overflow: "hidden",
         }}
       >
-        <View
-          style={{
-            position: "absolute",
-            top: -30,
-            end: -30,
-            width: 160,
-            height: 160,
-            borderRadius: 80,
-            backgroundColor: "rgba(255,255,255,0.07)",
-          }}
+        <Image
+          source={brandAssets.homeHero}
+          style={{ position: "absolute", width: "100%", height: "100%" }}
+          contentFit="cover"
         />
-        <View
-          style={{
-            position: "absolute",
-            bottom: 20,
-            start: -20,
-            width: 90,
-            height: 90,
-            borderRadius: 45,
-            backgroundColor: "rgba(201,162,75,0.22)",
-          }}
-        />
+        <Logo height={26} variant="white" style={{ marginBottom: spacing.lg }} />
         <View style={{ gap: 4 }}>
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
             {greeting}
@@ -130,6 +117,7 @@ export default function Home() {
             <Card>
               <EmptyState
                 icon="calendar-outline"
+                art={stateArt.noAppointments}
                 title={t.home.noUpcoming}
                 body={t.home.bookFirst}
                 action={

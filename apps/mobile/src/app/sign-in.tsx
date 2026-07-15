@@ -8,10 +8,12 @@ import {
   View,
 } from "react-native"
 import { Link, router } from "expo-router"
+import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card } from "../components/ui"
+import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
@@ -49,6 +51,13 @@ export default function SignIn() {
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {/* Soft brand wash behind the form — the screen reads as part of the
+          product, not a bare web form on white. */}
+      <Image
+        source={brandAssets.authBg}
+        style={{ position: "absolute", width: "100%", height: "100%" }}
+        contentFit="cover"
+      />
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -60,18 +69,7 @@ export default function SignIn() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ alignItems: "center", gap: spacing.sm, marginBottom: spacing.xl }}>
-          <View
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 24,
-              backgroundColor: colors.primarySoft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="sparkles" size={32} color={colors.primary} />
-          </View>
+          <Logo height={54} style={{ marginBottom: spacing.sm }} />
           <AppText variant="hero" weight="heavy">
             {t.auth.welcomeTitle}
           </AppText>

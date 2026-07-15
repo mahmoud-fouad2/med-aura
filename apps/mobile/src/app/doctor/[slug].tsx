@@ -7,9 +7,11 @@ import {
   Avatar,
   Button,
   Card,
+  ChevronBack,
   EmptyState,
   Skeleton,
 } from "../../components/ui"
+import { stateArt } from "../../components/brand"
 import { useDoctor } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -34,6 +36,8 @@ export default function DoctorProfile() {
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t.common.back}
           style={{
             width: 38,
             height: 38,
@@ -43,7 +47,7 @@ export default function DoctorProfile() {
             justifyContent: "center",
           }}
         >
-          <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+          <ChevronBack size={20} color="#FFFFFF" />
         </Pressable>
       </View>
 
@@ -65,6 +69,7 @@ export default function DoctorProfile() {
           <Card>
             <EmptyState
               icon="cloud-offline-outline"
+              art={stateArt.offline}
               title={t.common.loadFailed}
               action={
                 <Button

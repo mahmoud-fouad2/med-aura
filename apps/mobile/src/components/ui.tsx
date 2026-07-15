@@ -1,6 +1,7 @@
-import { type ReactNode } from "react"
+import { useCallback, useEffect, type ReactNode } from "react"
 import {
   ActivityIndicator,
+  I18nManager,
   Pressable,
   StyleSheet,
   Text,
@@ -9,7 +10,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native"
-import { Image } from "expo-image"
+import { Image, type ImageSource } from "expo-image"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import Animated, {
@@ -84,8 +85,23 @@ export function Button({
 }) {
   const scale = useSharedValue(1)
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }))
+
+  // `.set()`/`.get()` rather than `.value` — the compiler treats a hook's
+  // return value as immutable and rejects `.value =`, while these accessors
+  // are Reanimated's supported, compiler-safe API for the same thing.
+  const handlePressIn = useCallback(() => {
+    scale.set(withSpring(0.97, { damping: 20, stiffness: 300 }))
+  }, [scale])
+  const handlePressOut = useCallback(() => {
+    scale.set(withSpring(1, { damping: 20, stiffness: 300 }))
+  }, [scale])
+  const handlePress = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    onPress()
+  }, [onPress])
+
   const bg =
     variant === "primary"
       ? colors.primary
@@ -98,16 +114,9 @@ export function Button({
     <AnimatedPressable
       accessibilityRole="button"
       disabled={disabled || loading}
-      onPressIn={() => {
-        scale.value = withSpring(0.97, { damping: 20, stiffness: 300 })
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 20, stiffness: 300 })
-      }}
-      onPress={() => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-        onPress()
-      }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
       style={[
         {
           backgroundColor: bg,
@@ -169,6 +178,45 @@ export function Card({
     >
       {children}
     </Pressable>
+  )
+}
+
+/**
+ * Direction-aware chevrons. "Back" and "forward" are *logical* directions:
+ * back points right in Arabic and left in English. Hardcoding
+ * `chevron-back`/`chevron-forward` looks correct in one language and
+ * backwards in the other, so every navigational chevron goes through here.
+ */
+export function ChevronBack({
+  size = 20,
+  color = colors.text,
+}: {
+  size?: number
+  color?: string
+}) {
+  return (
+    <Ionicons
+      name={I18nManager.isRTL ? "chevron-forward" : "chevron-back"}
+      size={size}
+      color={color}
+    />
+  )
+}
+
+/** Points "onward" — into a detail screen, or the next item in a list. */
+export function ChevronForward({
+  size = 20,
+  color = colors.textFaint,
+}: {
+  size?: number
+  color?: string
+}) {
+  return (
+    <Ionicons
+      name={I18nManager.isRTL ? "chevron-back" : "chevron-forward"}
+      size={size}
+      color={color}
+    />
   )
 }
 
@@ -252,8 +300,13 @@ export function StatusPill({
 /** Pulsing skeleton block for list/card loading. */
 export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
   const opacity = useSharedValue(0.5)
-  opacity.value = withRepeat(withTiming(1, { duration: 700 }), -1, true)
-  const animated = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  // Start the loop once on mount. Kicking it off during render (as this did)
+  // restarts the pulse on every re-render, so the shimmer visibly stutters
+  // whenever the parent updates.
+  useEffect(() => {
+    opacity.set(withRepeat(withTiming(1, { duration: 700 }), -1, true))
+  }, [opacity])
+  const animated = useAnimatedStyle(() => ({ opacity: opacity.get() }))
   return (
     <Animated.View
       style={[
@@ -265,22 +318,41 @@ export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
   )
 }
 
+/**
+ * Empty/status block. Prefers a brand illustration (`art`) and falls back to
+ * a tinted icon disc — so a screen without dedicated art still looks finished
+ * rather than broken.
+ */
 export function EmptyState({
   icon,
+  art,
   title,
   body,
   action,
 }: {
   icon: keyof typeof Ionicons.glyphMap
+  /** Illustration from `stateArt` — takes precedence over `icon`. */
+  art?: ImageSource
   title: string
   body?: string
   action?: ReactNode
 }) {
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={30} color={colors.primaryMuted} />
-      </View>
+      {art ? (
+        <Image
+          source={art}
+          style={{ width: 190, height: 143 }}
+          contentFit="contain"
+          transition={220}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+      ) : (
+        <View style={styles.emptyIcon}>
+          <Ionicons name={icon} size={30} color={colors.primaryMuted} />
+        </View>
+      )}
       <AppText variant="heading" weight="bold" style={{ textAlign: "center" }}>
         {title}
       </AppText>

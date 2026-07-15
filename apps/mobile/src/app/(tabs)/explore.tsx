@@ -7,9 +7,11 @@ import {
   AppText,
   Avatar,
   Card,
+  ChevronForward,
   EmptyState,
   Skeleton,
 } from "../../components/ui"
+import { stateArt } from "../../components/brand"
 import { useDoctors, type Doctor } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -67,6 +69,7 @@ export default function Explore() {
       ) : doctors.isError ? (
         <EmptyState
           icon="cloud-offline-outline"
+          art={stateArt.offline}
           title={t.common.loadFailed}
           action={
             <AppText
@@ -125,7 +128,7 @@ function DoctorRow({ doctor }: { doctor: Doctor }) {
           {location} · {doctor.yearsExperience} {t.explore.years}
         </AppText>
       </View>
-      <Ionicons name="chevron-back" size={18} color={colors.textFaint} />
+      <ChevronForward size={18} />
     </Card>
   )
 }

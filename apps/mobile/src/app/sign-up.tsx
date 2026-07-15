@@ -9,11 +9,19 @@ import {
   View,
 } from "react-native"
 import { Link, router } from "expo-router"
+import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as WebBrowser from "expo-web-browser"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
-import { AppText, Button, Card } from "../components/ui"
+import {
+  AppText,
+  Button,
+  Card,
+  ChevronBack,
+  ChevronForward,
+} from "../components/ui"
+import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
 import { api } from "../lib/api"
 import { API_URL } from "../lib/config"
@@ -90,6 +98,11 @@ export default function SignUp() {
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      <Image
+        source={brandAssets.authBg}
+        style={{ position: "absolute", width: "100%", height: "100%" }}
+        contentFit="cover"
+      />
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -101,6 +114,7 @@ export default function SignUp() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ alignItems: "center", gap: spacing.xs, marginBottom: spacing.xl }}>
+          <Logo height={44} style={{ marginBottom: spacing.md }} />
           <AppText variant="hero" weight="heavy">
             {t.auth.createTitle}
           </AppText>
@@ -141,9 +155,10 @@ export default function SignUp() {
           <Card style={{ gap: spacing.lg }}>
             <Pressable
               onPress={() => setAccountType(null)}
+              accessibilityRole="button"
               style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
             >
-              <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+              <ChevronBack size={14} color={colors.primary} />
               <AppText variant="caption" weight="medium" color={colors.primary}>
                 {accountType === "doctor" ? t.auth.doctorTitle : t.auth.patientTitle}
               </AppText>
@@ -308,7 +323,7 @@ function TypeCard({
           {body}
         </AppText>
       </View>
-      <Ionicons name="chevron-back" size={18} color={colors.textFaint} />
+      <ChevronForward size={18} />
     </Card>
   )
 }

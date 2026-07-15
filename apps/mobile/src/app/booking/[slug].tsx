@@ -6,14 +6,17 @@ import { useQueryClient } from "@tanstack/react-query"
 import * as WebBrowser from "expo-web-browser"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
+import { Image } from "expo-image"
 import {
   AppText,
   Avatar,
   Button,
   Card,
+  ChevronBack,
   EmptyState,
   Skeleton,
 } from "../../components/ui"
+import { stateArt } from "../../components/brand"
 import {
   api,
   useDoctor,
@@ -91,18 +94,14 @@ export default function Booking() {
           gap: spacing.lg,
         }}
       >
-        <View
-          style={{
-            width: 88,
-            height: 88,
-            borderRadius: 44,
-            backgroundColor: colors.successSoft,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="checkmark-circle" size={52} color={colors.success} />
-        </View>
+        <Image
+          source={stateArt.bookingSuccess}
+          style={{ width: 220, height: 165 }}
+          contentFit="contain"
+          transition={240}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
         <View style={{ alignItems: "center", gap: spacing.xs }}>
           <AppText variant="title" weight="heavy">
             {t.booking.successTitle}
@@ -149,8 +148,13 @@ export default function Booking() {
           backgroundColor: colors.card,
         }}
       >
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-forward" size={22} color={colors.text} />
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t.common.back}
+        >
+          <ChevronBack size={22} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="heading" weight="bold">
@@ -210,6 +214,7 @@ export default function Booking() {
         ) : slots.isError ? (
           <EmptyState
             icon="cloud-offline-outline"
+            art={stateArt.offline}
             title={t.common.loadFailed}
             action={
               <Button
@@ -220,7 +225,11 @@ export default function Booking() {
             }
           />
         ) : days.length === 0 ? (
-          <EmptyState icon="calendar-outline" title={t.booking.noSlots} />
+          <EmptyState
+            icon="calendar-outline"
+            art={stateArt.noAppointments}
+            title={t.booking.noSlots}
+          />
         ) : (
           <>
             {/* Day picker */}

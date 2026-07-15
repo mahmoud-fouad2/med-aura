@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { FlatList, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
@@ -10,6 +10,7 @@ import {
   Skeleton,
   StatusPill,
 } from "../../components/ui"
+import { stateArt } from "../../components/brand"
 import { useAppointments, type Appointment } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -21,13 +22,19 @@ export default function Appointments() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming")
   const query = useAppointments()
 
-  const now = Date.now()
-  const all = query.data?.appointments ?? []
-  const rows = all.filter((a) =>
-    tab === "upcoming"
-      ? new Date(a.startsAt).getTime() >= now
-      : new Date(a.startsAt).getTime() < now,
-  )
+  // Splitting upcoming/past needs the wall clock, which is impure by nature.
+  // Reading it once per data change (rather than per render) keeps the list
+  // stable while the user is on the screen; a pull-to-refresh re-evaluates it.
+  const rows = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- clock read, intentional
+    const now = Date.now()
+    const all = query.data?.appointments ?? []
+    return all.filter((a) =>
+      tab === "upcoming"
+        ? new Date(a.startsAt).getTime() >= now
+        : new Date(a.startsAt).getTime() < now,
+    )
+  }, [query.data, tab])
 
   return (
     <View
@@ -85,6 +92,7 @@ export default function Appointments() {
       ) : query.isError ? (
         <EmptyState
           icon="cloud-offline-outline"
+          art={stateArt.offline}
           title={t.common.loadFailed}
           action={
             <AppText
@@ -107,6 +115,7 @@ export default function Appointments() {
           ListEmptyComponent={
             <EmptyState
               icon="calendar-outline"
+              art={stateArt.noAppointments}
               title={
                 tab === "upcoming"
                   ? t.appointments.emptyUpcoming

@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react"
-import { View } from "react-native"
 import { Redirect } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import * as SplashScreen from "expo-splash-screen"
 import { authClient } from "../lib/auth-client"
-import { colors } from "../theme"
+import { BrandSplash } from "../components/splash-screen"
 
 export const ONBOARDING_KEY = "medaura.onboarding.done"
 
@@ -44,6 +43,7 @@ export default function Boot() {
   if (state.status === "onboarding") return <Redirect href="/onboarding" />
   if (state.status === "auth") return <Redirect href="/sign-in" />
   if (state.status === "app") return <Redirect href="/(tabs)" />
-  // Splash is still covering the screen — keep the frame brand-colored.
-  return <View style={{ flex: 1, backgroundColor: colors.background }} />
+  // Session restore in flight — hold the branded splash rather than a blank
+  // frame, so the native splash → app handoff never flashes.
+  return <BrandSplash />
 }
