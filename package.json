@@ -26,19 +26,13 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:care-journey": "playwright test e2e/care-journey.spec.ts",
-    "mobile:sync": "cap sync android",
-    "mobile:assets": "tsx scripts/generate-mobile-assets.ts",
-    "mobile:open": "cap open android"
+    "app:assets": "tsx scripts/generate-app-assets.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",
     "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@base-ui/react": "^1.5.0",
     "@better-auth/expo": "^1.6.23",
-    "@capacitor/app": "^8.1.0",
-    "@capacitor/core": "^8.4.1",
-    "@capacitor/splash-screen": "^8.0.1",
-    "@capacitor/status-bar": "^8.0.2",
     "better-auth": "^1.6.22",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -59,8 +53,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@capacitor/android": "^8.4.1",
-    "@capacitor/cli": "^8.4.1",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.2.0",
