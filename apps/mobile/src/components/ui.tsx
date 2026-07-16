@@ -33,6 +33,7 @@ export function AppText({
   style,
   numberOfLines,
   onPress,
+  selectable,
 }: {
   children: ReactNode
   variant?: keyof typeof type
@@ -41,6 +42,8 @@ export function AppText({
   style?: StyleProp<TextStyle>
   numberOfLines?: number
   onPress?: () => void
+  /** Long-press to copy — for references and other support-facing values. */
+  selectable?: boolean
 }) {
   const fontWeight = (
     { regular: "400", medium: "600", bold: "700", heavy: "800" } as const
@@ -49,6 +52,7 @@ export function AppText({
     <Text
       numberOfLines={numberOfLines}
       onPress={onPress}
+      selectable={selectable}
       style={[
         {
           fontSize: type[variant],
@@ -170,6 +174,7 @@ export function Card({
   if (!onPress) return <View style={base}>{children}</View>
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={() => {
         void Haptics.selectionAsync()
         onPress()

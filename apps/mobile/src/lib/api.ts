@@ -1,4 +1,8 @@
-import { useQuery } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query"
 import { API_URL } from "./config"
 import { authClient } from "./auth-client"
 
@@ -193,9 +197,18 @@ export const useAppointments = () =>
   })
 
 export const useDoctors = (q: string) =>
-  useQuery({
+  useInfiniteQuery({
     queryKey: ["doctors", q],
-    queryFn: () => api.doctors({ q: q || undefined }),
+    queryFn: ({ pageParam }) =>
+      api.doctors({ q: q || undefined, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (last, pages) =>
+      pages.reduce((n, p) => n + p.doctors.length, 0) < last.total
+        ? last.page + 1
+        : undefined,
+    // While a new search term loads, the previous results stay on screen —
+    // no skeleton flash between keystrokes.
+    placeholderData: keepPreviousData,
     staleTime: 60_000,
   })
 

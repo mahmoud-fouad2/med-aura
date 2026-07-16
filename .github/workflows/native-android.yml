@@ -11,6 +11,13 @@ on:
       - ".github/workflows/native-android.yml"
   workflow_dispatch:
 
+# Two overlapping runs race on the same apk-latest release (one deletes the
+# asset while the other publishes → failed run + a release with no APK, i.e.
+# a dead footer link). Only the newest build matters — cancel the older one.
+concurrency:
+  group: native-android-apk
+  cancel-in-progress: true
+
 jobs:
   apk:
     runs-on: ubuntu-latest

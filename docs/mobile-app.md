@@ -19,11 +19,17 @@ core journey.
   terms). Sessions via Better Auth's Expo plugin — stored in
   Keychain/Keystore (`expo-secure-store`), never plain storage.
 - **Patient tabs**: Home (hero, quick actions, next appointment, featured
-  doctors), Explore (search + doctor list), Appointments (upcoming/past),
-  Account.
+  doctors, notification bell with unread badge), Explore (live debounced
+  search + infinite scroll), Appointments (upcoming/past → full details
+  screen with reference, payment status, policy), Account.
 - **Booking**: consultation type → day → slot → confirm, backed by the same
   `bookConsultation` action the web uses (double-booking rejected server-side);
   payment hands off to the secure page when Stripe is configured.
+- **Notifications center**: the same inbox the web dashboard shows —
+  mark-one/mark-all read, unread styling, illustrated empty state.
+- **Account, fully in-app**: edit profile (name/phone/country/city) and
+  change password (with optional revoke of other sessions) — native screens,
+  no browser hand-off.
 - **Settings**: account, language & appearance, notification preferences,
   security, support & info — on a native bottom sheet.
 - **App lock**: optional biometric unlock (fingerprint/face, device PIN as
@@ -46,10 +52,10 @@ database**, and a doctor with no photo gets an initials avatar.
 
 ## Backend
 
-`app/api/mobile/v1/*` (me, home, doctors, doctors/[slug],
-doctors/[slug]/slots, appointments, bookings, signup-profile) — thin JSON
-wrappers over the same session/RBAC/data layer the web uses
-(`lib/mobile-api.ts`). `lib/auth.ts` runs the Better Auth `expo()` plugin and
+`app/api/mobile/v1/*` (me [GET/PATCH], home, doctors, doctors/[slug],
+doctors/[slug]/slots, appointments, bookings, signup-profile,
+notifications [GET/POST]) — thin JSON wrappers over the same
+session/RBAC/data layer the web uses (`lib/mobile-api.ts`). `lib/auth.ts` runs the Better Auth `expo()` plugin and
 trusts the `medaura://` scheme.
 
 ## Running / building
@@ -82,11 +88,12 @@ Actions secrets, never committed) and enroll in Play App Signing.
 ## Not built yet
 
 - **iOS build** — needs a Mac; never claimed as passing from this environment.
-- **Push notifications** — the settings toggles persist the preference, but
-  delivery needs `expo-notifications` + a Firebase project (FCM) and a sender
-  in `lib/notifications`.
-- **Native profile editing / password change** — currently open the secure
-  web page.
+- **Push notifications** — the in-app notifications center is live, and the
+  settings toggles persist the preference, but *push delivery* needs
+  `expo-notifications` + a Firebase project (FCM) and a sender in
+  `lib/notifications`.
+- **Appointment cancel/reschedule from the app** — no server-side business
+  rules exist for it yet; the details screen links support instead.
 - **Files, invoices, provider (doctor/staff) experience** — web only so far.
 
 ## PWA layer (website, separate from the app)

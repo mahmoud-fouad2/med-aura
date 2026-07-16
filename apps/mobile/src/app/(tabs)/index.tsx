@@ -291,7 +291,10 @@ function AppointmentCard({
     minute: "2-digit",
   })
   return (
-    <Card style={{ gap: spacing.md }}>
+    <Card
+      onPress={() => router.push(`/appointment/${appointment.id}`)}
+      style={{ gap: spacing.md }}
+    >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
         <Avatar name={appointment.counterpartName} photoUrl={appointment.counterpartPhotoUrl} />
         <View style={{ flex: 1 }}>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { FlatList, Pressable, View } from "react-native"
+import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import {
@@ -131,7 +132,10 @@ function AppointmentRow({
   const starts = new Date(appointment.startsAt)
   const intl = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US"
   return (
-    <Card style={{ gap: spacing.md }}>
+    <Card
+      onPress={() => router.push(`/appointment/${appointment.id}`)}
+      style={{ gap: spacing.md }}
+    >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
         <Avatar
           name={appointment.counterpartName}

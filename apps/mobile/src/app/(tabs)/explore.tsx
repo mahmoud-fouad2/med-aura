@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { FlatList, TextInput, View } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { ActivityIndicator, FlatList, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -22,6 +22,18 @@ export default function Explore() {
   const [search, setSearch] = useState("")
   const [query, setQuery] = useState("")
   const doctors = useDoctors(query)
+
+  // Live search: results follow the typing after a beat — no submit needed,
+  // and no request per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(search.trim()), 350)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const rows = useMemo(
+    () => doctors.data?.pages.flatMap((p) => p.doctors) ?? [],
+    [doctors.data],
+  )
 
   return (
     <View
@@ -70,11 +82,25 @@ export default function Explore() {
         <QueryErrorState error={doctors.error} onRetry={() => void doctors.refetch()} />
       ) : (
         <FlatList
-          data={doctors.data?.doctors ?? []}
+          data={rows}
           keyExtractor={(d) => d.id}
           contentContainerStyle={{ padding: spacing.screen, gap: spacing.md }}
-          refreshing={doctors.isRefetching}
+          refreshing={doctors.isRefetching && !doctors.isFetchingNextPage}
           onRefresh={() => void doctors.refetch()}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (doctors.hasNextPage && !doctors.isFetchingNextPage) {
+              void doctors.fetchNextPage()
+            }
+          }}
+          ListFooterComponent={
+            doctors.isFetchingNextPage ? (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ paddingVertical: spacing.lg }}
+              />
+            ) : null
+          }
           ListEmptyComponent={
             <EmptyState icon="search-outline" title={t.explore.empty} />
           }
