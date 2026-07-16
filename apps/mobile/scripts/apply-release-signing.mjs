@@ -1,14 +1,40 @@
 /**
- * Post-prebuild step (CI): wires the committed distribution keystore into the
- * generated android project so `assembleRelease` produces an installable APK
- * with a CONSISTENT signature across builds (debug keystores rotate per
- * runner, which makes phones refuse to update: "app not installed").
+ * Post-prebuild step (CI): patches the generated android project before
+ * `assembleRelease`. Two things:
  *
- * This keystore is for direct-download testing distribution only — the Play
- * Store release will use a separate private key (see docs/mobile-app.md).
+ * 1. Wires the committed distribution keystore in, so the APK has a CONSISTENT
+ *    signature across builds (debug keystores rotate per runner, which makes
+ *    phones refuse to update: "app not installed"). Testing-distribution key
+ *    only — the Play Store release uses a separate private key (docs/mobile-app.md).
+ *
+ * 2. Narrows the built ABIs to the two ARM variants real phones use
+ *    (arm64-v8a + armeabi-v7a). Once the native video (WebRTC) libraries were
+ *    added, building all four ABIs (incl. x86/x86_64, which only emulators
+ *    need) pushed `assembleRelease` past an hour on the 2-core runner. Dropping
+ *    the x86 variants roughly halves the native packaging work and shrinks the
+ *    APK, with zero impact on physical devices.
  */
 import { readFileSync, writeFileSync } from "node:fs"
 
+// ── ABI narrowing ──────────────────────────────────────────────────────────
+// The Expo Android template reads `reactNativeArchitectures` from
+// gradle.properties to decide which ABIs to build.
+const gradlePropsPath = "android/gradle.properties"
+try {
+  let props = readFileSync(gradlePropsPath, "utf8")
+  const arm = "reactNativeArchitectures=arm64-v8a,armeabi-v7a"
+  if (/^reactNativeArchitectures=.*/m.test(props)) {
+    props = props.replace(/^reactNativeArchitectures=.*/m, arm)
+  } else {
+    props += `\n${arm}\n`
+  }
+  writeFileSync(gradlePropsPath, props)
+  console.log("ABIs narrowed to arm64-v8a,armeabi-v7a in", gradlePropsPath)
+} catch (err) {
+  console.warn("could not narrow ABIs:", err.message)
+}
+
+// ── Release signing ────────────────────────────────────────────────────────
 const gradlePath = "android/app/build.gradle"
 let gradle = readFileSync(gradlePath, "utf8")
 
