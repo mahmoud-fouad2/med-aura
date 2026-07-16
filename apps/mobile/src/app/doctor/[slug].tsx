@@ -8,10 +8,9 @@ import {
   Button,
   Card,
   ChevronBack,
-  EmptyState,
   Skeleton,
 } from "../../components/ui"
-import { stateArt } from "../../components/brand"
+import { QueryErrorState } from "../../components/query-error"
 import { useDoctor } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -67,18 +66,7 @@ export default function DoctorProfile() {
           </Card>
         ) : doctor.isError || !doctor.data ? (
           <Card>
-            <EmptyState
-              icon="cloud-offline-outline"
-              art={stateArt.offline}
-              title={t.common.loadFailed}
-              action={
-                <Button
-                  label={t.common.retry}
-                  variant="secondary"
-                  onPress={() => void doctor.refetch()}
-                />
-              }
-            />
+            <QueryErrorState error={doctor.error} onRetry={() => void doctor.refetch()} />
           </Card>
         ) : (
           <>

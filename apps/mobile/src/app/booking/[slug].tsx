@@ -17,6 +17,7 @@ import {
   Skeleton,
 } from "../../components/ui"
 import { stateArt } from "../../components/brand"
+import { QueryErrorState } from "../../components/query-error"
 import {
   api,
   useDoctor,
@@ -212,18 +213,7 @@ export default function Booking() {
             <Skeleton style={{ height: 120, borderRadius: radius.lg }} />
           </View>
         ) : slots.isError ? (
-          <EmptyState
-            icon="cloud-offline-outline"
-            art={stateArt.offline}
-            title={t.common.loadFailed}
-            action={
-              <Button
-                label={t.common.retry}
-                variant="secondary"
-                onPress={() => void slots.refetch()}
-              />
-            }
-          />
+          <QueryErrorState error={slots.error} onRetry={() => void slots.refetch()} />
         ) : days.length === 0 ? (
           <EmptyState
             icon="calendar-outline"

@@ -11,7 +11,7 @@ import {
   EmptyState,
   Skeleton,
 } from "../../components/ui"
-import { stateArt } from "../../components/brand"
+import { QueryErrorState } from "../../components/query-error"
 import { useDoctors, type Doctor } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -67,21 +67,7 @@ export default function Explore() {
           ))}
         </View>
       ) : doctors.isError ? (
-        <EmptyState
-          icon="cloud-offline-outline"
-          art={stateArt.offline}
-          title={t.common.loadFailed}
-          action={
-            <AppText
-              variant="sub"
-              weight="bold"
-              color={colors.primary}
-              onPress={() => void doctors.refetch()}
-            >
-              {t.common.retry}
-            </AppText>
-          }
-        />
+        <QueryErrorState error={doctors.error} onRetry={() => void doctors.refetch()} />
       ) : (
         <FlatList
           data={doctors.data?.doctors ?? []}

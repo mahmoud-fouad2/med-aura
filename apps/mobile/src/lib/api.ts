@@ -62,6 +62,9 @@ export type Me = {
 
 export class SessionExpiredError extends Error {}
 
+/** The request never reached the server (no connectivity, DNS, timeout). */
+export class NetworkError extends Error {}
+
 async function request<T>(
   path: string,
   init?: RequestInit & { auth?: boolean },
@@ -74,7 +77,14 @@ async function request<T>(
     const cookie = authClient.getCookie()
     if (cookie) headers.Cookie = cookie
   }
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers })
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...init, headers })
+  } catch (cause) {
+    // fetch itself rejecting means connectivity, not the server — the UI
+    // must say "offline", never blame the data, and vice versa.
+    throw new NetworkError("offline", { cause })
+  }
   if (res.status === 401) throw new SessionExpiredError()
   const body = (await res.json().catch(() => null)) as
     | { ok: true; data: T }

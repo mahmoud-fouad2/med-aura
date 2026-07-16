@@ -18,6 +18,12 @@ import {
 } from "../../components/ui"
 import { BottomSheet } from "../../components/bottom-sheet"
 import { useMe } from "../../lib/api"
+import {
+  authenticate,
+  biometricAvailability,
+  isAppLockEnabled,
+  setAppLockEnabled,
+} from "../../lib/app-lock"
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
 import { useI18n, type Locale } from "../../lib/i18n"
@@ -46,8 +52,10 @@ export default function Profile() {
   const signOut = async () => {
     setSigningOut(true)
     await authClient.signOut().catch(() => undefined)
-    // Never leave one account's data visible to the next.
+    // Never leave one account's data visible to the next — nor its app lock,
+    // which would confusingly gate whoever signs in on this device next.
     queryClient.clear()
+    await setAppLockEnabled(false).catch(() => undefined)
     setSigningOut(false)
     setConfirmSignOut(false)
     router.replace("/sign-in")
@@ -178,6 +186,8 @@ export default function Profile() {
 
       {/* Security */}
       <Section title={t.profile.sectionSecurity}>
+        <AppLockRow onNotice={setNotice} />
+        <Divider />
         <Row
           icon="trash-bin-outline"
           label={t.profile.clearCache}
@@ -219,15 +229,17 @@ export default function Profile() {
         />
       </Section>
 
+      {/* Neutral-informative: this box also carries "can't enable" guidance,
+          not only successes, so it mustn't read as a green confirmation. */}
       {notice ? (
         <View
           style={{
-            backgroundColor: colors.successSoft,
+            backgroundColor: colors.primarySoft,
             borderRadius: radius.md,
             padding: spacing.md,
           }}
         >
-          <AppText variant="sub" color={colors.success}>
+          <AppText variant="sub" color={colors.primary}>
             {notice}
           </AppText>
         </View>
@@ -445,6 +457,83 @@ function ToggleRow({
         trackColor={{ true: colors.primary, false: colors.border }}
         thumbColor="#FFFFFF"
         accessibilityLabel={label}
+      />
+    </View>
+  )
+}
+
+/**
+ * Biometric app lock. Turning it ON requires enrolled biometrics and one
+ * successful authentication (never lock behind a check that can't pass);
+ * turning it OFF demands the same proof — removing protection is as
+ * sensitive as adding it.
+ */
+function AppLockRow({ onNotice }: { onNotice: (message: string) => void }) {
+  const { t } = useI18n()
+  const [enabled, setEnabled] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    isAppLockEnabled()
+      .then((value) => {
+        if (alive) setEnabled(value)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const toggle = async (next: boolean) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      if (next) {
+        const availability = await biometricAvailability()
+        if (availability === "no-hardware") {
+          onNotice(t.profile.appLockNoHardware)
+          return
+        }
+        if (availability === "not-enrolled") {
+          onNotice(t.profile.appLockNotEnrolled)
+          return
+        }
+      }
+      const ok = await authenticate(t.lock.prompt, t.common.cancel)
+      if (!ok) return
+      await setAppLockEnabled(next)
+      setEnabled(next)
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      onNotice(next ? t.profile.appLockOn : t.profile.appLockOff)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.md,
+        padding: spacing.lg,
+      }}
+    >
+      <Ionicons name="finger-print-outline" size={20} color={colors.primary} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText variant="body">{t.profile.appLock}</AppText>
+        <AppText variant="caption" color={colors.textFaint}>
+          {t.profile.appLockHint}
+        </AppText>
+      </View>
+      <Switch
+        value={enabled}
+        disabled={busy}
+        onValueChange={(v) => void toggle(v)}
+        trackColor={{ true: colors.primary, false: colors.border }}
+        thumbColor="#FFFFFF"
+        accessibilityLabel={t.profile.appLock}
       />
     </View>
   )

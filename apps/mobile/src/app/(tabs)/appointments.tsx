@@ -11,6 +11,7 @@ import {
   StatusPill,
 } from "../../components/ui"
 import { stateArt } from "../../components/brand"
+import { QueryErrorState } from "../../components/query-error"
 import { useAppointments, type Appointment } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -90,21 +91,7 @@ export default function Appointments() {
           ))}
         </View>
       ) : query.isError ? (
-        <EmptyState
-          icon="cloud-offline-outline"
-          art={stateArt.offline}
-          title={t.common.loadFailed}
-          action={
-            <AppText
-              variant="sub"
-              weight="bold"
-              color={colors.primary}
-              onPress={() => void query.refetch()}
-            >
-              {t.common.retry}
-            </AppText>
-          }
-        />
+        <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (
         <FlatList
           data={rows}

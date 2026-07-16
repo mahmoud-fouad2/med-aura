@@ -26,6 +26,9 @@ core journey.
   payment hands off to the secure page when Stripe is configured.
 - **Settings**: account, language & appearance, notification preferences,
   security, support & info — on a native bottom sheet.
+- **App lock**: optional biometric unlock (fingerprint/face, device PIN as
+  the OS fallback). Enabling and disabling both require a successful
+  authentication; the app re-locks when backgrounded; sign-out clears it.
 - **Design**: brand tokens in `src/theme`, illustrations for every empty and
   error state, Arabic-first with real RTL and a full ar/en dictionary.
 
@@ -82,7 +85,6 @@ Actions secrets, never committed) and enroll in Play App Signing.
 - **Push notifications** — the settings toggles persist the preference, but
   delivery needs `expo-notifications` + a Firebase project (FCM) and a sender
   in `lib/notifications`.
-- **Face ID / Touch ID** — needs `expo-local-authentication`.
 - **Native profile editing / password change** — currently open the secure
   web page.
 - **Files, invoices, provider (doctor/staff) experience** — web only so far.

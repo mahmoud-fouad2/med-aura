@@ -24,13 +24,20 @@
       "predictiveBackGestureEnabled": true
     },
     "extra": {
-      "supportsRTL": true
+      "supportsRTL": true,
+      "forcesRTL": true
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-localization",
       "expo-web-browser",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "يستخدم Med Aura بصمة الوجه لفتح التطبيق بأمان."
+        }
+      ],
       [
         "expo-splash-screen",
         {

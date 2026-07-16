@@ -13,7 +13,8 @@ import {
   StatusPill,
 } from "../../components/ui"
 import { brandAssets, Logo, stateArt } from "../../components/brand"
-import { useHome, type Appointment, type Doctor } from "../../lib/api"
+import { NetworkError, useHome, type Appointment, type Doctor } from "../../lib/api"
+import { authClient } from "../../lib/auth-client"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing } from "../../theme"
 
@@ -21,6 +22,14 @@ export default function Home() {
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const home = useHome()
+  // The greeting must always be the person's name, never the brand's: the
+  // cached session (kept fresh at every boot) covers the moment the home
+  // request hasn't answered — or has failed.
+  const session = authClient.useSession()
+  const firstName =
+    home.data?.firstName ??
+    session.data?.user?.name?.trim().split(/\s+/)[0] ??
+    ""
 
   const hour = new Date().getHours()
   const greeting = hour < 17 ? t.home.morning : t.home.evening
@@ -59,11 +68,11 @@ export default function Home() {
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
             {greeting}
           </AppText>
-          {home.isLoading ? (
+          {home.isLoading && !firstName ? (
             <Skeleton style={{ width: 140, height: 26, backgroundColor: "rgba(255,255,255,0.25)" }} />
           ) : (
             <AppText variant="hero" weight="heavy" color="#FFFFFF">
-              {home.data?.firstName ?? t.appName}
+              {firstName}
             </AppText>
           )}
           <AppText variant="sub" color="rgba(255,255,255,0.85)">
@@ -110,7 +119,14 @@ export default function Home() {
               <Skeleton style={{ width: "40%" }} />
             </Card>
           ) : home.isError ? (
-            <ErrorCard message={t.common.loadFailed} onRetry={() => void home.refetch()} />
+            <ErrorCard
+              message={
+                home.error instanceof NetworkError
+                  ? t.common.offline
+                  : t.common.loadFailed
+              }
+              onRetry={() => void home.refetch()}
+            />
           ) : home.data?.nextAppointment ? (
             <AppointmentCard appointment={home.data.nextAppointment} locale={locale} statusLabels={t.status} />
           ) : (
@@ -132,7 +148,9 @@ export default function Home() {
           )}
         </Section>
 
-        {/* Featured doctors */}
+        {/* Featured doctors — hidden on failure: the next-appointment card
+            already carries the error + retry, one message is enough. */}
+        {home.isError ? null : (
         <Section title={t.home.featuredDoctors}>
           {home.isLoading ? (
             <View style={{ flexDirection: "row", gap: spacing.md }}>
@@ -147,6 +165,7 @@ export default function Home() {
             </ScrollView>
           )}
         </Section>
+        )}
       </View>
     </ScrollView>
   )

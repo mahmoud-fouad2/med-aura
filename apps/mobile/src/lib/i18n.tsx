@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { I18nManager } from "react-native"
 import * as SecureStore from "expo-secure-store"
 
 export type Locale = "ar" | "en"
@@ -26,9 +25,16 @@ const ar = {
     confirm: "تأكيد",
     loading: "لحظات من فضلك…",
     loadFailed: "تعذر تحميل البيانات. حاول مرة أخرى.",
-    offline: "انقطع الاتصال بالإنترنت.",
+    offline: "لا يوجد اتصال بالإنترنت.",
+    offlineBody: "تحققي من اتصالك ثم أعيدي المحاولة.",
     sessionExpired: "انتهت الجلسة. سجّل الدخول مرة أخرى.",
     seeAll: "عرض الكل",
+  },
+  lock: {
+    title: "التطبيق مقفل لحمايتك",
+    body: "استخدمي البصمة أو قفل الجهاز للمتابعة.",
+    unlock: "فتح التطبيق",
+    prompt: "تأكيد هويتك لفتح Med Aura",
   },
   onboarding: {
     slides: [
@@ -149,7 +155,7 @@ const ar = {
     language: "اللغة",
     arabic: "العربية",
     english: "English",
-    restartNote: "سيُعاد تشغيل التطبيق لتطبيق اللغة.",
+    restartNote: "تُطبَّق اللغة فورًا.",
     aboutOnboarding: "التعرّف على التطبيق",
     privacy: "سياسة الخصوصية",
     terms: "الشروط والأحكام",
@@ -172,6 +178,12 @@ const ar = {
     notifyOffers: "العروض والجديد",
     notifyOffersHint: "رسائل تعريفية من المركز",
     sessions: "الجلسة على هذا الجهاز",
+    appLock: "فتح التطبيق بالبصمة",
+    appLockHint: "بصمة الإصبع أو الوجه عند فتح التطبيق",
+    appLockNoHardware: "جهازك لا يدعم البصمة.",
+    appLockNotEnrolled: "أضيفي بصمة أو قفل شاشة في إعدادات الجهاز أولًا.",
+    appLockOn: "تم تفعيل القفل بالبصمة.",
+    appLockOff: "تم إيقاف القفل بالبصمة.",
     clearCache: "مسح البيانات المؤقتة",
     clearCacheHint: "يفرّغ ما تم تحميله دون حذف حسابك",
     clearCacheDone: "تم مسح البيانات المؤقتة.",
@@ -218,9 +230,16 @@ const en: typeof ar = {
     confirm: "Confirm",
     loading: "One moment…",
     loadFailed: "Couldn't load data. Please try again.",
-    offline: "You're offline.",
+    offline: "No internet connection.",
+    offlineBody: "Check your connection and try again.",
     sessionExpired: "Your session ended. Please sign in again.",
     seeAll: "See all",
+  },
+  lock: {
+    title: "Locked for your protection",
+    body: "Use your fingerprint or device lock to continue.",
+    unlock: "Unlock",
+    prompt: "Confirm it's you to open Med Aura",
   },
   onboarding: {
     slides: [
@@ -341,7 +360,7 @@ const en: typeof ar = {
     language: "Language",
     arabic: "العربية",
     english: "English",
-    restartNote: "The app will restart to apply the language.",
+    restartNote: "Applies immediately.",
     aboutOnboarding: "App tour",
     privacy: "Privacy Policy",
     terms: "Terms & Conditions",
@@ -364,6 +383,12 @@ const en: typeof ar = {
     notifyOffers: "News & offers",
     notifyOffersHint: "Occasional updates from the centre",
     sessions: "Session on this device",
+    appLock: "Unlock with biometrics",
+    appLockHint: "Fingerprint or face when opening the app",
+    appLockNoHardware: "This device doesn't support biometrics.",
+    appLockNotEnrolled: "Add a fingerprint or screen lock in device settings first.",
+    appLockOn: "Biometric lock enabled.",
+    appLockOff: "Biometric lock disabled.",
     clearCache: "Clear temporary data",
     clearCacheHint: "Frees up loaded data without touching your account",
     clearCacheDone: "Temporary data cleared.",
@@ -422,12 +447,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback(async (l: Locale) => {
     setLocaleState(l)
     await SecureStore.setItemAsync(LOCALE_KEY, l)
-    const wantRTL = l === "ar"
-    if (I18nManager.isRTL !== wantRTL) {
-      I18nManager.allowRTL(wantRTL)
-      I18nManager.forceRTL(wantRTL)
-      // Direction flips apply on next launch; the profile screen explains this.
-    }
+    // The layout stays RTL-anchored (native `forcesRTL` in app.json): the
+    // shell is designed RTL-first, so switching to English swaps the strings
+    // instantly with no restart and no mirrored-relayout flash.
   }, [])
 
   const value = useMemo<I18nValue>(

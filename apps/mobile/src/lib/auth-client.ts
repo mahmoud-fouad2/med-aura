@@ -14,6 +14,12 @@ export const authClient = createAuthClient({
     expoClient({
       scheme: APP_SCHEME,
       storagePrefix: "medaura",
+      // MUST match the server's `advanced.cookiePrefix` (lib/auth.ts). The
+      // plugin only persists Set-Cookie values whose name starts with this —
+      // with the default ("better-auth") our `__Secure-medaura.session_token`
+      // was silently dropped, so every API call went out unauthenticated and
+      // the session never survived a restart.
+      cookiePrefix: "medaura",
       storage: SecureStore,
     }),
   ],
