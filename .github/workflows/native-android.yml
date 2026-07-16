@@ -60,8 +60,20 @@ jobs:
         working-directory: apps/mobile/android
         run: ./gradlew assembleRelease --no-daemon
 
+      # The output name/path can shift when native deps change packaging
+      # (adding the WebRTC libs broke a hardcoded `cp app-release.apk`).
+      # Find the APK wherever gradle put it, and print the tree so a future
+      # failure diagnoses itself in the log.
       - name: Rename APK for release
-        run: cp android/app/build/outputs/apk/release/app-release.apk med-aura.apk
+        run: |
+          ls -laR android/app/build/outputs/apk || true
+          APK=$(find android/app/build/outputs/apk -name "*.apk" -type f | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "No APK produced under android/app/build/outputs/apk" >&2
+            exit 1
+          fi
+          echo "Publishing: $APK"
+          cp "$APK" med-aura.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
