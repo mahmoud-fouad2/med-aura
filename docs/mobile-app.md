@@ -35,6 +35,13 @@ core journey.
 - **App lock**: optional biometric unlock (fingerprint/face, device PIN as
   the OS fallback). Enabling and disabling both require a successful
   authentication; the app re-locks when backgrounded; sign-out clears it.
+- **Video consultations**: real in-app calls (Daily RN SDK — native views,
+  not a WebView). Pre-join screen (server-gated eligibility + camera/mic
+  permission checks) → call screen (remote video, local preview, mute/camera/
+  flip/speaker/end, duration, reconnect state) → closure screen. Tokens are
+  minted server-side per join and never stored. The same room serves the
+  web (doctor side) via `/consultation/[id]/video`. With no provider keys
+  the whole feature reports an honest "غير مفعّل" and shows no join button.
 - **Design**: brand tokens in `src/theme`, illustrations for every empty and
   error state, Arabic-first with real RTL and a full ar/en dictionary.
 

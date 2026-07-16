@@ -17,6 +17,7 @@ import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS, ROLES, ROLE_PERMISSIONS } from "@/lib/rbac"
 import { getMigrationStatus } from "@/lib/db/migration-status"
 import {
+  env,
   isStripeConfigured,
   isStripeWebhookConfigured,
   isR2Configured,
@@ -24,6 +25,7 @@ import {
   isVideoConfigured,
   isRecaptchaConfigured,
 } from "@/lib/env"
+import { videoJoinWindow } from "@/lib/video"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
@@ -47,7 +49,14 @@ export default async function AdminSettingsPage() {
     { label: "تحديثات الدفع التلقائية", ok: isStripeWebhookConfigured() },
     { label: "التخزين السحابي للملفات", ok: isR2Configured() },
     { label: "خدمة البريد الإلكتروني", ok: isEmailConfigured() },
-    { label: "الفيديو للاستشارة", ok: isVideoConfigured() },
+    {
+      label: "الاستشارات عن بُعد (فيديو)",
+      ok: isVideoConfigured(),
+      // Provider name + window only — never keys or secrets.
+      hint: isVideoConfigured()
+        ? `المزود: ${env.VIDEO_PROVIDER} · الدخول قبل الموعد بـ ${videoJoinWindow().beforeMinutes} د · سماح ${videoJoinWindow().afterMinutes} د بعد النهاية`
+        : "يحتاج إعداد: VIDEO_PROVIDER + مفتاح المزود في متغيرات الخادم",
+    },
     { label: "حماية النماذج", ok: isRecaptchaConfigured() },
   ]
   const activeCount = integrations.filter((i) => i.ok).length

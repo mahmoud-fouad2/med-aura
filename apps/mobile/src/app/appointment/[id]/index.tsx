@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
+import { VideoCard } from "../../../components/video-card"
 import {
   AppText,
   Avatar,
@@ -11,13 +12,13 @@ import {
   EmptyState,
   Skeleton,
   StatusPill,
-} from "../../components/ui"
-import { QueryErrorState } from "../../components/query-error"
-import { useAppointments, type Appointment } from "../../lib/api"
-import { API_URL } from "../../lib/config"
-import { useI18n } from "../../lib/i18n"
-import { colors, radius, spacing } from "../../theme"
-import { appointmentTone } from "../(tabs)/index"
+} from "../../../components/ui"
+import { QueryErrorState } from "../../../components/query-error"
+import { useAppointments, type Appointment } from "../../../lib/api"
+import { API_URL } from "../../../lib/config"
+import { useI18n } from "../../../lib/i18n"
+import { colors, radius, spacing } from "../../../theme"
+import { appointmentTone } from "../../(tabs)/index"
 
 /**
  * Full appointment record. Reads the same query the list uses — reached from
@@ -126,6 +127,11 @@ function Details({
           tone={appointmentTone(appointment.status)}
         />
       </Card>
+
+      {/* Remote consultation entry — video appointments only */}
+      {appointment.type === "VIDEO_CONSULTATION" ? (
+        <VideoCard appointmentId={appointment.id} />
+      ) : null}
 
       {/* When + what */}
       <Card style={{ padding: 0, overflow: "hidden" }}>

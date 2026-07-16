@@ -18,6 +18,8 @@ import {
   currencyAr,
 } from "@/lib/status-labels"
 import type { AppointmentRow } from "@/lib/data/appointments"
+import { isVideoConfigured } from "@/lib/env"
+import { videoJoinWindow } from "@/lib/video"
 
 const typeIcon: Record<string, LucideIcon> = {
   VIDEO_CONSULTATION: Video,
@@ -25,6 +27,25 @@ const typeIcon: Record<string, LucideIcon> = {
   PHONE_CONSULTATION: Phone,
   PROCEDURE: Sparkles,
   FOLLOW_UP: Stethoscope,
+}
+
+const JOINABLE = new Set(["CONFIRMED", "CHECKED_IN", "IN_PROGRESS"])
+
+/**
+ * The consultation entry shows only when it can actually lead somewhere:
+ * a video appointment, a configured provider, a joinable status, and the
+ * entry window not yet closed. The video page re-checks all of it
+ * server-side — this is presentation, not the security boundary.
+ */
+function videoEntry(a: AppointmentRow): "open" | "upcoming" | null {
+  if (a.type !== "VIDEO_CONSULTATION" || !isVideoConfigured()) return null
+  if (!JOINABLE.has(a.status)) return null
+  const { beforeMinutes, afterMinutes } = videoJoinWindow()
+  const now = Date.now()
+  const joinFrom = new Date(a.startsAt).getTime() - beforeMinutes * 60_000
+  const joinUntil = new Date(a.endsAt).getTime() + afterMinutes * 60_000
+  if (now > joinUntil) return null
+  return now >= joinFrom ? "open" : "upcoming"
 }
 
 function statusTone(status: string): {
@@ -77,6 +98,7 @@ export function AppointmentList({
         const { day, month, weekday } = fmtDayLabel(d)
         const tone = statusTone(a.status)
         const isPast = d.getTime() < Date.now() && a.status !== "CONFIRMED"
+        const entry = videoEntry(a)
 
         return (
           <li key={a.id}>
@@ -162,6 +184,20 @@ export function AppointmentList({
                     >
                       عرض الحالة
                       <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
+                    </Link>
+                  )}
+                  {entry && (
+                    <Link
+                      href={`/consultation/${a.id}/video`}
+                      className={
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors " +
+                        (entry === "open"
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "bg-primary/10 text-primary hover:bg-primary/15")
+                      }
+                    >
+                      <Video className="size-3.5" />
+                      {entry === "open" ? "دخول الاستشارة" : "استشارة عن بُعد"}
                     </Link>
                   )}
                 </div>

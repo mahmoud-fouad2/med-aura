@@ -12,7 +12,9 @@
       "bundleIdentifier": "com.medaura.app",
       "supportsTablet": false,
       "infoPlist": {
-        "CFBundleAllowMixedLocalizations": true
+        "CFBundleAllowMixedLocalizations": true,
+        "NSCameraUsageDescription": "يستخدم Med Aura الكاميرا أثناء الاستشارة المرئية مع طبيبك.",
+        "NSMicrophoneUsageDescription": "يستخدم Med Aura المايكروفون أثناء الاستشارة المرئية مع طبيبك."
       }
     },
     "android": {
@@ -37,6 +39,14 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "يستخدم Med Aura بصمة الوجه لفتح التطبيق بأمان."
+        }
+      ],
+      [
+        "@daily-co/config-plugin-rn-daily-js",
+        {
+          "enableCamera": true,
+          "enableMicrophone": true,
+          "enableScreenShare": false
         }
       ],
       [

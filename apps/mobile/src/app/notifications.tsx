@@ -33,6 +33,12 @@ export default function Notifications() {
 
   const open = (n: AppNotification) => {
     if (!n.readAt) markRead.mutate({ id: n.id })
+    // Video notifications stay inside the app — the appointments tab leads
+    // straight to the consultation entry. Everything else opens its web page.
+    if (n.type.startsWith("VIDEO_")) {
+      router.push("/(tabs)/appointments")
+      return
+    }
     if (n.href) {
       const url = n.href.startsWith("http") ? n.href : `${API_URL}${n.href}`
       void WebBrowser.openBrowserAsync(url)

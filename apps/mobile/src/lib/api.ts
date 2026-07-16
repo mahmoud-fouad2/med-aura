@@ -1,3 +1,4 @@
+import { Platform } from "react-native"
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -72,6 +73,39 @@ export type AppNotification = {
   href: string | null
   readAt: string | null
   createdAt: string
+}
+
+export type VideoDenyReason =
+  | "not_found"
+  | "not_authorized"
+  | "not_video"
+  | "disabled"
+  | "not_confirmed"
+  | "cancelled"
+  | "too_early"
+  | "expired"
+
+export type VideoState = {
+  isVideoAppointment: boolean
+  configured: boolean
+  role: "patient" | "doctor" | "staff"
+  allowed: boolean
+  reason: VideoDenyReason | null
+  joinAvailableFrom: string | null
+  joinAvailableUntil: string | null
+  startsAt: string
+  endsAt: string
+  doctorName: string
+  counterpartJoined: boolean
+  callStatus: "SCHEDULED" | "ACTIVE" | "ENDED" | "CANCELLED" | null
+}
+
+export type VideoJoin = {
+  token: string
+  expiresAt: string
+  roomUrl: string | null
+  role: "patient" | "doctor" | "staff"
+  doctorName: string
 }
 
 export class SessionExpiredError extends Error {}
@@ -153,6 +187,31 @@ export const api = {
   home: () => request<HomeData>("/api/mobile/v1/home"),
   appointments: () =>
     request<{ appointments: Appointment[] }>("/api/mobile/v1/appointments"),
+  videoState: (appointmentId: string) =>
+    request<VideoState>(`/api/mobile/v1/appointments/${appointmentId}/video`),
+  videoJoin: async (appointmentId: string): Promise<VideoJoin> => {
+    // The session must exist before a token can reference its room.
+    await request(`/api/mobile/v1/appointments/${appointmentId}/video/session`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    })
+    return request<VideoJoin>(
+      `/api/mobile/v1/appointments/${appointmentId}/video/token`,
+      { method: "POST", body: JSON.stringify({}) },
+    )
+  },
+  videoEvent: (appointmentId: string, event: string) =>
+    request<{ recorded: boolean }>(
+      `/api/mobile/v1/appointments/${appointmentId}/video/events`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          event,
+          deviceType: Platform.OS === "ios" ? "ios" : "android",
+        }),
+      },
+      // Telemetry is best-effort — a failed event must never break the call.
+    ).catch(() => ({ recorded: false })),
   doctors: (params: { q?: string; page?: number }) => {
     const sp = new URLSearchParams()
     if (params.q) sp.set("q", params.q)
@@ -235,4 +294,15 @@ export const useNotifications = () =>
     queryKey: ["notifications"],
     queryFn: api.notifications,
     staleTime: 30_000,
+  })
+
+export const useVideoState = (appointmentId: string, opts?: { poll?: boolean; enabled?: boolean }) =>
+  useQuery({
+    queryKey: ["video", appointmentId],
+    queryFn: () => api.videoState(appointmentId),
+    staleTime: 15_000,
+    // The pre-join screen polls so the join button appears the moment the
+    // window opens (and "طبيبك في غرفة الانتظار" the moment they arrive).
+    refetchInterval: opts?.poll ? 20_000 : false,
+    enabled: opts?.enabled ?? true,
   })
