@@ -282,6 +282,9 @@ export async function ensureVideoSession(input: {
         })
         .returning()
     )[0]
+    // A successful INSERT ... RETURNING always yields the row; guard anyway so
+    // the return type is non-nullable for every caller (token issuance).
+    if (!inserted) throw new Error("video session insert returned no row")
 
     const meta = await requestMeta()
     await writeAudit({

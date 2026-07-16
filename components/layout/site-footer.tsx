@@ -3,9 +3,9 @@ import { Download, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { AndroidMark } from "@/components/brand/android-mark"
 
-/** Fixed-tag release asset kept fresh by the "Android APK" workflow. */
-const APK_DOWNLOAD_URL =
-  "https://github.com/mahmoud-fouad2/med-aura/releases/download/apk-latest/med-aura.apk"
+/** First-party download path — /download/android streams the latest build
+    through our own domain (see app/download/android/route.ts). */
+const APK_DOWNLOAD_URL = "/download/android"
 
 export function SiteFooter() {
   const year = new Date().getFullYear()
