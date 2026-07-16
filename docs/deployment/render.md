@@ -16,7 +16,7 @@ Create a **Web Service** from the repo.
 | Runtime | Node |
 | Node version | `20` (pinned via `.node-version`; matches CI in `.github/workflows/ci.yml`) |
 | Build Command | `corepack enable && pnpm install --frozen-lockfile && pnpm run build` |
-| Pre-Deploy Command | `pnpm run db:migrate` |
+| Pre-Deploy Command | `pnpm run db:migrate` (paid plans only — see below) |
 | Start Command | `pnpm run start` |
 | Health Check Path | `/api/health` |
 
@@ -31,12 +31,13 @@ Notes:
 - `db:migrate` (`tsx scripts/migrate.ts`) requires `DATABASE_URL`. It applies the
   four migrations in `drizzle/` (`0000_init` … `0003_c7_ops_followup_safety_refund_closure`).
   Executed on a real Postgres in CI, **not** in this session (no local database).
-- **"Pre-Deploy Command" is a Render dashboard field you must set yourself** —
-  it is not read from this repo automatically. If it's left blank, Render
-  builds and starts the app without ever running `db:migrate`, so the schema
-  stays empty (`/api/readiness` reports `migrationsPending` > 0 and the app
-  shows honest "temporarily unavailable" states instead of data). This is
-  exactly what happened on the first deploy — see "Known issues" below.
+- **Migrations now apply automatically at server boot** (`instrumentation.ts`):
+  Render's free tier has no Pre-Deploy Command field, so the server itself
+  runs the drizzle migrator on every start — idempotent, one lookup when the
+  schema is already current, and race-free on a single instance. On paid
+  plans you may additionally set Pre-Deploy Command to `pnpm run db:migrate`
+  (migrations then apply before the new build serves traffic instead of
+  during its first boot), but nothing breaks without it.
 
 ## Health vs readiness
 
