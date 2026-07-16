@@ -60,6 +60,16 @@ export type Me = {
   city: string | null
 }
 
+export type AppNotification = {
+  id: string
+  type: string
+  title: string
+  body: string | null
+  href: string | null
+  readAt: string | null
+  createdAt: string
+}
+
 export class SessionExpiredError extends Error {}
 
 /** The request never reached the server (no connectivity, DNS, timeout). */
@@ -117,6 +127,25 @@ export type BookingResult = {
 
 export const api = {
   me: () => request<Me>("/api/mobile/v1/me"),
+  updateMe: (input: {
+    name: string
+    phone: string
+    residenceCountry: string
+    city?: string
+  }) =>
+    request<{ updated: boolean }>("/api/mobile/v1/me", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  notifications: () =>
+    request<{ unread: number; notifications: AppNotification[] }>(
+      "/api/mobile/v1/notifications",
+    ),
+  markNotificationsRead: (input: { id: string } | { all: true }) =>
+    request<{ updated: boolean }>("/api/mobile/v1/notifications", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
   home: () => request<HomeData>("/api/mobile/v1/home"),
   appointments: () =>
     request<{ appointments: Appointment[] }>("/api/mobile/v1/appointments"),
@@ -187,3 +216,10 @@ export const useSlots = (slug: string, type: ConsultationType) =>
 
 export const useMe = () =>
   useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: 60_000 })
+
+export const useNotifications = () =>
+  useQuery({
+    queryKey: ["notifications"],
+    queryFn: api.notifications,
+    staleTime: 30_000,
+  })

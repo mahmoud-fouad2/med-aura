@@ -122,15 +122,13 @@ export default function Profile() {
           icon="person-outline"
           label={t.profile.editProfile}
           hint={t.profile.editProfileHint}
-          onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/dashboard`)}
+          onPress={() => router.push("/edit-profile")}
         />
         <Divider />
         <Row
           icon="key-outline"
           label={t.profile.changePassword}
-          onPress={() =>
-            void WebBrowser.openBrowserAsync(`${API_URL}/forgot-password`)
-          }
+          onPress={() => router.push("/change-password")}
         />
       </Section>
 

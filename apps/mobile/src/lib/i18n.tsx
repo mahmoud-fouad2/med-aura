@@ -36,6 +36,27 @@ const ar = {
     unlock: "فتح التطبيق",
     prompt: "تأكيد هويتك لفتح Med Aura",
   },
+  inbox: {
+    title: "الإشعارات",
+    empty: "لا توجد إشعارات بعد.",
+    emptyBody: "سنخبرك هنا بكل جديد يخص مواعيدك وملفك.",
+    markAll: "تعليم الكل كمقروء",
+  },
+  editProfile: {
+    save: "حفظ التغييرات",
+    saved: "تم حفظ بياناتك.",
+  },
+  password: {
+    current: "كلمة المرور الحالية",
+    new: "كلمة المرور الجديدة",
+    confirm: "تأكيد كلمة المرور الجديدة",
+    mismatch: "كلمتا المرور غير متطابقتين.",
+    tooShort: "كلمة المرور يجب ألا تقل عن 8 أحرف.",
+    wrongCurrent: "كلمة المرور الحالية غير صحيحة.",
+    changed: "تم تغيير كلمة المرور.",
+    revokeOthers: "تسجيل الخروج من الأجهزة الأخرى",
+    revokeOthersHint: "ينهي الجلسات المفتوحة على أي جهاز آخر",
+  },
   onboarding: {
     slides: [
       {
@@ -240,6 +261,27 @@ const en: typeof ar = {
     body: "Use your fingerprint or device lock to continue.",
     unlock: "Unlock",
     prompt: "Confirm it's you to open Med Aura",
+  },
+  inbox: {
+    title: "Notifications",
+    empty: "No notifications yet.",
+    emptyBody: "We'll let you know here about your appointments and file.",
+    markAll: "Mark all as read",
+  },
+  editProfile: {
+    save: "Save changes",
+    saved: "Your details were saved.",
+  },
+  password: {
+    current: "Current password",
+    new: "New password",
+    confirm: "Confirm new password",
+    mismatch: "The passwords don't match.",
+    tooShort: "Password must be at least 8 characters.",
+    wrongCurrent: "The current password is incorrect.",
+    changed: "Password changed.",
+    revokeOthers: "Sign out of other devices",
+    revokeOthersHint: "Ends sessions open on any other device",
   },
   onboarding: {
     slides: [

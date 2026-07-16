@@ -13,7 +13,13 @@ import {
   StatusPill,
 } from "../../components/ui"
 import { brandAssets, Logo, stateArt } from "../../components/brand"
-import { NetworkError, useHome, type Appointment, type Doctor } from "../../lib/api"
+import {
+  NetworkError,
+  useHome,
+  useNotifications,
+  type Appointment,
+  type Doctor,
+} from "../../lib/api"
 import { authClient } from "../../lib/auth-client"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing } from "../../theme"
@@ -22,6 +28,7 @@ export default function Home() {
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const home = useHome()
+  const inbox = useNotifications()
   // The greeting must always be the person's name, never the brand's: the
   // cached session (kept fresh at every boot) covers the moment the home
   // request hasn't answered — or has failed.
@@ -63,7 +70,52 @@ export default function Home() {
           style={{ position: "absolute", width: "100%", height: "100%" }}
           contentFit="cover"
         />
-        <Logo height={26} variant="white" style={{ marginBottom: spacing.lg }} />
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Logo height={26} variant="white" />
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            accessibilityRole="button"
+            accessibilityLabel={t.inbox.title}
+            hitSlop={8}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: "rgba(255,255,255,0.16)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
+            {(inbox.data?.unread ?? 0) > 0 ? (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  end: -2,
+                  minWidth: 17,
+                  height: 17,
+                  borderRadius: 9,
+                  paddingHorizontal: 4,
+                  backgroundColor: colors.gold,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppText variant="caption" weight="bold" color={colors.ink}>
+                  {Math.min(inbox.data?.unread ?? 0, 9)}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
         <View style={{ gap: 4 }}>
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
             {greeting}
