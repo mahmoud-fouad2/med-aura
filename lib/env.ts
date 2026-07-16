@@ -41,9 +41,18 @@ const schema = z.object({
   EMAIL_FROM: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
 
-  // Video consultation provider (optional)
+  // Video consultation provider (optional). "daily" is the supported real
+  // provider; "mock" is for local development/tests only and is refused in
+  // production. Unset → video consultations stay in an honest "disabled"
+  // state (no join buttons anywhere).
+  VIDEO_PROVIDER: z.enum(["daily", "mock"]).optional(),
   VIDEO_PROVIDER_API_KEY: z.string().optional(),
   VIDEO_PROVIDER_API_SECRET: z.string().optional(),
+  VIDEO_WEBHOOK_SECRET: z.string().optional(),
+  /** Minutes before the appointment start when joining opens (default 10). */
+  VIDEO_JOIN_WINDOW_BEFORE_MINUTES: z.coerce.number().int().min(0).max(120).optional(),
+  /** Minutes after the appointment end when joining closes (default 30). */
+  VIDEO_JOIN_WINDOW_AFTER_MINUTES: z.coerce.number().int().min(0).max(240).optional(),
 
   // reCAPTCHA. Server-side verification is wired into the contact action; the
   // client token widget is not implemented yet, so no site key is consumed.
@@ -106,8 +115,11 @@ export const isR2Configured = () => {
 export const isStripeConfigured = () => Boolean(read().STRIPE_SECRET_KEY)
 export const isStripeWebhookConfigured = () => Boolean(read().STRIPE_WEBHOOK_SECRET)
 export const isEmailConfigured = () => Boolean(read().RESEND_API_KEY && read().EMAIL_FROM)
-export const isVideoConfigured = () =>
-  Boolean(read().VIDEO_PROVIDER_API_KEY && read().VIDEO_PROVIDER_API_SECRET)
+export const isVideoConfigured = () => {
+  const e = read()
+  if (e.VIDEO_PROVIDER === "mock") return e.NODE_ENV !== "production"
+  return e.VIDEO_PROVIDER === "daily" && Boolean(e.VIDEO_PROVIDER_API_KEY)
+}
 export const isRecaptchaConfigured = () => Boolean(read().RECAPTCHA_SECRET_KEY)
 
 /** Resolve the app's public base URL for links, redirects, auth. */
