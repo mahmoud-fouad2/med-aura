@@ -221,6 +221,7 @@ export default function Home() {
           ]}
         >
           <QuickAction icon="search" label={t.home.exploreAction} onPress={() => router.push("/(tabs)/explore")} />
+          <QuickAction icon="sparkles" label={t.services.title} onPress={() => router.push("/services")} />
           <QuickAction icon="calendar" label={t.home.myAppointments} onPress={() => router.push("/(tabs)/appointments")} />
           <QuickAction icon="person" label={t.home.myProfile} onPress={() => router.push("/(tabs)/profile")} />
         </View>

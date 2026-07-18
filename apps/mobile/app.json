@@ -2,7 +2,7 @@
   "expo": {
     "name": "Med Aura",
     "slug": "med-aura",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#FCFAFB",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"

@@ -1,6 +1,12 @@
-import { and, eq, asc } from "drizzle-orm"
-import { db } from "@/lib/db"
-import { procedure as procedureT, procedureCategory } from "@/lib/db/schema"
+import { and, eq, asc, ilike, or, sql } from "drizzle-orm"
+import { db, isDbConfigured } from "@/lib/db"
+import {
+  doctorProcedure,
+  doctorProfile,
+  procedure as procedureT,
+  procedureCategory,
+} from "@/lib/db/schema"
+import { getPublicUrl } from "@/lib/storage/r2"
 
 export type ProcedureListItem = {
   slug: string
@@ -88,4 +94,113 @@ export async function getProcedureBySlug(
   if (!row) return null
   const { visible: _v, ...rest } = row
   return rest
+}
+
+/* ── Mobile "services" surface (procedures + doctor availability) ──────────── */
+
+export type ServiceListItem = {
+  slug: string
+  nameAr: string
+  nameEn: string
+  descriptionAr: string | null
+  isSurgical: boolean
+  recoveryDays: number | null
+  categorySlug: string
+  categoryNameAr: string
+  doctorCount: number
+}
+
+/** Flat, searchable list of visible services with how many doctors offer each. */
+export async function listServices(params: {
+  q?: string
+  category?: string
+} = {}): Promise<ServiceListItem[]> {
+  if (!isDbConfigured) return []
+  const filters = [eq(procedureT.visible, true)]
+  if (params.category) {
+    filters.push(eq(procedureCategory.slug, params.category))
+  }
+  if (params.q?.trim()) {
+    const term = `%${params.q.trim()}%`
+    const like = or(
+      ilike(procedureT.nameAr, term),
+      ilike(procedureT.nameEn, term),
+      ilike(procedureCategory.nameAr, term),
+    )
+    if (like) filters.push(like)
+  }
+
+  const rows = await db
+    .select({
+      slug: procedureT.slug,
+      nameAr: procedureT.nameAr,
+      nameEn: procedureT.nameEn,
+      descriptionAr: procedureT.descriptionAr,
+      isSurgical: procedureT.isSurgical,
+      recoveryDays: procedureT.recoveryDays,
+      categorySlug: procedureCategory.slug,
+      categoryNameAr: procedureCategory.nameAr,
+      doctorCount: sql<number>`count(distinct ${doctorProcedure.doctorId})`,
+    })
+    .from(procedureT)
+    .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
+    .leftJoin(doctorProcedure, eq(doctorProcedure.procedureId, procedureT.id))
+    .where(and(...filters))
+    .groupBy(
+      procedureT.slug,
+      procedureT.nameAr,
+      procedureT.nameEn,
+      procedureT.descriptionAr,
+      procedureT.isSurgical,
+      procedureT.recoveryDays,
+      procedureCategory.slug,
+      procedureCategory.nameAr,
+      procedureT.sortOrder,
+    )
+    .orderBy(asc(procedureT.sortOrder))
+
+  return rows.map((r) => ({ ...r, doctorCount: Number(r.doctorCount) }))
+}
+
+export type ServiceDoctor = {
+  slug: string
+  name: string
+  title: string | null
+  photoUrl: string | null
+  verified: boolean
+}
+
+export type ServiceDetail = ProcedureDetail & {
+  doctors: ServiceDoctor[]
+}
+
+/** Full service view + the (published) doctors who offer it. */
+export async function getServiceDetail(
+  slug: string,
+): Promise<ServiceDetail | null> {
+  const detail = await getProcedureBySlug(slug)
+  if (!detail) return null
+
+  const rows = await db
+    .select({
+      slug: doctorProfile.slug,
+      name: doctorProfile.name,
+      title: doctorProfile.title,
+      photoKey: doctorProfile.photoKey,
+      verified: doctorProfile.verified,
+    })
+    .from(doctorProcedure)
+    .innerJoin(procedureT, eq(doctorProcedure.procedureId, procedureT.id))
+    .innerJoin(doctorProfile, eq(doctorProcedure.doctorId, doctorProfile.id))
+    .where(and(eq(procedureT.slug, slug), eq(doctorProfile.published, true)))
+    .limit(20)
+
+  const doctors: ServiceDoctor[] = rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    title: r.title,
+    photoUrl: r.photoKey ? getPublicUrl(r.photoKey) : null,
+    verified: r.verified,
+  }))
+  return { ...detail, doctors }
 }

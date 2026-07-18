@@ -111,6 +111,30 @@ export type VideoJoin = {
   doctorName: string
 }
 
+export type Service = {
+  slug: string
+  nameAr: string
+  nameEn: string
+  descriptionAr: string | null
+  isSurgical: boolean
+  recoveryDays: number | null
+  categorySlug: string
+  categoryNameAr: string
+  doctorCount: number
+}
+
+export type ServiceDetail = Service & {
+  nameEn: string
+  descriptionEn: string | null
+  doctors: {
+    slug: string
+    name: string
+    title: string | null
+    photoUrl: string | null
+    verified: boolean
+  }[]
+}
+
 export class SessionExpiredError extends Error {}
 
 /** The request never reached the server (no connectivity, DNS, timeout). */
@@ -226,6 +250,16 @@ export const api = {
   },
   doctor: (slug: string) =>
     request<DoctorDetail>(`/api/mobile/v1/doctors/${slug}`, { auth: false }),
+  services: (params: { q?: string }) => {
+    const sp = new URLSearchParams()
+    if (params.q) sp.set("q", params.q)
+    return request<{ services: Service[] }>(
+      `/api/mobile/v1/services?${sp.toString()}`,
+      { auth: false },
+    )
+  },
+  service: (slug: string) =>
+    request<ServiceDetail>(`/api/mobile/v1/services/${slug}`, { auth: false }),
   slots: (slug: string, type: ConsultationType) =>
     request<SlotsResponse>(
       `/api/mobile/v1/doctors/${slug}/slots?type=${type}`,
@@ -278,6 +312,21 @@ export const useDoctor = (slug: string) =>
   useQuery({
     queryKey: ["doctor", slug],
     queryFn: () => api.doctor(slug),
+    staleTime: 60_000,
+  })
+
+export const useServices = (q: string) =>
+  useQuery({
+    queryKey: ["services", q],
+    queryFn: () => api.services({ q: q || undefined }),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  })
+
+export const useService = (slug: string) =>
+  useQuery({
+    queryKey: ["service", slug],
+    queryFn: () => api.service(slug),
     staleTime: 60_000,
   })
 
