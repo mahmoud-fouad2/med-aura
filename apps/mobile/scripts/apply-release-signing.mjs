@@ -53,9 +53,25 @@ const signing = `
             storeType 'pkcs12'
         }
     }
+    // The native video (WebRTC) libraries ship their own copy of shared
+    // runtime .so files that also come from React Native — assembleRelease
+    // fails at the merge step with "More than one file was found with OS
+    // independent path 'lib/<abi>/libc++_shared.so'". pickFirsts resolves the
+    // duplicate deterministically (the copies are ABI-identical). This is the
+    // canonical react-native-webrtc release-build fix.
+    packagingOptions {
+        jniLibs {
+            pickFirsts += [
+                '**/libc++_shared.so',
+                '**/libfbjni.so',
+                '**/libjsc.so',
+                '**/libhermes.so',
+            ]
+        }
+    }
 `
 
-// Insert the signingConfigs block right after `android {`
+// Insert the signingConfigs + packaging blocks right after `android {`
 gradle = gradle.replace(/android \{/, (m) => m + signing)
 
 // Point the release build type at it (the template's release block has no

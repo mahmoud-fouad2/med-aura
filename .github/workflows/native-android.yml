@@ -58,7 +58,7 @@ jobs:
 
       - name: Build release APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       # The output name/path can shift when native deps change packaging
       # (adding the WebRTC libs broke a hardcoded `cp app-release.apk`).
