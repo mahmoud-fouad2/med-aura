@@ -60,6 +60,9 @@ export type Me = {
   name: string
   email: string
   role: string
+  accountType: "patient" | "doctor" | "staff"
+  displayName: string
+  doctorName: string | null
   phone: string | null
   residenceCountry: string | null
   city: string | null

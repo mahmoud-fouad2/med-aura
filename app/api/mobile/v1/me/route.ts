@@ -1,11 +1,21 @@
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { patientProfile, user as userTable } from "@/lib/db/schema"
+import { doctorProfile, patientProfile, user as userTable } from "@/lib/db/schema"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
+
+const PATIENT_ROLES = new Set(["patient"])
+const DOCTOR_ROLES = new Set(["doctor"])
+
+/** patient | doctor | staff — what the app tailors its UI to. */
+function accountTypeFor(role: string): "patient" | "doctor" | "staff" {
+  if (PATIENT_ROLES.has(role)) return "patient"
+  if (DOCTOR_ROLES.has(role)) return "doctor"
+  return "staff"
+}
 
 /** Session + profile snapshot the app loads right after boot/sign-in. */
 export async function GET() {
@@ -26,11 +36,35 @@ export async function GET() {
       .limit(1)
   )[0]
 
+  const accountType = accountTypeFor(user.role)
+
+  // A doctor's display name is their provider-profile name (which the app
+  // greets with a "د." prefix), NOT the raw account name. Only look it up for
+  // doctors so patients pay no extra query.
+  let doctorName: string | null = null
+  if (accountType === "doctor") {
+    const dp = (
+      await db
+        .select({ name: doctorProfile.name })
+        .from(doctorProfile)
+        .where(eq(doctorProfile.userId, user.id))
+        .limit(1)
+    )[0]
+    doctorName = dp?.name?.trim() || null
+  }
+
+  // One resolved name the app can trust for every greeting/header — never
+  // empty, never the app name, never a bare title.
+  const displayName = (doctorName || user.name || "").trim()
+
   return jsonOk({
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
+    accountType,
+    displayName,
+    doctorName,
     phone: profile?.phone ?? null,
     residenceCountry: profile?.residenceCountry ?? null,
     city: profile?.city ?? null,

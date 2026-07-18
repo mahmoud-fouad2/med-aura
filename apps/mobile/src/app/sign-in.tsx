@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card } from "../components/ui"
 import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
+import { setRememberMe } from "../lib/session-prefs"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -25,6 +26,7 @@ export default function SignIn() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -32,6 +34,9 @@ export default function SignIn() {
     if (loading) return
     setError(null)
     setLoading(true)
+    // Record the choice before the session lands, so the boot gate honours it
+    // on the next cold start.
+    await setRememberMe(remember).catch(() => undefined)
     const { error } = await authClient.signIn.email({ email, password })
     setLoading(false)
     if (error) {
@@ -129,18 +134,55 @@ export default function SignIn() {
             </View>
           ) : null}
 
-          <Button label={t.auth.signIn} onPress={() => void submit()} loading={loading} />
-
-          <Pressable
-            onPress={() =>
-              void WebBrowser.openBrowserAsync(`${API_URL}/forgot-password`)
-            }
-            style={{ alignSelf: "center" }}
+          {/* Remember-me sits opposite the forgot link, both above the CTA. */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
           >
-            <AppText variant="sub" weight="medium" color={colors.primary}>
-              {t.auth.forgot}
-            </AppText>
-          </Pressable>
+            <Pressable
+              onPress={() => setRemember((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: remember }}
+              hitSlop={8}
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 7,
+                  borderWidth: remember ? 0 : 1.5,
+                  borderColor: colors.border,
+                  backgroundColor: remember ? colors.primary : "transparent",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {remember ? (
+                  <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                ) : null}
+              </View>
+              <AppText variant="sub" color={colors.textMuted}>
+                {t.auth.rememberMe}
+              </AppText>
+            </Pressable>
+
+            <Pressable
+              onPress={() =>
+                void WebBrowser.openBrowserAsync(`${API_URL}/forgot-password`)
+              }
+              hitSlop={8}
+            >
+              <AppText variant="sub" weight="medium" color={colors.primary}>
+                {t.auth.forgot}
+              </AppText>
+            </Pressable>
+          </View>
+
+          <Button label={t.auth.signIn} onPress={() => void submit()} loading={loading} />
         </Card>
 
         <View

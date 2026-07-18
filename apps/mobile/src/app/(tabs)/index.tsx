@@ -2,6 +2,7 @@ import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
 import {
   AppText,
@@ -16,27 +17,45 @@ import { brandAssets, Logo, stateArt } from "../../components/brand"
 import {
   NetworkError,
   useHome,
+  useMe,
   useNotifications,
   type Appointment,
   type Doctor,
 } from "../../lib/api"
 import { authClient } from "../../lib/auth-client"
+import { API_URL } from "../../lib/config"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing } from "../../theme"
 
 export default function Home() {
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
+  const me = useMe()
   const home = useHome()
   const inbox = useNotifications()
-  // The greeting must always be the person's name, never the brand's: the
-  // cached session (kept fresh at every boot) covers the moment the home
-  // request hasn't answered — or has failed.
+  // The greeting must always be a person's name, never the brand's — and for
+  // a doctor it must be their provider name with the "د." title, never a bare
+  // title. `displayName`/`doctorName` come resolved from /me.
   const session = authClient.useSession()
-  const firstName =
+  const accountType = me.data?.accountType ?? "patient"
+  const isPatient = accountType === "patient"
+
+  const resolvedName = (
+    me.data?.displayName ??
     home.data?.firstName ??
-    session.data?.user?.name?.trim().split(/\s+/)[0] ??
+    session.data?.user?.name ??
     ""
+  ).trim()
+  const patientFirstName = resolvedName.split(/\s+/)[0] ?? ""
+  const doctorName = me.data?.doctorName?.trim() ?? ""
+  // What the hero prints: "د. أحمد …" for a named doctor, the first name for a
+  // patient, and a warm generic fallback when no name is known — never "".
+  const heroName =
+    accountType === "doctor"
+      ? doctorName
+        ? `${t.home.doctorTitle} ${doctorName}`
+        : t.home.welcomeFallback
+      : patientFirstName || t.home.welcomeFallback
 
   const hour = new Date().getHours()
   const greeting = hour < 17 ? t.home.morning : t.home.evening
@@ -120,29 +139,72 @@ export default function Home() {
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
             {greeting}
           </AppText>
-          {home.isLoading && !firstName ? (
+          {(me.isLoading || home.isLoading) && !resolvedName ? (
             <Skeleton style={{ width: 140, height: 26, backgroundColor: "rgba(255,255,255,0.25)" }} />
           ) : (
             <AppText variant="hero" weight="heavy" color="#FFFFFF">
-              {firstName}
+              {heroName}
             </AppText>
           )}
           <AppText variant="sub" color="rgba(255,255,255,0.85)">
-            {t.home.heroBody}
+            {isPatient ? t.home.heroBody : t.home.heroBodyProvider}
           </AppText>
         </View>
-        <Button
-          label={t.home.heroCta}
-          onPress={() => router.push("/(tabs)/explore")}
-          style={{
-            marginTop: spacing.lg,
-            backgroundColor: colors.gold,
-            alignSelf: "flex-start",
-            paddingVertical: 11,
-          }}
-        />
+        {/* Only patients book — never show a booking CTA to a doctor/staff. */}
+        {isPatient ? (
+          <Button
+            label={t.home.heroCta}
+            onPress={() => router.push("/(tabs)/explore")}
+            style={{
+              marginTop: spacing.lg,
+              backgroundColor: colors.gold,
+              alignSelf: "flex-start",
+              paddingVertical: 11,
+            }}
+          />
+        ) : null}
       </View>
 
+      {/* Provider (doctor/staff): the full schedule lives on the secure web
+          dashboard for now — show that, not patient booking actions. */}
+      {!isPatient ? (
+        <View style={{ paddingHorizontal: spacing.screen, marginTop: -spacing.xl }}>
+          <Card style={{ gap: spacing.md }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: radius.lg,
+                  backgroundColor: colors.primarySoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="briefcase-outline" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText variant="body" weight="bold">
+                  {t.home.providerPanelTitle}
+                </AppText>
+                <AppText variant="caption" color={colors.textMuted}>
+                  {t.home.providerPanelBody}
+                </AppText>
+              </View>
+            </View>
+            <Button
+              label={t.home.openDashboard}
+              icon="open-outline"
+              onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/dashboard`)}
+            />
+            <Button
+              label={t.home.myProfile}
+              variant="secondary"
+              onPress={() => router.push("/(tabs)/profile")}
+            />
+          </Card>
+        </View>
+      ) : (
       <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
         {/* Quick actions */}
         <View
@@ -219,6 +281,7 @@ export default function Home() {
         </Section>
         )}
       </View>
+      )}
     </ScrollView>
   )
 }

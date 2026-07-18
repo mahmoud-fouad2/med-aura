@@ -24,6 +24,7 @@ import {
   isAppLockEnabled,
   setAppLockEnabled,
 } from "../../lib/app-lock"
+import { setRememberMe } from "../../lib/session-prefs"
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
 import { useI18n, type Locale } from "../../lib/i18n"
@@ -50,12 +51,23 @@ export default function Profile() {
   const [notice, setNotice] = useState<string | null>(null)
 
   const signOut = async () => {
+    if (signingOut) return
     setSigningOut(true)
-    await authClient.signOut().catch(() => undefined)
-    // Never leave one account's data visible to the next — nor its app lock,
-    // which would confusingly gate whoever signs in on this device next.
+    // The server sign-out must never be able to hang the button: race it
+    // against a short timeout. Local sign-out is what actually matters — a
+    // stale server session expires on its own, but the user must always get
+    // out of their account immediately.
+    await Promise.race([
+      authClient.signOut().catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 4000)),
+    ])
+    // Wipe everything tied to this account before the next person signs in:
+    // cached data, the biometric lock preference, and the persisted session.
     queryClient.clear()
-    await setAppLockEnabled(false).catch(() => undefined)
+    await Promise.all([
+      setAppLockEnabled(false).catch(() => undefined),
+      setRememberMe(false).catch(() => undefined),
+    ])
     setSigningOut(false)
     setConfirmSignOut(false)
     router.replace("/sign-in")

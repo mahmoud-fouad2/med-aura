@@ -3,6 +3,7 @@ import { Redirect } from "expo-router"
 import * as SecureStore from "expo-secure-store"
 import * as SplashScreen from "expo-splash-screen"
 import { authClient } from "../lib/auth-client"
+import { isRememberMe } from "../lib/session-prefs"
 import { BrandSplash } from "../components/splash-screen"
 
 export const ONBOARDING_KEY = "medaura.onboarding.done"
@@ -23,15 +24,27 @@ export default function Boot() {
   useEffect(() => {
     let cancelled = false
     async function boot() {
-      const [seen, session] = await Promise.all([
+      const [seen, remember, session] = await Promise.all([
         SecureStore.getItemAsync(ONBOARDING_KEY),
+        isRememberMe(),
         authClient.getSession().catch(() => null),
       ])
       if (cancelled) return
+      const hasSession = Boolean(
+        session && "data" in session && session.data?.user,
+      )
       if (!seen) setState({ status: "onboarding" })
-      else if (session && "data" in session && session.data?.user)
-        setState({ status: "app" })
-      else setState({ status: "auth" })
+      else if (hasSession && remember) setState({ status: "app" })
+      else if (hasSession && !remember) {
+        // "Remember me" was off: a fresh cold start must require sign-in.
+        // Drop the persisted session (best-effort, never blocks boot) so it
+        // can't silently auto-restore.
+        void Promise.race([
+          authClient.signOut().catch(() => undefined),
+          new Promise((r) => setTimeout(r, 2500)),
+        ])
+        setState({ status: "auth" })
+      } else setState({ status: "auth" })
       await SplashScreen.hideAsync().catch(() => undefined)
     }
     void boot()
