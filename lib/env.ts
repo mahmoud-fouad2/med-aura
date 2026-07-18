@@ -61,6 +61,11 @@ const schema = z.object({
   // Ops
   ENABLE_DEMO_DATA: z.string().optional(),
   MONITORING_WEBHOOK_URL: z.url().optional(),
+  // QA only: unlocks the admin "mark test-paid" tool so a booking can be
+  // confirmed without a real charge, to exercise the video journey end to
+  // end. Refused in production unless explicitly set, and always requires an
+  // admin session on top. Never enable on a real-patient environment.
+  ENABLE_TEST_PAYMENT_TOOLS: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>
@@ -120,6 +125,9 @@ export const isVideoConfigured = () => {
   if (e.VIDEO_PROVIDER === "mock") return e.NODE_ENV !== "production"
   return e.VIDEO_PROVIDER === "daily" && Boolean(e.VIDEO_PROVIDER_API_KEY)
 }
+/** QA test-payment tool is gated by an explicit opt-in flag. */
+export const isTestPaymentEnabled = () =>
+  read().ENABLE_TEST_PAYMENT_TOOLS === "true"
 export const isRecaptchaConfigured = () => Boolean(read().RECAPTCHA_SECRET_KEY)
 
 /** Resolve the app's public base URL for links, redirects, auth. */
