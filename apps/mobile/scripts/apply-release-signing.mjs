@@ -93,31 +93,31 @@ gradle = gradle.replace(
 writeFileSync(gradlePath, gradle)
 console.log("release signing applied to", gradlePath)
 
-// ── Disable release lint for EVERY module ──────────────────────────────────
-// The crash was in library modules (expo-modules-core,
-// react-native-gesture-handler) lintVitalAnalyzeRelease, not just :app.
-// Belt-and-braces: turn release-lint off across all subprojects at the root
-// so no lintVitalAnalyze task can run for any dependency.
+// ── Disable release lint across every module (root level) ───────────────────
+// The lint crash was in LIBRARY modules (expo-modules-core,
+// react-native-gesture-handler), but those lintVitalAnalyzeRelease tasks only
+// run because :app's lintVitalRelease pulls them in — the app-level
+// `checkReleaseBuilds false` above removes that whole chain from
+// assembleRelease. This root patch is an extra guard, applied via
+// `plugins.withId` (NOT afterEvaluate, which throws "project already
+// evaluated" when injected at the end of the root script).
 const rootGradlePath = "android/build.gradle"
 try {
   let root = readFileSync(rootGradlePath, "utf8")
-  if (!root.includes("checkReleaseBuilds false")) {
+  if (!root.includes("medaura-disable-release-lint")) {
     root += `
 
-// Added post-prebuild: Android lint crashes ("bug in lint") on some library
-// modules during release analysis. Disable release-lint everywhere — code
-// quality is already gated by tsc + eslint on the JS side.
+// medaura-disable-release-lint: Android lint crashes ("bug in lint") on some
+// library modules during release analysis. Code quality is already gated by
+// tsc + eslint on the JS side, so release-lint is turned off everywhere.
 allprojects {
-    afterEvaluate { proj ->
-        def androidExt = proj.extensions.findByName("android")
-        if (androidExt != null) {
-            try {
-                androidExt.lint {
-                    checkReleaseBuilds false
-                    abortOnError false
-                }
-            } catch (ignored) {}
-        }
+    plugins.withId("com.android.library") {
+        extensions.getByName("android").lint.checkReleaseBuilds = false
+        extensions.getByName("android").lint.abortOnError = false
+    }
+    plugins.withId("com.android.application") {
+        extensions.getByName("android").lint.checkReleaseBuilds = false
+        extensions.getByName("android").lint.abortOnError = false
     }
 }
 `
