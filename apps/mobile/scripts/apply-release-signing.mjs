@@ -93,37 +93,13 @@ gradle = gradle.replace(
 writeFileSync(gradlePath, gradle)
 console.log("release signing applied to", gradlePath)
 
-// ── Disable release lint across every module (root level) ───────────────────
-// The lint crash was in LIBRARY modules (expo-modules-core,
-// react-native-gesture-handler), but those lintVitalAnalyzeRelease tasks only
-// run because :app's lintVitalRelease pulls them in — the app-level
-// `checkReleaseBuilds false` above removes that whole chain from
-// assembleRelease. This root patch is an extra guard, applied via
-// `plugins.withId` (NOT afterEvaluate, which throws "project already
-// evaluated" when injected at the end of the root script).
-const rootGradlePath = "android/build.gradle"
-try {
-  let root = readFileSync(rootGradlePath, "utf8")
-  if (!root.includes("medaura-disable-release-lint")) {
-    root += `
-
-// medaura-disable-release-lint: Android lint crashes ("bug in lint") on some
-// library modules during release analysis. Code quality is already gated by
-// tsc + eslint on the JS side, so release-lint is turned off everywhere.
-allprojects {
-    plugins.withId("com.android.library") {
-        extensions.getByName("android").lint.checkReleaseBuilds = false
-        extensions.getByName("android").lint.abortOnError = false
-    }
-    plugins.withId("com.android.application") {
-        extensions.getByName("android").lint.checkReleaseBuilds = false
-        extensions.getByName("android").lint.abortOnError = false
-    }
-}
-`
-    writeFileSync(rootGradlePath, root)
-    console.log("release lint disabled for all modules in", rootGradlePath)
-  }
-} catch (err) {
-  console.warn("could not disable module lint:", err.message)
-}
+// NOTE on the lint crash: assembleRelease runs :app:lintVitalRelease, which
+// pulls in each dependency's lintVitalAnalyzeRelease — one of those (expo /
+// gesture-handler) crashes lint itself. Setting `checkReleaseBuilds false` in
+// the app's own `android { lint { } }` block above (applied during the app's
+// evaluation, so never "too late") removes :app:lintVitalRelease from the
+// release graph, so those library analyze tasks are never triggered. Attempts
+// to also force it from the ROOT project failed with AGP timing errors
+// ("afterEvaluate ... already evaluated" / "too late to set checkReleaseBuilds")
+// and are unnecessary — the app-level flag is sufficient and is the documented
+// fix.
