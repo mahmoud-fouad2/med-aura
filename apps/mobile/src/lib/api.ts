@@ -135,6 +135,23 @@ export type ServiceDetail = Service & {
   }[]
 }
 
+export type DoctorFilters = {
+  city?: string
+  language?: string
+  category?: string
+  consultation?: "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
+  surgical?: "true" | "false"
+  priceMin?: number
+  priceMax?: number
+  sort?: "price_low" | "price_high" | "rating"
+}
+
+export type FilterFacets = {
+  cities: string[]
+  languages: string[]
+  categories: { slug: string; nameAr: string }[]
+}
+
 export class SessionExpiredError extends Error {}
 
 /** The request never reached the server (no connectivity, DNS, timeout). */
@@ -239,15 +256,26 @@ export const api = {
       },
       // Telemetry is best-effort — a failed event must never break the call.
     ).catch(() => ({ recorded: false })),
-  doctors: (params: { q?: string; page?: number }) => {
+  doctors: (params: { q?: string; page?: number; filters?: DoctorFilters }) => {
     const sp = new URLSearchParams()
     if (params.q) sp.set("q", params.q)
     if (params.page) sp.set("page", String(params.page))
+    const f = params.filters
+    if (f?.city) sp.set("city", f.city)
+    if (f?.language) sp.set("language", f.language)
+    if (f?.category) sp.set("category", f.category)
+    if (f?.consultation) sp.set("consultation", f.consultation)
+    if (f?.surgical) sp.set("surgical", f.surgical)
+    if (f?.priceMin != null) sp.set("priceMin", String(f.priceMin))
+    if (f?.priceMax != null) sp.set("priceMax", String(f.priceMax))
+    if (f?.sort) sp.set("sort", f.sort)
     return request<{ total: number; page: number; doctors: Doctor[] }>(
       `/api/mobile/v1/doctors?${sp.toString()}`,
       { auth: false },
     )
   },
+  filterFacets: () =>
+    request<FilterFacets>("/api/mobile/v1/filters", { auth: false }),
   doctor: (slug: string) =>
     request<DoctorDetail>(`/api/mobile/v1/doctors/${slug}`, { auth: false }),
   services: (params: { q?: string }) => {
@@ -292,20 +320,27 @@ export const useAppointments = () =>
     staleTime: 30_000,
   })
 
-export const useDoctors = (q: string) =>
+export const useDoctors = (q: string, filters?: DoctorFilters) =>
   useInfiniteQuery({
-    queryKey: ["doctors", q],
+    queryKey: ["doctors", q, filters ?? {}],
     queryFn: ({ pageParam }) =>
-      api.doctors({ q: q || undefined, page: pageParam }),
+      api.doctors({ q: q || undefined, page: pageParam, filters }),
     initialPageParam: 1,
     getNextPageParam: (last, pages) =>
       pages.reduce((n, p) => n + p.doctors.length, 0) < last.total
         ? last.page + 1
         : undefined,
-    // While a new search term loads, the previous results stay on screen —
-    // no skeleton flash between keystrokes.
+    // While a new search term/filter loads, the previous results stay on
+    // screen — no skeleton flash between keystrokes or filter changes.
     placeholderData: keepPreviousData,
     staleTime: 60_000,
+  })
+
+export const useFilterFacets = () =>
+  useQuery({
+    queryKey: ["filter-facets"],
+    queryFn: api.filterFacets,
+    staleTime: 5 * 60_000,
   })
 
 export const useDoctor = (slug: string) =>

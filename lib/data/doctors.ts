@@ -5,9 +5,11 @@ import {
   ilike,
   inArray,
   gte,
+  lte,
   isNull,
   desc,
   count,
+  sql,
   type SQL,
 } from "drizzle-orm"
 import { db } from "@/lib/db"
@@ -48,6 +50,10 @@ export type SearchParams = {
   city?: string
   consultation?: "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
   surgical?: "true" | "false"
+  language?: string // must be one of the doctor's languages
+  priceMin?: number
+  priceMax?: number
+  sort?: "price_low" | "price_high" | "rating"
   page?: number
   pageSize?: number
 }
@@ -109,6 +115,15 @@ function filterConditions(params: SearchParams): SQL[] {
     conds.push(eq(doctorProfile.offersVideo, true))
   if (params.consultation === "IN_PERSON_CONSULTATION")
     conds.push(eq(doctorProfile.offersInPerson, true))
+  // Language is stored as a text[] — match doctors who speak the chosen one.
+  if (params.language)
+    conds.push(sql`${params.language} = ANY(${doctorProfile.languages})`)
+  // Price range on the consultation fee (doctors with no fee set are excluded
+  // from a bounded range, which is the honest interpretation of a filter).
+  if (params.priceMin != null)
+    conds.push(gte(doctorProfile.consultationFee, String(params.priceMin)))
+  if (params.priceMax != null)
+    conds.push(lte(doctorProfile.consultationFee, String(params.priceMax)))
 
   if (params.procedure || params.category || params.surgical) {
     const sub = db
@@ -127,6 +142,42 @@ function filterConditions(params: SearchParams): SQL[] {
     conds.push(inArray(doctorProfile.id, sub.where(and(...subConds))))
   }
   return conds
+}
+
+/** Distinct filter options, computed from actually-visible doctors + catalog. */
+export async function getDoctorFilterFacets(): Promise<{
+  cities: string[]
+  languages: string[]
+  categories: { slug: string; nameAr: string }[]
+}> {
+  const where = and(...visibilityConditions())
+
+  const cityRows = await db
+    .selectDistinct({ city: doctorProfile.city })
+    .from(doctorProfile)
+    .where(where)
+  const cities = cityRows
+    .map((r) => r.city)
+    .filter((c): c is string => Boolean(c && c.trim()))
+    .sort()
+
+  // languages is text[]; unnest to get the distinct set actually in use.
+  const langRows = await db.execute<{ lang: string }>(
+    sql`select distinct unnest(${doctorProfile.languages}) as lang
+        from ${doctorProfile} where ${where}`,
+  )
+  const languages = (langRows.rows ?? [])
+    .map((r) => r.lang)
+    .filter((l): l is string => Boolean(l && l.trim()))
+    .sort()
+
+  const categories = await db
+    .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr })
+    .from(procedureCategory)
+    .where(eq(procedureCategory.visible, true))
+    .orderBy(procedureCategory.sortOrder)
+
+  return { cities, languages, categories }
 }
 
 export async function searchDoctors(
@@ -157,8 +208,20 @@ export async function searchDoctors(
       })
       .from(doctorProfile)
       .where(where)
-      // organic ranking: verified, then experience, then recency
-      .orderBy(desc(doctorProfile.verified), desc(doctorProfile.yearsExperience))
+      // Explicit sort when asked; otherwise organic ranking (verified, then
+      // experience). Nulls sort last so priced/rated doctors lead.
+      .orderBy(
+        ...(params.sort === "price_low"
+          ? [sql`${doctorProfile.consultationFee} asc nulls last`]
+          : params.sort === "price_high"
+            ? [sql`${doctorProfile.consultationFee} desc nulls last`]
+            : params.sort === "rating"
+              ? [sql`${doctorProfile.rating} desc nulls last`]
+              : [
+                  desc(doctorProfile.verified),
+                  desc(doctorProfile.yearsExperience),
+                ]),
+      )
       .limit(pageSize)
       .offset((page - 1) * pageSize),
     db.select({ n: count() }).from(doctorProfile).where(where),

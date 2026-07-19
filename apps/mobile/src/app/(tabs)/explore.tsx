@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, FlatList, TextInput, View } from "react-native"
+import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -12,7 +12,13 @@ import {
   Skeleton,
 } from "../../components/ui"
 import { QueryErrorState } from "../../components/query-error"
-import { useDoctors, type Doctor } from "../../lib/api"
+import { DoctorFilterSheet } from "../../components/doctor-filter-sheet"
+import {
+  useDoctors,
+  useFilterFacets,
+  type Doctor,
+  type DoctorFilters,
+} from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
 
@@ -21,7 +27,10 @@ export default function Explore() {
   const insets = useSafeAreaInsets()
   const [search, setSearch] = useState("")
   const [query, setQuery] = useState("")
-  const doctors = useDoctors(query)
+  const [filters, setFilters] = useState<DoctorFilters>({})
+  const [filterOpen, setFilterOpen] = useState(false)
+  const doctors = useDoctors(query, filters)
+  const facets = useFilterFacets()
 
   // Live search: results follow the typing after a beat — no submit needed,
   // and no request per keystroke.
@@ -34,6 +43,8 @@ export default function Explore() {
     () => doctors.data?.pages.flatMap((p) => p.doctors) ?? [],
     [doctors.data],
   )
+  const total = doctors.data?.pages[0]?.total ?? 0
+  const activeCount = Object.values(filters).filter((v) => v != null).length
 
   return (
     <View
@@ -47,30 +58,95 @@ export default function Explore() {
         <AppText variant="title" weight="heavy">
           {t.explore.title}
         </AppText>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing.sm,
-            backgroundColor: colors.card,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: radius.lg,
-            paddingHorizontal: spacing.md,
-          }}
-        >
-          <Ionicons name="search" size={18} color={colors.textFaint} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            onSubmitEditing={() => setQuery(search.trim())}
-            returnKeyType="search"
-            placeholder={t.explore.searchPlaceholder}
-            placeholderTextColor={colors.textFaint}
-            style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: colors.text }}
-          />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.sm,
+              backgroundColor: colors.card,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: radius.lg,
+              paddingHorizontal: spacing.md,
+            }}
+          >
+            <Ionicons name="search" size={18} color={colors.textFaint} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              onSubmitEditing={() => setQuery(search.trim())}
+              returnKeyType="search"
+              placeholder={t.explore.searchPlaceholder}
+              placeholderTextColor={colors.textFaint}
+              style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: colors.text }}
+            />
+            {search ? (
+              <Pressable onPress={() => setSearch("")} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={colors.textFaint} />
+              </Pressable>
+            ) : null}
+          </View>
+          {/* Filter button — badge shows how many filters are active. */}
+          <Pressable
+            onPress={() => setFilterOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t.filters.button}
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: radius.lg,
+              borderWidth: 1,
+              borderColor: activeCount ? colors.primary : colors.border,
+              backgroundColor: activeCount ? colors.primarySoft : colors.card,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons
+              name="options-outline"
+              size={20}
+              color={activeCount ? colors.primary : colors.textMuted}
+            />
+            {activeCount ? (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  end: -4,
+                  minWidth: 17,
+                  height: 17,
+                  borderRadius: 9,
+                  paddingHorizontal: 4,
+                  backgroundColor: colors.primary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppText variant="caption" weight="bold" color="#FFFFFF">
+                  {activeCount}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
         </View>
+
+        {/* Result count once any filter or search is active. */}
+        {(activeCount > 0 || query) && !doctors.isLoading ? (
+          <AppText variant="caption" color={colors.textMuted}>
+            {total} {t.filters.results}
+          </AppText>
+        ) : null}
       </View>
+
+      <DoctorFilterSheet
+        visible={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        facets={facets.data}
+        current={filters}
+        onApply={setFilters}
+      />
 
       {doctors.isLoading ? (
         <View style={{ padding: spacing.screen, gap: spacing.md }}>
