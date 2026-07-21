@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native"
+import { ActivityIndicator, FlatList, Linking, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -34,7 +34,9 @@ export default function Explore() {
   const [coords, setCoords] = useState<Coords | null>(null)
   const [locationSheetOpen, setLocationSheetOpen] = useState(false)
   const [locationBusy, setLocationBusy] = useState(false)
-  const [locationNotice, setLocationNotice] = useState<string | null>(null)
+  const [locationNotice, setLocationNotice] = useState<
+    { kind: "denied"; canAskAgain: boolean } | { kind: "error" } | { kind: "unavailable" } | null
+  >(null)
   const facets = useFilterFacets()
   // "Nearest to me" overrides sort but never the rest of the staged filters —
   // and only ever activates once we actually have real device coordinates.
@@ -67,16 +69,17 @@ export default function Explore() {
       setLocationSheetOpen(false)
     } else if (result.status === "denied") {
       setLocationSheetOpen(false)
-      setLocationNotice(t.filters.nearestDenied)
+      setLocationNotice({ kind: "denied", canAskAgain: result.canAskAgain })
     } else {
       setLocationSheetOpen(false)
-      setLocationNotice(t.filters.nearestError)
+      setLocationNotice({ kind: "error" })
     }
   }
 
   function onPressNearest() {
     if (!facets.data?.hasNearestSupport) {
-      setLocationNotice(t.filters.nearestUnavailable)
+      setLocationNotice({ kind: "unavailable" })
+      setFilterOpen(true) // let them search by city right away instead.
       return
     }
     setLocationNotice(null)
@@ -234,9 +237,31 @@ export default function Explore() {
           </Pressable>
         )}
         {locationNotice ? (
-          <AppText variant="caption" color={colors.textFaint}>
-            {locationNotice}
-          </AppText>
+          <View style={{ gap: 6 }}>
+            <AppText variant="caption" color={colors.textFaint}>
+              {locationNotice.kind === "denied"
+                ? t.filters.nearestDenied
+                : locationNotice.kind === "error"
+                  ? t.filters.nearestError
+                  : t.filters.nearestUnavailable}
+            </AppText>
+            {locationNotice.kind === "denied" ? (
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                <Pressable onPress={() => setFilterOpen(true)} hitSlop={4}>
+                  <AppText variant="caption" weight="bold" color={colors.primary}>
+                    {t.filters.chooseCity}
+                  </AppText>
+                </Pressable>
+                {!locationNotice.canAskAgain ? (
+                  <Pressable onPress={() => void Linking.openSettings()} hitSlop={4}>
+                    <AppText variant="caption" weight="bold" color={colors.primary}>
+                      {t.filters.openSettings}
+                    </AppText>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
         ) : null}
 
         {/* Result count once any filter or search is active. */}

@@ -5,6 +5,9 @@ export const MIN_LATITUDE = -90
 export const MAX_LATITUDE = 90
 export const MIN_LONGITUDE = -180
 export const MAX_LONGITUDE = 180
+/** Sane upper bound on a client-requested search radius — keeps radiusKm
+ *  from turning into an unbounded, unindexed distance scan. */
+export const MAX_RADIUS_KM = 500
 
 export function isValidLatitude(v: number): boolean {
   return Number.isFinite(v) && v >= MIN_LATITUDE && v <= MAX_LATITUDE

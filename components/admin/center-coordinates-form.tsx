@@ -44,7 +44,7 @@ export function CenterCoordinatesForm({
     return (
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
         {hasCoords ? <MapPin className="size-3.5" /> : <MapPinOff className="size-3.5" />}
-        {hasCoords ? "الموقع الجغرافي" : "إضافة الموقع"}
+        {hasCoords ? "الموقع محدد" : "لم تتم إضافة الموقع"}
       </Button>
     )
   }
@@ -85,13 +85,14 @@ export function CenterCoordinatesForm({
         </div>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex gap-2">
-        <Button size="sm" disabled={busy} onClick={onSave}>
-          {busy ? "جارٍ الحفظ…" : "حفظ"}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" loading={busy} loadingText="جارٍ الحفظ…" onClick={onSave}>
+          حفظ
         </Button>
         <Button
           size="sm"
           variant="ghost"
+          disabled={busy}
           onClick={() => {
             setOpen(false)
             setError(null)
@@ -101,6 +102,16 @@ export function CenterCoordinatesForm({
         >
           إلغاء
         </Button>
+        {hasCoords ? (
+          <a
+            href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            فتح على الخريطة
+          </a>
+        ) : null}
       </div>
     </div>
   )

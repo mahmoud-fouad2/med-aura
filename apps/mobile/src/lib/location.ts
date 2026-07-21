@@ -4,7 +4,10 @@ export type Coords = { lat: number; lng: number }
 
 export type LocationResult =
   | { status: "granted"; coords: Coords }
-  | { status: "denied" }
+  // canAskAgain=false means the OS will no longer show its own prompt — the
+  // only way back is the device Settings app, which we surface as a button,
+  // never opened automatically.
+  | { status: "denied"; canAskAgain: boolean }
   | { status: "error" }
 
 /**
@@ -13,8 +16,8 @@ export type LocationResult =
  */
 export async function requestLocation(): Promise<LocationResult> {
   try {
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== "granted") return { status: "denied" }
+    const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync()
+    if (status !== "granted") return { status: "denied", canAskAgain }
     const pos = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     })
