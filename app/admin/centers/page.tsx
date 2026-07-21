@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
+import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { countryNameAr, providerStatusAr, PROVIDER_STATUSES } from "@/lib/status-labels"
 import { firstParam } from "@/lib/utils"
@@ -136,13 +137,20 @@ export default async function AdminCentersPage({
                       { label: "الأطباء", value: c.doctorCount.toLocaleString("ar-SA-u-nu-latn") },
                     ]}
                     actions={
-                      <Link
-                        href={`/centers/${c.slug}`}
-                        className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      >
-                        عرض الملف
-                        <ExternalLink className="size-3" />
-                      </Link>
+                      <>
+                        <Link
+                          href={`/centers/${c.slug}`}
+                          className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          عرض الملف
+                          <ExternalLink className="size-3" />
+                        </Link>
+                        <CenterCoordinatesForm
+                          centerId={c.id}
+                          latitude={c.latitude}
+                          longitude={c.longitude}
+                        />
+                      </>
                     }
                   />
                 )
@@ -157,6 +165,7 @@ export default async function AdminCentersPage({
                     <Th>الملف</Th>
                     <Th>الموقع</Th>
                     <Th>الأطباء</Th>
+                    <Th>الإحداثيات</Th>
                     <Th>—</Th>
                   </tr>
                 </thead>
@@ -206,6 +215,13 @@ export default async function AdminCentersPage({
                             <UsersIcon className="size-3" />
                             {c.doctorCount.toLocaleString("ar-SA-u-nu-latn")}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <CenterCoordinatesForm
+                            centerId={c.id}
+                            latitude={c.latitude}
+                            longitude={c.longitude}
+                          />
                         </td>
                         <td className="px-4 py-3">
                           <Link

@@ -42,6 +42,10 @@ export const center = pgTable(
     logoKey: text("logoKey"),
     coverKey: text("coverKey"),
     languages: text("languages").array().notNull().default([]),
+    // Nullable until an admin sets them — "nearest" ranking must never
+    // fabricate a position for a center that hasn't been located yet.
+    latitude: numeric("latitude", { precision: 9, scale: 6 }),
+    longitude: numeric("longitude", { precision: 9, scale: 6 }),
     // rating/reviewCount are computed from verified reviews; shown only when > 0
     rating: numeric("rating", { precision: 2, scale: 1 }),
     reviewCount: integer("reviewCount").notNull().default(0),

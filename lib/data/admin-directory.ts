@@ -102,6 +102,8 @@ export type AdminCenterRow = {
   city: string | null
   doctorCount: number
   createdAt: Date
+  latitude: string | null
+  longitude: string | null
 }
 
 export async function listCentersForAdmin(filters: { status?: string; q?: string } = {}, limit = 100): Promise<AdminCenterRow[]> {
@@ -120,6 +122,8 @@ export async function listCentersForAdmin(filters: { status?: string; q?: string
       country: centerT.country,
       city: centerT.city,
       createdAt: centerT.createdAt,
+      latitude: centerT.latitude,
+      longitude: centerT.longitude,
     })
     .from(centerT)
     .where(conditions.length > 0 ? and(...conditions) : undefined)

@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { Pressable, ScrollView, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button } from "./ui"
 import { BottomSheet } from "./bottom-sheet"
 import { type DoctorFilters, type FilterFacets } from "../lib/api"
@@ -194,26 +193,6 @@ export function DoctorFilterSheet({
             />
           </Section>
 
-          {/* Nearest — deferred to the Location batch (no coordinates yet). */}
-          <Section title={t.filters.nearest}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 5,
-                borderRadius: radius.full,
-                paddingHorizontal: spacing.md,
-                paddingVertical: 7,
-                backgroundColor: "#F1EFF6",
-                opacity: 0.6,
-              }}
-            >
-              <Ionicons name="location-outline" size={14} color={colors.textFaint} />
-              <AppText variant="caption" weight="medium" color={colors.textFaint}>
-                {t.filters.nearestSoon}
-              </AppText>
-            </View>
-          </Section>
         </View>
       </ScrollView>
 

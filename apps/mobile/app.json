@@ -2,7 +2,7 @@
   "expo": {
     "name": "Med Aura",
     "slug": "med-aura",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -14,12 +14,13 @@
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
         "NSCameraUsageDescription": "يستخدم Med Aura الكاميرا أثناء الاستشارة المرئية مع طبيبك.",
-        "NSMicrophoneUsageDescription": "يستخدم Med Aura المايكروفون أثناء الاستشارة المرئية مع طبيبك."
+        "NSMicrophoneUsageDescription": "يستخدم Med Aura المايكروفون أثناء الاستشارة المرئية مع طبيبك.",
+        "NSLocationWhenInUseUsageDescription": "نستخدم موقعك لعرض الأطباء والفروع الأقرب إليك."
       }
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#FCFAFB",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
@@ -47,6 +48,14 @@
           "enableCamera": true,
           "enableMicrophone": true,
           "enableScreenShare": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "نستخدم موقعك لعرض الأطباء والفروع الأقرب إليك.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
         }
       ],
       [

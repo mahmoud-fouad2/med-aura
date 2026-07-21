@@ -85,6 +85,13 @@
       "when": 1784203748413,
       "tag": "0011_plain_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784634279432,
+      "tag": "0012_unusual_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

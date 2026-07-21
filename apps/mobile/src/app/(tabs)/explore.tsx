@@ -13,12 +13,14 @@ import {
 } from "../../components/ui"
 import { QueryErrorState } from "../../components/query-error"
 import { DoctorFilterSheet } from "../../components/doctor-filter-sheet"
+import { LocationPermissionSheet } from "../../components/location-permission-sheet"
 import {
   useDoctors,
   useFilterFacets,
   type Doctor,
   type DoctorFilters,
 } from "../../lib/api"
+import { requestLocation, type Coords } from "../../lib/location"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
 
@@ -29,8 +31,17 @@ export default function Explore() {
   const [query, setQuery] = useState("")
   const [filters, setFilters] = useState<DoctorFilters>({})
   const [filterOpen, setFilterOpen] = useState(false)
-  const doctors = useDoctors(query, filters)
+  const [coords, setCoords] = useState<Coords | null>(null)
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false)
+  const [locationBusy, setLocationBusy] = useState(false)
+  const [locationNotice, setLocationNotice] = useState<string | null>(null)
   const facets = useFilterFacets()
+  // "Nearest to me" overrides sort but never the rest of the staged filters —
+  // and only ever activates once we actually have real device coordinates.
+  const effectiveFilters: DoctorFilters = coords
+    ? { ...filters, sort: "nearest", lat: coords.lat, lng: coords.lng }
+    : filters
+  const doctors = useDoctors(query, effectiveFilters)
 
   // Live search: results follow the typing after a beat — no submit needed,
   // and no request per keystroke.
@@ -45,6 +56,36 @@ export default function Explore() {
   )
   const total = doctors.data?.pages[0]?.total ?? 0
   const activeCount = Object.values(filters).filter((v) => v != null).length
+
+  async function fetchLocation() {
+    setLocationBusy(true)
+    setLocationNotice(null)
+    const result = await requestLocation()
+    setLocationBusy(false)
+    if (result.status === "granted") {
+      setCoords(result.coords)
+      setLocationSheetOpen(false)
+    } else if (result.status === "denied") {
+      setLocationSheetOpen(false)
+      setLocationNotice(t.filters.nearestDenied)
+    } else {
+      setLocationSheetOpen(false)
+      setLocationNotice(t.filters.nearestError)
+    }
+  }
+
+  function onPressNearest() {
+    if (!facets.data?.hasNearestSupport) {
+      setLocationNotice(t.filters.nearestUnavailable)
+      return
+    }
+    setLocationNotice(null)
+    if (coords) {
+      void fetchLocation() // "تحديث موقعي" — permission already granted.
+    } else {
+      setLocationSheetOpen(true)
+    }
+  }
 
   return (
     <View
@@ -132,6 +173,72 @@ export default function Explore() {
           </Pressable>
         </View>
 
+        {/* "Nearest to me" — permission requested only on this exact tap,
+            never on app open. Re-tap once active re-fetches the position. */}
+        {coords ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.sm,
+              backgroundColor: colors.primarySoft,
+              borderRadius: radius.lg,
+              paddingHorizontal: spacing.md,
+              paddingVertical: 8,
+            }}
+          >
+            <Ionicons name="navigate" size={16} color={colors.primary} />
+            <AppText variant="caption" weight="medium" color={colors.primary} style={{ flex: 1 }}>
+              {t.filters.nearestBanner}
+            </AppText>
+            <Pressable
+              onPress={() => void fetchLocation()}
+              disabled={locationBusy}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t.filters.nearestUpdate}
+            >
+              <Ionicons name="refresh" size={16} color={colors.primary} />
+            </Pressable>
+            <Pressable
+              onPress={() => setCoords(null)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t.common.cancel}
+            >
+              <Ionicons name="close" size={16} color={colors.primary} />
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={onPressNearest}
+            accessibilityRole="button"
+            accessibilityLabel={t.filters.nearest}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              alignSelf: "flex-start",
+              gap: 6,
+              borderRadius: radius.full,
+              paddingHorizontal: spacing.md,
+              paddingVertical: 7,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.card,
+            }}
+          >
+            <Ionicons name="navigate-outline" size={14} color={colors.textMuted} />
+            <AppText variant="caption" weight="medium" color={colors.textMuted}>
+              {t.filters.nearest}
+            </AppText>
+          </Pressable>
+        )}
+        {locationNotice ? (
+          <AppText variant="caption" color={colors.textFaint}>
+            {locationNotice}
+          </AppText>
+        ) : null}
+
         {/* Result count once any filter or search is active. */}
         {(activeCount > 0 || query) && !doctors.isLoading ? (
           <AppText variant="caption" color={colors.textMuted}>
@@ -139,6 +246,13 @@ export default function Explore() {
           </AppText>
         ) : null}
       </View>
+
+      <LocationPermissionSheet
+        visible={locationSheetOpen}
+        busy={locationBusy}
+        onClose={() => setLocationSheetOpen(false)}
+        onContinue={() => void fetchLocation()}
+      />
 
       <DoctorFilterSheet
         visible={filterOpen}
@@ -214,6 +328,7 @@ function DoctorRow({ doctor }: { doctor: Doctor }) {
         ) : null}
         <AppText variant="caption" color={colors.textFaint} numberOfLines={1}>
           {location} · {doctor.yearsExperience} {t.explore.years}
+          {doctor.distanceKm != null ? ` · ${doctor.distanceKm} ${t.filters.km}` : ""}
         </AppText>
       </View>
       <ChevronForward size={18} />

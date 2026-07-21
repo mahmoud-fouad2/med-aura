@@ -7,6 +7,7 @@ import {
   gte,
   lte,
   isNull,
+  isNotNull,
   desc,
   count,
   sql,
@@ -22,6 +23,7 @@ import {
   center,
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { haversineKm, haversineKmSql } from "@/lib/distance"
 
 export type DoctorCard = {
   id: string
@@ -40,6 +42,9 @@ export type DoctorCard = {
   reviewCount: number
   photoUrl: string | null
   procedures: string[]
+  /** Only present when the caller sent real lat/lng AND the doctor's center
+   *  has real coordinates — never a fabricated or estimated value. */
+  distanceKm: number | null
 }
 
 export type SearchParams = {
@@ -53,9 +58,15 @@ export type SearchParams = {
   language?: string // must be one of the doctor's languages
   priceMin?: number
   priceMax?: number
-  sort?: "price_low" | "price_high" | "rating"
+  sort?: "price_low" | "price_high" | "rating" | "nearest"
   page?: number
   pageSize?: number
+  /** User's real device coordinates — only sent when they opt in. */
+  lat?: number
+  lng?: number
+  /** Only meaningful together with lat/lng; excludes doctors whose center
+   *  distance can't be computed (no fallback, no fabricated inclusion). */
+  radiusKm?: number
 }
 
 const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
@@ -125,6 +136,14 @@ function filterConditions(params: SearchParams): SQL[] {
   if (params.priceMax != null)
     conds.push(lte(doctorProfile.consultationFee, String(params.priceMax)))
 
+  // Radius only filters when we can actually compute a distance — doctors
+  // whose center has no real coordinates are excluded rather than guessed in.
+  if (params.lat != null && params.lng != null && params.radiusKm != null) {
+    conds.push(
+      sql`${haversineKmSql(center.latitude, center.longitude, params.lat, params.lng)} <= ${params.radiusKm}`,
+    )
+  }
+
   if (params.procedure || params.category || params.surgical) {
     const sub = db
       .select({ id: doctorProcedure.doctorId })
@@ -149,8 +168,23 @@ export async function getDoctorFilterFacets(): Promise<{
   cities: string[]
   languages: string[]
   categories: { slug: string; nameAr: string }[]
+  /** True only if at least one approved, visible center has real coordinates
+   *  set — the app must not offer "nearest" as if it works before this. */
+  hasNearestSupport: boolean
 }> {
   const where = and(...visibilityConditions())
+
+  const locatedCenters = await db
+    .select({ n: count() })
+    .from(center)
+    .where(
+      and(
+        eq(center.status, "approved"),
+        isNotNull(center.latitude),
+        isNotNull(center.longitude),
+      ),
+    )
+  const hasNearestSupport = (locatedCenters[0]?.n ?? 0) > 0
 
   const cityRows = await db
     .selectDistinct({ city: doctorProfile.city })
@@ -177,7 +211,7 @@ export async function getDoctorFilterFacets(): Promise<{
     .where(eq(procedureCategory.visible, true))
     .orderBy(procedureCategory.sortOrder)
 
-  return { cities, languages, categories }
+  return { cities, languages, categories, hasNearestSupport }
 }
 
 export async function searchDoctors(
@@ -186,6 +220,12 @@ export async function searchDoctors(
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 12))
   const where = and(...visibilityConditions(), ...filterConditions(params))
+  // sort=nearest only makes sense with real device coordinates — otherwise
+  // it silently falls back to the organic ranking instead of faking order.
+  const nearest =
+    params.sort === "nearest" && params.lat != null && params.lng != null
+      ? haversineKmSql(center.latitude, center.longitude, params.lat, params.lng)
+      : null
 
   const [rows, totalRows] = await Promise.all([
     db
@@ -205,26 +245,35 @@ export async function searchDoctors(
         rating: doctorProfile.rating,
         reviewCount: doctorProfile.reviewCount,
         photoKey: doctorProfile.photoKey,
+        centerLatitude: center.latitude,
+        centerLongitude: center.longitude,
       })
       .from(doctorProfile)
+      .leftJoin(center, eq(doctorProfile.centerId, center.id))
       .where(where)
       // Explicit sort when asked; otherwise organic ranking (verified, then
-      // experience). Nulls sort last so priced/rated doctors lead.
+      // experience). Nulls sort last so priced/rated/located doctors lead.
       .orderBy(
-        ...(params.sort === "price_low"
-          ? [sql`${doctorProfile.consultationFee} asc nulls last`]
-          : params.sort === "price_high"
-            ? [sql`${doctorProfile.consultationFee} desc nulls last`]
-            : params.sort === "rating"
-              ? [sql`${doctorProfile.rating} desc nulls last`]
-              : [
-                  desc(doctorProfile.verified),
-                  desc(doctorProfile.yearsExperience),
-                ]),
+        ...(nearest
+          ? [sql`${nearest} asc nulls last`]
+          : params.sort === "price_low"
+            ? [sql`${doctorProfile.consultationFee} asc nulls last`]
+            : params.sort === "price_high"
+              ? [sql`${doctorProfile.consultationFee} desc nulls last`]
+              : params.sort === "rating"
+                ? [sql`${doctorProfile.rating} desc nulls last`]
+                : [
+                    desc(doctorProfile.verified),
+                    desc(doctorProfile.yearsExperience),
+                  ]),
       )
       .limit(pageSize)
       .offset((page - 1) * pageSize),
-    db.select({ n: count() }).from(doctorProfile).where(where),
+    db
+      .select({ n: count() })
+      .from(doctorProfile)
+      .leftJoin(center, eq(doctorProfile.centerId, center.id))
+      .where(where),
   ])
 
   const ids = rows.map((r) => r.id)
@@ -246,10 +295,26 @@ export async function searchDoctors(
   }
 
   return {
-    results: rows.map(({ photoKey, ...r }) => ({
+    results: rows.map(({ photoKey, centerLatitude, centerLongitude, ...r }) => ({
       ...r,
       photoUrl: doctorPhotoUrl(r.slug, photoKey),
       procedures: procMap.get(r.id) ?? [],
+      // Honest distance: only computed when both the user's coordinates and
+      // the doctor's center coordinates are real — never estimated.
+      distanceKm:
+        params.lat != null &&
+        params.lng != null &&
+        centerLatitude != null &&
+        centerLongitude != null
+          ? Math.round(
+              haversineKm(
+                params.lat,
+                params.lng,
+                Number(centerLatitude),
+                Number(centerLongitude),
+              ) * 10,
+            ) / 10
+          : null,
     })),
     total: totalRows[0]?.n ?? 0,
   }
@@ -325,6 +390,8 @@ export async function getPublicDoctorBySlug(
     ...publicRow,
     photoUrl,
     procedures: procs.map((p) => p.nameAr),
+    // The single-doctor profile page never carries the viewer's coordinates.
+    distanceKm: null,
     licenseAuthority: license[0]?.issuingAuthority ?? null,
     licenseLast4: license[0]?.numberLast4 ?? null,
     lastVerifiedAt: license[0]?.lastVerifiedAt ?? null,

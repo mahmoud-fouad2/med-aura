@@ -22,6 +22,7 @@ import { requirePermission, PERMISSIONS, ROLES } from "@/lib/rbac"
 import { encryptString, last4 } from "@/lib/crypto"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { AppError, toSafeError, validation } from "@/lib/errors"
+import { isValidLatitude, isValidLongitude } from "@/lib/distance"
 
 export type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -453,6 +454,76 @@ async function approveCenterApplication(
     revalidatePath("/admin/applications")
     revalidatePath("/centers")
     return { ok: true, data: { centerId } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const centerCoordinatesSchema = z.object({
+  centerId: z.string().min(1),
+  // Sent as strings from a form; empty string means "leave/clear this field".
+  latitude: z.string(),
+  longitude: z.string(),
+})
+
+/**
+ * Sets or clears a center's coordinates, used only to rank "nearest" search
+ * results — never required, never guessed. Both fields must be provided
+ * together (a lone half-coordinate can't locate anything) or both left empty
+ * to clear a previously-set pair.
+ */
+export async function updateCenterCoordinates(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.PROVIDER_REVIEW)
+
+    const parsed = centerCoordinatesSchema.safeParse(input)
+    if (!parsed.success) throw validation("بيانات غير صحيحة")
+    const centerId = parsed.data.centerId
+    const latitudeRaw = parsed.data.latitude.trim()
+    const longitudeRaw = parsed.data.longitude.trim()
+
+    const existing = await db
+      .select({ id: center.id })
+      .from(center)
+      .where(eq(center.id, centerId))
+      .limit(1)
+    if (!existing[0]) throw new AppError("NOT_FOUND")
+
+    let latitude: string | null = null
+    let longitude: string | null = null
+
+    if (latitudeRaw || longitudeRaw) {
+      if (!latitudeRaw || !longitudeRaw)
+        throw validation("أدخل خط العرض وخط الطول معًا، أو اترك الحقلين فارغين.")
+      const lat = Number(latitudeRaw)
+      const lng = Number(longitudeRaw)
+      if (!isValidLatitude(lat))
+        throw validation("خط العرض يجب أن يكون رقمًا بين -90 و 90.")
+      if (!isValidLongitude(lng))
+        throw validation("خط الطول يجب أن يكون رقمًا بين -180 و 180.")
+      latitude = String(lat)
+      longitude = String(lng)
+    }
+
+    await db
+      .update(center)
+      .set({ latitude, longitude, updatedBy: user.id, updatedAt: new Date() })
+      .where(eq(center.id, centerId))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: latitude ? "center.coordinates.update" : "center.coordinates.clear",
+      actorUserId: user.id,
+      entityType: "center",
+      entityId: centerId,
+      metadata: { latitude, longitude },
+      ...meta,
+    })
+
+    revalidatePath("/admin/centers")
+    return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)
     return { ok: false, error: safe.userMessage, code: safe.code }

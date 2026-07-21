@@ -25,6 +25,9 @@ export type Doctor = {
   reviewCount: number
   photoUrl: string | null
   procedures: string[]
+  /** Only present when the caller sent real coordinates and the doctor's
+   *  center has real coordinates too — never a fabricated distance. */
+  distanceKm: number | null
 }
 
 export type DoctorDetail = Doctor & {
@@ -143,13 +146,20 @@ export type DoctorFilters = {
   surgical?: "true" | "false"
   priceMin?: number
   priceMax?: number
-  sort?: "price_low" | "price_high" | "rating"
+  sort?: "price_low" | "price_high" | "rating" | "nearest"
+  /** Only sent when the user opted into "nearest to me" and permission was granted. */
+  lat?: number
+  lng?: number
+  radiusKm?: number
 }
 
 export type FilterFacets = {
   cities: string[]
   languages: string[]
   categories: { slug: string; nameAr: string }[]
+  /** True only if at least one real branch has coordinates set — gates
+   *  whether "nearest to me" can be offered as functional at all. */
+  hasNearestSupport: boolean
 }
 
 export class SessionExpiredError extends Error {}
@@ -269,6 +279,9 @@ export const api = {
     if (f?.priceMin != null) sp.set("priceMin", String(f.priceMin))
     if (f?.priceMax != null) sp.set("priceMax", String(f.priceMax))
     if (f?.sort) sp.set("sort", f.sort)
+    if (f?.lat != null) sp.set("lat", String(f.lat))
+    if (f?.lng != null) sp.set("lng", String(f.lng))
+    if (f?.radiusKm != null) sp.set("radiusKm", String(f.radiusKm))
     return request<{ total: number; page: number; doctors: Doctor[] }>(
       `/api/mobile/v1/doctors?${sp.toString()}`,
       { auth: false },
