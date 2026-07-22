@@ -3,7 +3,8 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { doctorProfile, patientProfile, user as userTable } from "@/lib/db/schema"
 import { writeAudit, requestMeta } from "@/lib/audit"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { absolutize, jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { getPublicUrl } from "@/lib/storage/r2"
 
 export const dynamic = "force-dynamic"
 
@@ -40,22 +41,30 @@ export async function GET() {
 
   // A doctor's display name is their provider-profile name (which the app
   // greets with a "د." prefix), NOT the raw account name. Only look it up for
-  // doctors so patients pay no extra query.
+  // doctors so patients pay no extra query. A doctor's public photo lives on
+  // their provider profile (the same field the doctor list/search reads) —
+  // never the bare account image — so editing it from the app updates the
+  // exact photo patients already see everywhere.
   let doctorName: string | null = null
+  let photoKey: string | null = null
   if (accountType === "doctor") {
     const dp = (
       await db
-        .select({ name: doctorProfile.name })
+        .select({ name: doctorProfile.name, photoKey: doctorProfile.photoKey })
         .from(doctorProfile)
         .where(eq(doctorProfile.userId, user.id))
         .limit(1)
     )[0]
     doctorName = dp?.name?.trim() || null
+    photoKey = dp?.photoKey ?? null
+  } else {
+    photoKey = user.image ?? null
   }
 
   // One resolved name the app can trust for every greeting/header — never
   // empty, never the app name, never a bare title.
   const displayName = (doctorName || user.name || "").trim()
+  const photoUrl = photoKey ? absolutize(getPublicUrl(photoKey)) : null
 
   return jsonOk({
     id: user.id,
@@ -65,6 +74,7 @@ export async function GET() {
     accountType,
     displayName,
     doctorName,
+    photoUrl,
     phone: profile?.phone ?? null,
     residenceCountry: profile?.residenceCountry ?? null,
     city: profile?.city ?? null,

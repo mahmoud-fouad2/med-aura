@@ -806,6 +806,28 @@ export const notificationPreference = pgTable("notification_preference", {
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 })
 
+/**
+ * Expo push tokens for the native app — one row per installed device, not
+ * per user (someone signed in on two phones gets two rows). Sending to a
+ * user fans out to every token on file; a token that comes back
+ * DeviceNotRegistered from Expo's push service gets deleted, never retried.
+ */
+export const pushToken = pgTable(
+  "push_token",
+  {
+    id: id(),
+    userId: text("userId").notNull().references(() => user.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    platform: text("platform").notNull().default("android"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("lastSeenAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("push_token_token_idx").on(t.token),
+    index("push_token_user_idx").on(t.userId),
+  ],
+)
+
 /* ── Internal tasks (ops/concierge) ──────────────────────────────────────── */
 export const internalTask = pgTable(
   "internal_task",

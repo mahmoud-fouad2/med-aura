@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store"
 import * as SplashScreen from "expo-splash-screen"
 import { authClient } from "../lib/auth-client"
 import { isRememberMe } from "../lib/session-prefs"
+import { registerForPushNotifications } from "../lib/push-notifications"
 import { BrandSplash } from "../components/splash-screen"
 
 export const ONBOARDING_KEY = "medaura.onboarding.done"
@@ -34,7 +35,12 @@ export default function Boot() {
         session && "data" in session && session.data?.user,
       )
       if (!seen) setState({ status: "onboarding" })
-      else if (hasSession && remember) setState({ status: "app" })
+      else if (hasSession && remember) {
+        setState({ status: "app" })
+        // Fire-and-forget: never delays the redirect, and silently no-ops
+        // without a linked EAS project or a granted permission.
+        void registerForPushNotifications()
+      }
       else if (hasSession && !remember) {
         // "Remember me" was off: a fresh cold start must require sign-in.
         // Drop the persisted session (best-effort, never blocks boot) so it

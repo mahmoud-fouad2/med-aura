@@ -24,6 +24,7 @@ import {
 import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
 import { api } from "../lib/api"
+import { registerForPushNotifications } from "../lib/push-notifications"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -90,6 +91,7 @@ export default function SignUp() {
       // secure web flow; the account itself is ready.
       void WebBrowser.openBrowserAsync(`${API_URL}/dashboard/provider/apply`)
     }
+    void registerForPushNotifications()
     router.replace("/(tabs)")
   }
 

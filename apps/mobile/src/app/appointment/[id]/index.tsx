@@ -14,7 +14,7 @@ import {
   StatusPill,
 } from "../../../components/ui"
 import { QueryErrorState } from "../../../components/query-error"
-import { useAppointments, type Appointment } from "../../../lib/api"
+import { useAppointments, useMe, type Appointment } from "../../../lib/api"
 import { API_URL } from "../../../lib/config"
 import { useI18n } from "../../../lib/i18n"
 import { colors, radius, spacing } from "../../../theme"
@@ -29,6 +29,8 @@ export default function AppointmentDetails() {
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const query = useAppointments()
+  const me = useMe()
+  const isDoctor = me.data?.accountType === "doctor"
 
   const appointment = query.data?.appointments.find((a) => a.id === id)
 
@@ -83,7 +85,7 @@ export default function AppointmentDetails() {
             title={t.appointmentDetails.notFound}
           />
         ) : (
-          <Details appointment={appointment} locale={locale} />
+          <Details appointment={appointment} locale={locale} isDoctor={isDoctor} />
         )}
       </ScrollView>
     </View>
@@ -93,9 +95,11 @@ export default function AppointmentDetails() {
 function Details({
   appointment,
   locale,
+  isDoctor,
 }: {
   appointment: Appointment
   locale: string
+  isDoctor: boolean
 }) {
   const { t } = useI18n()
   const intl = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US"
@@ -116,7 +120,7 @@ function Details({
         />
         <View style={{ flex: 1 }}>
           <AppText variant="caption" color={colors.textMuted}>
-            {t.appointmentDetails.doctor}
+            {isDoctor ? t.appointmentDetails.patient : t.appointmentDetails.doctor}
           </AppText>
           <AppText variant="body" weight="bold" numberOfLines={1}>
             {appointment.counterpartName}

@@ -1,6 +1,5 @@
 import { ScrollView, Pressable, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
-import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -12,7 +11,7 @@ import {
   ChevronForward,
   Skeleton,
 } from "../../components/ui"
-import { onboardingArt } from "../../components/brand"
+import { ServiceThumbnail } from "../../components/service-thumbnail"
 import { QueryErrorState } from "../../components/query-error"
 import { useMe, useService } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
@@ -25,13 +24,6 @@ export default function ServiceDetails() {
   const me = useMe()
   const service = useService(slug)
   const isPatient = (me.data?.accountType ?? "patient") === "patient"
-
-  const art = [
-    onboardingArt.trust,
-    onboardingArt.consult,
-    onboardingArt.journey,
-    onboardingArt.privacy,
-  ][(slug?.length ?? 0) % 4]
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -61,18 +53,24 @@ export default function ServiceDetails() {
             <ChevronBack size={24} color="#FFFFFF" />
           </Pressable>
           <View style={{ alignItems: "center", gap: spacing.sm }}>
-            <View
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: radius.xl,
-                backgroundColor: "rgba(255,255,255,0.15)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image source={art} style={{ width: 76, height: 76 }} contentFit="contain" />
-            </View>
+            {service.data ? (
+              <ServiceThumbnail
+                uri={service.data.imageUrl}
+                size={96}
+                radiusSize={radius.xl}
+                backgroundColor="rgba(255,255,255,0.15)"
+                iconColor="#FFFFFF"
+              />
+            ) : (
+              <View
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: radius.xl,
+                  backgroundColor: "rgba(255,255,255,0.15)",
+                }}
+              />
+            )}
             {service.data ? (
               <AppText variant="title" weight="heavy" color="#FFFFFF" style={{ textAlign: "center" }}>
                 {service.data.nameAr}

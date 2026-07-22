@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { FlatList, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
-import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -12,7 +11,7 @@ import {
   EmptyState,
   Skeleton,
 } from "../components/ui"
-import { onboardingArt } from "../components/brand"
+import { ServiceThumbnail } from "../components/service-thumbnail"
 import { QueryErrorState } from "../components/query-error"
 import { useMe, useServices, type Service } from "../lib/api"
 import { useI18n } from "../lib/i18n"
@@ -122,31 +121,11 @@ function ServiceRow({ service }: { service: Service }) {
   const { t } = useI18n()
   const me = useMe()
   const isPatient = (me.data?.accountType ?? "patient") === "patient"
-  // Cycle a small set of brand illustrations so the list has visual rhythm
-  // without any per-service photo (none exist).
-  const art = [
-    onboardingArt.trust,
-    onboardingArt.consult,
-    onboardingArt.journey,
-    onboardingArt.privacy,
-  ][service.slug.length % 4]
 
   return (
     <Card onPress={() => router.push(`/service/${service.slug}`)} style={{ gap: spacing.md }}>
       <View style={{ flexDirection: "row", gap: spacing.md }}>
-        <View
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: radius.lg,
-            backgroundColor: colors.primarySoft,
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-          }}
-        >
-          <Image source={art} style={{ width: 52, height: 52 }} contentFit="contain" />
-        </View>
+        <ServiceThumbnail uri={service.imageUrl} size={64} />
         <View style={{ flex: 1, gap: 4 }}>
           <AppText variant="body" weight="bold" numberOfLines={1}>
             {service.nameAr}

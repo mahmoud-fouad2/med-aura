@@ -98,42 +98,53 @@ export default function Home() {
           }}
         >
           <Logo height={26} variant="white" />
-          <Pressable
-            onPress={() => router.push("/notifications")}
-            accessibilityRole="button"
-            accessibilityLabel={t.inbox.title}
-            hitSlop={8}
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 19,
-              backgroundColor: "rgba(255,255,255,0.16)",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
-            {(inbox.data?.unread ?? 0) > 0 ? (
-              <View
-                style={{
-                  position: "absolute",
-                  top: -2,
-                  end: -2,
-                  minWidth: 17,
-                  height: 17,
-                  borderRadius: 9,
-                  paddingHorizontal: 4,
-                  backgroundColor: colors.gold,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <AppText variant="caption" weight="bold" color={colors.ink}>
-                  {Math.min(inbox.data?.unread ?? 0, 9)}
-                </AppText>
-              </View>
-            ) : null}
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Pressable
+              onPress={() => router.push("/notifications")}
+              accessibilityRole="button"
+              accessibilityLabel={t.inbox.title}
+              hitSlop={8}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: "rgba(255,255,255,0.16)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
+              {(inbox.data?.unread ?? 0) > 0 ? (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    end: -2,
+                    minWidth: 17,
+                    height: 17,
+                    borderRadius: 9,
+                    paddingHorizontal: 4,
+                    backgroundColor: colors.gold,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <AppText variant="caption" weight="bold" color={colors.ink}>
+                    {Math.min(inbox.data?.unread ?? 0, 9)}
+                  </AppText>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/(tabs)/profile")}
+              accessibilityRole="button"
+              accessibilityLabel={t.home.myProfile}
+              hitSlop={8}
+              style={{ borderRadius: 19, borderWidth: 2, borderColor: "rgba(255,255,255,0.5)" }}
+            >
+              <Avatar name={resolvedName || "؟"} photoUrl={me.data?.photoUrl} size={34} />
+            </Pressable>
+          </View>
         </View>
         <View style={{ gap: 4 }}>
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
@@ -165,44 +176,67 @@ export default function Home() {
         ) : null}
       </View>
 
-      {/* Provider (doctor/staff): the full schedule lives on the secure web
-          dashboard for now — show that, not patient booking actions. */}
+      {/* Provider (doctor/staff): real today's-schedule data, natively —
+          only full calendar/availability editing still lives on the web
+          dashboard, linked below rather than replacing this screen. */}
       {!isPatient ? (
-        <View style={{ paddingHorizontal: spacing.screen, marginTop: -spacing.xl }}>
-          <Card style={{ gap: spacing.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: radius.lg,
-                  backgroundColor: colors.primarySoft,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="briefcase-outline" size={20} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <AppText variant="body" weight="bold">
-                  {t.home.providerPanelTitle}
-                </AppText>
-                <AppText variant="caption" color={colors.textMuted}>
-                  {t.home.providerPanelBody}
-                </AppText>
-              </View>
-            </View>
-            <Button
-              label={t.home.openDashboard}
-              icon="open-outline"
-              onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/dashboard`)}
+        <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
+          {/* Stats */}
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <StatCard
+              icon="today-outline"
+              value={home.data?.todayCount ?? 0}
+              label={t.home.todayAppointments}
+              loading={home.isLoading}
             />
-            <Button
-              label={t.home.myProfile}
-              variant="secondary"
-              onPress={() => router.push("/(tabs)/profile")}
+            <StatCard
+              icon="calendar-outline"
+              value={home.data?.upcomingCount ?? 0}
+              label={t.home.totalUpcoming}
+              loading={home.isLoading}
             />
-          </Card>
+          </View>
+
+          {/* Next patient */}
+          <Section title={t.home.nextPatientAppointment}>
+            {home.isLoading ? (
+              <Card style={{ gap: spacing.md }}>
+                <Skeleton style={{ width: "60%" }} />
+                <Skeleton style={{ width: "40%" }} />
+              </Card>
+            ) : home.isError ? (
+              <ErrorCard
+                message={
+                  home.error instanceof NetworkError
+                    ? t.common.offline
+                    : t.common.loadFailed
+                }
+                onRetry={() => void home.refetch()}
+              />
+            ) : home.data?.nextAppointment ? (
+              <AppointmentCard appointment={home.data.nextAppointment} locale={locale} statusLabels={t.status} />
+            ) : (
+              <Card>
+                <EmptyState
+                  icon="calendar-outline"
+                  art={stateArt.noAppointments}
+                  title={t.home.noUpcomingPatients}
+                />
+              </Card>
+            )}
+          </Section>
+
+          <Button
+            label={t.home.viewAllAppointments}
+            variant="secondary"
+            onPress={() => router.push("/(tabs)/appointments")}
+          />
+          <Button
+            label={t.home.openDashboard}
+            icon="open-outline"
+            variant="ghost"
+            onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/dashboard`)}
+          />
         </View>
       ) : (
       <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
@@ -325,6 +359,47 @@ function QuickAction({
         {label}
       </AppText>
     </Pressable>
+  )
+}
+
+function StatCard({
+  icon,
+  value,
+  label,
+  loading,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  value: number
+  label: string
+  loading: boolean
+}) {
+  return (
+    <View
+      style={[
+        {
+          flex: 1,
+          backgroundColor: colors.card,
+          borderRadius: radius.xl,
+          borderWidth: 1,
+          borderColor: colors.border,
+          padding: spacing.lg,
+          gap: 6,
+        },
+        shadows.raised,
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      {loading ? (
+        <Skeleton style={{ width: 32, height: 24 }} />
+      ) : (
+        <AppText variant="title" weight="heavy">
+          {value}
+        </AppText>
+      )}
+      <AppText variant="caption" color={colors.textMuted}>
+        {label}
+      </AppText>
+    </View>
   )
 }
 

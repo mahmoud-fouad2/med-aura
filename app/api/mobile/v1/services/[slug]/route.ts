@@ -13,8 +13,10 @@ export async function GET(
     const { slug } = await params
     const service = await getServiceDetail(slug)
     if (!service) return jsonError("الخدمة غير موجودة.", 404)
+    const { imagePath, ...rest } = service
     return jsonOk({
-      ...service,
+      ...rest,
+      imageUrl: absolutize(imagePath)!,
       doctors: service.doctors.map((d) => ({
         ...d,
         photoUrl: absolutize(d.photoUrl),

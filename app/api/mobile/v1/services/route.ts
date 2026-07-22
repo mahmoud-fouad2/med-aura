@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { listServices } from "@/lib/data/procedures"
-import { jsonError, jsonOk } from "@/lib/mobile-api"
+import { absolutize, jsonError, jsonOk } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +12,12 @@ export async function GET(request: NextRequest) {
       q: sp.get("q") ?? undefined,
       category: sp.get("category") ?? undefined,
     })
-    return jsonOk({ services })
+    return jsonOk({
+      services: services.map(({ imagePath, ...s }) => ({
+        ...s,
+        imageUrl: absolutize(imagePath)!,
+      })),
+    })
   } catch {
     return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
   }

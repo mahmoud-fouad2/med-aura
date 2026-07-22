@@ -108,7 +108,7 @@ export async function listDoctorAppointments(
 ): Promise<AppointmentRow[]> {
   const profileId = await getDoctorProfileId(doctorUserId)
   if (!profileId) return []
-  return db
+  const rows = await db
     .select({
       id: appointment.id,
       reference: appointment.reference,
@@ -119,6 +119,7 @@ export async function listDoctorAppointments(
       priceAmount: appointment.priceAmount,
       currency: appointment.currency,
       counterpartName: userT.name,
+      counterpartPhotoKey: userT.image,
       paymentStatus: payment.status,
       caseId: appointment.caseId,
     })
@@ -127,4 +128,9 @@ export async function listDoctorAppointments(
     .leftJoin(payment, eq(payment.appointmentId, appointment.id))
     .where(eq(appointment.doctorId, profileId))
     .orderBy(desc(appointment.startsAt))
+
+  return rows.map(({ counterpartPhotoKey, ...r }) => ({
+    ...r,
+    counterpartPhotoUrl: counterpartPhotoKey ? getPublicUrl(counterpartPhotoKey) : null,
+  }))
 }

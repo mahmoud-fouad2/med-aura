@@ -7,6 +7,7 @@ import {
   procedureCategory,
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { serviceImageForCategory } from "@/lib/seo"
 
 export type ProcedureListItem = {
   slug: string
@@ -67,6 +68,8 @@ export type ProcedureDetail = {
   recoveryDays: number | null
   categorySlug: string
   categoryNameAr: string
+  /** Same category illustration the web uses — relative path, absolutized by API routes. */
+  imagePath: string
 }
 
 export async function getProcedureBySlug(
@@ -93,7 +96,7 @@ export async function getProcedureBySlug(
   )[0]
   if (!row) return null
   const { visible: _v, ...rest } = row
-  return rest
+  return { ...rest, imagePath: serviceImageForCategory(rest.categorySlug) }
 }
 
 /* ── Mobile "services" surface (procedures + doctor availability) ──────────── */
@@ -108,6 +111,8 @@ export type ServiceListItem = {
   categorySlug: string
   categoryNameAr: string
   doctorCount: number
+  /** Same category illustration the web uses — relative path, absolutized by API routes. */
+  imagePath: string
 }
 
 /** Flat, searchable list of visible services with how many doctors offer each. */
@@ -159,7 +164,11 @@ export async function listServices(params: {
     )
     .orderBy(asc(procedureT.sortOrder))
 
-  return rows.map((r) => ({ ...r, doctorCount: Number(r.doctorCount) }))
+  return rows.map((r) => ({
+    ...r,
+    doctorCount: Number(r.doctorCount),
+    imagePath: serviceImageForCategory(r.categorySlug),
+  }))
 }
 
 export type ServiceDoctor = {

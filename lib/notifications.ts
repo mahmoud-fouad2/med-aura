@@ -3,6 +3,7 @@ import { db } from "./db"
 import { notification, notificationDelivery, notificationPreference } from "./db/schema"
 import { isEmailConfigured } from "./env"
 import { sendEmail } from "./email"
+import { sendPushToUser } from "./push"
 import { logger } from "./logger"
 
 async function emailAllowed(userId: string): Promise<boolean> {
@@ -53,6 +54,15 @@ export async function notify(input: NotifyInput): Promise<void> {
       channel: "IN_APP",
       status: "SENT",
       sentAt: new Date(),
+    })
+
+    // Push mirrors in-app: same title/body, plus enough data to deep-link
+    // once the notification is tapped. No-ops silently when the user has no
+    // registered device (never blocks the underlying business action).
+    await sendPushToUser(input.userId, {
+      title: input.title,
+      body: input.body,
+      data: { type: input.type, href: input.href, caseId: input.caseId },
     })
 
     if (input.email) {

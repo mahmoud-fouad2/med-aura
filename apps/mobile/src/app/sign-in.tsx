@@ -16,6 +16,7 @@ import { AppText, Button, Card } from "../components/ui"
 import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
 import { setRememberMe } from "../lib/session-prefs"
+import { registerForPushNotifications } from "../lib/push-notifications"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -48,6 +49,7 @@ export default function SignIn() {
       )
       return
     }
+    void registerForPushNotifications()
     router.replace("/(tabs)")
   }
 

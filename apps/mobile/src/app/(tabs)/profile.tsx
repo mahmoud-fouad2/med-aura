@@ -17,7 +17,8 @@ import {
   Skeleton,
 } from "../../components/ui"
 import { BottomSheet } from "../../components/bottom-sheet"
-import { useMe } from "../../lib/api"
+import { AvatarPickerSheet } from "../../components/avatar-picker-sheet"
+import { useMe, type Me } from "../../lib/api"
 import {
   authenticate,
   biometricAvailability,
@@ -25,6 +26,7 @@ import {
   setAppLockEnabled,
 } from "../../lib/app-lock"
 import { setRememberMe } from "../../lib/session-prefs"
+import { unregisterThisDevice } from "../../lib/push-notifications"
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
 import { useI18n, type Locale } from "../../lib/i18n"
@@ -48,11 +50,26 @@ export default function Profile() {
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [languageSheet, setLanguageSheet] = useState(false)
+  const [switchingLanguage, setSwitchingLanguage] = useState(false)
+  const [avatarSheet, setAvatarSheet] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+
+  // Every screen reading useMe() (header, greeting, doctor list row) sees the
+  // new photo immediately — no waiting on a refetch, no logout/login needed.
+  const setPhotoUrl = (photoUrl: string | null) => {
+    queryClient.setQueryData<Me>(["me"], (old) => (old ? { ...old, photoUrl } : old))
+  }
 
   const signOut = async () => {
     if (signingOut) return
     setSigningOut(true)
+    // Unregistering needs the still-live session (the endpoint is
+    // session-scoped) — must happen before signOut() invalidates it. Same
+    // race-against-a-timeout guard: a slow network must never hang sign-out.
+    await Promise.race([
+      unregisterThisDevice(),
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ])
     // The server sign-out must never be able to hang the button: race it
     // against a short timeout. Local sign-out is what actually matters — a
     // stale server session expires on its own, but the user must always get
@@ -73,10 +90,17 @@ export default function Profile() {
     router.replace("/sign-in")
   }
 
-  const switchLanguage = async (l: Locale) => {
+  const switchLanguage = (l: Locale) => {
+    if (switchingLanguage) return
     setLanguageSheet(false)
     if (l === locale) return
-    await setLocale(l)
+    setSwitchingLanguage(true)
+    // Let the sheet's own close animation finish before swapping every
+    // string on screen — an app-wide re-render competing with the closing
+    // animation is what made the picker feel like it jumps/stutters.
+    setTimeout(() => {
+      void setLocale(l).finally(() => setSwitchingLanguage(false))
+    }, 220)
   }
 
   const clearCache = async () => {
@@ -114,7 +138,31 @@ export default function Profile() {
           </>
         ) : (
           <>
-            <Avatar name={me.data?.name ?? "؟"} size={56} />
+            <Pressable
+              onPress={() => setAvatarSheet(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t.profile.editPhoto}
+              hitSlop={8}
+            >
+              <Avatar name={me.data?.name ?? "؟"} photoUrl={me.data?.photoUrl} size={56} />
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: -2,
+                  end: -2,
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  backgroundColor: colors.primary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: colors.card,
+                }}
+              >
+                <Ionicons name="camera" size={11} color="#FFFFFF" />
+              </View>
+            </Pressable>
             <View style={{ flex: 1 }}>
               <AppText variant="body" weight="bold">
                 {me.data?.name ?? ""}
@@ -279,7 +327,7 @@ export default function Profile() {
           ).map(([code, label]) => (
             <Pressable
               key={code}
-              onPress={() => void switchLanguage(code)}
+              onPress={() => switchLanguage(code)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -328,6 +376,22 @@ export default function Profile() {
           />
         </View>
       </BottomSheet>
+
+      <AvatarPickerSheet
+        visible={avatarSheet}
+        onClose={() => setAvatarSheet(false)}
+        hasPhoto={Boolean(me.data?.photoUrl)}
+        onUploaded={(photoUrl) => {
+          setPhotoUrl(photoUrl)
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+          setNotice(t.profile.photoUpdated)
+        }}
+        onRemoved={() => {
+          setPhotoUrl(null)
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+          setNotice(t.profile.photoRemoved)
+        }}
+      />
     </ScrollView>
   )
 }

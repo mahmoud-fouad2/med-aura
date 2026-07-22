@@ -56,6 +56,9 @@ export type HomeData = {
   upcomingCount: number
   nextAppointment: Appointment | null
   featuredDoctors: Doctor[]
+  /** Doctor accounts only — omitted for patients. */
+  todayCount?: number
+  todaysAppointments?: Appointment[]
 }
 
 export type Me = {
@@ -66,6 +69,7 @@ export type Me = {
   accountType: "patient" | "doctor" | "staff"
   displayName: string
   doctorName: string | null
+  photoUrl: string | null
   phone: string | null
   residenceCountry: string | null
   city: string | null
@@ -124,6 +128,8 @@ export type Service = {
   categorySlug: string
   categoryNameAr: string
   doctorCount: number
+  /** Same category illustration used on the web — always a real absolute URL. */
+  imageUrl: string
 }
 
 export type ServiceDetail = Service & {
@@ -228,6 +234,28 @@ export const api = {
     request<{ updated: boolean }>("/api/mobile/v1/me", {
       method: "PATCH",
       body: JSON.stringify(input),
+    }),
+  avatarPresign: (input: { fileName: string; contentType: string; sizeBytes: number }) =>
+    request<{ uploadUrl: string; objectKey: string }>("/api/mobile/v1/me/avatar", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  avatarFinalize: (objectKey: string) =>
+    request<{ photoUrl: string | null }>("/api/mobile/v1/me/avatar", {
+      method: "PUT",
+      body: JSON.stringify({ objectKey }),
+    }),
+  avatarRemove: () =>
+    request<{ removed: boolean }>("/api/mobile/v1/me/avatar", { method: "DELETE" }),
+  registerPushToken: (input: { token: string; platform: "android" | "ios" }) =>
+    request<{ registered: boolean }>("/api/mobile/v1/push-tokens", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  unregisterPushToken: (token: string) =>
+    request<{ removed: boolean }>("/api/mobile/v1/push-tokens", {
+      method: "DELETE",
+      body: JSON.stringify({ token }),
     }),
   notifications: () =>
     request<{ unread: number; notifications: AppNotification[] }>(
