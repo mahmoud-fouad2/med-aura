@@ -56,12 +56,14 @@ export async function notify(input: NotifyInput): Promise<void> {
       sentAt: new Date(),
     })
 
-    // Push mirrors in-app: same title/body, plus enough data to deep-link
-    // once the notification is tapped. No-ops silently when the user has no
-    // registered device (never blocks the underlying business action).
+    // Push carries the title only — never `body`. Unlike the in-app
+    // notification (behind auth, read from inside the app), a push renders
+    // on the lock screen for anyone holding the phone, and several call
+    // sites put real content in `body` (message previews, refund amounts,
+    // safety-alert summaries). The title alone is enough to prompt opening
+    // the app; the deep-link data gets the reader to the full detail there.
     await sendPushToUser(input.userId, {
       title: input.title,
-      body: input.body,
       data: { type: input.type, href: input.href, caseId: input.caseId },
     })
 
