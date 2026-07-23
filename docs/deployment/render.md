@@ -111,7 +111,12 @@ Feature-gated (optional; the feature is disabled and says so if unset):
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `R2_ACCOUNT_ID`,
 `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`,
 `RESEND_API_KEY`, `EMAIL_FROM`, `RECAPTCHA_SECRET_KEY`, `MONITORING_WEBHOOK_URL`,
-`VIDEO_PROVIDER_API_KEY`, `VIDEO_PROVIDER_API_SECRET`.
+`VIDEO_PROVIDER`, `VIDEO_PROVIDER_API_KEY`, `VIDEO_PROVIDER_API_SECRET`.
+
+QA-only, must stay unset (or `false`) on the real production service —
+these unlock admin tools that touch real Daily rooms / booking state, each
+still gated by an admin session and (for video) `user.isTest=true` accounts:
+`ENABLE_TEST_PAYMENT_TOOLS`, `ENABLE_VIDEO_QA_TOOLS`.
 
 Recommended (see "Known issues" below): `NEXT_TELEMETRY_DISABLED=1`.
 
