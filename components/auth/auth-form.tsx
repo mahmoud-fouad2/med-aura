@@ -105,7 +105,11 @@ export function AuthForm({
     })
     if (!profile.ok) {
       setLoading(false)
-      setError(profile.error)
+      setError(
+        accountCreated && profile.error.includes("تسجيل الدخول")
+          ? "تم إنشاء الحساب. سجّل الدخول لإكمال بياناتك."
+          : profile.error,
+      )
       return
     }
     // Hard navigation on purpose: right after the server action resolves,
@@ -410,8 +414,13 @@ function translateAuthError(message?: string): string {
   const m = message.toLowerCase()
   if (m.includes("invalid") && m.includes("password"))
     return "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+  if (m.includes("password") && (m.includes("short") || m.includes("length") || m.includes("8")))
+    return "كلمة المرور يجب أن تكون 8 أحرف على الأقل."
   if (m.includes("credential")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة."
-  if (m.includes("exist")) return "هذا البريد الإلكتروني مسجّل بالفعل."
+  if (m.includes("exist") || m.includes("already")) return "هذا البريد الإلكتروني مسجّل بالفعل."
   if (m.includes("email")) return "يرجى إدخال بريد إلكتروني صحيح."
+  if (m.includes("origin") || m.includes("csrf") || m.includes("cors"))
+    return "تعذّر التحقق من مصدر الطلب. حدّث الصفحة وحاول مرة أخرى."
+  if (m.includes("rate")) return "عدد المحاولات كبير، انتظر قليلًا ثم حاول مرة أخرى."
   return "تعذّر إتمام العملية، حاول مرة أخرى."
 }

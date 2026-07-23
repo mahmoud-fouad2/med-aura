@@ -6,6 +6,9 @@ import { db } from "@/lib/db"
 import { patientProfile, user } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { writeAudit, requestMeta } from "@/lib/audit"
+import { logger } from "@/lib/logger"
+import { toSafeError } from "@/lib/errors"
+import { normalizeSignupPhone } from "@/lib/onboarding/validation"
 
 const SignupProfileSchema = z.object({
   // "doctor" only routes the user into the provider-accreditation flow —
@@ -15,10 +18,13 @@ const SignupProfileSchema = z.object({
     .string()
     .trim()
     .min(8, "رقم الهاتف قصير جدًا")
-    .max(20, "رقم الهاتف طويل جدًا")
-    .regex(/^\+?[0-9\s-]+$/, "رقم الهاتف غير صالح"),
+    .max(24, "رقم الهاتف طويل جدًا")
+    .regex(/^[+0-9\s\-()]+$/, "رقم الهاتف غير صالح"),
   residenceCountry: z.string().trim().length(2, "اختر الدولة"),
-  city: z.string().trim().max(120).optional(),
+  city: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(120).optional(),
+  ),
 })
 
 export type SignupProfileInput = z.infer<typeof SignupProfileSchema>
@@ -44,44 +50,49 @@ export async function completeSignupProfile(
         error: parsed.error.issues[0]?.message ?? "بيانات غير مكتملة",
       }
     }
-    const { accountType, phone, residenceCountry, city } = parsed.data
+    const { accountType, residenceCountry, city } = parsed.data
+    const phone = normalizeSignupPhone(parsed.data.phone, residenceCountry)
 
-    const existing = await db
-      .select({ id: patientProfile.id })
-      .from(patientProfile)
-      .where(eq(patientProfile.userId, me.id))
-      .limit(1)
+    const meta = await requestMeta()
 
-    if (existing[0]) {
-      await db
-        .update(patientProfile)
-        .set({
+    await db.transaction(async (tx) => {
+      const existing = await tx
+        .select({ id: patientProfile.id })
+        .from(patientProfile)
+        .where(eq(patientProfile.userId, me.id))
+        .limit(1)
+
+      if (existing[0]) {
+        await tx
+          .update(patientProfile)
+          .set({
+            phone,
+            residenceCountry,
+            city: city || null,
+            onboardingCompleted: true,
+            updatedAt: new Date(),
+          })
+          .where(eq(patientProfile.id, existing[0].id))
+      } else {
+        await tx.insert(patientProfile).values({
+          userId: me.id,
           phone,
           residenceCountry,
           city: city || null,
           onboardingCompleted: true,
-          updatedAt: new Date(),
         })
-        .where(eq(patientProfile.id, existing[0].id))
-    } else {
-      await db.insert(patientProfile).values({
-        userId: me.id,
-        phone,
-        residenceCountry,
-        city: city || null,
-        onboardingCompleted: true,
-      })
-    }
-    await db.update(user).set({ phone }).where(eq(user.id, me.id))
+      }
 
-    const meta = await requestMeta()
-    await writeAudit({
-      action: "signup.profile_completed",
-      actorUserId: me.id,
-      entityType: "patient_profile",
-      entityId: me.id,
-      metadata: { accountType, residenceCountry },
-      ...meta,
+      await tx.update(user).set({ phone, country: residenceCountry }).where(eq(user.id, me.id))
+
+      await writeAudit({
+        action: "signup.profile_completed",
+        actorUserId: me.id,
+        entityType: "patient_profile",
+        entityId: me.id,
+        metadata: { accountType, residenceCountry },
+        ...meta,
+      }, tx)
     })
 
     return {
@@ -89,9 +100,14 @@ export async function completeSignupProfile(
       next: accountType === "doctor" ? "/dashboard/provider/apply" : "/dashboard",
     }
   } catch (err) {
+    const safe = toSafeError(err)
+    logger.error("signup profile completion failed", {
+      code: safe.code,
+      error: err instanceof Error ? err.message : String(err),
+    })
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "تعذّر حفظ البيانات",
+      error: safe.userMessage,
     }
   }
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Med Aura",
     "slug": "med-aura",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -20,7 +20,7 @@
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 9,
+      "versionCode": 10,
       "adaptiveIcon": {
         "backgroundColor": "#FCFAFB",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
@@ -79,7 +79,9 @@
           "photosPermission": "يحتاج Med Aura الوصول إلى معرض الصور لاختيار صورة شخصية جديدة.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -9,6 +9,7 @@ import {
   permission as permT,
   rolePermission,
   userRole,
+  account as accountT,
   user as userT,
   country as countryT,
   city as cityT,
@@ -200,6 +201,7 @@ async function ensureUser(
   email: string,
   name: string,
   roleKey: RoleKey,
+  isTest = false,
 ): Promise<string> {
   let row = (
     await db.select().from(userT).where(eq(userT.email, email)).limit(1)
@@ -222,7 +224,7 @@ async function ensureUser(
   // mark email verified for dev convenience
   await db
     .update(userT)
-    .set({ emailVerified: true, role: roleKey })
+    .set({ emailVerified: true, role: roleKey, isTest })
     .where(eq(userT.id, row.id))
 
   const roles = await db.select().from(roleT)
@@ -242,6 +244,48 @@ async function ensureUser(
     .onConflictDoNothing()
 
   return row.id
+}
+
+const TEST_EMAIL_MIGRATIONS = [
+  { oldEmail: "admin@medaura.local", newEmail: "admin@medauraworld.com", isTest: false },
+  { oldEmail: "patient@medaura.local", newEmail: "patient@medauraworld.com", isTest: true },
+  { oldEmail: "doctor@medaura.local", newEmail: "doctor@medauraworld.com", isTest: true },
+]
+
+async function migrateSeedUserEmails() {
+  await db.transaction(async (tx) => {
+    for (const item of TEST_EMAIL_MIGRATIONS) {
+      const oldUser = await tx
+        .select({ id: userT.id })
+        .from(userT)
+        .where(eq(userT.email, item.oldEmail))
+        .limit(1)
+      const newUser = await tx
+        .select({ id: userT.id })
+        .from(userT)
+        .where(eq(userT.email, item.newEmail))
+        .limit(1)
+
+      if (oldUser[0] && newUser[0] && oldUser[0].id !== newUser[0].id) {
+        throw new Error(
+          `Refusing to merge duplicate test users: ${item.oldEmail} and ${item.newEmail}`,
+        )
+      }
+
+      const targetId = oldUser[0]?.id ?? newUser[0]?.id
+      if (!targetId) continue
+
+      await tx
+        .update(userT)
+        .set({ email: item.newEmail, isTest: item.isTest })
+        .where(eq(userT.id, targetId))
+
+      await tx
+        .update(accountT)
+        .set({ accountId: item.newEmail })
+        .where(and(eq(accountT.providerId, "credential"), eq(accountT.accountId, item.oldEmail)))
+    }
+  })
 }
 
 type DemoDoctorInput = {
@@ -290,7 +334,7 @@ async function seedDemoDoctorPhoto(fileName: string): Promise<string | null> {
 
 /** Idempotent: creates the doctor + their center (as owner) + license + procedures + availability. */
 async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<string> {
-  const doctorUserId = await ensureUser(input.email, input.name, ROLES.DOCTOR)
+  const doctorUserId = await ensureUser(input.email, input.name, ROLES.DOCTOR, true)
 
   const centerOwnerRole = (
     await db.select({ id: roleT.id }).from(roleT).where(eq(roleT.key, ROLES.CENTER_OWNER)).limit(1)
@@ -404,16 +448,18 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
 }
 
 async function seedUsersAndProviders() {
-  const adminId = await ensureUser("admin@medaura.local", "مدير النظام", ROLES.SUPER_ADMIN)
+  await migrateSeedUserEmails()
+
+  const adminId = await ensureUser("admin@medauraworld.com", "مدير النظام", ROLES.SUPER_ADMIN)
   const complianceId = await ensureUser(
-    "compliance@medaura.local",
+    "compliance@medauraworld.com",
     "مراجع الاعتماد",
     ROLES.COMPLIANCE_REVIEWER,
   )
-  await ensureUser("patient@medaura.local", "مريم المريضة", ROLES.PATIENT)
+  await ensureUser("patient@medauraworld.com", "مريم المريضة", ROLES.PATIENT, true)
 
   await ensureApprovedDoctorWithCenter({
-    email: "doctor@medaura.local",
+    email: "doctor@medauraworld.com",
     name: "د. سارة العتيبي",
     doctorSlug: "dr-sara-alotaibi",
     title: "استشارية جراحة تجميل",
@@ -433,7 +479,7 @@ async function seedUsersAndProviders() {
   })
 
   await ensureApprovedDoctorWithCenter({
-    email: "doctor2@medaura.local",
+    email: "doctor2@medauraworld.com",
     name: "د. نورة القحطاني",
     doctorSlug: "dr-noura-alqahtani",
     title: "استشارية جراحة تجميل الجسم",
@@ -453,7 +499,7 @@ async function seedUsersAndProviders() {
   })
 
   await ensureApprovedDoctorWithCenter({
-    email: "doctor3@medaura.local",
+    email: "doctor3@medauraworld.com",
     name: "د. أحمد يلماز",
     doctorSlug: "dr-ahmet-yilmaz",
     title: "استشاري زراعة الشعر وتجميل الوجه",
@@ -473,9 +519,10 @@ async function seedUsersAndProviders() {
   })
 
   const pendingDoctorId = await ensureUser(
-    "pending-doctor@medaura.local",
+    "pending-doctor@medauraworld.com",
     "د. ليان الحربي",
     ROLES.PATIENT, // still patient until approved
+    true,
   )
   console.log("✓ users (admin, compliance, patient, 3 approved doctors/centers, pending doctor)")
 
@@ -613,14 +660,14 @@ export async function runSeed({ demo }: { demo: boolean }): Promise<void> {
   if (demo) {
     await seedDemo()
     console.log("\n✅ Seed complete (reference + DEMO data — non-production only).")
-    console.log("   Demo login password:", DEV_PASSWORD)
-    console.log("   • admin@medaura.local            (Super Admin)")
-    console.log("   • compliance@medaura.local       (Compliance Reviewer)")
-    console.log("   • patient@medaura.local          (Patient)")
-    console.log("   • doctor@medaura.local           (د. سارة العتيبي — الرياض، أنف/وجه)")
-    console.log("   • doctor2@medaura.local          (د. نورة القحطاني — جدة، جسم/ثدي)")
-    console.log("   • doctor3@medaura.local          (د. أحمد يلماز — إسطنبول، شعر)")
-    console.log("   • pending-doctor@medaura.local   (Pending application)")
+    console.log("   Demo login password is documented in README.md.")
+    console.log("   • admin@medauraworld.com            (Super Admin)")
+    console.log("   • compliance@medauraworld.com       (Compliance Reviewer)")
+    console.log("   • patient@medauraworld.com          (Patient, isTest)")
+    console.log("   • doctor@medauraworld.com           (د. سارة العتيبي — الرياض، أنف/وجه, isTest)")
+    console.log("   • doctor2@medauraworld.com          (د. نورة القحطاني — جدة، جسم/ثدي, isTest)")
+    console.log("   • doctor3@medauraworld.com          (د. أحمد يلماز — إسطنبول، شعر, isTest)")
+    console.log("   • pending-doctor@medauraworld.com   (Pending application, isTest)")
   } else {
     console.log("\n✅ Seed complete (reference/catalog data only).")
     console.log("   Demo accounts skipped. Run `db:seed:demo` (non-production) to create them.")

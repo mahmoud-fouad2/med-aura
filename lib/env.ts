@@ -20,8 +20,8 @@ const schema = z.object({
   // Core
   DATABASE_URL: z.string().min(1).optional(),
   BETTER_AUTH_SECRET: z.string().min(16).optional(),
-  BETTER_AUTH_URL: z.url().optional(),
-  APP_URL: z.url().optional(),
+  BETTER_AUTH_URL: z.string().optional(),
+  APP_URL: z.string().optional(),
   // 32-byte (64 hex char) key for encrypting sensitive fields at rest.
   ENCRYPTION_KEY: z.string().min(32).optional(),
 
@@ -30,7 +30,7 @@ const schema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().optional(),
-  R2_PUBLIC_BASE_URL: z.url().optional(),
+  R2_PUBLIC_BASE_URL: z.string().optional(),
 
   // Stripe (payments, test mode). Checkout is redirect-based, so only the
   // server secret + webhook secret are consumed (no publishable key needed).
@@ -60,7 +60,7 @@ const schema = z.object({
 
   // Ops
   ENABLE_DEMO_DATA: z.string().optional(),
-  MONITORING_WEBHOOK_URL: z.url().optional(),
+  MONITORING_WEBHOOK_URL: z.string().optional(),
   // QA only: unlocks the admin "mark test-paid" tool so a booking can be
   // confirmed without a real charge, to exercise the video journey end to
   // end. Refused in production unless explicitly set, and always requires an
@@ -77,16 +77,88 @@ export type Env = z.infer<typeof schema>
 
 let cached: Env | null = null
 
+const URL_ENV_KEYS = [
+  "APP_URL",
+  "BETTER_AUTH_URL",
+  "R2_PUBLIC_BASE_URL",
+  "MONITORING_WEBHOOK_URL",
+] as const
+
+type UrlEnvKey = (typeof URL_ENV_KEYS)[number]
+
+function normalizeUrlEnvValues(raw: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const normalized = { ...raw }
+  for (const key of URL_ENV_KEYS) {
+    const value = normalized[key]
+    if (typeof value === "string") {
+      const trimmed = value.trim()
+      normalized[key] = trimmed === "" ? undefined : trimmed
+    }
+  }
+  return normalized
+}
+
+function validatePublicUrl(key: UrlEnvKey, value: string | undefined): string | null {
+  if (!value) return null
+  if (new RegExp(`^${key}\\s*=`).test(value)) {
+    throw new Error(
+      `${key} value must be only the URL, for example https://medauraworld.com. ` +
+        `Do not paste "${key}=..." into the value field.`,
+    )
+  }
+
+  let parsed: URL
+  try {
+    parsed = new URL(value)
+  } catch {
+    throw new Error(`${key} must be a valid absolute URL.`)
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error(`${key} must use http:// or https://.`)
+  }
+  const isLocalHost =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "[::1]"
+  if (parsed.protocol === "http:" && !isLocalHost) {
+    throw new Error(`${key} must use https:// outside local development.`)
+  }
+  if (!parsed.hostname) {
+    throw new Error(`${key} must include a hostname.`)
+  }
+
+  return parsed.href.replace(/\/$/, "")
+}
+
+function collectUrlProblems(e: Env): string[] {
+  const problems: string[] = []
+  for (const key of URL_ENV_KEYS) {
+    try {
+      validatePublicUrl(key, e[key])
+    } catch (err) {
+      problems.push(err instanceof Error ? err.message : `${key} is invalid`)
+    }
+  }
+  return problems
+}
+
 function read(): Env {
   if (cached) return cached
-  const parsed = schema.safeParse(process.env)
+  const parsed = schema.safeParse(normalizeUrlEnvValues(process.env))
   if (!parsed.success) {
-    // Should be rare since everything is optional; log and fall back to raw.
+    // Should be rare since URL format is validated separately. Keep the valid
+    // core values so one malformed optional field cannot mask real state.
     console.error(
       "[env] invalid environment:",
       parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
     )
-    cached = schema.parse({ NODE_ENV: process.env.NODE_ENV })
+    cached = schema.parse({
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_URL: process.env.DATABASE_URL,
+      BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+      ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
+    })
     return cached
   }
   cached = parsed.data
@@ -140,13 +212,38 @@ export const isRecaptchaConfigured = () => Boolean(read().RECAPTCHA_SECRET_KEY)
 /** Resolve the app's public base URL for links, redirects, auth. */
 export function appUrl(): string {
   const e = read()
+  const configured =
+    validatePublicUrl("APP_URL", e.APP_URL) ??
+    validatePublicUrl("BETTER_AUTH_URL", e.BETTER_AUTH_URL)
+  if (configured) return configured
+  return process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000"
+}
+
+export function betterAuthUrl(): string {
+  const e = read()
   return (
-    e.APP_URL ??
-    e.BETTER_AUTH_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : "http://localhost:3000")
+    validatePublicUrl("BETTER_AUTH_URL", e.BETTER_AUTH_URL) ??
+    validatePublicUrl("APP_URL", e.APP_URL) ??
+    appUrl()
   )
+}
+
+export function trustedAuthOrigins(): string[] {
+  const origins = new Set<string>()
+  for (const url of [appUrl(), betterAuthUrl()]) {
+    const parsed = new URL(url)
+    origins.add(parsed.origin)
+    if (parsed.hostname === "medauraworld.com") {
+      origins.add("https://www.medauraworld.com")
+    }
+    if (parsed.hostname === "www.medauraworld.com") {
+      origins.add("https://medauraworld.com")
+    }
+  }
+  origins.add("medaura://")
+  return Array.from(origins)
 }
 
 /**
@@ -166,6 +263,7 @@ export function assertCoreEnv(): void {
   if (prod && !e.ENCRYPTION_KEY) missing.push("ENCRYPTION_KEY")
 
   const problems: string[] = []
+  problems.push(...collectUrlProblems(e))
   // Demo data must never be enabled in production.
   if (prod && e.ENABLE_DEMO_DATA === "true") {
     problems.push("ENABLE_DEMO_DATA must not be 'true' in production")

@@ -1,3 +1,5 @@
+import os from "node:os"
+
 /** @type {import('next').NextConfig} */
 
 // Security headers applied to every response. CSP is intentionally strict but
@@ -17,7 +19,16 @@ const securityHeaders = [
   },
 ]
 
+const configuredBuildCpus = Number.parseInt(process.env.NEXT_BUILD_CPUS ?? "2", 10)
+const buildCpus =
+  Number.isFinite(configuredBuildCpus) && configuredBuildCpus > 0
+    ? Math.min(configuredBuildCpus, os.cpus().length)
+    : 2
+
 const nextConfig = {
+  experimental: {
+    cpus: buildCpus,
+  },
   // TypeScript errors must fail the build. Do NOT re-enable ignoreBuildErrors.
   typescript: {
     ignoreBuildErrors: false,

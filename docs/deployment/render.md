@@ -93,8 +93,8 @@ and a patient to click through as:
 - **Spin up a second Render Web Service pointed at a second (cheap/free)
   Render Postgres** with `NODE_ENV=test` and `ENABLE_DEMO_DATA=true` set as
   env var overrides on that service only. There, `pnpm run db:seed:demo` is
-  allowed and creates: `admin@medaura.local`, `compliance@medaura.local`,
-  `patient@medaura.local`, `doctor@medaura.local`, `pending-doctor@medaura.local`
+  allowed and creates: `admin@medauraworld.com`, `compliance@medauraworld.com`,
+  `patient@medauraworld.com`, `doctor@medauraworld.com`, `pending-doctor@medauraworld.com`
   — all with password `MedAura#2026`. Keep this service separate from the real
   production database.
 

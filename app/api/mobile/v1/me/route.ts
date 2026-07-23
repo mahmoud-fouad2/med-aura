@@ -5,6 +5,8 @@ import { doctorProfile, patientProfile, user as userTable } from "@/lib/db/schem
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { absolutize, jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { logger } from "@/lib/logger"
+import { normalizeSignupPhone } from "@/lib/onboarding/validation"
 
 export const dynamic = "force-dynamic"
 
@@ -94,10 +96,13 @@ const UpdateMeSchema = z.object({
     .string()
     .trim()
     .min(8, "رقم الهاتف قصير جدًا")
-    .max(20, "رقم الهاتف طويل جدًا")
-    .regex(/^\+?[0-9\s-]+$/, "رقم الهاتف غير صالح"),
+    .max(24, "رقم الهاتف طويل جدًا")
+    .regex(/^[+0-9\s\-()]+$/, "رقم الهاتف غير صالح"),
   residenceCountry: z.string().trim().length(2, "اختر الدولة"),
-  city: z.string().trim().max(120).optional(),
+  city: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(120).optional(),
+  ),
 })
 
 /** Own-profile edit from the app (session-scoped — no id is accepted). */
@@ -114,50 +119,59 @@ export async function PATCH(request: Request) {
       400,
     )
   }
-  const { name, phone, residenceCountry, city } = parsed.data
+  const { name, residenceCountry, city } = parsed.data
 
   try {
-    const existing = await db
-      .select({ id: patientProfile.id })
-      .from(patientProfile)
-      .where(eq(patientProfile.userId, me.id))
-      .limit(1)
+    const phone = normalizeSignupPhone(parsed.data.phone, residenceCountry)
+    const meta = await requestMeta()
 
-    if (existing[0]) {
-      await db
-        .update(patientProfile)
-        .set({
+    await db.transaction(async (tx) => {
+      const existing = await tx
+        .select({ id: patientProfile.id })
+        .from(patientProfile)
+        .where(eq(patientProfile.userId, me.id))
+        .limit(1)
+
+      if (existing[0]) {
+        await tx
+          .update(patientProfile)
+          .set({
+            phone,
+            residenceCountry,
+            city: city || null,
+            updatedAt: new Date(),
+          })
+          .where(eq(patientProfile.id, existing[0].id))
+      } else {
+        await tx.insert(patientProfile).values({
+          userId: me.id,
           phone,
           residenceCountry,
           city: city || null,
-          updatedAt: new Date(),
         })
-        .where(eq(patientProfile.id, existing[0].id))
-    } else {
-      await db.insert(patientProfile).values({
-        userId: me.id,
-        phone,
-        residenceCountry,
-        city: city || null,
-      })
-    }
-    await db
-      .update(userTable)
-      .set({ name, phone })
-      .where(eq(userTable.id, me.id))
+      }
 
-    const meta = await requestMeta()
-    await writeAudit({
-      action: "profile.updated_from_app",
-      actorUserId: me.id,
-      entityType: "patient_profile",
-      entityId: me.id,
-      metadata: { residenceCountry },
-      ...meta,
+      await tx
+        .update(userTable)
+        .set({ name, phone, country: residenceCountry })
+        .where(eq(userTable.id, me.id))
+
+      await writeAudit({
+        action: "profile.updated_from_app",
+        actorUserId: me.id,
+        entityType: "patient_profile",
+        entityId: me.id,
+        metadata: { residenceCountry },
+        ...meta,
+      }, tx)
     })
 
     return jsonOk({ updated: true })
-  } catch {
+  } catch (err) {
+    logger.error("mobile profile update failed", {
+      userId: me.id,
+      error: err instanceof Error ? err.message : String(err),
+    })
     return jsonError("تعذّر حفظ البيانات. حاول مرة أخرى.", 500)
   }
 }

@@ -59,11 +59,11 @@ pnpm dev             # http://localhost:3000
 
 | الحساب | الدور |
 |--------|------|
-| `admin@medaura.local` | Super Admin |
-| `compliance@medaura.local` | مراجع اعتماد |
-| `patient@medaura.local` | مريض |
-| `doctor@medaura.local` | طبيب معتمد (ترخيص ساري) |
-| `pending-doctor@medaura.local` | طلب انضمام بانتظار المراجعة |
+| `admin@medauraworld.com` | Super Admin |
+| `compliance@medauraworld.com` | مراجع اعتماد |
+| `patient@medauraworld.com` | مريض اختبار |
+| `doctor@medauraworld.com` | طبيب معتمد اختبار (ترخيص ساري) |
+| `pending-doctor@medauraworld.com` | طلب انضمام اختبار بانتظار المراجعة |
 
 ## المسار الرأسي العامل (End-to-End)
 

@@ -3,7 +3,7 @@ import { expo } from "@better-auth/expo"
 import { eq } from "drizzle-orm"
 import { pool, db } from "@/lib/db"
 import { patientProfile, role as roleTable, userRole } from "@/lib/db/schema"
-import { env, appUrl } from "@/lib/env"
+import { betterAuthUrl, env, trustedAuthOrigins } from "@/lib/env"
 import { ROLES } from "@/lib/rbac"
 import { logger } from "@/lib/logger"
 import { writeAudit } from "@/lib/audit"
@@ -21,7 +21,7 @@ export const auth = betterAuth({
   // Placeholder keeps `next build` working without secrets; assertCoreEnv()
   // refuses to boot the server in production if the real secret is missing.
   secret: env.BETTER_AUTH_SECRET ?? "build-time-placeholder-change-me-32chars",
-  baseURL: appUrl(),
+  baseURL: betterAuthUrl(),
 
   emailAndPassword: {
     enabled: true,
@@ -85,7 +85,7 @@ export const auth = betterAuth({
 
   // The native app authenticates over the same endpoints; its custom scheme
   // must be trusted or Better Auth's CSRF origin check rejects it.
-  trustedOrigins: [appUrl(), "medaura://"],
+  trustedOrigins: trustedAuthOrigins(),
 
   plugins: [expo()],
 
@@ -93,43 +93,57 @@ export const auth = betterAuth({
     user: {
       create: {
         // After a new account is created, provision the patient profile and
-        // assign the PATIENT role in the RBAC tables. Failures here are logged
-        // but never block signup.
+        // assign the PATIENT role in one transaction. The follow-up onboarding
+        // action also repairs the same profile row if the auth provider retries.
         async after(createdUser) {
           try {
-            await db
-              .insert(patientProfile)
-              .values({ userId: createdUser.id, language: "ar" })
-              .onConflictDoNothing()
+            await db.transaction(async (tx) => {
+              await tx
+                .insert(patientProfile)
+                .values({ userId: createdUser.id, language: "ar" })
+                .onConflictDoNothing()
 
-            const patientRole = await db
-              .select({ id: roleTable.id })
-              .from(roleTable)
-              .where(eq(roleTable.key, ROLES.PATIENT))
-              .limit(1)
+              const patientRole = await tx
+                .select({ id: roleTable.id })
+                .from(roleTable)
+                .where(eq(roleTable.key, ROLES.PATIENT))
+                .limit(1)
 
-            if (patientRole[0]) {
-              await db
+              if (!patientRole[0]) {
+                logger.warn("patient role not seeded; skipped RBAC assignment", {
+                  userId: createdUser.id,
+                })
+                return
+              }
+
+              await tx
                 .insert(userRole)
                 .values({ userId: createdUser.id, roleId: patientRole[0].id })
                 .onConflictDoNothing()
-            } else {
-              logger.warn("patient role not seeded; skipped RBAC assignment", {
-                userId: createdUser.id,
-              })
-            }
 
-            await writeAudit({
-              action: "auth.signup",
-              actorUserId: createdUser.id,
-              entityType: "user",
-              entityId: createdUser.id,
+              await writeAudit({
+                action: "auth.signup",
+                actorUserId: createdUser.id,
+                entityType: "user",
+                entityId: createdUser.id,
+              }, tx)
             })
           } catch (err) {
             logger.error("post-signup provisioning failed", {
               userId: createdUser.id,
               error: err instanceof Error ? err.message : String(err),
             })
+            try {
+              await db
+                .insert(patientProfile)
+                .values({ userId: createdUser.id, language: "ar" })
+                .onConflictDoNothing()
+            } catch (repairErr) {
+              logger.error("post-signup profile repair failed", {
+                userId: createdUser.id,
+                error: repairErr instanceof Error ? repairErr.message : String(repairErr),
+              })
+            }
           }
         },
       },

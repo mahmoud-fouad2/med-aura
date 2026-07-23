@@ -19,7 +19,7 @@ live database — not a description of what CI *would* do:
 | Demo seed | `pnpm db:seed:demo` | 3 approved doctor+center pairs (Riyadh/Jeddah/Istanbul) + admin/compliance/patient/pending-application accounts |
 | Unit + integration tests | `pnpm test` | **38/38 passed, 0 skipped** (previously 4 integration tests always skipped — no DB to gate on) |
 | E2E (Playwright, real Chromium) | `pnpm test:e2e` | **4/4 passed**: home renders, procedures list real seeded categories, search shows only the approved/valid-license doctor (and correctly hides the pending one), a real visitor can sign up and lands on `/dashboard` |
-| Cross-role RBAC (manual, real session) | signed in as `doctor@medaura.local`, cookie-based requests | `/dashboard/doctor`, `/dashboard/cases`, `/dashboard/center` (owner via `center_staff`), `/dashboard/notifications` render with real data; `/dashboard/finance` correctly redirects to `/403` — finance dashboard content never reached the response |
+| Cross-role RBAC (manual, real session) | signed in as `doctor@medauraworld.com`, cookie-based requests | `/dashboard/doctor`, `/dashboard/cases`, `/dashboard/center` (owner via `center_staff`), `/dashboard/notifications` render with real data; `/dashboard/finance` correctly redirects to `/403` — finance dashboard content never reached the response |
 | Public catalog pages | `curl` (no auth) | `/search` lists all 3 real doctors; `/procedures` lists the new dental category and real procedures; `/centers` lists all 3 real centers |
 
 Two real bugs were found and fixed *because* this was a real run, not a
