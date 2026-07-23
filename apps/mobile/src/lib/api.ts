@@ -294,6 +294,17 @@ export const api = {
       },
       // Telemetry is best-effort — a failed event must never break the call.
     ).catch(() => ({ recorded: false })),
+  /** QA-only: logs join/leave events for a video-QA test room (404s when the
+   *  server-side ENABLE_VIDEO_QA_TOOLS flag is off). Best-effort, same as
+   *  the real videoEvent above. */
+  qaVideoEvent: (
+    roomName: string,
+    event: "patient_joined" | "doctor_joined" | "patient_left" | "doctor_left",
+  ) =>
+    request<{ ok: boolean }>("/api/dev/video-qa/events", {
+      method: "POST",
+      body: JSON.stringify({ roomName, event }),
+    }).catch(() => ({ ok: false })),
   doctors: (params: { q?: string; page?: number; filters?: DoctorFilters }) => {
     const sp = new URLSearchParams()
     if (params.q) sp.set("q", params.q)

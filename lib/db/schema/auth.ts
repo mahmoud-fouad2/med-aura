@@ -31,6 +31,10 @@ export const user = pgTable("user", {
   phone: text("phone"),
   country: text("country"),
   locale: text("locale").notNull().default("ar"),
+  // QA-only marker: gates the video-QA tool (lib/video/qa.ts) to accounts
+  // explicitly created for testing, so it can never be pointed at a real
+  // patient or doctor. Never set from public signup.
+  isTest: boolean("isTest").notNull().default(false),
 
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),

@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "isTest" boolean DEFAULT false NOT NULL;

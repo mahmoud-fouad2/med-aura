@@ -66,6 +66,11 @@ const schema = z.object({
   // end. Refused in production unless explicitly set, and always requires an
   // admin session on top. Never enable on a real-patient environment.
   ENABLE_TEST_PAYMENT_TOOLS: z.string().optional(),
+  // QA only: unlocks the admin "create test video session" tool — a real
+  // Daily room + tokens for two isTest=true accounts, no appointment or
+  // payment involved. Off by default everywhere; never enable on a
+  // real-patient environment.
+  ENABLE_VIDEO_QA_TOOLS: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>
@@ -128,6 +133,8 @@ export const isVideoConfigured = () => {
 /** QA test-payment tool is gated by an explicit opt-in flag. */
 export const isTestPaymentEnabled = () =>
   read().ENABLE_TEST_PAYMENT_TOOLS === "true"
+/** QA video-session tool is gated by an explicit opt-in flag. */
+export const isVideoQaEnabled = () => read().ENABLE_VIDEO_QA_TOOLS === "true"
 export const isRecaptchaConfigured = () => Boolean(read().RECAPTCHA_SECRET_KEY)
 
 /** Resolve the app's public base URL for links, redirects, auth. */
