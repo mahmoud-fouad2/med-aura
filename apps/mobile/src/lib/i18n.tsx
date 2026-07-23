@@ -308,6 +308,13 @@ const ar = {
       not_authorized: "الموعد غير موجود.",
     } as Record<string, string>,
   },
+  cameraTest: {
+    title: "اختبار الكاميرا والميكروفون",
+    intro: "تأكد من عمل الكاميرا والميكروفون قبل موعد الاستشارة. هذا اختبار محلي على جهازك فقط — لا يُنشئ أي مكالمة أو يحجز أي موعد.",
+    start: "ابدأ الاختبار",
+    endTest: "إنهاء الاختبار",
+    permissionDenied: "لم نتمكن من الوصول إلى الكاميرا أو المايكروفون.",
+  },
   profile: {
     title: "حسابي",
     language: "اللغة",
@@ -680,6 +687,13 @@ const en: typeof ar = {
       not_found: "Appointment not found.",
       not_authorized: "Appointment not found.",
     },
+  },
+  cameraTest: {
+    title: "Camera & microphone test",
+    intro: "Make sure your camera and microphone work before your consultation. This is a local check on your own device only — it never starts a call or books an appointment.",
+    start: "Start test",
+    endTest: "End test",
+    permissionDenied: "We couldn't access the camera or microphone.",
   },
   profile: {
     title: "My account",

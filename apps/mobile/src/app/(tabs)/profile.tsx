@@ -252,6 +252,12 @@ export default function Profile() {
           hint={t.profile.clearCacheHint}
           onPress={() => void clearCache()}
         />
+        <Divider />
+        <Row
+          icon="videocam-outline"
+          label={t.cameraTest.title}
+          onPress={() => router.push("/camera-test")}
+        />
       </Section>
 
       {/* Support & info */}

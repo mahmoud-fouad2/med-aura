@@ -543,6 +543,15 @@ export default function VideoConsultation() {
                   {t.video.permissionDenied}
                 </AppText>
               ) : null}
+              <Pressable
+                onPress={() => router.push("/camera-test")}
+                accessibilityRole="button"
+                hitSlop={4}
+              >
+                <AppText variant="caption" weight="medium" color={colors.primary}>
+                  {t.cameraTest.title}
+                </AppText>
+              </Pressable>
             </Card>
 
             {/* Tips */}
