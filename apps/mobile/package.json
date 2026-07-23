@@ -38,6 +38,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.0",
+    "react-native-background-timer": "^2.4.1",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-get-random-values": "~1.11.0",
     "react-native-reanimated": "4.5.0",
@@ -65,7 +66,8 @@
       "reactNativeDirectoryCheck": {
         "exclude": [
           "@daily-co/react-native-daily-js",
-          "@daily-co/react-native-webrtc"
+          "@daily-co/react-native-webrtc",
+          "react-native-background-timer"
         ]
       }
     }
