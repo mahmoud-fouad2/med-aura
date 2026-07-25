@@ -76,7 +76,10 @@ export function DataTable<T>({
                   </td>
                 ))}
                 {actions ? (
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="px-4 py-3"
+                    onClick={onRowClick ? (e) => e.stopPropagation() : undefined}
+                  >
                     {actions(row)}
                   </td>
                 ) : null}

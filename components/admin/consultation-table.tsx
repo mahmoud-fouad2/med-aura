@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Download, CreditCard, Video } from "lucide-react"
+import { Download, CreditCard, Video, Undo2 } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { ManualPaymentDialog } from "@/components/admin/manual-payment-dialog"
+import { CancelManualPaymentDialog } from "@/components/admin/cancel-manual-payment-dialog"
 import {
   appointmentStatusAr,
   appointmentTypeAr,
@@ -35,6 +36,8 @@ export type ConsultationRow = {
   patientName: string
   paymentStatus: string | null
   paymentId: string | null
+  /** "stripe" | "manual" | "test" — gates the "cancel manual payment" action. */
+  paymentProvider: string | null
   caseId: string | null
 }
 
@@ -60,9 +63,11 @@ function fmtDateTime(d: Date): string {
 export function ConsultationTable({
   rows,
   canRecordManualPayment,
+  isSuperAdmin,
 }: {
   rows: ConsultationRow[]
   canRecordManualPayment: boolean
+  isSuperAdmin: boolean
 }) {
   const [selected, setSelected] = useState<ConsultationRow | null>(null)
 
@@ -166,6 +171,17 @@ export function ConsultationTable({
                     trigger={
                       <Button size="sm" className="w-full">
                         <CreditCard className="size-4" /> تسجيل دفعة يدوية
+                      </Button>
+                    }
+                  />
+                ) : null}
+                {isSuperAdmin && selected.paymentProvider === "manual" && selected.paymentStatus === "PAID" && selected.paymentId ? (
+                  <CancelManualPaymentDialog
+                    paymentId={selected.paymentId}
+                    appointmentReference={selected.reference}
+                    trigger={
+                      <Button variant="destructive" size="sm" className="w-full">
+                        <Undo2 className="size-4" /> إلغاء الدفعة اليدوية
                       </Button>
                     }
                   />

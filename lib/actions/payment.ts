@@ -1,7 +1,7 @@
 "use server"
 
 import { z } from "zod"
-import { eq, desc, and } from "drizzle-orm"
+import { eq, desc, and, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import {
@@ -11,6 +11,7 @@ import {
   appointment,
   appointmentStatusHistory,
   doctorProfile,
+  refundRequest,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, hasRole, PERMISSIONS, ROLES } from "@/lib/rbac"
@@ -20,6 +21,7 @@ import { AppError, toSafeError, forbidden, conflict, validation, notFound } from
 import { appUrl } from "@/lib/env"
 import { isStripeConfigured, createCheckoutSession } from "@/lib/payments/stripe"
 import { decideManualPaymentEligibility } from "@/lib/pdf/manual-payment-eligibility"
+import { decideManualPaymentCancelEligibility } from "@/lib/pdf/manual-payment-cancel-eligibility"
 import type { ActionResult } from "@/lib/actions/provider"
 
 function ref(prefix: string): string {
@@ -330,9 +332,41 @@ export async function cancelManualPayment(
     const pay = (
       await db.select().from(payment).where(eq(payment.id, data.paymentId)).limit(1)
     )[0]
-    if (!pay) throw notFound("الدفعة غير موجودة.")
-    if (pay.provider !== "manual") throw conflict("هذا الإجراء مخصص للدفعات اليدوية فقط.")
-    if (pay.status !== "PAID") throw conflict("هذه الدفعة ليست في حالة مدفوعة.")
+
+    // A refund already in flight for this payment must resolve (or be
+    // rejected/cancelled) before the payment record itself can be reversed —
+    // otherwise the refund would end up pointing at a payment that was never
+    // really paid. Only worth the query once we know there's a payment to check.
+    const blockingRefund = pay
+      ? (
+          await db
+            .select({ id: refundRequest.id })
+            .from(refundRequest)
+            .where(
+              and(
+                eq(refundRequest.paymentId, pay.id),
+                inArray(refundRequest.status, ["REQUESTED", "UNDER_REVIEW", "APPROVED", "PROVIDER_CONFIRMED"]),
+              ),
+            )
+            .limit(1)
+        )[0]
+      : undefined
+
+    const decision = decideManualPaymentCancelEligibility({
+      payment: pay ? { provider: pay.provider, status: pay.status } : null,
+      hasBlockingRefund: Boolean(blockingRefund),
+    })
+    if (!decision.allowed) {
+      const messages: Record<typeof decision.reason, string> = {
+        not_found: "الدفعة غير موجودة.",
+        not_manual: "هذا الإجراء مخصص للدفعات اليدوية فقط.",
+        not_paid: "هذه الدفعة ليست في حالة مدفوعة.",
+        blocking_refund: "توجد طلب استرداد جارٍ لهذه الدفعة — يجب البت فيه أولًا قبل إلغاء الدفعة.",
+      }
+      throw conflict(messages[decision.reason])
+    }
+    // decision.allowed guarantees pay is non-null.
+    const confirmedPay = pay!
 
     const meta = await requestMeta()
 
@@ -340,15 +374,15 @@ export async function cancelManualPayment(
       await tx
         .update(payment)
         .set({ status: "CANCELLED", failureReason: `ألغيت يدويًا: ${data.reason}` })
-        .where(eq(payment.id, pay.id))
+        .where(eq(payment.id, confirmedPay.id))
 
-      if (pay.appointmentId) {
+      if (confirmedPay.appointmentId) {
         await tx
           .update(appointment)
           .set({ status: "PENDING_PAYMENT" })
-          .where(and(eq(appointment.id, pay.appointmentId), eq(appointment.status, "CONFIRMED")))
+          .where(and(eq(appointment.id, confirmedPay.appointmentId), eq(appointment.status, "CONFIRMED")))
         await tx.insert(appointmentStatusHistory).values({
-          appointmentId: pay.appointmentId,
+          appointmentId: confirmedPay.appointmentId,
           fromStatus: "CONFIRMED",
           toStatus: "PENDING_PAYMENT",
           changedBy: user.id,
@@ -361,7 +395,7 @@ export async function cancelManualPayment(
           action: "payment.manual_cancelled",
           actorUserId: user.id,
           entityType: "payment",
-          entityId: pay.id,
+          entityId: confirmedPay.id,
           metadata: { reason: data.reason },
           ...meta,
         },
@@ -370,7 +404,7 @@ export async function cancelManualPayment(
     })
 
     await notify({
-      userId: pay.payerUserId,
+      userId: confirmedPay.payerUserId,
       type: "payment.manual_cancelled",
       title: "تم إلغاء تسجيل دفعتك",
       body: "تواصل مع الدعم لمزيد من التفاصيل حول موعدك.",
@@ -380,7 +414,7 @@ export async function cancelManualPayment(
     revalidatePath("/admin/finance")
     revalidatePath("/admin/consultations")
 
-    return { ok: true, data: { appointmentId: pay.appointmentId } }
+    return { ok: true, data: { appointmentId: confirmedPay.appointmentId } }
   } catch (err) {
     const safe = toSafeError(err)
     return { ok: false, error: safe.userMessage, code: safe.code }

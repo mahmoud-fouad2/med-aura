@@ -1,4 +1,4 @@
-import { and, eq, desc } from "drizzle-orm"
+import { and, eq, desc, gte, lte, ilike, or, sql, type SQL } from "drizzle-orm"
 import { db } from "@/lib/db"
 import {
   appointment,
@@ -70,18 +70,70 @@ export async function getDoctorProfileId(
   return row?.id ?? null
 }
 
+export type ConsultationAdminRow = AppointmentRow & {
+  patientName: string
+  /** "stripe" | "manual" | "test" — drives whether "cancel manual payment"
+   *  can even be offered for this row. */
+  paymentProvider: string | null
+}
+
+export type ConsultationListFilters = {
+  /** Matches reference, patient name, or doctor name. */
+  q?: string
+  status?: string
+  paymentStatus?: string
+  doctorId?: string
+  from?: string
+  to?: string
+}
+
+const CONSULTATION_PAGE_SIZE = 20
+
 /**
  * Admin/concierge oversight — every appointment, latest first, joined to the
- * doctor's profile and the patient. Optional status filter narrows to a single
- * pipeline state. Not paginated at the SQL layer yet because the appointment
- * volume in production stays well under one page; callers should refuse to
- * render more than 200 rows and switch to a filter instead.
+ * doctor's profile and the patient. Filtered + paginated at the SQL layer
+ * (previously a flat `limit(200)` with only a status filter — that stopped
+ * being workable once there's enough real traffic for a "page 2").
  */
-export async function listAppointmentsForAdmin(opts?: {
-  status?: string
-  limit?: number
-}): Promise<(AppointmentRow & { patientName: string })[]> {
-  const rows = await db
+export async function listAppointmentsForAdmin(
+  filters?: ConsultationListFilters,
+  page = 1,
+  pageSize = CONSULTATION_PAGE_SIZE,
+): Promise<{ rows: ConsultationAdminRow[]; totalCount: number; totalPages: number }> {
+  const conditions: SQL[] = []
+
+  if (filters?.q?.trim()) {
+    const term = `%${filters.q.trim()}%`
+    conditions.push(
+      or(
+        ilike(appointment.reference, term),
+        ilike(userT.name, term),
+        ilike(doctorProfile.name, term),
+      )!,
+    )
+  }
+  if (filters?.status) {
+    conditions.push(eq(appointment.status, filters.status as never))
+  }
+  if (filters?.doctorId) conditions.push(eq(appointment.doctorId, filters.doctorId))
+  if (filters?.from) conditions.push(gte(appointment.startsAt, new Date(filters.from)))
+  if (filters?.to) conditions.push(lte(appointment.startsAt, new Date(filters.to)))
+
+  // paymentStatus lives on a left-joined table, so it has to be resolved as
+  // an appointment-id set first — folding it into the join's ON clause
+  // would silently turn the LEFT JOIN into an INNER JOIN for that row.
+  if (filters?.paymentStatus) {
+    const matches = await db
+      .selectDistinct({ appointmentId: payment.appointmentId })
+      .from(payment)
+      .where(eq(payment.status, filters.paymentStatus as never))
+    const ids = matches.map((m) => m.appointmentId).filter((id): id is string => id != null)
+    conditions.push(sql`${appointment.id} = ANY(${ids.length > 0 ? ids : ["__none__"]})`)
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined
+
+  const baseQuery = db
     .select({
       id: appointment.id,
       reference: appointment.reference,
@@ -95,16 +147,30 @@ export async function listAppointmentsForAdmin(opts?: {
       patientName: userT.name,
       paymentStatus: payment.status,
       paymentId: payment.id,
+      paymentProvider: payment.provider,
       caseId: appointment.caseId,
     })
     .from(appointment)
     .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
     .innerJoin(userT, eq(appointment.patientUserId, userT.id))
     .leftJoin(payment, eq(payment.appointmentId, appointment.id))
-    .where(opts?.status ? eq(appointment.status, opts.status as never) : undefined)
-    .orderBy(desc(appointment.startsAt))
-    .limit(opts?.limit ?? 200)
-  return rows
+
+  const countQuery = db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(appointment)
+    .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
+    .innerJoin(userT, eq(appointment.patientUserId, userT.id))
+    .leftJoin(payment, eq(payment.appointmentId, appointment.id))
+
+  const [rows, countResult] = await Promise.all([
+    baseQuery.where(where).orderBy(desc(appointment.startsAt)).limit(pageSize).offset((page - 1) * pageSize),
+    countQuery.where(where),
+  ])
+
+  const totalCount = countResult[0]?.n ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  return { rows, totalCount, totalPages }
 }
 
 export async function listDoctorAppointments(
