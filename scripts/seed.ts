@@ -250,9 +250,19 @@ const TEST_EMAIL_MIGRATIONS = [
   { oldEmail: "admin@medaura.local", newEmail: "admin@medauraworld.com", isTest: false },
   { oldEmail: "patient@medaura.local", newEmail: "patient@medauraworld.com", isTest: true },
   { oldEmail: "doctor@medaura.local", newEmail: "doctor@medauraworld.com", isTest: true },
+  { oldEmail: "doctor2@medaura.local", newEmail: "doctor2@medauraworld.com", isTest: true },
+  { oldEmail: "doctor3@medaura.local", newEmail: "doctor3@medauraworld.com", isTest: true },
 ]
 
-async function migrateSeedUserEmails() {
+/**
+ * Renames the seed/demo accounts' emails in place (same user id, same
+ * password, same role) and marks them isTest — never creates a row, never
+ * merges two different accounts. Exported so it can run standalone against
+ * an existing database without also running the rest of seedDemo() (which
+ * would touch centers/licenses/availability — more surface than a pure
+ * rename needs).
+ */
+export async function migrateSeedUserEmails() {
   await db.transaction(async (tx) => {
     for (const item of TEST_EMAIL_MIGRATIONS) {
       const oldUser = await tx
