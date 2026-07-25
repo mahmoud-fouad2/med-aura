@@ -1,4 +1,5 @@
 import { Platform } from "react-native"
+import * as FileSystem from "expo-file-system/legacy"
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -49,6 +50,7 @@ export type Appointment = {
   counterpartName: string
   counterpartPhotoUrl: string | null
   paymentStatus: string | null
+  paymentId: string | null
 }
 
 export type HomeData = {
@@ -445,3 +447,25 @@ export const useVideoState = (appointmentId: string, opts?: { poll?: boolean; en
     refetchInterval: opts?.poll ? 20_000 : false,
     enabled: opts?.enabled ?? true,
   })
+
+/**
+ * Downloads a payment receipt PDF to a local temp file, authenticated the
+ * same way `request()` is (session cookie, not a bearer token — this app
+ * has none). Returns the local file URI to hand to expo-sharing; throws on
+ * any failure (network, 401, 404) so the caller can show a normal error.
+ * WebBrowser.openBrowserAsync is NOT usable here — it opens an external
+ * browser that never sees this app's SecureStore-held session cookie.
+ */
+export async function downloadInvoicePdf(paymentId: string): Promise<string> {
+  const cookie = authClient.getCookie()
+  const localUri = `${FileSystem.cacheDirectory}med-aura-receipt-${paymentId}.pdf`
+  const result = await FileSystem.downloadAsync(
+    `${API_URL}/api/invoices/payment/${paymentId}/pdf`,
+    localUri,
+    { headers: cookie ? { Cookie: cookie } : {} },
+  )
+  if (result.status !== 200) {
+    throw new Error("تعذّر تحميل الفاتورة. حاول مرة أخرى.")
+  }
+  return result.uri
+}

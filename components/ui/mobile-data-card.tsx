@@ -12,15 +12,35 @@ export function MobileDataCard({
   badge,
   rows,
   actions,
+  onClick,
 }: {
   title: ReactNode
   subtitle?: ReactNode
   badge?: ReactNode
   rows?: { label: string; value: ReactNode }[]
   actions?: ReactNode
+  onClick?: () => void
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4">
+    <div
+      className={
+        "rounded-xl border border-border/60 bg-card p-4" +
+        (onClick ? " cursor-pointer transition-colors hover:bg-muted/25" : "")
+      }
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="font-medium text-foreground">{title}</p>
@@ -41,7 +61,10 @@ export function MobileDataCard({
         </dl>
       )}
       {actions && (
-        <div className="mt-3 flex flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-3 [&>*]:min-w-0 has-[>[data-slot=card]]:flex-col has-[>[data-slot=card]]:items-stretch">
+        <div
+          className="mt-3 flex flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-3 [&>*]:min-w-0 has-[>[data-slot=card]]:flex-col has-[>[data-slot=card]]:items-stretch"
+          onClick={onClick ? (e) => e.stopPropagation() : undefined}
+        >
           {actions}
         </div>
       )}

@@ -37,6 +37,13 @@ export const payment = pgTable(
     providerSessionId: text("providerSessionId"),
     failureReason: text("failureReason"),
     paidAt: timestamp("paidAt", { withTimezone: true }),
+    // Only set when provider = "manual" — how/why a Finance/Super Admin
+    // recorded this payment outside the online gateway.
+    manualMethod: text("manualMethod"),
+    manualReferenceNote: text("manualReferenceNote"),
+    manualRecordedById: text("manualRecordedById").references(() => user.id, {
+      onDelete: "set null",
+    }),
     ...lifecycle(),
   },
   (t) => [

@@ -15,6 +15,7 @@ import {
   followUpEntry,
   safetyAlert,
   invoice,
+  payment,
 } from "@/lib/db/schema"
 
 export type CareConsultation = {
@@ -360,6 +361,9 @@ export type InvoiceView = {
   paidAmount: string
   remainingAmount: string
   status: string
+  /** Most recent PAID payment against this case, if any — the id the
+   *  "Download Receipt" button needs. Null when nothing has been paid yet. */
+  latestPaymentId: string | null
 }
 
 export async function getInvoiceForCase(caseId: string): Promise<InvoiceView | null> {
@@ -378,5 +382,15 @@ export async function getInvoiceForCase(caseId: string): Promise<InvoiceView | n
     .where(eq(invoice.caseId, caseId))
     .orderBy(desc(invoice.createdAt))
     .limit(1)
-  return rows[0] ?? null
+  const inv = rows[0]
+  if (!inv) return null
+
+  const latestPayment = await db
+    .select({ id: payment.id })
+    .from(payment)
+    .where(and(eq(payment.caseId, caseId), eq(payment.status, "PAID")))
+    .orderBy(desc(payment.paidAt))
+    .limit(1)
+
+  return { ...inv, latestPaymentId: latestPayment[0]?.id ?? null }
 }

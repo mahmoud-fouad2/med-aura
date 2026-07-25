@@ -20,6 +20,8 @@ export type AppointmentRow = {
   counterpartName: string
   counterpartPhotoUrl?: string | null
   paymentStatus: string | null
+  /** The payment to download a receipt for — only meaningful once it's PAID. */
+  paymentId: string | null
   caseId: string | null
 }
 
@@ -39,6 +41,7 @@ export async function listPatientAppointments(
       counterpartName: doctorProfile.name,
       counterpartPhotoKey: doctorProfile.photoKey,
       paymentStatus: payment.status,
+      paymentId: payment.id,
       caseId: appointment.caseId,
     })
     .from(appointment)
@@ -91,6 +94,7 @@ export async function listAppointmentsForAdmin(opts?: {
       counterpartName: doctorProfile.name,
       patientName: userT.name,
       paymentStatus: payment.status,
+      paymentId: payment.id,
       caseId: appointment.caseId,
     })
     .from(appointment)
@@ -121,6 +125,7 @@ export async function listDoctorAppointments(
       counterpartName: userT.name,
       counterpartPhotoKey: userT.image,
       paymentStatus: payment.status,
+      paymentId: payment.id,
       caseId: appointment.caseId,
     })
     .from(appointment)

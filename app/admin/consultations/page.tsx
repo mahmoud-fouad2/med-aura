@@ -1,18 +1,11 @@
 import Link from "next/link"
-import { CalendarClock } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
-import { PERMISSIONS } from "@/lib/rbac"
+import { PERMISSIONS, hasPermission } from "@/lib/rbac"
 import { listAppointmentsForAdmin } from "@/lib/data/appointments"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MobileDataCard } from "@/components/ui/mobile-data-card"
-import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
-import {
-  appointmentStatusAr,
-  appointmentTypeAr,
-  currencyAr,
-  paymentStatusAr,
-} from "@/lib/status-labels"
+import { CalendarClock } from "lucide-react"
+import { ConsultationTable } from "@/components/admin/consultation-table"
 import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -29,36 +22,19 @@ const STATUS_TABS: { key?: string; label: string }[] = [
   { key: "NO_SHOW", label: "لم يحضر" },
 ]
 
-function statusTone(s: string): StatusTone {
-  if (s === "CONFIRMED" || s === "COMPLETED" || s === "CHECKED_IN" || s === "IN_PROGRESS") return "success"
-  if (s === "PENDING_PAYMENT" || s === "PENDING_PROVIDER_CONFIRMATION" || s === "RESCHEDULED") return "warning"
-  if (
-    s === "CANCELLED_BY_PATIENT" ||
-    s === "CANCELLED_BY_PROVIDER" ||
-    s === "NO_SHOW"
-  )
-    return "danger"
-  return "neutral"
-}
-
-
-function fmtDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(d)
-}
-
 export default async function AdminConsultationsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requirePermissionPage(PERMISSIONS.APPOINTMENT_READ_ANY)
+  const viewer = await requirePermissionPage(PERMISSIONS.APPOINTMENT_READ_ANY)
   const sp = await searchParams
   const status = firstParam(sp.status)
 
-  const rows = await listAppointmentsForAdmin({ status })
+  const [rows, canRecordManualPayment] = await Promise.all([
+    listAppointmentsForAdmin({ status }),
+    hasPermission(viewer.id, PERMISSIONS.FINANCE_ACCESS),
+  ])
 
   const buildHref = (s: string | undefined) => {
     const p = new URLSearchParams()
@@ -72,7 +48,7 @@ export default async function AdminConsultationsPage({
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">طلبات الاستشارة</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {rows.length.toLocaleString("ar-SA-u-nu-latn")} موعد استشارة/إجراء
+          {rows.length.toLocaleString("ar-SA-u-nu-latn")} موعد استشارة/إجراء — اضغط أي صف لعرض التفاصيل
         </p>
       </div>
 
@@ -103,101 +79,9 @@ export default async function AdminConsultationsPage({
             description="جرّب تعديل الفلاتر أو انتظر تسجيل مواعيد جديدة."
           />
         ) : (
-          <>
-            <div className="space-y-2 p-3 sm:hidden">
-              {rows.map((r) => (
-                <MobileDataCard
-                  key={r.id}
-                  title={r.patientName}
-                  subtitle={r.counterpartName}
-                  badge={
-                    <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />
-                  }
-                  rows={[
-                    { label: "النوع", value: appointmentTypeAr(r.type) },
-                    { label: "الموعد", value: fmtDateTime(new Date(r.startsAt)) },
-                    {
-                      label: "السعر",
-                      value: r.priceAmount ? `${r.priceAmount} ${currencyAr(r.currency)}` : "—",
-                    },
-                    {
-                      label: "الدفع",
-                      value: r.paymentStatus ? paymentStatusAr(r.paymentStatus) : "—",
-                    },
-                  ]}
-                  actions={
-                    r.caseId ? (
-                      <Link
-                        href={`/admin/cases?q=${encodeURIComponent(r.reference)}`}
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        فتح الحالة {r.reference}
-                      </Link>
-                    ) : (
-                      <span className="font-mono text-xs text-muted-foreground">{r.reference}</span>
-                    )
-                  }
-                />
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
-                    <Th>المرجع</Th>
-                    <Th>النوع</Th>
-                    <Th>الحالة</Th>
-                    <Th>المريض</Th>
-                    <Th>الطبيب</Th>
-                    <Th>الموعد</Th>
-                    <Th>السعر</Th>
-                    <Th>الدفع</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {rows.map((r) => (
-                    <tr key={r.id} className="transition-colors hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                        {r.caseId ? (
-                          <Link
-                            href={`/admin/cases?q=${encodeURIComponent(r.reference)}`}
-                            className="text-primary hover:underline"
-                          >
-                            {r.reference}
-                          </Link>
-                        ) : (
-                          r.reference
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{appointmentTypeAr(r.type)}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">{r.patientName}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.counterpartName}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {fmtDateTime(new Date(r.startsAt))}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {r.priceAmount
-                          ? `${r.priceAmount} ${currencyAr(r.currency)}`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {r.paymentStatus ? paymentStatusAr(r.paymentStatus) : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <ConsultationTable rows={rows} canRecordManualPayment={canRecordManualPayment} />
         )}
       </Card>
     </div>
   )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return <th className="px-4 py-2.5 text-start font-medium">{children}</th>
 }

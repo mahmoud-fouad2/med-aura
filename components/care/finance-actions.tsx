@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { CreditCard, Undo2, Lock, LockOpen, Info } from "lucide-react"
+import { CreditCard, Undo2, Lock, LockOpen, Info, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -70,6 +70,17 @@ export function RemainingBalanceCard({
           <dd>{remaining.toLocaleString("ar-SA-u-nu-latn")} {currencyAr(invoice.currency)}</dd>
         </div>
       </dl>
+      {invoice.latestPaymentId ? (
+        <Button
+          variant="outline"
+          size="sm"
+          render={
+            <a href={`/api/invoices/payment/${invoice.latestPaymentId}/pdf`} target="_blank" rel="noopener noreferrer">
+              <Download className="size-4" /> تنزيل الفاتورة
+            </a>
+          }
+        />
+      ) : null}
       {error && <p className="text-sm text-destructive">{error}</p>}
       {readOnly ? (
         remaining > 0 ? (

@@ -9,6 +9,7 @@ import {
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
 import { searchActivity, type ActivityFilter } from "@/lib/data/admin-activity"
+import { actionLabelAr } from "@/lib/audit-labels"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -46,34 +47,6 @@ function actionTone(action: string): string {
     travel: "bg-primary",
   }
   return map[ns] ?? "bg-muted-foreground"
-}
-
-function actionAr(action: string): string {
-  const key = action.replace(/\./g, "_")
-  const MAP: Record<string, string> = {
-    case_create: "إنشاء حالة",
-    case_update: "تحديث حالة",
-    case_close: "إغلاق حالة",
-    payment_success: "دفع ناجح",
-    payment_failed: "فشل دفع",
-    refund_request: "طلب استرجاع",
-    refund_approve: "قبول استرجاع",
-    provider_application_submit: "تقديم طلب انضمام",
-    provider_approve: "اعتماد مقدم خدمة",
-    provider_reject: "رفض مقدم خدمة",
-    safety_alert_create: "إنشاء تنبيه سلامة",
-    safety_alert_resolve: "معالجة تنبيه سلامة",
-    catalog_procedure_create: "إنشاء إجراء",
-    catalog_category_create: "إنشاء قسم",
-    before_after_case_approve: "اعتماد قبل/بعد",
-    consent_grant: "منح موافقة",
-    consent_revoke: "سحب موافقة",
-    notification_preferences_update: "تحديث تفضيلات الإشعارات",
-    travel_request_submit: "طلب سفر",
-    travel_offer_send: "إرسال عرض سفر",
-    travel_offer_accept: "قبول عرض سفر",
-  }
-  return MAP[key] ?? action
 }
 
 export default async function AdminActivityPage({
@@ -206,17 +179,9 @@ export default async function AdminActivityPage({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {actionAr(e.action)}
-                        </p>
-                        <p
-                          dir="ltr"
-                          className="mt-0.5 font-mono text-[10px] text-muted-foreground/70"
-                        >
-                          {e.action}
-                        </p>
-                      </div>
+                      <p className="min-w-0 text-sm font-medium text-foreground">
+                        {actionLabelAr(e.action)}
+                      </p>
                       <div className="flex shrink-0 items-center gap-3 text-[11px]">
                         {e.entityType && (
                           <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
@@ -236,6 +201,28 @@ export default async function AdminActivityPage({
                         {e.actorName ?? "النظام"}
                       </span>
                     </div>
+                    {/* Raw event string + metadata stay tucked away — a
+                        reviewer scanning the log reads Arabic labels, not
+                        dot-namespaced action names or JSON. */}
+                    <details className="mt-2 group">
+                      <summary className="w-fit cursor-pointer text-[11px] font-medium text-muted-foreground/70 hover:text-muted-foreground">
+                        تفاصيل متقدمة
+                      </summary>
+                      <div className="mt-1.5 space-y-1 rounded-md bg-muted/40 p-2">
+                        <p dir="ltr" className="font-mono text-[10px] text-muted-foreground">
+                          {e.action}
+                          {e.entityId ? ` · ${e.entityId}` : ""}
+                        </p>
+                        {Object.keys(e.metadata ?? {}).length > 0 ? (
+                          <pre
+                            dir="ltr"
+                            className="overflow-x-auto whitespace-pre-wrap font-mono text-[10px] text-muted-foreground"
+                          >
+                            {JSON.stringify(e.metadata, null, 2)}
+                          </pre>
+                        ) : null}
+                      </div>
+                    </details>
                   </div>
                 </li>
               )

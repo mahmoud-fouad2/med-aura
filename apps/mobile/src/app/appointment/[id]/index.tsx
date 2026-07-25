@@ -1,7 +1,9 @@
-import { Pressable, ScrollView, View } from "react-native"
+import { useState } from "react"
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as WebBrowser from "expo-web-browser"
+import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
 import { VideoCard } from "../../../components/video-card"
 import {
@@ -14,7 +16,7 @@ import {
   StatusPill,
 } from "../../../components/ui"
 import { QueryErrorState } from "../../../components/query-error"
-import { useAppointments, useMe, type Appointment } from "../../../lib/api"
+import { useAppointments, useMe, downloadInvoicePdf, type Appointment } from "../../../lib/api"
 import { API_URL } from "../../../lib/config"
 import { useI18n } from "../../../lib/i18n"
 import { colors, radius, spacing } from "../../../theme"
@@ -102,6 +104,25 @@ function Details({
   isDoctor: boolean
 }) {
   const { t } = useI18n()
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false)
+  const [downloadError, setDownloadError] = useState(false)
+
+  async function onDownloadInvoice() {
+    if (downloadingInvoice || !appointment.paymentId) return
+    setDownloadingInvoice(true)
+    setDownloadError(false)
+    try {
+      const fileUri = await downloadInvoicePdf(appointment.paymentId)
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, { mimeType: "application/pdf", UTI: "com.adobe.pdf" })
+      }
+    } catch {
+      setDownloadError(true)
+    } finally {
+      setDownloadingInvoice(false)
+    }
+  }
+
   const intl = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US"
   const starts = new Date(appointment.startsAt)
   const typeLabel =
@@ -199,6 +220,37 @@ function Details({
                 appointment.paymentStatus
               }
             />
+          </>
+        ) : null}
+        {!isDoctor && appointment.paymentStatus === "PAID" && appointment.paymentId ? (
+          <>
+            <RowDivider />
+            <Pressable
+              onPress={() => void onDownloadInvoice()}
+              disabled={downloadingInvoice}
+              accessibilityRole="button"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing.sm,
+                paddingVertical: 4,
+                opacity: downloadingInvoice ? 0.6 : 1,
+              }}
+            >
+              {downloadingInvoice ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="download-outline" size={18} color={colors.primary} />
+              )}
+              <AppText variant="sub" weight="medium" color={colors.primary}>
+                {t.appointmentDetails.downloadInvoice}
+              </AppText>
+            </Pressable>
+            {downloadError ? (
+              <AppText variant="caption" color={colors.danger}>
+                {t.common.loadFailed}
+              </AppText>
+            ) : null}
           </>
         ) : null}
       </Card>

@@ -19,7 +19,7 @@ import {
 } from "@/lib/data/finance"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MobileDataCard } from "@/components/ui/mobile-data-card"
+import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { RefundReviewPanel } from "@/components/finance/refund-review-panel"
@@ -144,6 +144,7 @@ export default async function FinanceDashboardPage() {
             ) : (
               <DataTable
                 rows={payments}
+                getRowKey={(p) => p.id}
                 columns={[
                   { header: "المرجع", cell: (p) => <span dir="ltr" className="font-mono text-xs">{p.reference}</span> },
                   { header: "الغرض", cell: (p) => paymentPurposeAr(p.purpose) },
@@ -152,6 +153,25 @@ export default async function FinanceDashboardPage() {
                   { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-foreground">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
                   { header: "التاريخ", cell: (p) => <span className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}</span> },
                 ]}
+                actions={(p) =>
+                  p.status === "PAID" ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      render={
+                        <a
+                          href={`/api/invoices/payment/${p.id}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="تنزيل الفاتورة"
+                          title="تنزيل الفاتورة"
+                        >
+                          <Download className="size-4" />
+                        </a>
+                      }
+                    />
+                  ) : null
+                }
               />
             )}
           </SectionCard>
@@ -308,63 +328,5 @@ function PaymentStatusPill({ status }: { status: string }) {
     >
       {paymentStatusAr(status)}
     </span>
-  )
-}
-
-function DataTable<T>({
-  rows,
-  columns,
-}: {
-  rows: T[]
-  columns: {
-    header: string
-    cell: (row: T) => React.ReactNode
-    mobile?: "title" | "badge"
-  }[]
-}) {
-  const titleCol = columns.find((c) => c.mobile === "title") ?? columns[0]
-  const badgeCol = columns.find((c) => c.mobile === "badge")
-  const rowCols = columns.filter((c) => c !== titleCol && c !== badgeCol)
-
-  return (
-    <>
-      <div className="space-y-2 p-3 sm:hidden">
-        {rows.map((row, i) => (
-          <MobileDataCard
-            key={i}
-            title={titleCol.cell(row)}
-            badge={badgeCol?.cell(row)}
-            rows={rowCols.map((c) => ({ label: c.header, value: c.cell(row) }))}
-          />
-        ))}
-      </div>
-      <div className="hidden overflow-x-auto sm:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-              {columns.map((c) => (
-                <th
-                  key={c.header}
-                  className="px-4 py-2.5 text-start font-medium"
-                >
-                  {c.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/60">
-            {rows.map((row, i) => (
-              <tr key={i} className="transition-colors hover:bg-muted/25">
-                {columns.map((c) => (
-                  <td key={c.header} className="px-4 py-3">
-                    {c.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
   )
 }
