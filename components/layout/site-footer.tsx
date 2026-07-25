@@ -120,6 +120,18 @@ export function SiteFooter() {
             رعاية أوضح وقرار أهدأ
           </p>
         </div>
+        {/* Quiet, small developer credit — never the phone number here. */}
+        <p className="mt-3 text-center text-[11px] text-muted-foreground/70">
+          Developed by{" "}
+          <a
+            href="https://ma-fo.info"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-dotted underline-offset-2 hover:text-primary"
+          >
+            Mahmoud Fouad
+          </a>
+        </p>
       </div>
     </footer>
   )
