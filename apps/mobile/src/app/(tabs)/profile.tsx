@@ -47,11 +47,14 @@ export default function Profile() {
   const queryClient = useQueryClient()
   const me = useMe()
 
-  const [confirmSignOut, setConfirmSignOut] = useState(false)
+  // One switch, not three independent booleans — guarantees at most one
+  // sheet's `visible` prop is ever true, so opening one always closes any
+  // other instead of risking two overlapping native Modals (visible as a
+  // double-backdrop flicker, worst on Android where each Modal is its own
+  // window).
+  const [activeSheet, setActiveSheet] = useState<"language" | "signout" | "avatar" | null>(null)
   const [signingOut, setSigningOut] = useState(false)
-  const [languageSheet, setLanguageSheet] = useState(false)
   const [switchingLanguage, setSwitchingLanguage] = useState(false)
-  const [avatarSheet, setAvatarSheet] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   // Every screen reading useMe() (header, greeting, doctor list row) sees the
@@ -86,13 +89,13 @@ export default function Profile() {
       setRememberMe(false).catch(() => undefined),
     ])
     setSigningOut(false)
-    setConfirmSignOut(false)
+    setActiveSheet(null)
     router.replace("/sign-in")
   }
 
   const switchLanguage = (l: Locale) => {
     if (switchingLanguage) return
-    setLanguageSheet(false)
+    setActiveSheet(null)
     if (l === locale) return
     setSwitchingLanguage(true)
     // Let the sheet's own close animation finish before swapping every
@@ -139,7 +142,7 @@ export default function Profile() {
         ) : (
           <>
             <Pressable
-              onPress={() => setAvatarSheet(true)}
+              onPress={() => setActiveSheet("avatar")}
               accessibilityRole="button"
               accessibilityLabel={t.profile.editPhoto}
               hitSlop={8}
@@ -198,7 +201,7 @@ export default function Profile() {
           icon="language-outline"
           label={t.profile.language}
           value={locale === "ar" ? t.profile.arabic : t.profile.english}
-          onPress={() => setLanguageSheet(true)}
+          onPress={() => setActiveSheet("language")}
         />
         <Divider />
         <Row
@@ -293,8 +296,19 @@ export default function Profile() {
         />
       </Section>
 
+      <Button
+        label={t.auth.signOut}
+        variant="secondary"
+        icon="log-out-outline"
+        onPress={() => setActiveSheet("signout")}
+        style={{ backgroundColor: colors.dangerSoft }}
+      />
+
       {/* Neutral-informative: this box also carries "can't enable" guidance,
-          not only successes, so it mustn't read as a green confirmation. */}
+          not only successes, so it mustn't read as a green confirmation.
+          Rendered AFTER the sign-out button (not before it) so it appearing
+          or disappearing never shifts the button's position under a tap
+          already in flight. */}
       {notice ? (
         <View
           style={{
@@ -309,18 +323,10 @@ export default function Profile() {
         </View>
       ) : null}
 
-      <Button
-        label={t.auth.signOut}
-        variant="secondary"
-        icon="log-out-outline"
-        onPress={() => setConfirmSignOut(true)}
-        style={{ backgroundColor: colors.dangerSoft }}
-      />
-
       {/* Language picker */}
       <BottomSheet
-        visible={languageSheet}
-        onClose={() => setLanguageSheet(false)}
+        visible={activeSheet === "language"}
+        onClose={() => setActiveSheet(null)}
         title={t.profile.language}
         description={t.profile.restartNote}
       >
@@ -363,8 +369,8 @@ export default function Profile() {
 
       {/* Sign-out confirm */}
       <BottomSheet
-        visible={confirmSignOut}
-        onClose={() => setConfirmSignOut(false)}
+        visible={activeSheet === "signout"}
+        onClose={() => setActiveSheet(null)}
         title={t.auth.signOut}
         description={t.auth.signOutConfirm}
       >
@@ -378,14 +384,14 @@ export default function Profile() {
           <Button
             label={t.common.cancel}
             variant="ghost"
-            onPress={() => setConfirmSignOut(false)}
+            onPress={() => setActiveSheet(null)}
           />
         </View>
       </BottomSheet>
 
       <AvatarPickerSheet
-        visible={avatarSheet}
-        onClose={() => setAvatarSheet(false)}
+        visible={activeSheet === "avatar"}
+        onClose={() => setActiveSheet(null)}
         hasPhoto={Boolean(me.data?.photoUrl)}
         onUploaded={(photoUrl) => {
           setPhotoUrl(photoUrl)

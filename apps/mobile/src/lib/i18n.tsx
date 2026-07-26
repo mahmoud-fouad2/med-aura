@@ -791,14 +791,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("ar")
 
   useEffect(() => {
-    SecureStore.getItemAsync(LOCALE_KEY).then((saved) => {
-      if (saved === "en" || saved === "ar") setLocaleState(saved)
-    })
+    SecureStore.getItemAsync(LOCALE_KEY)
+      .then((saved) => {
+        if (saved === "en" || saved === "ar") setLocaleState(saved)
+      })
+      .catch(() => undefined)
   }, [])
 
   const setLocale = useCallback(async (l: Locale) => {
     setLocaleState(l)
-    await SecureStore.setItemAsync(LOCALE_KEY, l)
+    await SecureStore.setItemAsync(LOCALE_KEY, l).catch(() => undefined)
     // The layout stays RTL-anchored (native `forcesRTL` in app.json): the
     // shell is designed RTL-first, so switching to English swaps the strings
     // instantly with no restart and no mirrored-relayout flash.

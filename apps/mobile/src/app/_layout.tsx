@@ -9,6 +9,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { SessionExpiredError } from "../lib/api"
 import { I18nProvider } from "../lib/i18n"
 import { AppLockGate } from "../components/app-lock"
+import { RootErrorBoundary } from "../components/error-boundary"
 import "../lib/push-notifications"
 import { colors } from "../theme"
 
@@ -62,21 +63,23 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <I18nProvider>
-          <StatusBar style="dark" />
-          <AppLockGate>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-                animation: "fade_from_bottom",
-              }}
-            />
-          </AppLockGate>
-        </I18nProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <RootErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <I18nProvider>
+            <StatusBar style="dark" />
+            <AppLockGate>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.background },
+                  animation: "fade_from_bottom",
+                }}
+              />
+            </AppLockGate>
+          </I18nProvider>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </RootErrorBoundary>
   )
 }
