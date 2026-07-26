@@ -112,26 +112,22 @@ export function SiteFooter() {
 
         <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground">
           <p>© {year} Med Aura. جميع الحقوق محفوظة.</p>
-          <p className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-primary"
-            />
-            رعاية أوضح وقرار أهدأ
-          </p>
-        </div>
-        {/* Quiet, small developer credit — never the phone number here. */}
-        <p className="mt-3 text-center text-[11px] text-muted-foreground/70">
-          Developed by{" "}
+          {/* Quiet developer credit — never the phone number here. */}
           <a
             href="https://ma-fo.info"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline decoration-dotted underline-offset-2 hover:text-primary"
+            className="inline-flex items-center gap-1.5 text-muted-foreground/70 transition-colors hover:text-primary"
           >
-            Mahmoud Fouad
+            {/* eslint-disable-next-line @next/next/no-img-element -- tiny external badge, not worth a next/image remote-pattern config */}
+            <img
+              src="https://ma-fo.info/logo2.png"
+              alt=""
+              className="size-3 shrink-0 rounded-sm object-contain"
+            />
+            Ma-Fo
           </a>
-        </p>
+        </div>
       </div>
     </footer>
   )
