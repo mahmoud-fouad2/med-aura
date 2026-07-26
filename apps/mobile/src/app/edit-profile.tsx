@@ -18,7 +18,7 @@ import {
   ChevronBack,
   Skeleton,
 } from "../components/ui"
-import { useMe, api, type Me } from "../lib/api"
+import { useMe, api, NetworkError, type Me } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 import { Field, inputStyle } from "./sign-in"
@@ -98,7 +98,7 @@ function ProfileForm({ initial }: { initial: Me }) {
     if (saving) return
     setError(null)
     if (!country) {
-      setError(t.auth.country)
+      setError(t.auth.selectCountryRequired)
       return
     }
     setSaving(true)
@@ -111,7 +111,16 @@ function ProfileForm({ initial }: { initial: Me }) {
       })
     } catch (err) {
       setSaving(false)
-      setError(err instanceof Error && err.message ? err.message : t.auth.genericError)
+      // A NetworkError's message is the literal English word "offline" (see
+      // lib/api.ts) — never render it as-is. Any other thrown Error already
+      // carries the server's own (Arabic) validation message.
+      setError(
+        err instanceof NetworkError
+          ? t.common.offline
+          : err instanceof Error && err.message
+            ? err.message
+            : t.auth.genericError,
+      )
       return
     }
     // The name/phone shown on home + profile come from these queries.

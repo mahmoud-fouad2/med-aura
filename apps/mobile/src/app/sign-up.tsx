@@ -23,7 +23,7 @@ import {
 } from "../components/ui"
 import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
-import { api } from "../lib/api"
+import { api, NetworkError } from "../lib/api"
 import { registerForPushNotifications } from "../lib/push-notifications"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
@@ -56,7 +56,7 @@ export default function SignUp() {
       return
     }
     if (!country) {
-      setError(t.auth.country)
+      setError(t.auth.selectCountryRequired)
       return
     }
     setLoading(true)
@@ -81,7 +81,16 @@ export default function SignUp() {
       })
     } catch (err) {
       setLoading(false)
-      setError(err instanceof Error ? err.message : t.auth.genericError)
+      // A NetworkError's message is the literal English word "offline" (see
+      // lib/api.ts) — never render it as-is. Any other thrown Error already
+      // carries the server's own (Arabic) validation message.
+      setError(
+        err instanceof NetworkError
+          ? t.common.offline
+          : err instanceof Error && err.message
+            ? err.message
+            : t.auth.genericError,
+      )
       return
     }
     setLoading(false)

@@ -22,6 +22,7 @@ import {
   api,
   useDoctor,
   useSlots,
+  NetworkError,
   type BookingResult,
   type ConsultationType,
 } from "../../lib/api"
@@ -75,7 +76,17 @@ export default function Booking() {
       setDone(result)
     } catch (err) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-      setError(err instanceof Error ? err.message : t.booking.slotTaken)
+      // A NetworkError's message is the literal English word "offline" (see
+      // lib/api.ts) — never render it as-is. Any other thrown Error already
+      // carries the server's own (Arabic) message; a non-Error throw falls
+      // back to the slot-taken copy, the most likely real cause here.
+      setError(
+        err instanceof NetworkError
+          ? t.common.offline
+          : err instanceof Error && err.message
+            ? err.message
+            : t.booking.slotTaken,
+      )
       setSelectedSlot(null)
       void slots.refetch()
     }
