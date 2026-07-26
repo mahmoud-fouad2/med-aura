@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or } from "drizzle-orm"
+import { and, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { user as userT, patientProfile, doctorProfile, center as centerT, aestheticCase } from "@/lib/db/schema"
 
@@ -106,31 +106,47 @@ export type AdminCenterRow = {
   longitude: string | null
 }
 
-export async function listCentersForAdmin(filters: { status?: string; q?: string } = {}, limit = 100): Promise<AdminCenterRow[]> {
-  if (!isDbConfigured) return []
-  const conditions = []
+export type AdminCenterListFilters = { status?: string; q?: string; country?: string }
+
+const CENTER_PAGE_SIZE = 20
+
+export async function listCentersForAdmin(
+  filters: AdminCenterListFilters = {},
+  page = 1,
+  pageSize = CENTER_PAGE_SIZE,
+): Promise<{ rows: AdminCenterRow[]; totalCount: number; totalPages: number }> {
+  if (!isDbConfigured) return { rows: [], totalCount: 0, totalPages: 1 }
+  const conditions: SQL[] = []
   if (filters.status) conditions.push(eq(centerT.status, filters.status as (typeof centerT.status.enumValues)[number]))
   if (filters.q?.trim()) conditions.push(ilike(centerT.name, `%${filters.q.trim()}%`))
+  if (filters.country) conditions.push(eq(centerT.country, filters.country))
+  const where = conditions.length > 0 ? and(...conditions) : undefined
 
-  const rows = await db
-    .select({
-      id: centerT.id,
-      slug: centerT.slug,
-      name: centerT.name,
-      status: centerT.status,
-      published: centerT.published,
-      country: centerT.country,
-      city: centerT.city,
-      createdAt: centerT.createdAt,
-      latitude: centerT.latitude,
-      longitude: centerT.longitude,
-    })
-    .from(centerT)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(centerT.createdAt))
-    .limit(limit)
+  const [rows, countResult] = await Promise.all([
+    db
+      .select({
+        id: centerT.id,
+        slug: centerT.slug,
+        name: centerT.name,
+        status: centerT.status,
+        published: centerT.published,
+        country: centerT.country,
+        city: centerT.city,
+        createdAt: centerT.createdAt,
+        latitude: centerT.latitude,
+        longitude: centerT.longitude,
+      })
+      .from(centerT)
+      .where(where)
+      .orderBy(desc(centerT.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ n: sql<number>`count(*)::int` }).from(centerT).where(where),
+  ])
+  const totalCount = countResult[0]?.n ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  if (rows.length === 0) return { rows: [], totalCount, totalPages }
 
-  if (rows.length === 0) return []
   const doctorRows = await db
     .select({ centerId: doctorProfile.centerId })
     .from(doctorProfile)
@@ -141,5 +157,77 @@ export async function listCentersForAdmin(filters: { status?: string; q?: string
     countByCenter.set(d.centerId, (countByCenter.get(d.centerId) ?? 0) + 1)
   }
 
-  return rows.map((r) => ({ ...r, doctorCount: countByCenter.get(r.id) ?? 0 }))
+  return {
+    rows: rows.map((r) => ({ ...r, doctorCount: countByCenter.get(r.id) ?? 0 })),
+    totalCount,
+    totalPages,
+  }
+}
+
+export type CenterFull = {
+  id: string
+  legalName: string
+  name: string
+  slug: string
+  description: string | null
+  country: string
+  city: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  languages: string[]
+  latitude: string | null
+  longitude: string | null
+  published: boolean
+  status: string
+  createdAt: Date
+}
+
+export async function getCenterForAdmin(centerId: string): Promise<CenterFull | null> {
+  if (!isDbConfigured) return null
+  const row = (
+    await db
+      .select({
+        id: centerT.id,
+        legalName: centerT.legalName,
+        name: centerT.name,
+        slug: centerT.slug,
+        description: centerT.description,
+        country: centerT.country,
+        city: centerT.city,
+        address: centerT.address,
+        phone: centerT.phone,
+        email: centerT.email,
+        website: centerT.website,
+        languages: centerT.languages,
+        latitude: centerT.latitude,
+        longitude: centerT.longitude,
+        published: centerT.published,
+        status: centerT.status,
+        createdAt: centerT.createdAt,
+      })
+      .from(centerT)
+      .where(eq(centerT.id, centerId))
+      .limit(1)
+  )[0]
+  return row ?? null
+}
+
+export type CenterDoctorRow = { id: string; name: string; slug: string; status: string; published: boolean }
+
+/** Read-only roster for a center's drawer — reassigning a doctor's center happens on the doctor's own record. */
+export async function listDoctorsByCenter(centerId: string): Promise<CenterDoctorRow[]> {
+  if (!isDbConfigured) return []
+  return db
+    .select({
+      id: doctorProfile.id,
+      name: doctorProfile.name,
+      slug: doctorProfile.slug,
+      status: doctorProfile.status,
+      published: doctorProfile.published,
+    })
+    .from(doctorProfile)
+    .where(eq(doctorProfile.centerId, centerId))
+    .orderBy(desc(doctorProfile.createdAt))
 }

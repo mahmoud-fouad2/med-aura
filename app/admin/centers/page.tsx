@@ -1,30 +1,20 @@
 import Link from "next/link"
-import {
-  Building2,
-  Search,
-  Eye,
-  EyeOff,
-  ExternalLink,
-  ChevronLeft,
-  Users as UsersIcon,
-} from "lucide-react"
+import { Building2, SlidersHorizontal } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
-import { listCentersForAdmin } from "@/lib/data/admin-directory"
+import { listCentersForAdmin, type AdminCenterListFilters } from "@/lib/data/admin-directory"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MobileDataCard } from "@/components/ui/mobile-data-card"
-import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
-import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
+import { CenterTable } from "@/components/admin/center-table"
+import { AdminPagination } from "@/components/admin/pagination"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { countryNameAr, providerStatusAr, PROVIDER_STATUSES } from "@/lib/status-labels"
+import { countryNameAr, providerStatusAr, PROVIDER_STATUSES, COUNTRY_CODES } from "@/lib/status-labels"
 import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المراكز" }
-
 
 export default async function AdminCentersPage({
   searchParams,
@@ -33,73 +23,88 @@ export default async function AdminCentersPage({
 }) {
   await requirePermissionPage(PERMISSIONS.PROVIDER_REVIEW)
   const sp = await searchParams
-  const q = firstParam(sp.q)
-  const status = firstParam(sp.status)
 
-  const centers = await listCentersForAdmin({ q, status })
-  const approved = centers.filter((c) => c.status === "approved").length
-  const pending = centers.filter((c) => c.status === "pending").length
-
-  const buildHref = (s: string | undefined) => {
-    const params = new URLSearchParams()
-    if (q) params.set("q", q)
-    if (s) params.set("status", s)
-    return `/admin/centers?${params.toString()}`
+  const filters: AdminCenterListFilters = {
+    q: firstParam(sp.q),
+    status: firstParam(sp.status),
+    country: firstParam(sp.country),
   }
+  const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1)
+
+  const { rows, totalCount, totalPages } = await listCentersForAdmin(filters, page)
+
+  const buildHref = (overrides: Record<string, string | number | undefined>) => {
+    const q = new URLSearchParams()
+    const merged = { ...sp, ...overrides }
+    for (const [k, v] of Object.entries(merged)) {
+      const val = Array.isArray(v) ? v[0] : v
+      if (val !== undefined && val !== "") q.set(k, String(val))
+    }
+    return `/admin/centers?${q.toString()}`
+  }
+
+  const activeFilterCount = [filters.q, filters.status, filters.country].filter(Boolean).length
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="المراكز"
-        description={`${centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز${status ? ` — ${providerStatusAr(status)}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
-        stats={
-          !status && centers.length > 0
-            ? [
-                { label: "المعتمدة", value: approved.toLocaleString("ar-SA-u-nu-latn") },
-                { label: "قيد المراجعة", value: pending.toLocaleString("ar-SA-u-nu-latn") },
-              ]
-            : undefined
-        }
+        description={`${totalCount.toLocaleString("ar-SA-u-nu-latn")} مركز — اضغط أي صف لعرض التفاصيل والتعديل`}
       />
 
-      <Card className="space-y-3 p-4">
-        <form method="get" className="flex flex-wrap items-center gap-2">
-          <input type="hidden" name="status" value={status ?? ""} />
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              name="q"
-              defaultValue={q ?? ""}
-              placeholder="ابحث باسم المركز…"
-              className="h-9 ps-9"
-            />
+      <Card className="p-4">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="size-4 text-primary" />
+            <h2 className="font-heading text-sm font-bold text-foreground">عوامل التصفية</h2>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {activeFilterCount}
+              </span>
+            )}
           </div>
-          <Button type="submit" size="sm">
-            <Search className="size-4" />
-            بحث
-          </Button>
-        </form>
-        <div className="flex flex-wrap gap-1 border-t border-border/60 pt-3">
-          <TabLink active={!status} href={buildHref(undefined)}>
-            الكل ({centers.length.toLocaleString("ar-SA-u-nu-latn")})
-          </TabLink>
-          {PROVIDER_STATUSES.map((k) => (
-            <TabLink key={k} active={status === k} href={buildHref(k)}>
-              {providerStatusAr(k)}
-            </TabLink>
-          ))}
+          {activeFilterCount > 0 && (
+            <Link href="/admin/centers" className="text-xs font-medium text-primary hover:underline">
+              مسح الكل
+            </Link>
+          )}
         </div>
+        <form method="get" className="grid gap-3 sm:grid-cols-3">
+          <Field label="بحث">
+            <Input name="q" defaultValue={filters.q ?? ""} placeholder="ابحث باسم المركز…" />
+          </Field>
+          <Field label="الحالة">
+            <Select name="status" defaultValue={filters.status ?? ""}>
+              <option value="">الكل</option>
+              {PROVIDER_STATUSES.map((s) => (
+                <option key={s} value={s}>{providerStatusAr(s)}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="الدولة">
+            <Select name="country" defaultValue={filters.country ?? ""}>
+              <option value="">الكل</option>
+              {COUNTRY_CODES.map((c) => (
+                <option key={c} value={c}>{countryNameAr(c)}</option>
+              ))}
+            </Select>
+          </Field>
+          <div className="flex items-end gap-2 sm:col-span-3">
+            <Button type="submit">تطبيق الفلاتر</Button>
+            <Button type="button" variant="ghost" render={<Link href="/admin/centers">إعادة ضبط</Link>} />
+          </div>
+        </form>
       </Card>
 
       <Card className="overflow-hidden p-0">
-        {centers.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="p-10">
             <EmptyState
               icon={Building2}
-              title={q || status ? "لا توجد مراكز مطابقة" : "لا توجد مراكز بعد"}
+              title={activeFilterCount > 0 ? "لا توجد مراكز مطابقة" : "لا توجد مراكز بعد"}
               description={
-                q || status
+                activeFilterCount > 0
                   ? "جرّب تعديل الفلاتر أو كلمات البحث."
                   : "ستظهر المراكز هنا بمجرد الموافقة على طلبات انضمامها."
               }
@@ -108,137 +113,14 @@ export default async function AdminCentersPage({
           </div>
         ) : (
           <>
-            <div className="space-y-2 p-3 sm:hidden">
-              {centers.map((c) => {
-                const initial = c.name.trim().charAt(0) || "م"
-                return (
-                  <MobileDataCard
-                    key={c.id}
-                    title={
-                      <span className="flex items-center gap-2">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                          {initial}
-                        </span>
-                        <span className="truncate">{c.name}</span>
-                      </span>
-                    }
-                    badge={
-                      <StatusBadge
-                        tone={providerStatusTone(c.status)}
-                        label={providerStatusAr(c.status)}
-                      />
-                    }
-                    rows={[
-                      { label: "الظهور", value: c.published ? "ظاهر" : "مخفي" },
-                      {
-                        label: "الموقع",
-                        value: `${c.city ? `${c.city}، ` : ""}${countryNameAr(c.country)}`,
-                      },
-                      { label: "الأطباء", value: c.doctorCount.toLocaleString("ar-SA-u-nu-latn") },
-                    ]}
-                    actions={
-                      <>
-                        <Link
-                          href={`/centers/${c.slug}`}
-                          className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          عرض الملف
-                          <ExternalLink className="size-3" />
-                        </Link>
-                        <CenterCoordinatesForm
-                          centerId={c.id}
-                          latitude={c.latitude}
-                          longitude={c.longitude}
-                        />
-                      </>
-                    }
-                  />
-                )
-              })}
-            </div>
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                    <Th>الاسم</Th>
-                    <Th>الحالة</Th>
-                    <Th>الملف</Th>
-                    <Th>الموقع</Th>
-                    <Th>الأطباء</Th>
-                    <Th>الإحداثيات</Th>
-                    <Th>—</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {centers.map((c) => {
-                    const initial = c.name.trim().charAt(0) || "م"
-                    return (
-                      <tr
-                        key={c.id}
-                        className="transition-colors hover:bg-muted/25"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                              {initial}
-                            </span>
-                            <span className="font-medium text-foreground">
-                              {c.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge
-                            tone={providerStatusTone(c.status)}
-                            label={providerStatusAr(c.status)}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          {c.published ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
-                              <Eye className="size-3" />
-                              ظاهر
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                              <EyeOff className="size-3" />
-                              مخفي
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {c.city ? `${c.city}، ` : ""}
-                          {countryNameAr(c.country)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary">
-                            <UsersIcon className="size-3" />
-                            {c.doctorCount.toLocaleString("ar-SA-u-nu-latn")}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <CenterCoordinatesForm
-                            centerId={c.id}
-                            latitude={c.latitude}
-                            longitude={c.longitude}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link
-                            href={`/centers/${c.slug}`}
-                            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                          >
-                            الملف
-                            <ExternalLink className="size-3" />
-                            <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
-                          </Link>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <CenterTable rows={rows} />
+            <AdminPagination
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={20}
+              buildHref={(p) => buildHref({ page: p })}
+            />
           </>
         )}
       </Card>
@@ -246,34 +128,31 @@ export default async function AdminCentersPage({
   )
 }
 
-function TabLink({
-  active,
-  href,
-  children,
-}: {
-  active: boolean
-  href: string
-  children: React.ReactNode
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      className={
-        "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-        (active
-          ? "bg-primary text-primary-foreground shadow-[0_2px_8px_-2px_rgba(74,29,150,0.35)]"
-          : "bg-muted text-muted-foreground hover:bg-muted/70")
-      }
-    >
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
       {children}
-    </Link>
+    </div>
   )
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function Select({
+  name,
+  defaultValue,
+  children,
+}: {
+  name: string
+  defaultValue: string
+  children: React.ReactNode
+}) {
   return (
-    <th className="px-4 py-2.5 text-start font-medium tracking-wide">
+    <select
+      name={name}
+      defaultValue={defaultValue}
+      className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+    >
       {children}
-    </th>
+    </select>
   )
 }

@@ -87,6 +87,11 @@ const ACTION_LABELS_AR: Record<string, string> = {
   // Medical / procedure / quote
   "medical.approved": "اعتماد طبي",
   "center.confirmed": "تأكيد المركز للموعد",
+  "center.update": "تعديل بيانات المركز",
+  "center.status.update": "تغيير حالة اعتماد المركز",
+  "center.published.update": "تغيير ظهور المركز",
+  "center.coordinates.update": "تحديد موقع المركز",
+  "center.coordinates.clear": "إزالة موقع المركز",
   "procedure.confirmed": "تأكيد إجراء",
   "procedure.completed": "اكتمال إجراء",
   "quote.sent": "إرسال عرض سعر",
