@@ -51,6 +51,32 @@ export type Appointment = {
   counterpartPhotoUrl: string | null
   paymentStatus: string | null
   paymentId: string | null
+  /** The linked medical case, when there is one — a doctor's entry point
+   *  into the patient summary screen. */
+  caseId: string | null
+}
+
+export type CaseDocument = {
+  id: string
+  fileName: string
+  kind: string
+  contentType: string
+  createdAt: string
+}
+
+export type CaseSummary = {
+  id: string
+  reference: string
+  status: string
+  goal: string | null
+  description: string | null
+  procedureName: string
+  patientName: string
+  centerName: string | null
+  doctorName: string | null
+  consentActive: boolean
+  isOwner: boolean
+  documents: CaseDocument[]
 }
 
 export type HomeData = {
@@ -271,6 +297,8 @@ export const api = {
   home: () => request<HomeData>("/api/mobile/v1/home"),
   appointments: () =>
     request<{ appointments: Appointment[] }>("/api/mobile/v1/appointments"),
+  caseSummary: (caseId: string) =>
+    request<CaseSummary>(`/api/mobile/v1/cases/${caseId}`),
   videoState: (appointmentId: string) =>
     request<VideoState>(`/api/mobile/v1/appointments/${appointmentId}/video`),
   videoJoin: async (appointmentId: string): Promise<VideoJoin> => {
@@ -374,6 +402,14 @@ export const useAppointments = () =>
     staleTime: 30_000,
   })
 
+export const useCaseSummary = (caseId: string | null) =>
+  useQuery({
+    queryKey: ["case", caseId],
+    queryFn: () => api.caseSummary(caseId as string),
+    enabled: caseId != null,
+    staleTime: 30_000,
+  })
+
 export const useDoctors = (q: string, filters?: DoctorFilters) =>
   useInfiniteQuery({
     queryKey: ["doctors", q, filters ?? {}],
@@ -466,6 +502,30 @@ export async function downloadInvoicePdf(paymentId: string): Promise<string> {
   )
   if (result.status !== 200) {
     throw new Error("تعذّر تحميل الفاتورة. حاول مرة أخرى.")
+  }
+  return result.uri
+}
+
+/**
+ * Downloads a case document (medical photo/report) to a local temp file,
+ * same authenticated pattern as `downloadInvoicePdf`. `/api/documents/{id}`
+ * is authorized per-document (owner, admin, or an active grant) and every
+ * view is audited server-side — this never bypasses that.
+ */
+export async function downloadDocument(
+  documentId: string,
+  fileName: string,
+): Promise<string> {
+  const cookie = authClient.getCookie()
+  const safeName = fileName.replace(/[^\w.\-]+/g, "_")
+  const localUri = `${FileSystem.cacheDirectory}med-aura-doc-${documentId}-${safeName}`
+  const result = await FileSystem.downloadAsync(
+    `${API_URL}/api/documents/${documentId}`,
+    localUri,
+    { headers: cookie ? { Cookie: cookie } : {} },
+  )
+  if (result.status !== 200) {
+    throw new Error("تعذّر تحميل الملف. حاول مرة أخرى.")
   }
   return result.uri
 }

@@ -11,6 +11,7 @@ import {
   Avatar,
   Card,
   ChevronBack,
+  ChevronForward,
   EmptyState,
   Skeleton,
   StatusPill,
@@ -152,6 +153,37 @@ function Details({
           tone={appointmentTone(appointment.status)}
         />
       </Card>
+
+      {/* Patient summary entry — doctors only, and only when this
+          appointment is linked to a medical case. */}
+      {isDoctor && appointment.caseId ? (
+        <Card
+          onPress={() => router.push(`/case/${appointment.caseId}`)}
+          style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: radius.lg,
+              backgroundColor: colors.primarySoft,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="folder-open-outline" size={19} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText variant="sub" weight="bold">
+              {t.appointmentDetails.viewCaseSummary}
+            </AppText>
+            <AppText variant="caption" color={colors.textMuted}>
+              {t.appointmentDetails.viewCaseSummaryHint}
+            </AppText>
+          </View>
+          <ChevronForward size={18} />
+        </Card>
+      ) : null}
 
       {/* Remote consultation entry — video appointments only */}
       {appointment.type === "VIDEO_CONSULTATION" ? (

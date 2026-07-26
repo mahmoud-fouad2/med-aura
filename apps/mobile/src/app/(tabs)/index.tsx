@@ -39,6 +39,7 @@ export default function Home() {
   const session = authClient.useSession()
   const accountType = me.data?.accountType ?? "patient"
   const isPatient = accountType === "patient"
+  const todaysAppointments = home.data?.todaysAppointments ?? []
 
   const resolvedName = (
     me.data?.displayName ??
@@ -196,6 +197,19 @@ export default function Home() {
               loading={home.isLoading}
             />
           </View>
+
+          {/* Today's schedule — the full list already fetched for the stat
+              card above, previously computed and thrown away. The most
+              actionable view for a doctor starting their day. */}
+          {todaysAppointments.length > 0 ? (
+            <Section title={t.home.todaysSchedule}>
+              <View style={{ gap: spacing.md }}>
+                {todaysAppointments.map((a) => (
+                  <AppointmentCard key={a.id} appointment={a} locale={locale} statusLabels={t.status} />
+                ))}
+              </View>
+            </Section>
+          ) : null}
 
           {/* Next patient */}
           <Section title={t.home.nextPatientAppointment}>
