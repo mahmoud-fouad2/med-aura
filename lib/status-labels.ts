@@ -16,6 +16,23 @@ const CURRENCY: Record<string, string> = {
 /** Arabic currency symbol for a given ISO code — falls back to the code itself for anything not mapped. */
 export const currencyAr = (code: string): string => CURRENCY[code] ?? code
 
+const ROLE: Record<string, string> = {
+  patient: "مريض",
+  doctor: "طبيب",
+  center_owner: "مالك مركز",
+  center_admin: "مدير مركز",
+  center_staff: "طاقم مركز",
+  concierge: "فريق المتابعة",
+  compliance_reviewer: "مراجع اعتماد",
+  finance_admin: "مالية",
+  support_agent: "دعم",
+  content_admin: "محتوى",
+  super_admin: "مدير النظام",
+}
+
+/** Arabic label for a platform role key — falls back to the raw key for anything not mapped. */
+export const roleAr = (key: string): string => ROLE[key] ?? key
+
 const COUNTRY: Record<string, string> = {
   SA: "السعودية",
   AE: "الإمارات",

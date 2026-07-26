@@ -1,4 +1,4 @@
-import { asc, desc, eq, ilike, inArray, or } from "drizzle-orm"
+import { and, asc, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { country as countryT, city as cityT, procedureCategory, procedure as procedureT, user as userT, userRole, role as roleT, session as sessionT } from "@/lib/db/schema"
 
@@ -147,28 +147,59 @@ export type AdminUserRow = {
   lastLoginAt: Date | null
 }
 
-export async function listUsersForAdmin(opts?: { q?: string; limit?: number }): Promise<AdminUserRow[]> {
-  if (!isDbConfigured) return []
-  const q = opts?.q?.trim()
-  const users = await db
-    .select({
-      id: userT.id,
-      name: userT.name,
-      email: userT.email,
-      phone: userT.phone,
-      status: userT.status,
-      primaryRole: userT.role,
-      createdAt: userT.createdAt,
-    })
-    .from(userT)
-    .where(
-      q
-        ? or(ilike(userT.name, `%${q}%`), ilike(userT.email, `%${q}%`), ilike(userT.phone, `%${q}%`))
-        : undefined,
+export type AdminUserListFilters = { q?: string; role?: string; status?: string }
+
+const USER_PAGE_SIZE = 20
+
+export async function listUsersForAdmin(
+  filters?: AdminUserListFilters,
+  page = 1,
+  pageSize = USER_PAGE_SIZE,
+): Promise<{ rows: AdminUserRow[]; totalCount: number; totalPages: number }> {
+  if (!isDbConfigured) return { rows: [], totalCount: 0, totalPages: 1 }
+
+  const conditions: SQL[] = []
+  const q = filters?.q?.trim()
+  if (q) {
+    conditions.push(
+      or(ilike(userT.name, `%${q}%`), ilike(userT.email, `%${q}%`), ilike(userT.phone, `%${q}%`))!,
     )
-    .orderBy(desc(userT.createdAt))
-    .limit(opts?.limit ?? 200)
-  if (users.length === 0) return []
+  }
+  if (filters?.status) conditions.push(eq(userT.status, filters.status as never))
+  if (filters?.role) {
+    // A role filter matches any granted role, not just the legacy primary
+    // role column — a user can hold several roles at once.
+    const matches = await db
+      .selectDistinct({ userId: userRole.userId })
+      .from(userRole)
+      .innerJoin(roleT, eq(userRole.roleId, roleT.id))
+      .where(eq(roleT.key, filters.role))
+    const ids = matches.map((m) => m.userId)
+    conditions.push(sql`${userT.id} = ANY(${ids.length > 0 ? ids : ["__none__"]})`)
+  }
+  const where = conditions.length > 0 ? and(...conditions) : undefined
+
+  const [users, countResult] = await Promise.all([
+    db
+      .select({
+        id: userT.id,
+        name: userT.name,
+        email: userT.email,
+        phone: userT.phone,
+        status: userT.status,
+        primaryRole: userT.role,
+        createdAt: userT.createdAt,
+      })
+      .from(userT)
+      .where(where)
+      .orderBy(desc(userT.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ n: sql<number>`count(*)::int` }).from(userT).where(where),
+  ])
+  const totalCount = countResult[0]?.n ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  if (users.length === 0) return { rows: [], totalCount, totalPages }
 
   const userIds = users.map((u) => u.id)
   const [roleRows, sessionRows] = await Promise.all([
@@ -196,11 +227,15 @@ export async function listUsersForAdmin(opts?: { q?: string; limit?: number }): 
     if (!lastLoginByUser.has(s.userId)) lastLoginByUser.set(s.userId, s.createdAt)
   }
 
-  return users.map((u) => ({
-    ...u,
-    roles: rolesByUser.get(u.id) ?? [],
-    lastLoginAt: lastLoginByUser.get(u.id) ?? null,
-  }))
+  return {
+    rows: users.map((u) => ({
+      ...u,
+      roles: rolesByUser.get(u.id) ?? [],
+      lastLoginAt: lastLoginByUser.get(u.id) ?? null,
+    })),
+    totalCount,
+    totalPages,
+  }
 }
 
 export type AdminRoleOption = { key: string; nameAr: string }

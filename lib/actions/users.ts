@@ -10,6 +10,7 @@ import { PERMISSIONS, ROLES } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { auth } from "@/lib/auth"
 import { isEmailConfigured } from "@/lib/env"
+import { listActivityForEntityIds, type ActivityRow } from "@/lib/data/admin-activity"
 
 /**
  * User role management. Guarded by ROLE_ASSIGN (super admin only via the
@@ -312,4 +313,17 @@ export async function adminRequestPasswordResetAction(userId: string): Promise<A
   })
 
   return { status: "ok", message: `أُرسل رابط إعادة تعيين كلمة المرور إلى بريد ${target.name}.` }
+}
+
+/**
+ * Audit trail for one account, for the user detail drawer's Activity tab.
+ * Gated by AUDIT_READ (not USER_READ_ANY) since it's audit data, matching
+ * the permission /admin/activity itself requires.
+ */
+export async function getUserActivityAction(
+  userId: string,
+): Promise<{ status: "ok"; entries: ActivityRow[] } | { status: "error"; message: string }> {
+  await requirePermissionOrThrow(PERMISSIONS.AUDIT_READ)
+  const entries = await listActivityForEntityIds([userId], 30)
+  return { status: "ok", entries }
 }
