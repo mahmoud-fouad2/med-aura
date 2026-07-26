@@ -28,7 +28,7 @@ export default async function AdminGeographyPage() {
     listCountriesForAdmin(),
     listCitiesForAdmin(),
   ])
-  const countryOptions = countries.map((c) => ({ id: c.id, nameAr: c.nameAr }))
+  const countryOptions = countries.map((c) => ({ id: c.id, nameAr: c.nameAr, nameEn: c.nameEn, code: c.code }))
   const activeCountries = countries.filter((c) => c.active).length
 
   return (

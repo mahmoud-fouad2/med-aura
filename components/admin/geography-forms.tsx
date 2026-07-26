@@ -16,6 +16,7 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { CountryCombobox } from "@/components/admin/country-combobox"
+import { CountrySelectCombobox } from "@/components/admin/country-select-combobox"
 import { TimezoneCombobox } from "@/components/admin/timezone-combobox"
 import {
   upsertCountryAction,
@@ -285,7 +286,7 @@ export function CityFormButton({
   countries,
 }: {
   existing?: CityRow
-  countries: { id: string; nameAr: string }[]
+  countries: { id: string; nameAr: string; nameEn: string; code: string }[]
 }) {
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
@@ -323,23 +324,12 @@ export function CityFormButton({
         {existing && <input type="hidden" name="id" value={existing.id} />}
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="الدولة">
-            <Select
+            <CountrySelectCombobox
               name="countryId"
-              items={countries.map((c) => ({ value: c.id, label: c.nameAr }))}
+              options={countries}
               value={countryId}
-              onValueChange={(v) => setCountryId(String(v))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="اختر الدولة…" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nameAr}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={setCountryId}
+            />
           </Field>
           <Field label="متاحة للاستخدام">
             <label className="flex h-9 items-center gap-2">
