@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm"
+import { desc, eq, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { db } from "@/lib/db"
 import {
   payment,
@@ -75,4 +76,66 @@ export async function getPaymentReceiptData(
     .limit(1)
 
   return rows[0] ?? null
+}
+
+export type MyPaymentRow = {
+  paymentId: string
+  reference: string
+  purpose: string
+  status: string
+  amount: string
+  currency: string
+  provider: string
+  paidAt: Date | null
+  createdAt: Date
+  appointmentId: string | null
+  appointmentReference: string | null
+  appointmentType: string | null
+  doctorName: string | null
+  centerName: string | null
+  serviceNameEn: string | null
+  serviceNameAr: string | null
+}
+
+const caseDoctorProfile = alias(doctorProfile, "case_doctor_profile")
+const caseCenter = alias(center, "case_center")
+
+/**
+ * A user's own payment history (patient billing — never exposed to a
+ * doctor viewer; see decideInvoiceAccess). Unlike getPaymentReceiptData,
+ * this joins the case/procedure/doctor/center via `payment.caseId` — set
+ * directly on every case-linked payment, not just consultation-fee ones —
+ * so deposits and final payments (which never have an appointmentId) still
+ * show a real service and provider name instead of nulls.
+ */
+export async function listMyPayments(userId: string): Promise<MyPaymentRow[]> {
+  return db
+    .select({
+      paymentId: payment.id,
+      reference: payment.reference,
+      purpose: payment.purpose,
+      status: payment.status,
+      amount: payment.amount,
+      currency: payment.currency,
+      provider: payment.provider,
+      paidAt: payment.paidAt,
+      createdAt: payment.createdAt,
+      appointmentId: payment.appointmentId,
+      appointmentReference: appointment.reference,
+      appointmentType: appointment.type,
+      doctorName: sql<string | null>`coalesce(${doctorProfile.name}, ${caseDoctorProfile.name})`,
+      centerName: sql<string | null>`coalesce(${center.name}, ${caseCenter.name})`,
+      serviceNameEn: procedureT.nameEn,
+      serviceNameAr: procedureT.nameAr,
+    })
+    .from(payment)
+    .leftJoin(appointment, eq(payment.appointmentId, appointment.id))
+    .leftJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
+    .leftJoin(center, eq(appointment.centerId, center.id))
+    .leftJoin(aestheticCase, eq(payment.caseId, aestheticCase.id))
+    .leftJoin(procedureT, eq(aestheticCase.procedureId, procedureT.id))
+    .leftJoin(caseDoctorProfile, eq(aestheticCase.doctorId, caseDoctorProfile.id))
+    .leftJoin(caseCenter, eq(aestheticCase.centerId, caseCenter.id))
+    .where(eq(payment.payerUserId, userId))
+    .orderBy(desc(payment.createdAt))
 }

@@ -64,6 +64,25 @@ export type CaseDocument = {
   createdAt: string
 }
 
+export type Payment = {
+  paymentId: string
+  reference: string
+  purpose: string
+  status: string
+  amount: string
+  currency: string
+  provider: string
+  paidAt: string | null
+  createdAt: string
+  appointmentId: string | null
+  appointmentReference: string | null
+  appointmentType: string | null
+  doctorName: string | null
+  centerName: string | null
+  serviceNameEn: string | null
+  serviceNameAr: string | null
+}
+
 export type CaseSummary = {
   id: string
   reference: string
@@ -299,6 +318,7 @@ export const api = {
     request<{ appointments: Appointment[] }>("/api/mobile/v1/appointments"),
   caseSummary: (caseId: string) =>
     request<CaseSummary>(`/api/mobile/v1/cases/${caseId}`),
+  payments: () => request<{ payments: Payment[] }>("/api/mobile/v1/payments"),
   videoState: (appointmentId: string) =>
     request<VideoState>(`/api/mobile/v1/appointments/${appointmentId}/video`),
   videoJoin: async (appointmentId: string): Promise<VideoJoin> => {
@@ -407,6 +427,13 @@ export const useCaseSummary = (caseId: string | null) =>
     queryKey: ["case", caseId],
     queryFn: () => api.caseSummary(caseId as string),
     enabled: caseId != null,
+    staleTime: 30_000,
+  })
+
+export const usePayments = () =>
+  useQuery({
+    queryKey: ["payments"],
+    queryFn: api.payments,
     staleTime: 30_000,
   })
 
