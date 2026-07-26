@@ -198,6 +198,14 @@ const PROVIDER_STATUS: Record<string, string> = {
 }
 export const PROVIDER_STATUSES = Object.keys(PROVIDER_STATUS)
 
+const LICENSE_STATUS: Record<string, string> = {
+  PENDING: "قيد التحقق",
+  VALID: "ساري",
+  EXPIRED: "منتهي",
+  REVOKED: "مُلغى",
+}
+export const licenseStatusAr = (s: string): string => LICENSE_STATUS[s] ?? s
+
 const FOLLOW_UP_TASK: Record<string, string> = {
   SCHEDULED: "مجدولة",
   DUE: "مستحقة الآن",

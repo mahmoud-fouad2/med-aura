@@ -1,28 +1,20 @@
 import Link from "next/link"
-import {
-  Stethoscope,
-  Search,
-  ExternalLink,
-  Eye,
-  EyeOff,
-  ChevronLeft,
-} from "lucide-react"
+import { Stethoscope, SlidersHorizontal } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
-import { listDoctorsForAdmin } from "@/lib/data/admin-directory"
+import { listDoctorsForAdmin, listCentersForSelect, type AdminDoctorListFilters } from "@/lib/data/admin-directory"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MobileDataCard } from "@/components/ui/mobile-data-card"
-import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
+import { DoctorTable } from "@/components/admin/doctor-table"
+import { AdminPagination } from "@/components/admin/pagination"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { countryNameAr, providerStatusAr, PROVIDER_STATUSES } from "@/lib/status-labels"
+import { countryNameAr, providerStatusAr, PROVIDER_STATUSES, COUNTRY_CODES } from "@/lib/status-labels"
 import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الأطباء" }
-
 
 export default async function AdminDoctorsPage({
   searchParams,
@@ -31,73 +23,91 @@ export default async function AdminDoctorsPage({
 }) {
   await requirePermissionPage(PERMISSIONS.PROVIDER_REVIEW)
   const sp = await searchParams
-  const q = firstParam(sp.q)
-  const status = firstParam(sp.status)
 
-  const doctors = await listDoctorsForAdmin({ q, status })
-  const approved = doctors.filter((d) => d.status === "approved").length
-  const pending = doctors.filter((d) => d.status === "pending").length
-
-  const buildHref = (s: string | undefined) => {
-    const params = new URLSearchParams()
-    if (q) params.set("q", q)
-    if (s) params.set("status", s)
-    return `/admin/doctors?${params.toString()}`
+  const filters: AdminDoctorListFilters = {
+    q: firstParam(sp.q),
+    status: firstParam(sp.status),
+    country: firstParam(sp.country),
   }
+  const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1)
+
+  const [{ rows, totalCount, totalPages }, centers] = await Promise.all([
+    listDoctorsForAdmin(filters, page),
+    listCentersForSelect(),
+  ])
+
+  const buildHref = (overrides: Record<string, string | number | undefined>) => {
+    const q = new URLSearchParams()
+    const merged = { ...sp, ...overrides }
+    for (const [k, v] of Object.entries(merged)) {
+      const val = Array.isArray(v) ? v[0] : v
+      if (val !== undefined && val !== "") q.set(k, String(val))
+    }
+    return `/admin/doctors?${q.toString()}`
+  }
+
+  const activeFilterCount = [filters.q, filters.status, filters.country].filter(Boolean).length
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="الأطباء"
-        description={`${doctors.length.toLocaleString("ar-SA-u-nu-latn")} طبيب${status ? ` — ${providerStatusAr(status)}` : ""}${q ? ` مطابق للبحث "${q}"` : ""}`}
-        stats={
-          !status && doctors.length > 0
-            ? [
-                { label: "المعتمدون", value: approved.toLocaleString("ar-SA-u-nu-latn") },
-                { label: "قيد المراجعة", value: pending.toLocaleString("ar-SA-u-nu-latn") },
-              ]
-            : undefined
-        }
+        description={`${totalCount.toLocaleString("ar-SA-u-nu-latn")} طبيب — اضغط أي صف لعرض التفاصيل والتعديل`}
       />
 
-      <Card className="space-y-3 p-4">
-        <form method="get" className="flex flex-wrap items-center gap-2">
-          <input type="hidden" name="status" value={status ?? ""} />
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              name="q"
-              defaultValue={q ?? ""}
-              placeholder="ابحث باسم الطبيب…"
-              className="h-9 ps-9"
-            />
+      <Card className="p-4">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="size-4 text-primary" />
+            <h2 className="font-heading text-sm font-bold text-foreground">عوامل التصفية</h2>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {activeFilterCount}
+              </span>
+            )}
           </div>
-          <Button type="submit" size="sm">
-            <Search className="size-4" />
-            بحث
-          </Button>
-        </form>
-        <div className="flex flex-wrap gap-1 border-t border-border/60 pt-3">
-          <TabLink active={!status} href={buildHref(undefined)}>
-            الكل ({doctors.length.toLocaleString("ar-SA-u-nu-latn")})
-          </TabLink>
-          {PROVIDER_STATUSES.map((k) => (
-            <TabLink key={k} active={status === k} href={buildHref(k)}>
-              {providerStatusAr(k)}
-            </TabLink>
-          ))}
+          {activeFilterCount > 0 && (
+            <Link href="/admin/doctors" className="text-xs font-medium text-primary hover:underline">
+              مسح الكل
+            </Link>
+          )}
         </div>
+        <form method="get" className="grid gap-3 sm:grid-cols-3">
+          <Field label="بحث">
+            <Input name="q" defaultValue={filters.q ?? ""} placeholder="ابحث باسم الطبيب…" />
+          </Field>
+          <Field label="الحالة">
+            <Select name="status" defaultValue={filters.status ?? ""}>
+              <option value="">الكل</option>
+              {PROVIDER_STATUSES.map((s) => (
+                <option key={s} value={s}>{providerStatusAr(s)}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="الدولة">
+            <Select name="country" defaultValue={filters.country ?? ""}>
+              <option value="">الكل</option>
+              {COUNTRY_CODES.map((c) => (
+                <option key={c} value={c}>{countryNameAr(c)}</option>
+              ))}
+            </Select>
+          </Field>
+          <div className="flex items-end gap-2 sm:col-span-3">
+            <Button type="submit">تطبيق الفلاتر</Button>
+            <Button type="button" variant="ghost" render={<Link href="/admin/doctors">إعادة ضبط</Link>} />
+          </div>
+        </form>
       </Card>
 
       <Card className="overflow-hidden p-0">
-        {doctors.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="p-10">
             <EmptyState
               icon={Stethoscope}
-              title={q || status ? "لا يوجد أطباء مطابقون" : "لا يوجد أطباء بعد"}
+              title={activeFilterCount > 0 ? "لا يوجد أطباء مطابقون" : "لا يوجد أطباء بعد"}
               description={
-                q || status
+                activeFilterCount > 0
                   ? "جرّب تعديل الفلاتر أو كلمات البحث."
                   : "سيظهر الأطباء هنا بمجرد الموافقة على طلبات انضمامهم."
               }
@@ -106,126 +116,14 @@ export default async function AdminDoctorsPage({
           </div>
         ) : (
           <>
-            <div className="space-y-2 p-3 sm:hidden">
-              {doctors.map((d) => {
-                const initial =
-                  d.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
-                return (
-                  <MobileDataCard
-                    key={d.id}
-                    title={
-                      <span className="flex items-center gap-2">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                          {initial}
-                        </span>
-                        <span className="truncate">{d.name}</span>
-                      </span>
-                    }
-                    subtitle={d.centerName ?? undefined}
-                    badge={
-                      <StatusBadge
-                        tone={providerStatusTone(d.status)}
-                        label={providerStatusAr(d.status)}
-                      />
-                    }
-                    rows={[
-                      { label: "الظهور", value: d.published ? "ظاهر" : "مخفي" },
-                      {
-                        label: "الموقع",
-                        value: `${d.city ? `${d.city}، ` : ""}${countryNameAr(d.country)}`,
-                      },
-                      { label: "الخبرة", value: `${d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة` },
-                    ]}
-                    actions={
-                      <Link
-                        href={`/doctors/${d.slug}`}
-                        className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      >
-                        عرض الملف
-                        <ExternalLink className="size-3" />
-                      </Link>
-                    }
-                  />
-                )
-              })}
-            </div>
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                    <Th>الاسم</Th>
-                    <Th>الحالة</Th>
-                    <Th>الملف</Th>
-                    <Th>المركز</Th>
-                    <Th>الموقع</Th>
-                    <Th>الخبرة</Th>
-                    <Th>—</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {doctors.map((d) => {
-                    const initial =
-                      d.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
-                    return (
-                      <tr
-                        key={d.id}
-                        className="transition-colors hover:bg-muted/25"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                              {initial}
-                            </span>
-                            <span className="font-medium text-foreground">
-                              {d.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge
-                            tone={providerStatusTone(d.status)}
-                            label={providerStatusAr(d.status)}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          {d.published ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
-                              <Eye className="size-3" />
-                              ظاهر
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                              <EyeOff className="size-3" />
-                              مخفي
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {d.centerName ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {d.city ? `${d.city}، ` : ""}
-                          {countryNameAr(d.country)}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground tabular-nums">
-                          {d.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link
-                            href={`/doctors/${d.slug}`}
-                            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                          >
-                            الملف
-                            <ExternalLink className="size-3" />
-                            <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
-                          </Link>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DoctorTable rows={rows} centers={centers} />
+            <AdminPagination
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={20}
+              buildHref={(p) => buildHref({ page: p })}
+            />
           </>
         )}
       </Card>
@@ -233,34 +131,31 @@ export default async function AdminDoctorsPage({
   )
 }
 
-function TabLink({
-  active,
-  href,
-  children,
-}: {
-  active: boolean
-  href: string
-  children: React.ReactNode
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      className={
-        "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-        (active
-          ? "bg-primary text-primary-foreground shadow-[0_2px_8px_-2px_rgba(74,29,150,0.35)]"
-          : "bg-muted text-muted-foreground hover:bg-muted/70")
-      }
-    >
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
       {children}
-    </Link>
+    </div>
   )
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function Select({
+  name,
+  defaultValue,
+  children,
+}: {
+  name: string
+  defaultValue: string
+  children: React.ReactNode
+}) {
   return (
-    <th className="px-4 py-2.5 text-start font-medium tracking-wide">
+    <select
+      name={name}
+      defaultValue={defaultValue}
+      className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+    >
       {children}
-    </th>
+    </select>
   )
 }

@@ -1,6 +1,17 @@
 import { and, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
-import { user as userT, patientProfile, doctorProfile, center as centerT, aestheticCase } from "@/lib/db/schema"
+import {
+  user as userT,
+  patientProfile,
+  doctorProfile,
+  center as centerT,
+  aestheticCase,
+  doctorProcedure,
+  procedure as procedureT,
+  procedureCategory,
+  doctorLicense,
+  availabilityRule,
+} from "@/lib/db/schema"
 
 export type AdminPatientRow = {
   userId: string
@@ -61,13 +72,23 @@ export type AdminDoctorRow = {
   createdAt: Date
 }
 
-export async function listDoctorsForAdmin(filters: { status?: string; q?: string } = {}, limit = 100): Promise<AdminDoctorRow[]> {
-  if (!isDbConfigured) return []
-  const conditions = []
+export type AdminDoctorListFilters = { status?: string; q?: string; country?: string }
+
+const DOCTOR_PAGE_SIZE = 20
+
+export async function listDoctorsForAdmin(
+  filters: AdminDoctorListFilters = {},
+  page = 1,
+  pageSize = DOCTOR_PAGE_SIZE,
+): Promise<{ rows: AdminDoctorRow[]; totalCount: number; totalPages: number }> {
+  if (!isDbConfigured) return { rows: [], totalCount: 0, totalPages: 1 }
+  const conditions: SQL[] = []
   if (filters.status) conditions.push(eq(doctorProfile.status, filters.status as (typeof doctorProfile.status.enumValues)[number]))
   if (filters.q?.trim()) conditions.push(ilike(doctorProfile.name, `%${filters.q.trim()}%`))
+  if (filters.country) conditions.push(eq(doctorProfile.country, filters.country))
+  const where = conditions.length > 0 ? and(...conditions) : undefined
 
-  const rows = await db
+  const baseQuery = db
     .select({
       id: doctorProfile.id,
       userId: doctorProfile.userId,
@@ -85,11 +106,21 @@ export async function listDoctorsForAdmin(filters: { status?: string; q?: string
     .from(doctorProfile)
     .innerJoin(userT, eq(doctorProfile.userId, userT.id))
     .leftJoin(centerT, eq(doctorProfile.centerId, centerT.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(doctorProfile.createdAt))
-    .limit(limit)
 
-  return rows
+  const countQuery = db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(doctorProfile)
+    .innerJoin(userT, eq(doctorProfile.userId, userT.id))
+    .leftJoin(centerT, eq(doctorProfile.centerId, centerT.id))
+
+  const [rows, countResult] = await Promise.all([
+    baseQuery.where(where).orderBy(desc(doctorProfile.createdAt)).limit(pageSize).offset((page - 1) * pageSize),
+    countQuery.where(where),
+  ])
+  const totalCount = countResult[0]?.n ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  return { rows, totalCount, totalPages }
 }
 
 export type AdminCenterRow = {
@@ -230,4 +261,143 @@ export async function listDoctorsByCenter(centerId: string): Promise<CenterDocto
     .from(doctorProfile)
     .where(eq(doctorProfile.centerId, centerId))
     .orderBy(desc(doctorProfile.createdAt))
+}
+
+export type DoctorFull = {
+  id: string
+  name: string
+  title: string | null
+  bio: string | null
+  country: string
+  city: string | null
+  languages: string[]
+  yearsExperience: number
+  consultationFee: string | null
+  currency: string
+  offersVideo: boolean
+  offersInPerson: boolean
+  centerId: string | null
+  published: boolean
+  status: string
+  createdAt: Date
+}
+
+export async function getDoctorForAdmin(doctorId: string): Promise<DoctorFull | null> {
+  if (!isDbConfigured) return null
+  const row = (
+    await db
+      .select({
+        id: doctorProfile.id,
+        name: doctorProfile.name,
+        title: doctorProfile.title,
+        bio: doctorProfile.bio,
+        country: doctorProfile.country,
+        city: doctorProfile.city,
+        languages: doctorProfile.languages,
+        yearsExperience: doctorProfile.yearsExperience,
+        consultationFee: doctorProfile.consultationFee,
+        currency: doctorProfile.currency,
+        offersVideo: doctorProfile.offersVideo,
+        offersInPerson: doctorProfile.offersInPerson,
+        centerId: doctorProfile.centerId,
+        published: doctorProfile.published,
+        status: doctorProfile.status,
+        createdAt: doctorProfile.createdAt,
+      })
+      .from(doctorProfile)
+      .where(eq(doctorProfile.id, doctorId))
+      .limit(1)
+  )[0]
+  return row ?? null
+}
+
+/** id/name pairs for the doctor edit form's center-assignment select. */
+export async function listCentersForSelect(): Promise<{ id: string; name: string }[]> {
+  if (!isDbConfigured) return []
+  return db
+    .select({ id: centerT.id, name: centerT.name })
+    .from(centerT)
+    .where(eq(centerT.status, "approved"))
+    .orderBy(centerT.name)
+}
+
+export type DoctorProcedureOption = {
+  id: string
+  nameAr: string
+  categoryNameAr: string
+  assigned: boolean
+  priceFrom: string | null
+}
+
+/** Full procedure catalog with this doctor's assignment + price overlaid — same "all options + current keys" shape as the role manager. */
+export async function listDoctorProcedureOptions(doctorId: string): Promise<DoctorProcedureOption[]> {
+  if (!isDbConfigured) return []
+  const [procedures, assigned] = await Promise.all([
+    db
+      .select({ id: procedureT.id, nameAr: procedureT.nameAr, categoryNameAr: procedureCategory.nameAr })
+      .from(procedureT)
+      .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
+      .orderBy(procedureCategory.sortOrder, procedureT.nameAr),
+    db
+      .select({ procedureId: doctorProcedure.procedureId, priceFrom: doctorProcedure.priceFrom })
+      .from(doctorProcedure)
+      .where(eq(doctorProcedure.doctorId, doctorId)),
+  ])
+  const byId = new Map(assigned.map((a) => [a.procedureId, a.priceFrom]))
+  return procedures.map((p) => ({
+    ...p,
+    assigned: byId.has(p.id),
+    priceFrom: byId.get(p.id) ?? null,
+  }))
+}
+
+export type DoctorLicenseInfo = {
+  numberLast4: string | null
+  issuingAuthority: string
+  expiryDate: string
+  status: string
+}
+
+export async function getDoctorLicense(doctorId: string): Promise<DoctorLicenseInfo | null> {
+  if (!isDbConfigured) return null
+  const row = (
+    await db
+      .select({
+        numberLast4: doctorLicense.numberLast4,
+        issuingAuthority: doctorLicense.issuingAuthority,
+        expiryDate: doctorLicense.expiryDate,
+        status: doctorLicense.status,
+      })
+      .from(doctorLicense)
+      .where(eq(doctorLicense.doctorId, doctorId))
+      .orderBy(desc(doctorLicense.createdAt))
+      .limit(1)
+  )[0]
+  return row ?? null
+}
+
+export type AvailabilityRuleRow = {
+  id: string
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  type: string
+  active: boolean
+}
+
+/** Read-only — there is no editor for this anywhere yet (admin or doctor self-service). */
+export async function listAvailabilityForDoctor(doctorId: string): Promise<AvailabilityRuleRow[]> {
+  if (!isDbConfigured) return []
+  return db
+    .select({
+      id: availabilityRule.id,
+      dayOfWeek: availabilityRule.dayOfWeek,
+      startTime: availabilityRule.startTime,
+      endTime: availabilityRule.endTime,
+      type: availabilityRule.type,
+      active: availabilityRule.active,
+    })
+    .from(availabilityRule)
+    .where(eq(availabilityRule.doctorId, doctorId))
+    .orderBy(availabilityRule.dayOfWeek, availabilityRule.startTime)
 }
