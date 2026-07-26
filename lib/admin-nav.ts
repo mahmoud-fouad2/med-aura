@@ -69,6 +69,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     title: "التواصل",
     items: [
       { href: "/dashboard/notifications", label: "الإشعارات", icon: "Bell", anyOf: [], external: true },
+      { href: "/admin/messages", label: "رسائل التواصل", icon: "MessageCircle", anyOf: [P.SUPPORT_MANAGE] },
     ],
   },
   {
@@ -97,6 +98,7 @@ export const ADMIN_SHELL_ENTRY_PERMISSIONS: PermissionKey[] = [
   P.FINANCE_ACCESS,
   P.CONCIERGE_ACCESS,
   P.CENTER_DASHBOARD_ACCESS,
+  P.SUPPORT_MANAGE,
 ]
 
 export function visibleAdminNav(userPerms: Set<PermissionKey>): AdminNavGroup[] {

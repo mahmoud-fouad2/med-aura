@@ -92,6 +92,9 @@ export const PERMISSIONS = {
   // Travel & concierge module
   TRAVEL_REQUEST_OWN: "travel:request:own",
   TRAVEL_OFFER_MANAGE: "travel:offer:manage",
+
+  // Support inbox (public contact-form submissions)
+  SUPPORT_MANAGE: "support:manage",
 } as const
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
@@ -205,6 +208,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.CASE_READ_ANY,
     P.APPOINTMENT_READ_ANY,
     P.CATALOG_READ,
+    P.SUPPORT_MANAGE,
   ],
   [ROLES.CONTENT_ADMIN]: [P.CATALOG_MANAGE, P.CATALOG_READ, P.BEFORE_AFTER_MODERATE],
   // Super admin gets everything via the wildcard in hasPermission().

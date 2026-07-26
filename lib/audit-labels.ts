@@ -97,6 +97,7 @@ const ACTION_LABELS_AR: Record<string, string> = {
   "doctor.published.update": "تغيير ظهور الطبيب",
   "doctor.procedure.assign": "إسناد إجراء للطبيب",
   "doctor.procedure.unassign": "إزالة إجراء من الطبيب",
+  "contact_message.status_update": "تحديث حالة رسالة تواصل",
   "procedure.confirmed": "تأكيد إجراء",
   "procedure.completed": "اكتمال إجراء",
   "quote.sent": "إرسال عرض سعر",

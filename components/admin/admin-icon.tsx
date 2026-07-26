@@ -21,6 +21,7 @@ import {
   Settings2,
   ImageIcon,
   Plane,
+  MessageCircle,
   Circle,
   type LucideIcon,
 } from "lucide-react"
@@ -48,6 +49,7 @@ const ICONS: Record<string, LucideIcon> = {
   Settings2,
   ImageIcon,
   Plane,
+  MessageCircle,
 }
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {
