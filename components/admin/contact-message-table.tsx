@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Archive, CheckCircle2, Mail, RotateCcw } from "lucide-react"
+import { Archive, CheckCircle2, Mail, RotateCcw, Send } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import {
   Sheet,
@@ -14,8 +14,9 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
-import { setContactMessageStatusAction } from "@/lib/actions/admin-support"
+import { setContactMessageStatusAction, replyToContactMessageAction } from "@/lib/actions/admin-support"
 import type { AdminContactMessageRow } from "@/lib/data/admin-support"
 
 function statusTone(status: string): StatusTone {
@@ -34,7 +35,7 @@ function fmtDate(d: Date): string {
   )
 }
 
-export function ContactMessageTable({ rows }: { rows: AdminContactMessageRow[] }) {
+export function ContactMessageTable({ rows, emailConfigured }: { rows: AdminContactMessageRow[]; emailConfigured: boolean }) {
   const [selected, setSelected] = useState<AdminContactMessageRow | null>(null)
 
   return (
@@ -58,7 +59,12 @@ export function ContactMessageTable({ rows }: { rows: AdminContactMessageRow[] }
           {
             header: "الحالة",
             mobile: "badge",
-            cell: (m) => <StatusBadge tone={statusTone(m.status)} label={statusLabel(m.status)} />,
+            cell: (m) => (
+              <div className="flex items-center gap-1.5">
+                <StatusBadge tone={statusTone(m.status)} label={statusLabel(m.status)} />
+                {m.repliedAt && <StatusBadge tone="success" label="تم الرد" />}
+              </div>
+            ),
           },
           { header: "التاريخ", cell: (m) => <span className="text-xs text-muted-foreground">{fmtDate(m.createdAt)}</span> },
         ]}
@@ -66,7 +72,9 @@ export function ContactMessageTable({ rows }: { rows: AdminContactMessageRow[] }
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
         <SheetContent side="left">
-          {selected ? <MessageDetail message={selected} onChanged={() => setSelected(null)} /> : null}
+          {selected ? (
+            <MessageDetail message={selected} emailConfigured={emailConfigured} onChanged={() => setSelected(null)} />
+          ) : null}
         </SheetContent>
       </Sheet>
     </>
@@ -75,13 +83,34 @@ export function ContactMessageTable({ rows }: { rows: AdminContactMessageRow[] }
 
 function MessageDetail({
   message,
+  emailConfigured,
   onChanged,
 }: {
   message: AdminContactMessageRow
+  emailConfigured: boolean
   onChanged: () => void
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
+  const [replying, setReplying] = useState(false)
+  const [replyBody, setReplyBody] = useState("")
+  const [replyPending, startReply] = useTransition()
+  const [replyError, setReplyError] = useState<string | null>(null)
+
+  function sendReply() {
+    setReplyError(null)
+    startReply(async () => {
+      const res = await replyToContactMessageAction({ id: message.id, body: replyBody })
+      if (res.ok) {
+        toast.success("تم إرسال الرد بالبريد الإلكتروني.")
+        setReplying(false)
+        setReplyBody("")
+        router.refresh()
+      } else {
+        setReplyError(res.error)
+      }
+    })
+  }
 
   // Opening a "new" message marks it read — standard inbox behavior, not a
   // separate click the agent has to remember to make.
@@ -144,15 +173,48 @@ function MessageDetail({
             <p className="whitespace-pre-wrap text-sm text-foreground">{message.message}</p>
           </div>
         </div>
+
+        {message.repliedAt && (
+          <p className="inline-flex items-center gap-1 text-xs text-success">
+            <CheckCircle2 className="size-3.5" /> تم الرد بتاريخ {fmtDate(message.repliedAt)}
+          </p>
+        )}
+
+        {replying && (
+          <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <p className="text-xs font-medium text-foreground">الرد إلى {message.email}</p>
+            <Textarea
+              value={replyBody}
+              onChange={(e) => setReplyBody(e.target.value)}
+              rows={4}
+              placeholder="اكتب ردك هنا…"
+              autoFocus
+            />
+            {replyError && <p className="text-xs text-destructive">{replyError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" disabled={replyPending} onClick={() => setReplying(false)}>
+                إلغاء
+              </Button>
+              <Button size="sm" loading={replyPending} disabled={replyBody.trim().length < 3} onClick={sendReply}>
+                <Send className="size-4" /> إرسال الرد
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <SheetFooter>
+        {emailConfigured ? (
+          <Button variant="outline" size="sm" onClick={() => setReplying((v) => !v)}>
+            <Send className="size-4" /> رد من داخل النظام
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           size="sm"
           render={<a href={`mailto:${message.email}?subject=${encodeURIComponent(`Re: ${message.subject}`)}`} />}
         >
-          <Mail className="size-4" /> الرد بالبريد
+          <Mail className="size-4" /> الرد ببرنامج البريد
         </Button>
         {message.status === "archived" ? (
           <Button size="sm" variant="outline" loading={pending} onClick={() => setStatus("read")}>

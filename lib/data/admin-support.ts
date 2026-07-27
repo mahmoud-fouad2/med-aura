@@ -11,6 +11,7 @@ export type AdminContactMessageRow = {
   message: string
   status: string
   handledBy: string | null
+  repliedAt: Date | null
   createdAt: Date
 }
 

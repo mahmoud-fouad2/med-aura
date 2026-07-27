@@ -3,6 +3,7 @@ import { MessageCircle, SlidersHorizontal } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
 import { listContactMessagesForAdmin, type ContactMessageListFilters } from "@/lib/data/admin-support"
+import { isEmailConfigured } from "@/lib/env"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -114,7 +115,7 @@ export default async function AdminMessagesPage({
           </div>
         ) : (
           <>
-            <ContactMessageTable rows={rows} />
+            <ContactMessageTable rows={rows} emailConfigured={isEmailConfigured()} />
             <AdminPagination
               page={page}
               totalPages={totalPages}

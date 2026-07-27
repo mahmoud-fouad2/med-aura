@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, index } from "drizzle-orm/pg-core"
+import { pgTable, text, integer, boolean, index, timestamp } from "drizzle-orm/pg-core"
 import { lifecycle } from "./_shared"
 
 /** Public contact-form submissions (stored, never faked). */
@@ -16,6 +16,10 @@ export const contactMessage = pgTable(
     // new | read | archived
     status: text("status").notNull().default("new"),
     handledBy: text("handledBy"),
+    // Set once an agent sends an in-app reply — independent of status, since
+    // a replied message can still later be archived.
+    repliedAt: timestamp("repliedAt", { withTimezone: true }),
+    repliedBy: text("repliedBy"),
     ...lifecycle(),
   },
   (t) => [index("contact_status_idx").on(t.status)],
