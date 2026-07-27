@@ -45,7 +45,7 @@ export default async function ProceduresPage() {
       g.procedures.map((p) => ({
         name: p.nameAr,
         url: absoluteUrl(`/procedures/${p.slug}`),
-        image: absoluteUrl(serviceImageForCategory(g.slug)),
+        image: p.imageUrl ?? absoluteUrl(serviceImageForCategory(g.slug)),
       })),
     ),
   })
@@ -108,7 +108,7 @@ export default async function ProceduresPage() {
                           >
                             <div className="relative h-32 overflow-hidden bg-muted">
                               <Image
-                                src={serviceImageForCategory(g.slug)}
+                                src={p.imageUrl ?? serviceImageForCategory(g.slug)}
                                 alt=""
                                 fill
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { validateUpload, MAX_FILE_BYTES, isAllowedMime } from "@/lib/uploads"
+import { validateUpload, MAX_FILE_BYTES, isAllowedMime, validateEntityImage, MAX_IMAGE_BYTES } from "@/lib/uploads"
 
 describe("upload validation", () => {
   it("accepts an in-size image", () => {
@@ -27,5 +27,27 @@ describe("upload validation", () => {
 
   it("rejects empty files", () => {
     expect(validateUpload({ contentType: "image/png", sizeBytes: 0 }).ok).toBe(false)
+  })
+})
+
+describe("entity image validation (procedure/doctor/center photos)", () => {
+  it("accepts an in-size JPEG/PNG/WebP", () => {
+    expect(validateEntityImage({ contentType: "image/jpeg", sizeBytes: 500_000 }).ok).toBe(true)
+    expect(validateEntityImage({ contentType: "image/png", sizeBytes: 500_000 }).ok).toBe(true)
+    expect(validateEntityImage({ contentType: "image/webp", sizeBytes: 500_000 }).ok).toBe(true)
+  })
+
+  it("rejects PDFs — this endpoint is images-only, unlike medical document uploads", () => {
+    const r = validateEntityImage({ contentType: "application/pdf", sizeBytes: 1000 })
+    expect(r.ok).toBe(false)
+  })
+
+  it("rejects a file over the 8MB cap even though it's under the 15MB document cap", () => {
+    const r = validateEntityImage({ contentType: "image/jpeg", sizeBytes: MAX_IMAGE_BYTES + 1 })
+    expect(r.ok).toBe(false)
+  })
+
+  it("rejects empty files", () => {
+    expect(validateEntityImage({ contentType: "image/jpeg", sizeBytes: 0 }).ok).toBe(false)
   })
 })

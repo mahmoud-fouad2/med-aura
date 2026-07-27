@@ -26,3 +26,20 @@ export function validateUpload(input: {
   }
   return { ok: true }
 }
+
+/** Public entity photos (procedures, doctors, centers) — images only, smaller cap than private documents. */
+export const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"])
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
+export function validateEntityImage(input: {
+  contentType: string
+  sizeBytes: number
+}): { ok: true } | { ok: false; reason: string } {
+  if (!IMAGE_MIME.has(input.contentType)) {
+    return { ok: false, reason: "نوع الصورة غير مدعوم. استخدم JPG أو PNG أو WebP." }
+  }
+  if (input.sizeBytes <= 0 || input.sizeBytes > MAX_IMAGE_BYTES) {
+    return { ok: false, reason: "حجم الصورة يتجاوز الحد المسموح (8 ميجابايت)." }
+  }
+  return { ok: true }
+}

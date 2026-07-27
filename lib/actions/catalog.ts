@@ -140,6 +140,10 @@ const ProcedureSchema = z.object({
   recoveryDays: z.coerce.number().int().min(0).max(365).optional().nullable(),
   visible: z.coerce.boolean().default(true),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
+  seoTitleAr: z.string().max(160).optional().nullable(),
+  seoTitleEn: z.string().max(160).optional().nullable(),
+  seoDescriptionAr: z.string().max(300).optional().nullable(),
+  seoDescriptionEn: z.string().max(300).optional().nullable(),
 })
 
 export async function upsertProcedureAction(fd: FormData): Promise<ActionResult> {

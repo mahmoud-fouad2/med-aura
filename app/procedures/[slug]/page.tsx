@@ -78,7 +78,7 @@ export default async function ProcedureDetailPage({
 
   const doctorsRes = await query(() => searchDoctors({ procedure: slug, pageSize: 6 }))
   const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
-  const procedureImage = serviceImageForProcedure(procedure.categorySlug)
+  const procedureImage = procedure.imageUrl ?? serviceImageForProcedure(procedure.categorySlug)
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -87,7 +87,7 @@ export default async function ProcedureDetailPage({
     alternateName: procedure.nameEn,
     category: procedure.categoryNameAr,
     description: procedure.descriptionAr ?? undefined,
-    image: absoluteUrl(procedureImage),
+    image: procedure.imageUrl ?? absoluteUrl(procedureImage),
     url: absoluteUrl(`/procedures/${procedure.slug}`),
     provider: {
       "@type": "Organization",
@@ -167,6 +167,15 @@ export default async function ProcedureDetailPage({
                   }
                 />
               </div>
+              {procedure.gallery.length > 0 && (
+                <div className="mt-8 flex gap-3 overflow-x-auto pb-1">
+                  {procedure.gallery.map((url) => (
+                    <div key={url} className="relative h-24 w-32 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+                      <Image src={url} alt="" fill className="object-cover" sizes="128px" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </Reveal>
           </div>
         </section>

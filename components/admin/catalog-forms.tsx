@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Save, X, EyeOff, Eye, Trash2 } from "lucide-react"
+import Image from "next/image"
+import { Plus, Pencil, Save, X, EyeOff, Eye, Trash2, ImagePlus, ImageOff } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,6 +43,13 @@ export type ProcedureRow = {
   recoveryDays?: number | null
   sortOrder: number
   visible: boolean
+  imageKey: string | null
+  imageUrl: string | null
+  gallery: { key: string; url: string | null }[]
+  seoTitleAr?: string | null
+  seoTitleEn?: string | null
+  seoDescriptionAr?: string | null
+  seoDescriptionEn?: string | null
 }
 
 async function handleResult(res: ActionResult, onOk: () => void) {
@@ -165,9 +173,11 @@ export function CategoryFormButton({ existing }: { existing?: CategoryRow }) {
 export function ProcedureFormButton({
   existing,
   categories,
+  r2Enabled,
 }: {
   existing?: ProcedureRow
   categories: { id: string; nameAr: string }[]
+  r2Enabled: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
@@ -202,6 +212,15 @@ export function ProcedureFormButton({
         className="space-y-3"
       >
         {existing && <input type="hidden" name="id" value={existing.id} />}
+
+        {existing ? (
+          <ProcedureImageUploader procedureId={existing.id} imageKey={existing.imageKey} imageUrl={existing.imageUrl} gallery={existing.gallery} r2Enabled={r2Enabled} />
+        ) : (
+          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            احفظ الإجراء أولًا، ثم افتح التعديل لإضافة الصور.
+          </p>
+        )}
+
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="القسم">
             <select
@@ -294,6 +313,40 @@ export function ProcedureFormButton({
             />
           </Field>
         </div>
+
+        <details className="rounded-lg border border-border/60 p-3">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            بيانات SEO (اختياري)
+          </summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="عنوان SEO (عربي)">
+              <Input name="seoTitleAr" defaultValue={existing?.seoTitleAr ?? ""} maxLength={160} />
+            </Field>
+            <Field label="عنوان SEO (إنجليزي)">
+              <Input name="seoTitleEn" defaultValue={existing?.seoTitleEn ?? ""} maxLength={160} dir="ltr" />
+            </Field>
+            <Field label="وصف SEO (عربي)" full>
+              <textarea
+                name="seoDescriptionAr"
+                defaultValue={existing?.seoDescriptionAr ?? ""}
+                rows={2}
+                maxLength={300}
+                className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+            </Field>
+            <Field label="وصف SEO (إنجليزي)" full>
+              <textarea
+                name="seoDescriptionEn"
+                defaultValue={existing?.seoDescriptionEn ?? ""}
+                rows={2}
+                maxLength={300}
+                dir="ltr"
+                className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+            </Field>
+          </div>
+        </details>
+
         <div className="flex justify-end gap-2">
           <Button
             type="button"
@@ -310,6 +363,173 @@ export function ProcedureFormButton({
         </div>
       </form>
     </Card>
+  )
+}
+
+function ProcedureImageUploader({
+  procedureId,
+  imageKey,
+  imageUrl,
+  gallery,
+  r2Enabled,
+}: {
+  procedureId: string
+  imageKey: string | null
+  imageUrl: string | null
+  gallery: { key: string; url: string | null }[]
+  r2Enabled: boolean
+}) {
+  const router = useRouter()
+  const [busy, setBusy] = useState<"main" | "gallery" | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function upload(file: File, slot: "main" | "gallery") {
+    setBusy(slot)
+    setError(null)
+    try {
+      const presignRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size, slot }),
+      })
+      const presign = await presignRes.json()
+      if (!presignRes.ok) throw new Error(presign.error ?? "تعذّر بدء الرفع")
+
+      const putRes = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+      if (!putRes.ok) throw new Error("تعذّر رفع الصورة")
+
+      const finalizeRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objectKey: presign.objectKey, slot }),
+      })
+      const finalize = await finalizeRes.json()
+      if (!finalizeRes.ok) throw new Error(finalize.error ?? "تعذّر حفظ الصورة")
+
+      toast.success("تم رفع الصورة")
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "تعذّر رفع الصورة"
+      setError(message)
+      toast.error(message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function remove(objectKey: string) {
+    setBusy("main")
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/procedures/${procedureId}/image`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objectKey }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "تعذّر حذف الصورة")
+      toast.success("تم حذف الصورة")
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "تعذّر حذف الصورة"
+      setError(message)
+      toast.error(message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  if (!r2Enabled) {
+    return (
+      <p className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <ImageOff className="size-3.5 shrink-0" /> رفع الصور غير مفعّل حاليًا على هذا الخادم.
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border/60 p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">الصورة الرئيسية</span>
+        <label className="cursor-pointer">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+            <ImagePlus className="size-3.5" /> {imageUrl ? "استبدال" : "رفع صورة"}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            disabled={busy !== null}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ""
+              if (file) void upload(file, "main")
+            }}
+          />
+        </label>
+      </div>
+      {imageUrl && imageKey && (
+        <div className="relative inline-block">
+          <Image src={imageUrl} alt="" width={120} height={80} className="rounded-lg border border-border object-cover" />
+          <button
+            type="button"
+            onClick={() => void remove(imageKey)}
+            disabled={busy !== null}
+            className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+            aria-label="حذف الصورة الرئيسية"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between border-t border-border/60 pt-3">
+        <span className="text-xs font-medium text-muted-foreground">صور المعرض</span>
+        <label className="cursor-pointer">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+            <ImagePlus className="size-3.5" /> إضافة صورة
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            disabled={busy !== null}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ""
+              if (file) void upload(file, "gallery")
+            }}
+          />
+        </label>
+      </div>
+      {gallery.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {gallery.map((g) => (
+            <div key={g.key} className="relative inline-block">
+              {g.url && (
+                <Image src={g.url} alt="" width={80} height={60} className="rounded-lg border border-border object-cover" />
+              )}
+              <button
+                type="button"
+                onClick={() => void remove(g.key)}
+                disabled={busy !== null}
+                className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+                aria-label="حذف صورة من المعرض"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {busy && <p className="text-xs text-muted-foreground">جارٍ المعالجة…</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   )
 }
 

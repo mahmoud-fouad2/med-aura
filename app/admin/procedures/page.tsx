@@ -1,7 +1,9 @@
-import { Sparkles } from "lucide-react"
+import Image from "next/image"
+import { Sparkles, ImageOff } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
 import { listCategoriesForAdmin, listProceduresForAdmin } from "@/lib/data/admin-content"
+import { getPublicUrl, isR2Configured } from "@/lib/storage/r2"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { MobileDataCard } from "@/components/ui/mobile-data-card"
@@ -19,11 +21,17 @@ export const metadata = { title: "المحتوى والإجراءات" }
 export default async function AdminProceduresPage() {
   await requirePermissionPage(PERMISSIONS.CATALOG_MANAGE)
 
-  const [categories, procedures] = await Promise.all([
+  const [categories, proceduresRaw] = await Promise.all([
     listCategoriesForAdmin(),
     listProceduresForAdmin(),
   ])
   const categoryOptions = categories.map((c) => ({ id: c.id, nameAr: c.nameAr }))
+  const r2Enabled = isR2Configured()
+  const procedures = proceduresRaw.map((p) => ({
+    ...p,
+    imageUrl: p.imageKey ? getPublicUrl(p.imageKey) : null,
+    gallery: p.galleryKeys.map((key) => ({ key, url: getPublicUrl(key) })),
+  }))
 
   return (
     <div className="space-y-6">
@@ -126,7 +134,7 @@ export default async function AdminProceduresPage() {
       <Card className="overflow-hidden p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="font-heading text-sm font-bold text-foreground">الإجراءات</h2>
-          <ProcedureFormButton categories={categoryOptions} />
+          <ProcedureFormButton categories={categoryOptions} r2Enabled={r2Enabled} />
         </div>
         {procedures.length === 0 ? (
           <EmptyState
@@ -140,7 +148,12 @@ export default async function AdminProceduresPage() {
               {procedures.map((p) => (
                 <MobileDataCard
                   key={p.id}
-                  title={p.nameAr}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <ProcedureThumb url={p.imageUrl} size={32} />
+                      {p.nameAr}
+                    </span>
+                  }
                   subtitle={<span dir="ltr">/{p.slug}</span>}
                   badge={
                     <StatusBadge
@@ -161,7 +174,7 @@ export default async function AdminProceduresPage() {
                   ]}
                   actions={
                     <div className="flex items-center gap-1">
-                      <ProcedureFormButton existing={p} categories={categoryOptions} />
+                      <ProcedureFormButton existing={p} categories={categoryOptions} r2Enabled={r2Enabled} />
                       <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
                       <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
                     </div>
@@ -173,6 +186,7 @@ export default async function AdminProceduresPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
+                    <Th>—</Th>
                     <Th>الإجراء</Th>
                     <Th>القسم</Th>
                     <Th>النوع</Th>
@@ -184,6 +198,9 @@ export default async function AdminProceduresPage() {
                 <tbody className="divide-y divide-border">
                   {procedures.map((p) => (
                     <tr key={p.id} className="transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <ProcedureThumb url={p.imageUrl} size={40} />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{p.nameAr}</div>
                         <div dir="ltr" className="text-xs text-muted-foreground">
@@ -207,7 +224,7 @@ export default async function AdminProceduresPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <ProcedureFormButton existing={p} categories={categoryOptions} />
+                          <ProcedureFormButton existing={p} categories={categoryOptions} r2Enabled={r2Enabled} />
                           <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
                           <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
                         </div>
@@ -226,4 +243,27 @@ export default async function AdminProceduresPage() {
 
 function Th({ children }: { children: React.ReactNode }) {
   return <th className="px-4 py-2.5 text-start font-medium">{children}</th>
+}
+
+function ProcedureThumb({ url, size }: { url: string | null; size: number }) {
+  if (!url) {
+    return (
+      <div
+        style={{ width: size, height: size }}
+        className="flex shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground"
+      >
+        <ImageOff className="size-3.5" />
+      </div>
+    )
+  }
+  return (
+    <Image
+      src={url}
+      alt=""
+      width={size}
+      height={size}
+      className="shrink-0 rounded-lg border border-border object-cover"
+      style={{ width: size, height: size }}
+    />
+  )
 }

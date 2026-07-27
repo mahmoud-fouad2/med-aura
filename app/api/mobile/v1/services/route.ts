@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
       category: sp.get("category") ?? undefined,
     })
     return jsonOk({
-      services: services.map(({ imagePath, ...s }) => ({
+      services: services.map(({ imagePath, imageUrl, ...s }) => ({
         ...s,
-        imageUrl: absolutize(imagePath)!,
+        imageUrl: imageUrl ?? absolutize(imagePath)!,
       })),
     })
   } catch {

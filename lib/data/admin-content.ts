@@ -110,6 +110,12 @@ export type AdminProcedureRow = {
   recoveryDays: number | null
   visible: boolean
   sortOrder: number
+  imageKey: string | null
+  galleryKeys: string[]
+  seoTitleAr: string | null
+  seoTitleEn: string | null
+  seoDescriptionAr: string | null
+  seoDescriptionEn: string | null
 }
 
 export async function listProceduresForAdmin(): Promise<AdminProcedureRow[]> {
@@ -128,6 +134,12 @@ export async function listProceduresForAdmin(): Promise<AdminProcedureRow[]> {
       recoveryDays: procedureT.recoveryDays,
       visible: procedureT.visible,
       sortOrder: procedureT.sortOrder,
+      imageKey: procedureT.imageKey,
+      galleryKeys: procedureT.galleryKeys,
+      seoTitleAr: procedureT.seoTitleAr,
+      seoTitleEn: procedureT.seoTitleEn,
+      seoDescriptionAr: procedureT.seoDescriptionAr,
+      seoDescriptionEn: procedureT.seoDescriptionEn,
     })
     .from(procedureT)
     .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))

@@ -93,6 +93,10 @@ export const procedure = pgTable(
     seoTitleEn: text("seoTitleEn"),
     seoDescriptionAr: text("seoDescriptionAr"),
     seoDescriptionEn: text("seoDescriptionEn"),
+    // R2 object keys — public bucket, resolved via getPublicUrl(). Null/empty
+    // renders a graceful placeholder, never a broken image.
+    imageKey: text("imageKey"),
+    galleryKeys: text("galleryKeys").array().notNull().default([]),
     visible: boolean("visible").notNull().default(true),
     sortOrder: integer("sortOrder").notNull().default(0),
     ...lifecycle(),

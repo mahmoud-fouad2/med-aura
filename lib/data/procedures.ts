@@ -16,6 +16,8 @@ export type ProcedureListItem = {
   recoveryDays: number | null
   categorySlug: string
   categoryNameAr: string
+  /** A real uploaded photo, when the admin has set one — null falls back to the category illustration. */
+  imageUrl: string | null
 }
 
 export type CategoryGroup = {
@@ -46,6 +48,7 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
       recoveryDays: procedureT.recoveryDays,
       categorySlug: procedureCategory.slug,
       categoryNameAr: procedureCategory.nameAr,
+      imageKey: procedureT.imageKey,
     })
     .from(procedureT)
     .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
@@ -54,7 +57,9 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
 
   return cats.map((c) => ({
     ...c,
-    procedures: procs.filter((p) => p.categorySlug === c.slug),
+    procedures: procs
+      .filter((p) => p.categorySlug === c.slug)
+      .map(({ imageKey, ...p }) => ({ ...p, imageUrl: imageKey ? getPublicUrl(imageKey) : null })),
   }))
 }
 
@@ -70,6 +75,9 @@ export type ProcedureDetail = {
   categoryNameAr: string
   /** Same category illustration the web uses — relative path, absolutized by API routes. */
   imagePath: string
+  /** A real uploaded photo, when set — prefer this over imagePath. */
+  imageUrl: string | null
+  gallery: string[]
 }
 
 export async function getProcedureBySlug(
@@ -88,6 +96,8 @@ export async function getProcedureBySlug(
         categorySlug: procedureCategory.slug,
         categoryNameAr: procedureCategory.nameAr,
         visible: procedureT.visible,
+        imageKey: procedureT.imageKey,
+        galleryKeys: procedureT.galleryKeys,
       })
       .from(procedureT)
       .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
@@ -95,8 +105,13 @@ export async function getProcedureBySlug(
       .limit(1)
   )[0]
   if (!row) return null
-  const { visible: _v, ...rest } = row
-  return { ...rest, imagePath: serviceImageForCategory(rest.categorySlug) }
+  const { visible: _v, imageKey, galleryKeys, ...rest } = row
+  return {
+    ...rest,
+    imagePath: serviceImageForCategory(rest.categorySlug),
+    imageUrl: imageKey ? getPublicUrl(imageKey) : null,
+    gallery: galleryKeys.map((k) => getPublicUrl(k)).filter((u): u is string => Boolean(u)),
+  }
 }
 
 /* ── Mobile "services" surface (procedures + doctor availability) ──────────── */
@@ -113,6 +128,8 @@ export type ServiceListItem = {
   doctorCount: number
   /** Same category illustration the web uses — relative path, absolutized by API routes. */
   imagePath: string
+  /** A real uploaded photo, when set — prefer this over imagePath. */
+  imageUrl: string | null
 }
 
 /** Flat, searchable list of visible services with how many doctors offer each. */
@@ -146,6 +163,7 @@ export async function listServices(params: {
       categorySlug: procedureCategory.slug,
       categoryNameAr: procedureCategory.nameAr,
       doctorCount: sql<number>`count(distinct ${doctorProcedure.doctorId})`,
+      imageKey: procedureT.imageKey,
     })
     .from(procedureT)
     .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
@@ -161,13 +179,15 @@ export async function listServices(params: {
       procedureCategory.slug,
       procedureCategory.nameAr,
       procedureT.sortOrder,
+      procedureT.imageKey,
     )
     .orderBy(asc(procedureT.sortOrder))
 
-  return rows.map((r) => ({
+  return rows.map(({ imageKey, ...r }) => ({
     ...r,
     doctorCount: Number(r.doctorCount),
     imagePath: serviceImageForCategory(r.categorySlug),
+    imageUrl: imageKey ? getPublicUrl(imageKey) : null,
   }))
 }
 
