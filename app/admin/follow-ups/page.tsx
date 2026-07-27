@@ -55,6 +55,17 @@ export default async function AdminFollowUpsPage({
   const openCount = tasks.filter(
     (t) => t.status !== "COMPLETED" && t.status !== "CANCELLED",
   ).length
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)
+  const dueTodayCount = tasks.filter(
+    (t) =>
+      !t.overdue &&
+      ["SCHEDULED", "DUE"].includes(t.status) &&
+      t.dueAt != null &&
+      t.dueAt >= startOfToday &&
+      t.dueAt < startOfTomorrow,
+  ).length
 
   const buildHref = (status: string | undefined) => {
     const q = new URLSearchParams()
@@ -73,6 +84,7 @@ export default async function AdminFollowUpsPage({
             ? [
                 { label: "الإجمالي", value: tasks.length.toLocaleString("ar-SA-u-nu-latn") },
                 { label: "مفتوحة", value: openCount.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "اليوم", value: dueTodayCount.toLocaleString("ar-SA-u-nu-latn") },
                 { label: "متأخرة", value: overdueCount.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
@@ -82,6 +94,12 @@ export default async function AdminFollowUpsPage({
       <Card className="flex flex-wrap items-center gap-1 p-3">
         <TabLink active={filters.status === "open"} href={buildHref("open")}>
           قيد الانتظار
+        </TabLink>
+        <TabLink active={filters.status === "today"} href={buildHref("today")}>
+          مستحقة اليوم
+        </TabLink>
+        <TabLink active={filters.status === "upcoming"} href={buildHref("upcoming")}>
+          قادمة
         </TabLink>
         <TabLink
           active={filters.status === "overdue"}

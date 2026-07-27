@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lt, or } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, lt, or } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { followUpTask, followUpPlan, aestheticCase, doctorProfile, user as userT } from "@/lib/db/schema"
 
@@ -18,18 +18,30 @@ export type AdminFollowUpRow = {
 }
 
 export type FollowUpFilters = {
-  status?: "open" | "overdue" | "completed" | string
+  status?: "open" | "overdue" | "completed" | "today" | "upcoming" | string
 }
 
 export async function listFollowUpsForAdmin(filters: FollowUpFilters = {}): Promise<AdminFollowUpRow[]> {
   if (!isDbConfigured) return []
 
   const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)
   const conditions = []
   if (filters.status === "overdue") {
     conditions.push(
       or(eq(followUpTask.status, "MISSED"), and(inArray(followUpTask.status, ["SCHEDULED", "DUE"]), lt(followUpTask.dueAt, now)))!,
     )
+  } else if (filters.status === "today") {
+    conditions.push(
+      and(
+        inArray(followUpTask.status, ["SCHEDULED", "DUE"]),
+        gte(followUpTask.dueAt, startOfToday),
+        lt(followUpTask.dueAt, startOfTomorrow),
+      )!,
+    )
+  } else if (filters.status === "upcoming") {
+    conditions.push(and(inArray(followUpTask.status, ["SCHEDULED", "DUE"]), gte(followUpTask.dueAt, startOfTomorrow))!)
   } else if (filters.status === "open") {
     conditions.push(inArray(followUpTask.status, OPEN_STATUSES))
   } else if (filters.status === "completed") {
