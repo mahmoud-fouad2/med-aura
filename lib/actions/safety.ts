@@ -340,6 +340,22 @@ export async function createSafetyAlertManual(input: unknown): Promise<ActionRes
     })
 
     await notifySafetyAlertRecipients(alertId)
+    // The recipient fan-out above only covers the case's doctor/center
+    // staff/concierges — an explicit assignee (e.g. a compliance reviewer)
+    // may not be any of those and would otherwise hear nothing.
+    if (data.assignedTo && data.assignedTo !== user.id) {
+      const severityLabel: Record<string, string> = {
+        LOW: "منخفضة", MEDIUM: "متوسطة", HIGH: "عالية", CRITICAL: "حرجة",
+      }
+      await notify({
+        userId: data.assignedTo,
+        type: "safety_alert.assigned",
+        title: `تم إسناد تنبيه سلامة إليك (${severityLabel[data.severity] ?? data.severity})`,
+        body: data.summary,
+        caseId: c.id,
+        href: `/dashboard/cases/${c.id}`,
+      })
+    }
     revalidatePath(`/dashboard/cases/${c.id}`)
     revalidatePath("/admin/safety-alerts")
     return { ok: true, data: { alertId } }
@@ -368,6 +384,22 @@ export async function assignSafetyAlert(input: unknown): Promise<ActionResult> {
       await tx.update(safetyAlert).set({ assignedTo: data.assignedTo }).where(eq(safetyAlert.id, data.alertId))
       await writeAudit({ action: "safety_alert.assign", actorUserId: user.id, entityType: "safety_alert", entityId: data.alertId, metadata: { assignedTo: data.assignedTo } }, tx)
     })
+
+    // The assignee otherwise only finds out by checking the dashboard
+    // themselves — for a safety-triage queue that's a real gap, not polish.
+    if (data.assignedTo !== user.id) {
+      const severityLabel: Record<string, string> = {
+        LOW: "منخفضة", MEDIUM: "متوسطة", HIGH: "عالية", CRITICAL: "حرجة",
+      }
+      await notify({
+        userId: data.assignedTo,
+        type: "safety_alert.assigned",
+        title: `تم إسناد تنبيه سلامة إليك (${severityLabel[alert.severity] ?? alert.severity})`,
+        body: alert.summary ?? undefined,
+        caseId: alert.caseId,
+        href: `/dashboard/cases/${alert.caseId}`,
+      })
+    }
 
     revalidatePath(`/dashboard/cases/${alert.caseId}`)
     revalidatePath("/admin/safety-alerts")
