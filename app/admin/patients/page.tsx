@@ -1,44 +1,58 @@
 import Link from "next/link"
-import { Users, Search, X, ChevronLeft } from "lucide-react"
+import { Users, Search, X } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
-import { PERMISSIONS } from "@/lib/rbac"
+import { PERMISSIONS, hasPermission } from "@/lib/rbac"
 import { listPatientsForAdmin } from "@/lib/data/admin-directory"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { countryNameAr } from "@/lib/status-labels"
+import { PatientTable } from "@/components/admin/patient-table"
+import { AdminPagination } from "@/components/admin/pagination"
 import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "المرضى" }
-
 
 export default async function AdminPatientsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requirePermissionPage(PERMISSIONS.USER_READ_ANY)
+  const viewer = await requirePermissionPage(PERMISSIONS.USER_READ_ANY)
   const sp = await searchParams
   const q = firstParam(sp.q)
+  const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1)
 
-  const patients = await listPatientsForAdmin(q)
-  const withCases = patients.filter((p) => p.caseCount > 0)
+  const [{ rows, totalCount, totalPages }, canManageAccount, canViewActivity] = await Promise.all([
+    listPatientsForAdmin(q, page),
+    hasPermission(viewer.id, PERMISSIONS.ROLE_ASSIGN),
+    hasPermission(viewer.id, PERMISSIONS.AUDIT_READ),
+  ])
+  const withCases = rows.filter((p) => p.caseCount > 0)
+
+  const buildHref = (overrides: Record<string, string | number | undefined>) => {
+    const q2 = new URLSearchParams()
+    const merged = { ...sp, ...overrides }
+    for (const [k, v] of Object.entries(merged)) {
+      const val = Array.isArray(v) ? v[0] : v
+      if (val !== undefined && val !== "") q2.set(k, String(val))
+    }
+    return `/admin/patients?${q2.toString()}`
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="الدليل"
         title="المرضى"
-        description={`${patients.length.toLocaleString("ar-SA-u-nu-latn")} مريض مسجَّل${q ? ` مطابق للبحث "${q}"` : ""}`}
+        description={`${totalCount.toLocaleString("ar-SA-u-nu-latn")} مريض مسجَّل${q ? ` مطابق للبحث "${q}"` : ""}`}
         stats={
-          patients.length > 0
+          totalCount > 0
             ? [
-                { label: "الإجمالي", value: patients.length.toLocaleString("ar-SA-u-nu-latn") },
-                { label: "لديهم حالات", value: withCases.length.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "الإجمالي", value: totalCount.toLocaleString("ar-SA-u-nu-latn") },
+                { label: "لديهم حالات (هذه الصفحة)", value: withCases.length.toLocaleString("ar-SA-u-nu-latn") },
               ]
             : undefined
         }
@@ -76,7 +90,7 @@ export default async function AdminPatientsPage({
       </Card>
 
       <Card className="overflow-hidden p-0">
-        {patients.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="p-10">
             <EmptyState
               icon={Users}
@@ -91,126 +105,17 @@ export default async function AdminPatientsPage({
           </div>
         ) : (
           <>
-            <div className="space-y-2 p-3 sm:hidden">
-              {patients.map((p) => {
-                const initial = p.name.trim().charAt(0) || "؟"
-                return (
-                  <MobileDataCard
-                    key={p.userId}
-                    title={
-                      <span className="flex items-center gap-2">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                          {initial}
-                        </span>
-                        <span className="truncate">{p.name}</span>
-                      </span>
-                    }
-                    subtitle={<span dir="ltr">{p.email}</span>}
-                    rows={[
-                      {
-                        label: "الموقع",
-                        value: `${p.city ? `${p.city}، ` : ""}${p.residenceCountry ? countryNameAr(p.residenceCountry) : "—"}`,
-                      },
-                      {
-                        label: "تاريخ التسجيل",
-                        value: new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn"),
-                      },
-                    ]}
-                    actions={
-                      p.caseCount > 0 ? (
-                        <Link
-                          href={`/admin/cases?q=${encodeURIComponent(p.name)}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-primary hover:bg-primary/15"
-                        >
-                          {p.caseCount.toLocaleString("ar-SA-u-nu-latn")} حالة
-                        </Link>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground/60">لا توجد حالات</span>
-                      )
-                    }
-                  />
-                )
-              })}
-            </div>
-            <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/25 text-xs text-muted-foreground">
-                  <Th>الاسم</Th>
-                  <Th>البريد الإلكتروني</Th>
-                  <Th>الدولة</Th>
-                  <Th>المدينة</Th>
-                  <Th>الحالات</Th>
-                  <Th>تاريخ التسجيل</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {patients.map((p) => {
-                  const initial = p.name.trim().charAt(0) || "؟"
-                  return (
-                    <tr
-                      key={p.userId}
-                      className="transition-colors hover:bg-muted/25"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/15">
-                            {initial}
-                          </span>
-                          <span className="font-medium text-foreground">
-                            {p.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        dir="ltr"
-                        className="px-4 py-3 text-end text-xs text-muted-foreground"
-                      >
-                        {p.email}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {p.residenceCountry
-                          ? countryNameAr(p.residenceCountry)
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {p.city ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {p.caseCount > 0 ? (
-                          <Link
-                            href={`/admin/cases?q=${encodeURIComponent(p.name)}`}
-                            className="group inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-primary hover:bg-primary/15"
-                          >
-                            {p.caseCount.toLocaleString("ar-SA-u-nu-latn")} حالة
-                            <ChevronLeft className="size-3 transition-transform group-hover:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
-                          </Link>
-                        ) : (
-                          <span className="text-[11px] text-muted-foreground/60">
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
-                        {new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-            </div>
+            <PatientTable rows={rows} canManageAccount={canManageAccount} canViewActivity={canViewActivity} />
+            <AdminPagination
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={20}
+              buildHref={(p) => buildHref({ page: p })}
+            />
           </>
         )}
       </Card>
     </div>
-  )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="px-4 py-2.5 text-start font-medium tracking-wide">
-      {children}
-    </th>
   )
 }

@@ -17,36 +17,53 @@ export type AdminPatientRow = {
   userId: string
   name: string
   email: string
+  phone: string | null
+  status: string
   city: string | null
   residenceCountry: string | null
   createdAt: Date
   caseCount: number
 }
 
-export async function listPatientsForAdmin(q?: string, limit = 100): Promise<AdminPatientRow[]> {
-  if (!isDbConfigured) return []
+const PATIENT_PAGE_SIZE = 20
+
+export async function listPatientsForAdmin(
+  q?: string,
+  page = 1,
+  pageSize = PATIENT_PAGE_SIZE,
+): Promise<{ rows: AdminPatientRow[]; totalCount: number; totalPages: number }> {
+  if (!isDbConfigured) return { rows: [], totalCount: 0, totalPages: 1 }
   const conditions = [eq(userT.role, "patient")]
   if (q?.trim()) {
     const term = `%${q.trim()}%`
     conditions.push(or(ilike(userT.name, term), ilike(userT.email, term))!)
   }
+  const where = and(...conditions)
 
-  const rows = await db
-    .select({
-      userId: userT.id,
-      name: userT.name,
-      email: userT.email,
-      city: patientProfile.city,
-      residenceCountry: patientProfile.residenceCountry,
-      createdAt: userT.createdAt,
-    })
-    .from(userT)
-    .leftJoin(patientProfile, eq(patientProfile.userId, userT.id))
-    .where(and(...conditions))
-    .orderBy(desc(userT.createdAt))
-    .limit(limit)
+  const [rows, countResult] = await Promise.all([
+    db
+      .select({
+        userId: userT.id,
+        name: userT.name,
+        email: userT.email,
+        phone: userT.phone,
+        status: userT.status,
+        city: patientProfile.city,
+        residenceCountry: patientProfile.residenceCountry,
+        createdAt: userT.createdAt,
+      })
+      .from(userT)
+      .leftJoin(patientProfile, eq(patientProfile.userId, userT.id))
+      .where(where)
+      .orderBy(desc(userT.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ n: sql<number>`count(*)::int` }).from(userT).where(where),
+  ])
+  const totalCount = countResult[0]?.n ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  if (rows.length === 0) return { rows: [], totalCount, totalPages }
 
-  if (rows.length === 0) return []
   const caseCounts = await db
     .select({ patientUserId: aestheticCase.patientUserId })
     .from(aestheticCase)
@@ -54,7 +71,11 @@ export async function listPatientsForAdmin(q?: string, limit = 100): Promise<Adm
   const countByUser = new Map<string, number>()
   for (const c of caseCounts) countByUser.set(c.patientUserId, (countByUser.get(c.patientUserId) ?? 0) + 1)
 
-  return rows.map((r) => ({ ...r, caseCount: countByUser.get(r.userId) ?? 0 }))
+  return {
+    rows: rows.map((r) => ({ ...r, caseCount: countByUser.get(r.userId) ?? 0 })),
+    totalCount,
+    totalPages,
+  }
 }
 
 export type AdminDoctorRow = {
