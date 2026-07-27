@@ -58,6 +58,11 @@ const schema = z.object({
   // client token widget is not implemented yet, so no site key is consumed.
   RECAPTCHA_SECRET_KEY: z.string().optional(),
 
+  // Google sign-in (Better Auth social provider). Unset → the Google button
+  // stays hidden everywhere instead of rendering a broken flow.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
   // Ops
   ENABLE_DEMO_DATA: z.string().optional(),
   MONITORING_WEBHOOK_URL: z.string().optional(),
@@ -208,6 +213,8 @@ export const isTestPaymentEnabled = () =>
 /** QA video-session tool is gated by an explicit opt-in flag. */
 export const isVideoQaEnabled = () => read().ENABLE_VIDEO_QA_TOOLS === "true"
 export const isRecaptchaConfigured = () => Boolean(read().RECAPTCHA_SECRET_KEY)
+export const isGoogleAuthConfigured = () =>
+  Boolean(read().GOOGLE_CLIENT_ID && read().GOOGLE_CLIENT_SECRET)
 
 /** Resolve the app's public base URL for links, redirects, auth. */
 export function appUrl(): string {

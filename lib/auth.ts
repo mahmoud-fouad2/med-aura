@@ -3,7 +3,7 @@ import { expo } from "@better-auth/expo"
 import { eq } from "drizzle-orm"
 import { pool, db } from "@/lib/db"
 import { patientProfile, role as roleTable, userRole } from "@/lib/db/schema"
-import { betterAuthUrl, env, trustedAuthOrigins } from "@/lib/env"
+import { betterAuthUrl, env, isGoogleAuthConfigured, trustedAuthOrigins } from "@/lib/env"
 import { ROLES } from "@/lib/rbac"
 import { logger } from "@/lib/logger"
 import { writeAudit } from "@/lib/audit"
@@ -50,6 +50,31 @@ export const auth = betterAuth({
       })
     },
   },
+
+  // Left out entirely (not just empty) when unconfigured — Better Auth
+  // otherwise still registers the /callback/google route, which would 500
+  // on first use instead of the button simply never appearing.
+  ...(isGoogleAuthConfigured()
+    ? {
+        socialProviders: {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID as string,
+            clientSecret: env.GOOGLE_CLIENT_SECRET as string,
+          },
+        },
+        account: {
+          accountLinking: {
+            enabled: true,
+            trustedProviders: ["google"],
+            // Google verifies the email itself; requiring our own (optional,
+            // not enforced today — emailAndPassword.requireEmailVerification
+            // is false) verification too would block "Sign in with Google"
+            // for the many existing accounts that never verified.
+            requireLocalEmailVerified: false,
+          },
+        },
+      }
+    : {}),
 
   user: {
     additionalFields: {

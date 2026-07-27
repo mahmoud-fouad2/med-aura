@@ -17,6 +17,7 @@ import { brandAssets, Logo } from "../components/brand"
 import { authClient } from "../lib/auth-client"
 import { setRememberMe } from "../lib/session-prefs"
 import { registerForPushNotifications } from "../lib/push-notifications"
+import { api } from "../lib/api"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -30,6 +31,7 @@ export default function SignIn() {
   const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const submit = async () => {
     if (loading) return
@@ -51,6 +53,29 @@ export default function SignIn() {
     }
     void registerForPushNotifications()
     router.replace("/(tabs)")
+  }
+
+  const submitGoogle = async () => {
+    if (googleLoading) return
+    setError(null)
+    setGoogleLoading(true)
+    await setRememberMe(remember).catch(() => undefined)
+    // The Expo plugin opens the native browser (expo-web-browser) for the
+    // OAuth round trip and only resolves once it's done — same shape as the
+    // email/password call above, just a different provider.
+    const { error } = await authClient.signIn.social({ provider: "google" })
+    if (error) {
+      setGoogleLoading(false)
+      setError(t.auth.genericError)
+      return
+    }
+    // Google never collects a phone/country — a first-time sign-up detours
+    // through the same completion screen the email flow fills right after
+    // signUp.email(), just triggered here instead.
+    const me = await api.me().catch(() => null)
+    setGoogleLoading(false)
+    void registerForPushNotifications()
+    router.replace(me && !me.profileCompleted ? "/complete-profile" : "/(tabs)")
   }
 
   return (
@@ -186,6 +211,44 @@ export default function SignIn() {
 
           <Button label={t.auth.signIn} onPress={() => void submit()} loading={loading} />
         </Card>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            marginVertical: spacing.lg,
+          }}
+        >
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          <AppText variant="caption" color={colors.textFaint}>
+            {t.auth.or}
+          </AppText>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+        </View>
+
+        <Pressable
+          onPress={() => void submitGoogle()}
+          disabled={googleLoading}
+          accessibilityRole="button"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            height: 48,
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: "#FFFFFF",
+            opacity: googleLoading ? 0.6 : 1,
+          }}
+        >
+          <Ionicons name="logo-google" size={18} color="#4285F4" />
+          <AppText variant="body" weight="medium">
+            {googleLoading ? t.common.loading : t.auth.continueWithGoogle}
+          </AppText>
+        </Pressable>
 
         <View
           style={{

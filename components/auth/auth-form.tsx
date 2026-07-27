@@ -29,6 +29,8 @@ export function AuthForm({
   nextPath,
   accountDisabled,
   initialType,
+  googleEnabled,
+  googleError,
 }: {
   mode: "sign-in" | "sign-up"
   dict: AuthDict
@@ -38,6 +40,11 @@ export function AuthForm({
   accountDisabled?: boolean
   /** Preselects the account type (e.g. /sign-up?type=doctor) and skips the choice step. */
   initialType?: AccountType
+  /** Server-computed from isGoogleAuthConfigured() — hidden entirely, not
+   *  just disabled, when Google isn't configured. */
+  googleEnabled?: boolean
+  /** Bounced back from a failed Google OAuth callback (?googleError=1). */
+  googleError?: boolean
 }) {
   const router = useRouter()
   const [accountType, setAccountType] = useState<AccountType | null>(
@@ -51,13 +58,35 @@ export function AuthForm({
   const [city, setCity] = useState("")
   const [agree, setAgree] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    googleError ? "تعذّر تسجيل الدخول عبر Google. حاول مرة أخرى." : null,
+  )
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   // Survives a failed profile save so retrying doesn't hit "email exists".
   const [accountCreated, setAccountCreated] = useState(false)
 
   const isSignUp = mode === "sign-up"
   const destination = nextPath || "/dashboard"
+
+  const handleGoogle = async () => {
+    setError(null)
+    setGoogleLoading(true)
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      // Returning users land where they were headed; a first-time Google
+      // sign-up never collected phone/country, so it detours through the
+      // same completion step the email/password flow fills synchronously.
+      callbackURL: destination,
+      newUserCallbackURL: `/complete-profile?next=${encodeURIComponent(destination)}`,
+      errorCallbackURL: `/sign-in?googleError=1${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""}`,
+    })
+    if (error) {
+      setGoogleLoading(false)
+      setError(translateAuthError(error.message))
+    }
+    // On success the browser navigates away to Google — no further state change here.
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,6 +179,29 @@ export function AuthForm({
                 تم تعطيل هذا الحساب. إذا كنت تعتقد أن هذا خطأ، تواصل مع فريق
                 الدعم لمراجعة حالة حسابك.
               </span>
+            </div>
+          )}
+
+          {googleEnabled && (
+            <div className="mb-5 flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={() => void handleGoogle()}
+                disabled={googleLoading}
+                className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elegant disabled:pointer-events-none disabled:opacity-60"
+              >
+                <GoogleGlyph className="size-4.5" />
+                {googleLoading
+                  ? "يرجى الانتظار…"
+                  : isSignUp
+                    ? "إنشاء حساب عبر Google"
+                    : "الدخول عبر Google"}
+              </button>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                أو
+                <span className="h-px flex-1 bg-border" />
+              </div>
             </div>
           )}
 
@@ -406,6 +458,31 @@ function TypeChoiceCard({
       </span>
       <ChevronLeft className="ms-auto mt-1 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-primary rtl:rotate-0 ltr:rotate-180" />
     </button>
+  )
+}
+
+/** The standard four-color "G" mark — brand colors are fixed by Google's
+ *  guidelines, not the app's theme. */
+function GoogleGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <path
+        fill="#FFC107"
+        d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"
+      />
+      <path
+        fill="#FF3D00"
+        d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44c5.5 0 10.4-2.1 14.1-5.6l-6.5-5.5C29.6 34.6 27 35.6 24 35.6c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.2 44 24 44z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.5 5.5C41.7 35.9 44 30.5 44 24c0-1.3-.1-2.7-.4-3.5z"
+      />
+    </svg>
   )
 }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/session"
 import { getI18n } from "@/lib/i18n"
+import { isGoogleAuthConfigured } from "@/lib/env"
 import { AuthForm } from "@/components/auth/auth-form"
 
 export default async function SignUpPage({
@@ -25,6 +26,7 @@ export default async function SignUpPage({
       authShell={t.authShell}
       nextPath={next}
       initialType={initialType}
+      googleEnabled={isGoogleAuthConfigured()}
     />
   )
 }

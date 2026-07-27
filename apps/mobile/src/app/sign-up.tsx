@@ -47,6 +47,26 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false)
   // Survives a failed profile save so retrying doesn't hit "email exists".
   const [accountCreated, setAccountCreated] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  const submitGoogle = async () => {
+    if (googleLoading) return
+    setError(null)
+    setGoogleLoading(true)
+    // Public sign-up always creates a patient — the same invariant the
+    // email/password form enforces. A doctor account still needs the full
+    // accreditation application, which Google's profile can't supply.
+    const { error } = await authClient.signIn.social({ provider: "google" })
+    if (error) {
+      setGoogleLoading(false)
+      setError(t.auth.genericError)
+      return
+    }
+    const me = await api.me().catch(() => null)
+    setGoogleLoading(false)
+    void registerForPushNotifications()
+    router.replace(me && !me.profileCompleted ? "/complete-profile" : "/(tabs)")
+  }
 
   const submit = async () => {
     if (loading) return
@@ -134,6 +154,45 @@ export default function SignUp() {
               {t.auth.chooseType}
             </AppText>
           )}
+        </View>
+
+        <Pressable
+          onPress={() => void submitGoogle()}
+          disabled={googleLoading}
+          accessibilityRole="button"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            height: 48,
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: "#FFFFFF",
+            opacity: googleLoading ? 0.6 : 1,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <Ionicons name="logo-google" size={18} color="#4285F4" />
+          <AppText variant="body" weight="medium">
+            {googleLoading ? t.common.loading : t.auth.continueWithGoogle}
+          </AppText>
+        </Pressable>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            marginBottom: spacing.lg,
+          }}
+        >
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          <AppText variant="caption" color={colors.textFaint}>
+            {t.auth.or}
+          </AppText>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
         </View>
 
         {accountType === null ? (

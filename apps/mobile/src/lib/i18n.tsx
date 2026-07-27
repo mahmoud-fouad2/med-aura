@@ -107,6 +107,11 @@ const ar = {
     selectCountryRequired: "يرجى اختيار دولة الإقامة للمتابعة.",
     signOut: "تسجيل الخروج",
     signOutConfirm: "هل تريد تسجيل الخروج من حسابك؟",
+    or: "أو",
+    continueWithGoogle: "المتابعة عبر Google",
+    completeProfileTitle: "خطوة أخيرة قبل البدء",
+    completeProfileBody: "نحتاج رقم جوالك ودولة إقامتك لإتمام حسابك.",
+    continue: "متابعة",
   },
   tabs: {
     home: "الرئيسية",
@@ -556,6 +561,11 @@ const en: typeof ar = {
     selectCountryRequired: "Please select your country of residence to continue.",
     signOut: "Sign out",
     signOutConfirm: "Do you want to sign out of your account?",
+    or: "or",
+    continueWithGoogle: "Continue with Google",
+    completeProfileTitle: "One last step",
+    completeProfileBody: "We need your phone number and country of residence to finish setting up your account.",
+    continue: "Continue",
   },
   tabs: {
     home: "Home",

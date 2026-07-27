@@ -120,6 +120,8 @@ export type Me = {
   phone: string | null
   residenceCountry: string | null
   city: string | null
+  /** False right after a Google sign-up — it never collects phone/country. */
+  profileCompleted: boolean
 }
 
 export type AppNotification = {
