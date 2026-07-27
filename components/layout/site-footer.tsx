@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { Download, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
@@ -119,10 +120,11 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-muted-foreground/70 transition-colors hover:text-primary"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- tiny external badge, not worth a next/image remote-pattern config */}
-            <img
-              src="https://ma-fo.info/logo2.png"
+            <Image
+              src="/brand/mafo-mark.png"
               alt=""
+              width={64}
+              height={64}
               className="size-3 shrink-0 rounded-sm object-contain"
             />
             Ma-Fo
