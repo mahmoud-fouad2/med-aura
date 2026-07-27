@@ -52,11 +52,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   alternates: {
     canonical: absoluteUrl("/"),
-    languages: {
-      ar: absoluteUrl("/"),
-      en: absoluteUrl("/"),
-      "x-default": absoluteUrl("/"),
-    },
+    // Same URL serves both languages via a cookie, not a path — only
+    // x-default is a real signal (see the identical note in lib/seo.ts).
+    languages: { "x-default": absoluteUrl("/") },
   },
   openGraph: {
     title: DEFAULT_TITLE,

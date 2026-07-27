@@ -88,11 +88,11 @@ export function buildPageMetadata({
     description,
     alternates: {
       canonical: url,
-      languages: {
-        ar: url,
-        en: url,
-        "x-default": url,
-      },
+      // Content is served from one URL regardless of language (cookie-based
+      // switching, not path-based) — only x-default is a true signal here.
+      // Claiming ar/en both live at this same URL would tell crawlers two
+      // distinct localized versions exist when they don't.
+      languages: { "x-default": url },
     },
     openGraph: {
       title,
@@ -129,6 +129,21 @@ export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
       position: index + 1,
       name: item.name,
       item: item.url,
+    })),
+  }
+}
+
+export function faqPageJsonLd(items: { question: string; answer: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
     })),
   }
 }

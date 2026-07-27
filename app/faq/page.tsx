@@ -11,13 +11,16 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { Reveal } from "@/components/motion"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, faqPageJsonLd } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "الأسئلة الشائعة",
   description: "إجابات عن أكثر الأسئلة شيوعًا حول منصة Med Aura وخدماتها.",
-}
+  path: "/faq",
+  image: "/demo-services/aesthetic-clinic-lounge.png",
+})
 
 export default async function FaqPage() {
   const res = await query(() =>
@@ -33,8 +36,20 @@ export default async function FaqPage() {
   )
   const items = res.status === "ok" ? res.data : []
 
+  const structuredData = [
+    breadcrumbJsonLd([
+      { name: "الرئيسية", url: absoluteUrl("/") },
+      { name: "الأسئلة الشائعة", url: absoluteUrl("/faq") },
+    ]),
+    ...(items.length > 0 ? [faqPageJsonLd(items.map((i) => ({ question: i.question, answer: i.answer })))] : []),
+  ]
+
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <PageHero
