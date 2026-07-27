@@ -21,8 +21,13 @@ import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS, ROLES } from "@/lib/rbac"
 import { encryptString, last4 } from "@/lib/crypto"
 import { writeAudit, requestMeta } from "@/lib/audit"
+import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation } from "@/lib/errors"
 import { isValidLatitude, isValidLongitude } from "@/lib/distance"
+import {
+  decideApplicationDecisionEligibility,
+  decideApplicationResubmitEligibility,
+} from "@/lib/actions/provider-application-rules"
 
 export type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -102,7 +107,9 @@ export async function submitCenterApplication(
     }
     const data = parsed.data
 
-    // one open application per applicant, matching the doctor policy
+    // one open application per applicant, matching the doctor policy — a
+    // NEEDS_CHANGES application is resubmitted in place (see resubmit
+    // eligibility below) rather than blocked as "already in review".
     const existing = await db
       .select({ id: providerApplication.id, status: providerApplication.status })
       .from(providerApplication)
@@ -114,11 +121,52 @@ export async function submitCenterApplication(
       )
       .limit(1)
 
-    const openStatuses = ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANGES"]
-    if (existing[0] && openStatuses.includes(existing[0].status)) {
+    const eligibility = decideApplicationResubmitEligibility({ existing: existing[0] ?? null })
+    if (!eligibility.allowed) {
       throw new AppError("CONFLICT", {
         userMessage: "لديك طلب انضمام مركز قيد المراجعة بالفعل.",
       })
+    }
+
+    const payload = {
+      ...data,
+      license: {
+        ...data.license,
+        commercialRegistration: encryptString(data.license.commercialRegistration),
+        facilityLicenseNumber: encryptString(data.license.facilityLicenseNumber),
+        commercialRegistrationLast4: last4(data.license.commercialRegistration),
+        facilityLicenseNumberLast4: last4(data.license.facilityLicenseNumber),
+      },
+    }
+    const meta = await requestMeta()
+
+    if (eligibility.mode === "update") {
+      const applicationId = existing[0].id
+      await db
+        .update(providerApplication)
+        .set({
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+          decidedAt: null,
+          reviewerNotes: null,
+          payload,
+          updatedBy: user.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(providerApplication.id, applicationId))
+
+      await writeAudit({
+        action: "provider.center.application.resubmit",
+        actorUserId: user.id,
+        entityType: "provider_application",
+        entityId: applicationId,
+        metadata: { country: data.country, city: data.city },
+        ...meta,
+      })
+
+      revalidatePath("/dashboard")
+      revalidatePath("/admin/applications")
+      return { ok: true, data: { applicationId } }
     }
 
     const inserted = await db
@@ -128,27 +176,11 @@ export async function submitCenterApplication(
         applicantUserId: user.id,
         status: "SUBMITTED",
         submittedAt: new Date(),
-        payload: {
-          ...data,
-          license: {
-            ...data.license,
-            commercialRegistration: encryptString(
-              data.license.commercialRegistration,
-            ),
-            facilityLicenseNumber: encryptString(
-              data.license.facilityLicenseNumber,
-            ),
-            commercialRegistrationLast4: last4(
-              data.license.commercialRegistration,
-            ),
-            facilityLicenseNumberLast4: last4(data.license.facilityLicenseNumber),
-          },
-        },
+        payload,
         createdBy: user.id,
       })
       .returning({ id: providerApplication.id })
 
-    const meta = await requestMeta()
     await writeAudit({
       action: "provider.center.application.submit",
       actorUserId: user.id,
@@ -182,18 +214,48 @@ export async function submitDoctorApplication(
     }
     const data = parsed.data
 
-    // one open application per applicant
+    // one open application per applicant — NEEDS_CHANGES resubmits in place
     const existing = await db
       .select({ id: providerApplication.id, status: providerApplication.status })
       .from(providerApplication)
       .where(eq(providerApplication.applicantUserId, user.id))
       .limit(1)
 
-    const openStatuses = ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANGES"]
-    if (existing[0] && openStatuses.includes(existing[0].status)) {
+    const eligibility = decideApplicationResubmitEligibility({ existing: existing[0] ?? null })
+    if (!eligibility.allowed) {
       throw new AppError("CONFLICT", {
         userMessage: "لديك طلب انضمام قيد المراجعة بالفعل.",
       })
+    }
+
+    const meta = await requestMeta()
+
+    if (eligibility.mode === "update") {
+      const applicationId = existing[0].id
+      await db
+        .update(providerApplication)
+        .set({
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+          decidedAt: null,
+          reviewerNotes: null,
+          payload: data,
+          updatedBy: user.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(providerApplication.id, applicationId))
+
+      await writeAudit({
+        action: "provider.application.resubmit",
+        actorUserId: user.id,
+        entityType: "provider_application",
+        entityId: applicationId,
+        ...meta,
+      })
+
+      revalidatePath("/dashboard")
+      revalidatePath("/admin/applications")
+      return { ok: true, data: { applicationId } }
     }
 
     const inserted = await db
@@ -208,7 +270,6 @@ export async function submitDoctorApplication(
       })
       .returning({ id: providerApplication.id })
 
-    const meta = await requestMeta()
     await writeAudit({
       action: "provider.application.submit",
       actorUserId: user.id,
@@ -250,9 +311,12 @@ export async function approveApplication(
       .where(eq(providerApplication.id, applicationId))
       .limit(1)
     const application = appRows[0]
-    if (!application) throw new AppError("NOT_FOUND")
-    if (["APPROVED", "REJECTED"].includes(application.status))
-      throw new AppError("CONFLICT", { userMessage: "تمت معالجة هذا الطلب مسبقًا." })
+    const eligibility = decideApplicationDecisionEligibility({ application: application ?? null })
+    if (!application || !eligibility.allowed) {
+      throw eligibility.allowed === false && eligibility.reason === "already_decided"
+        ? new AppError("CONFLICT", { userMessage: "تمت معالجة هذا الطلب مسبقًا." })
+        : new AppError("NOT_FOUND")
+    }
 
     if (application.kind === "CENTER") {
       return await approveCenterApplication(application, reviewer.id, note)
@@ -361,6 +425,13 @@ export async function approveApplication(
 
     revalidatePath("/admin/applications")
     revalidatePath("/search")
+    await notify({
+      userId: application.applicantUserId,
+      type: "provider.approved",
+      title: "تهانينا! تم اعتماد طلب انضمامك كطبيب",
+      body: "أصبح ملفك الطبي منشورًا للمرضى على Med Aura الآن.",
+      href: "/dashboard/doctor",
+    })
     return { ok: true, data: { doctorId } }
   } catch (err) {
     const safe = toSafeError(err)
@@ -453,6 +524,13 @@ async function approveCenterApplication(
 
     revalidatePath("/admin/applications")
     revalidatePath("/centers")
+    await notify({
+      userId: application.applicantUserId,
+      type: "provider.approved",
+      title: "تهانينا! تم اعتماد طلب انضمام مركزكم",
+      body: "أصبح ملف مركزكم منشورًا للمرضى على Med Aura الآن.",
+      href: "/dashboard/center",
+    })
     return { ok: true, data: { centerId } }
   } catch (err) {
     const safe = toSafeError(err)
@@ -541,13 +619,21 @@ export async function rejectApplication(
       throw validation("يرجى إدخال سبب الرفض.")
 
     const appRows = await db
-      .select({ id: providerApplication.id, status: providerApplication.status })
+      .select({
+        id: providerApplication.id,
+        status: providerApplication.status,
+        applicantUserId: providerApplication.applicantUserId,
+      })
       .from(providerApplication)
       .where(eq(providerApplication.id, applicationId))
       .limit(1)
-    if (!appRows[0]) throw new AppError("NOT_FOUND")
-    if (["APPROVED", "REJECTED"].includes(appRows[0].status))
-      throw new AppError("CONFLICT", { userMessage: "تمت معالجة هذا الطلب مسبقًا." })
+    const application = appRows[0]
+    const eligibility = decideApplicationDecisionEligibility({ application: application ?? null })
+    if (!application || !eligibility.allowed) {
+      throw eligibility.allowed === false && eligibility.reason === "already_decided"
+        ? new AppError("CONFLICT", { userMessage: "تمت معالجة هذا الطلب مسبقًا." })
+        : new AppError("NOT_FOUND")
+    }
 
     await db.transaction(async (tx) => {
       await tx
@@ -578,6 +664,89 @@ export async function rejectApplication(
     })
 
     revalidatePath("/admin/applications")
+    await notify({
+      userId: application.applicantUserId,
+      type: "provider.rejected",
+      title: "لم تتم الموافقة على طلب الانضمام",
+      body: reason,
+      href: "/dashboard",
+    })
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+/**
+ * Compliance sends an application back for changes instead of an outright
+ * rejection — the applicant edits and resubmits the same application
+ * (see decideApplicationResubmitEligibility's "update" mode) rather than
+ * starting over.
+ */
+export async function requestChangesApplication(
+  applicationId: string,
+  note: string,
+): Promise<ActionResult> {
+  try {
+    const reviewer = await requireUser()
+    await requirePermission(reviewer.id, PERMISSIONS.PROVIDER_APPROVE)
+    if (!note || note.trim().length < 3)
+      throw validation("يرجى توضيح التعديلات المطلوبة.")
+
+    const appRows = await db
+      .select({
+        id: providerApplication.id,
+        status: providerApplication.status,
+        applicantUserId: providerApplication.applicantUserId,
+      })
+      .from(providerApplication)
+      .where(eq(providerApplication.id, applicationId))
+      .limit(1)
+    const application = appRows[0]
+    const eligibility = decideApplicationDecisionEligibility({ application: application ?? null })
+    if (!application || !eligibility.allowed) {
+      throw eligibility.allowed === false && eligibility.reason === "already_decided"
+        ? new AppError("CONFLICT", { userMessage: "تمت معالجة هذا الطلب مسبقًا." })
+        : new AppError("NOT_FOUND")
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(providerApplication)
+        .set({
+          status: "NEEDS_CHANGES",
+          reviewerNotes: note,
+          updatedBy: reviewer.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(providerApplication.id, applicationId))
+      await tx.insert(verificationReview).values({
+        applicationId,
+        reviewerId: reviewer.id,
+        action: "request_changes",
+        note,
+      })
+      await writeAudit(
+        {
+          action: "provider.request_changes",
+          actorUserId: reviewer.id,
+          entityType: "provider_application",
+          entityId: applicationId,
+          metadata: { note },
+        },
+        tx,
+      )
+    })
+
+    revalidatePath("/admin/applications")
+    await notify({
+      userId: application.applicantUserId,
+      type: "provider.changes_requested",
+      title: "مطلوب تعديل على طلب الانضمام",
+      body: note,
+      href: "/dashboard",
+    })
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)

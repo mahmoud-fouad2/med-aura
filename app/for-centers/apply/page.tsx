@@ -1,14 +1,15 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { asc, eq } from "drizzle-orm"
-import { Building2, ShieldCheck, ChevronLeft } from "lucide-react"
+import { asc, desc, eq } from "drizzle-orm"
+import { Building2, ShieldCheck, ChevronLeft, AlertTriangle } from "lucide-react"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { Card } from "@/components/ui/card"
 import { getCurrentUser } from "@/lib/session"
 import { db } from "@/lib/db"
-import { country as countryT } from "@/lib/db/schema"
+import { country as countryT, providerApplication } from "@/lib/db/schema"
 import { CenterApplicationForm } from "@/components/provider/center-application-form"
+import type { CenterApplicationInput } from "@/lib/actions/provider"
 
 export const dynamic = "force-dynamic"
 
@@ -23,6 +24,43 @@ export default async function CenterApplyPage() {
   if (!user) {
     redirect("/sign-in?returnTo=/for-centers/apply")
   }
+
+  const open = (
+    await db
+      .select({
+        status: providerApplication.status,
+        notes: providerApplication.reviewerNotes,
+        payload: providerApplication.payload,
+      })
+      .from(providerApplication)
+      .where(eq(providerApplication.applicantUserId, user.id))
+      .orderBy(desc(providerApplication.createdAt))
+      .limit(1)
+  )[0]
+
+  if (open && (open.status === "SUBMITTED" || open.status === "UNDER_REVIEW")) {
+    return (
+      <div className="flex min-h-svh flex-col">
+        <SiteHeader />
+        <main className="flex-1 bg-muted/20">
+          <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
+            <Card className="p-6">
+              <h1 className="font-heading text-xl font-bold text-foreground">
+                طلب الانضمام قيد المراجعة
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                استلمنا طلبكم وسيقوم فريق الاعتماد بمراجعته والتحقق من التراخيص.
+                سنخطركم بالنتيجة قريبًا.
+              </p>
+            </Card>
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    )
+  }
+
+  const needsChanges = open?.status === "NEEDS_CHANGES"
 
   const countries = await db
     .select({ code: countryT.code, nameAr: countryT.nameAr })
@@ -65,6 +103,20 @@ export default async function CenterApplyPage() {
             </div>
           </div>
 
+          {needsChanges && (
+            <Card className="mb-6 flex items-start gap-3 border-warning/30 bg-warning/5 p-4">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" />
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">
+                  فريق الاعتماد طلب تعديلًا قبل المتابعة
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {open?.notes || "يرجى مراجعة بياناتكم وإعادة الإرسال."}
+                </p>
+              </div>
+            </Card>
+          )}
+
           <Card className="mb-6 flex items-start gap-3 border-info/30 bg-info/5 p-4 text-sm">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-info" />
             <div className="space-y-1">
@@ -79,7 +131,10 @@ export default async function CenterApplyPage() {
             </div>
           </Card>
 
-          <CenterApplicationForm countries={countries} />
+          <CenterApplicationForm
+            countries={countries}
+            defaultValues={needsChanges ? (open?.payload as Partial<CenterApplicationInput>) : undefined}
+          />
         </div>
       </main>
       <SiteFooter />

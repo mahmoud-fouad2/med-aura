@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { submitDoctorApplication } from "@/lib/actions/provider"
+import { submitDoctorApplication, type DoctorApplicationInput } from "@/lib/actions/provider"
 
 const LANGUAGES = [
   { code: "ar", label: "العربية" },
@@ -19,15 +19,19 @@ const LANGUAGES = [
 export function DoctorApplicationForm({
   procedures,
   countries,
+  defaultValues,
 }: {
   procedures: { slug: string; nameAr: string }[]
   countries: { code: string; nameAr: string }[]
+  /** Pre-fills a resubmission after a "needs changes" review, so the
+   *  applicant edits their prior answers instead of starting over. */
+  defaultValues?: Partial<DoctorApplicationInput>
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [langs, setLangs] = useState<string[]>(["ar"])
-  const [procs, setProcs] = useState<string[]>([])
+  const [langs, setLangs] = useState<string[]>(defaultValues?.languages ?? ["ar"])
+  const [procs, setProcs] = useState<string[]>(defaultValues?.procedures ?? [])
 
   const toggle = (
     list: string[],
@@ -73,12 +77,18 @@ export function DoctorApplicationForm({
   return (
     <Card className="p-6">
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
-        <Field label="الاسم الكامل" name="name" required />
-        <Field label="المسمى المهني" name="title" placeholder="مثال: استشاري جراحة تجميل" required />
+        <Field label="الاسم الكامل" name="name" required defaultValue={defaultValues?.name} />
+        <Field
+          label="المسمى المهني"
+          name="title"
+          placeholder="مثال: استشاري جراحة تجميل"
+          required
+          defaultValue={defaultValues?.title}
+        />
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="bio">نبذة مهنية</Label>
-          <Textarea id="bio" name="bio" rows={3} />
+          <Textarea id="bio" name="bio" rows={3} defaultValue={defaultValues?.bio} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -88,7 +98,7 @@ export function DoctorApplicationForm({
               id="country"
               name="country"
               required
-              defaultValue=""
+              defaultValue={defaultValues?.country ?? ""}
               className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
             >
               <option value="" disabled>
@@ -101,12 +111,23 @@ export function DoctorApplicationForm({
               ))}
             </select>
           </div>
-          <Field label="المدينة" name="city" required />
+          <Field label="المدينة" name="city" required defaultValue={defaultValues?.city} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="سنوات الخبرة" name="yearsExperience" type="number" required />
-          <Field label="سعر الاستشارة (ر.س)" name="consultationFee" type="number" />
+          <Field
+            label="سنوات الخبرة"
+            name="yearsExperience"
+            type="number"
+            required
+            defaultValue={defaultValues?.yearsExperience}
+          />
+          <Field
+            label="سعر الاستشارة (ر.س)"
+            name="consultationFee"
+            type="number"
+            defaultValue={defaultValues?.consultationFee}
+          />
         </div>
 
         <fieldset className="flex flex-col gap-2">
@@ -142,9 +163,25 @@ export function DoctorApplicationForm({
             بيانات الترخيص
           </h3>
           <div className="flex flex-col gap-4">
-            <Field label="رقم الترخيص" name="licenseNumber" required />
-            <Field label="جهة الإصدار" name="licenseAuthority" required />
-            <Field label="تاريخ انتهاء الترخيص" name="licenseExpiry" type="date" required />
+            <Field
+              label="رقم الترخيص"
+              name="licenseNumber"
+              required
+              defaultValue={defaultValues?.license?.number}
+            />
+            <Field
+              label="جهة الإصدار"
+              name="licenseAuthority"
+              required
+              defaultValue={defaultValues?.license?.issuingAuthority}
+            />
+            <Field
+              label="تاريخ انتهاء الترخيص"
+              name="licenseExpiry"
+              type="date"
+              required
+              defaultValue={defaultValues?.license?.expiryDate}
+            />
           </div>
         </div>
 
@@ -168,17 +205,26 @@ function Field({
   type = "text",
   required,
   placeholder,
+  defaultValue,
 }: {
   label: string
   name: string
   type?: string
   required?: boolean
   placeholder?: string
+  defaultValue?: string | number
 }) {
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type={type} required={required} placeholder={placeholder} />
+      <Input
+        id={name}
+        name={name}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        defaultValue={defaultValue}
+      />
     </div>
   )
 }

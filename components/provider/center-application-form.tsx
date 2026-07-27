@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { submitCenterApplication } from "@/lib/actions/provider"
+import { submitCenterApplication, type CenterApplicationInput } from "@/lib/actions/provider"
 
 const LANGUAGES = [
   { code: "ar", label: "العربية" },
@@ -37,14 +37,23 @@ type FormState =
 
 export function CenterApplicationForm({
   countries,
+  defaultValues,
 }: {
   countries: { code: string; nameAr: string }[]
+  /** Pre-fills a resubmission after a "needs changes" review. The two
+   *  encrypted license numbers are never round-tripped back into a form —
+   *  the applicant re-enters them, everything else carries over. */
+  defaultValues?: Partial<
+    Omit<CenterApplicationInput, "license"> & {
+      license?: Partial<Pick<CenterApplicationInput["license"], "issuingAuthority" | "licenseExpiryDate">>
+    }
+  >
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [state, setState] = useState<FormState>({ status: "idle" })
-  const [langs, setLangs] = useState<string[]>(["ar"])
-  const [services, setServices] = useState<string[]>([])
+  const [langs, setLangs] = useState<string[]>(defaultValues?.languages ?? ["ar"])
+  const [services, setServices] = useState<string[]>(defaultValues?.services ?? [])
   const [customService, setCustomService] = useState("")
 
   function toggleLang(code: string) {
@@ -138,15 +147,16 @@ export function CenterApplicationForm({
       <Section title="بيانات المركز">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="الاسم القانوني" required>
-            <Input name="legalName" required minLength={3} maxLength={200} />
+            <Input name="legalName" required minLength={3} maxLength={200} defaultValue={defaultValues?.legalName} />
           </Field>
           <Field label="الاسم التجاري" required>
-            <Input name="name" required minLength={3} maxLength={200} />
+            <Input name="name" required minLength={3} maxLength={200} defaultValue={defaultValues?.name} />
           </Field>
           <Field label="الدولة" required>
             <select
               name="country"
               required
+              defaultValue={defaultValues?.country ?? ""}
               className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="">اختر دولة…</option>
@@ -158,10 +168,10 @@ export function CenterApplicationForm({
             </select>
           </Field>
           <Field label="المدينة" required>
-            <Input name="city" required minLength={2} maxLength={120} />
+            <Input name="city" required minLength={2} maxLength={120} defaultValue={defaultValues?.city} />
           </Field>
           <Field label="العنوان (اختياري)" full>
-            <Input name="address" maxLength={500} />
+            <Input name="address" maxLength={500} defaultValue={defaultValues?.address} />
           </Field>
         </div>
       </Section>
@@ -176,13 +186,14 @@ export function CenterApplicationForm({
               minLength={6}
               maxLength={30}
               dir="ltr"
+              defaultValue={defaultValues?.phone}
             />
           </Field>
           <Field label="البريد الإلكتروني" required>
-            <Input name="email" type="email" required dir="ltr" />
+            <Input name="email" type="email" required dir="ltr" defaultValue={defaultValues?.email} />
           </Field>
           <Field label="الموقع الإلكتروني (اختياري)" full>
-            <Input name="website" type="url" dir="ltr" />
+            <Input name="website" type="url" dir="ltr" defaultValue={defaultValues?.website} />
           </Field>
         </div>
       </Section>
@@ -190,10 +201,10 @@ export function CenterApplicationForm({
       <Section title="المسؤول المفوَّض">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="الاسم" required>
-            <Input name="representativeName" required minLength={3} />
+            <Input name="representativeName" required minLength={3} defaultValue={defaultValues?.representativeName} />
           </Field>
           <Field label="المسمى" required>
-            <Input name="representativeTitle" required minLength={2} />
+            <Input name="representativeTitle" required minLength={2} defaultValue={defaultValues?.representativeTitle} />
           </Field>
         </div>
       </Section>
@@ -291,10 +302,10 @@ export function CenterApplicationForm({
             />
           </Field>
           <Field label="جهة إصدار ترخيص المنشأة" required>
-            <Input name="issuingAuthority" required minLength={2} />
+            <Input name="issuingAuthority" required minLength={2} defaultValue={defaultValues?.license?.issuingAuthority} />
           </Field>
           <Field label="تاريخ انتهاء ترخيص المنشأة" required>
-            <Input name="licenseExpiryDate" type="date" required />
+            <Input name="licenseExpiryDate" type="date" required defaultValue={defaultValues?.license?.licenseExpiryDate} />
           </Field>
         </div>
       </Section>
@@ -305,6 +316,7 @@ export function CenterApplicationForm({
           rows={4}
           maxLength={2000}
           placeholder="أي معلومات إضافية تفيد فريق المراجعة…"
+          defaultValue={defaultValues?.notes}
         />
       </Section>
 

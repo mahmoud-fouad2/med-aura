@@ -1,6 +1,4 @@
-import { desc, eq } from "drizzle-orm"
-import { db } from "@/lib/db"
-import { providerApplication, user as userT } from "@/lib/db/schema"
+import Link from "next/link"
 import {
   Inbox,
   Stethoscope,
@@ -10,14 +8,20 @@ import {
   Sparkles,
   FileText,
   Calendar,
+  SlidersHorizontal,
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { AdminPagination } from "@/components/admin/pagination"
 import { ApplicationReview } from "@/components/admin/application-review"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
 import { countryNameAr } from "@/lib/status-labels"
+import { listApplicationsForAdmin, type ApplicationListFilters } from "@/lib/data/admin-applications"
+import { firstParam } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "طلبات الانضمام" }
@@ -73,46 +77,85 @@ const STATUS_TONE: Record<
   },
 }
 
-export default async function ApplicationsPage() {
+export default async function ApplicationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   await requirePermissionPage(PERMISSIONS.PROVIDER_REVIEW)
-  const rows = await db
-    .select({
-      id: providerApplication.id,
-      kind: providerApplication.kind,
-      status: providerApplication.status,
-      payload: providerApplication.payload,
-      submittedAt: providerApplication.submittedAt,
-      notes: providerApplication.reviewerNotes,
-      applicantName: userT.name,
-      applicantEmail: userT.email,
-    })
-    .from(providerApplication)
-    .innerJoin(userT, eq(providerApplication.applicantUserId, userT.id))
-    .orderBy(desc(providerApplication.createdAt))
-    .limit(50)
+  const sp = await searchParams
 
-  const openCount = rows.filter((r) =>
-    ["SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANGES"].includes(r.status),
-  ).length
-  const doctorCount = rows.filter((r) => r.kind === "DOCTOR").length
-  const centerCount = rows.filter((r) => r.kind === "CENTER").length
+  const filters: ApplicationListFilters = {
+    q: firstParam(sp.q),
+    kind: firstParam(sp.kind),
+    status: firstParam(sp.status),
+  }
+  const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1)
+
+  const { rows, totalCount, totalPages } = await listApplicationsForAdmin(filters, page)
+
+  const buildHref = (overrides: Record<string, string | number | undefined>) => {
+    const q = new URLSearchParams()
+    const merged = { ...sp, ...overrides }
+    for (const [k, v] of Object.entries(merged)) {
+      const val = Array.isArray(v) ? v[0] : v
+      if (val !== undefined && val !== "") q.set(k, String(val))
+    }
+    return `/admin/applications?${q.toString()}`
+  }
+
+  const activeFilterCount = [filters.q, filters.kind, filters.status].filter(Boolean).length
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="مقدّمو الخدمة"
         title="طلبات الانضمام"
-        description="طلبات الأطباء والمراكز بانتظار مراجعة فريق المراجعة والاعتماد."
-        stats={
-          rows.length > 0
-            ? [
-                { label: "بانتظار المراجعة", value: openCount.toLocaleString("ar-SA-u-nu-latn") },
-                { label: "طلبات أطباء", value: doctorCount.toLocaleString("ar-SA-u-nu-latn") },
-                { label: "طلبات مراكز", value: centerCount.toLocaleString("ar-SA-u-nu-latn") },
-              ]
-            : undefined
-        }
+        description={`${totalCount.toLocaleString("ar-SA-u-nu-latn")} طلب إجمالًا${activeFilterCount > 0 ? ` — ${activeFilterCount} فلتر مطبَّق` : ""}`}
       />
+
+      <Card className="p-4">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="size-4 text-primary" />
+            <h2 className="font-heading text-sm font-bold text-foreground">عوامل التصفية</h2>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                {activeFilterCount}
+              </span>
+            )}
+          </div>
+          {activeFilterCount > 0 && (
+            <Link href="/admin/applications" className="text-xs font-medium text-primary hover:underline">
+              مسح الكل
+            </Link>
+          )}
+        </div>
+        <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="بحث">
+            <Input name="q" defaultValue={filters.q ?? ""} placeholder="اسم أو بريد مقدّم الطلب…" />
+          </Field>
+          <Field label="النوع">
+            <Select name="kind" defaultValue={filters.kind ?? ""}>
+              <option value="">الكل</option>
+              <option value="DOCTOR">طبيب</option>
+              <option value="CENTER">مركز</option>
+            </Select>
+          </Field>
+          <Field label="الحالة">
+            <Select name="status" defaultValue={filters.status ?? ""}>
+              <option value="">الكل</option>
+              {Object.entries(STATUS_TONE).map(([key, tone]) => (
+                <option key={key} value={key}>{tone.label}</option>
+              ))}
+            </Select>
+          </Field>
+          <div className="flex items-end gap-2">
+            <Button type="submit" className="flex-1">تطبيق الفلاتر</Button>
+            <Button type="button" variant="ghost" render={<Link href="/admin/applications">إعادة ضبط</Link>} />
+          </div>
+        </form>
+      </Card>
 
       {rows.length === 0 ? (
         <Card className="p-12">
@@ -256,9 +299,45 @@ export default async function ApplicationsPage() {
               </Card>
             )
           })}
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={15}
+            buildHref={(p) => buildHref({ page: p })}
+          />
         </div>
       )}
     </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+function Select({
+  name,
+  defaultValue,
+  children,
+}: {
+  name: string
+  defaultValue: string
+  children: React.ReactNode
+}) {
+  return (
+    <select
+      name={name}
+      defaultValue={defaultValue}
+      className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+    >
+      {children}
+    </select>
   )
 }
 

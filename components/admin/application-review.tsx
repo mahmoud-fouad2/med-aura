@@ -4,7 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { approveApplication, rejectApplication } from "@/lib/actions/provider"
+import {
+  approveApplication,
+  rejectApplication,
+  requestChangesApplication,
+} from "@/lib/actions/provider"
+
+type Mode = "idle" | "reject" | "request-changes"
 
 export function ApplicationReview({
   applicationId,
@@ -15,8 +21,8 @@ export function ApplicationReview({
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
-  const [rejecting, setRejecting] = useState(false)
-  const [reason, setReason] = useState("")
+  const [mode, setMode] = useState<Mode>("idle")
+  const [note, setNote] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   async function approve() {
@@ -31,11 +37,22 @@ export function ApplicationReview({
   async function reject() {
     setBusy(true)
     setError(null)
-    const res = await rejectApplication(applicationId, reason)
+    const res = await rejectApplication(applicationId, note)
     setBusy(false)
     if (!res.ok) return setError(res.error)
-    setRejecting(false)
-    setReason("")
+    setMode("idle")
+    setNote("")
+    router.refresh()
+  }
+
+  async function requestChanges() {
+    setBusy(true)
+    setError(null)
+    const res = await requestChangesApplication(applicationId, note)
+    setBusy(false)
+    if (!res.ok) return setError(res.error)
+    setMode("idle")
+    setNote("")
     router.refresh()
   }
 
@@ -46,30 +63,39 @@ export function ApplicationReview({
           {error}
         </p>
       )}
-      {rejecting ? (
+      {mode === "reject" || mode === "request-changes" ? (
         <div className="flex flex-col gap-2">
           <Textarea
-            placeholder="سبب الرفض (يظهر لمقدّم الطلب)"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            placeholder={
+              mode === "reject"
+                ? "سبب الرفض (يظهر لمقدّم الطلب)"
+                : "التعديلات المطلوبة (تظهر لمقدّم الطلب ليعدّل ويعيد الإرسال)"
+            }
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
             rows={2}
           />
           <div className="flex gap-2">
-            <Button variant="destructive" size="sm" disabled={busy} onClick={reject}>
-              تأكيد الرفض
+            <Button
+              variant={mode === "reject" ? "destructive" : "default"}
+              size="sm"
+              disabled={busy}
+              onClick={mode === "reject" ? reject : requestChanges}
+            >
+              {mode === "reject" ? "تأكيد الرفض" : "إرسال طلب التعديل"}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               disabled={busy}
-              onClick={() => setRejecting(false)}
+              onClick={() => setMode("idle")}
             >
               إلغاء
             </Button>
           </div>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" disabled={busy} onClick={approve}>
             {busy ? "جارٍ المعالجة…" : isDoctor ? "اعتماد ونشر الطبيب" : "اعتماد ونشر المركز"}
           </Button>
@@ -77,7 +103,15 @@ export function ApplicationReview({
             variant="outline"
             size="sm"
             disabled={busy}
-            onClick={() => setRejecting(true)}
+            onClick={() => setMode("request-changes")}
+          >
+            طلب تعديل
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => setMode("reject")}
           >
             رفض
           </Button>
