@@ -22,6 +22,7 @@ import {
   Activity,
   Settings2,
   LayoutDashboard,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react"
 import type { AdminNavGroup } from "@/lib/admin-nav"
@@ -44,6 +45,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   History,
   Activity,
   Settings2,
+  LifeBuoy,
 }
 
 export function CommandPalette({ nav }: { nav: AdminNavGroup[] }) {

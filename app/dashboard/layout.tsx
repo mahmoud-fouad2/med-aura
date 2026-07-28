@@ -22,6 +22,7 @@ export default async function DashboardLayout({
   const nav: ShellNavLink[] = [{ href: "/dashboard", label: "الرئيسية" }]
   nav.push({ href: "/dashboard/cases", label: "حالاتي" })
   nav.push({ href: "/dashboard/appointments", label: "مواعيدي" })
+  nav.push({ href: "/dashboard/support", label: "الدعم" })
   if (roles.includes(ROLES.DOCTOR)) {
     nav.push({ href: "/dashboard/doctor", label: "لوحة الطبيب" })
   }

@@ -715,9 +715,13 @@ export const conversation = pgTable(
     id: id(),
     caseId: text("caseId").references(() => aestheticCase.id, { onDelete: "cascade" }),
     subject: text("subject"),
+    // Standalone support tickets (caseId null) use these; case-scoped
+    // conversations leave them at their defaults and never read them.
+    status: text("status").notNull().default("OPEN"),
+    category: text("category"),
     ...lifecycle(),
   },
-  (t) => [index("conversation_case_idx").on(t.caseId)],
+  (t) => [index("conversation_case_idx").on(t.caseId), index("conversation_status_idx").on(t.status)],
 )
 
 export const conversationParticipant = pgTable(

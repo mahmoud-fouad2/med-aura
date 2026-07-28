@@ -149,6 +149,24 @@ const SAFETY_STATUS: Record<string, string> = {
   FALSE_ALARM: "إنذار غير حقيقي",
 }
 
+const TICKET_STATUS: Record<string, string> = {
+  OPEN: "مفتوحة",
+  IN_PROGRESS: "قيد المعالجة",
+  RESOLVED: "تم الحل",
+  CLOSED: "مغلقة",
+}
+export const ticketStatusAr = (s: string): string => TICKET_STATUS[s] ?? s
+
+const TICKET_CATEGORY: Record<string, string> = {
+  ACCOUNT: "الحساب",
+  BOOKING: "الحجوزات",
+  BILLING: "الفواتير والدفع",
+  MEDICAL: "استفسار طبي",
+  TECHNICAL: "مشكلة تقنية",
+  OTHER: "أخرى",
+}
+export const ticketCategoryAr = (s: string | null): string => (s ? (TICKET_CATEGORY[s] ?? s) : "عام")
+
 const REFUND: Record<string, string> = {
   REQUESTED: "مُقدَّم",
   UNDER_REVIEW: "قيد المراجعة",

@@ -127,6 +127,13 @@
       "when": 1785154664821,
       "tag": "0017_windy_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785171119093,
+      "tag": "0018_supreme_eternity",
+      "breakpoints": true
     }
   ]
 }
