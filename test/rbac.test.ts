@@ -73,4 +73,14 @@ describe("RBAC permission model", () => {
     expect(rolesHavePermission([ROLES.CONCIERGE], PERMISSIONS.QUOTE_WRITE)).toBe(false)
     expect(rolesHavePermission([ROLES.CONCIERGE], PERMISSIONS.PROCEDURE_CONFIRM)).toBe(false)
   })
+
+  it("only support agents (and super admin) can manage contact messages and support tickets", () => {
+    expect(rolesHavePermission([ROLES.SUPPORT_AGENT], PERMISSIONS.SUPPORT_MANAGE)).toBe(true)
+    expect(rolesHavePermission([ROLES.PATIENT], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
+    expect(rolesHavePermission([ROLES.DOCTOR], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
+    expect(rolesHavePermission([ROLES.CENTER_OWNER], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
+    expect(rolesHavePermission([ROLES.CONCIERGE], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
+    expect(rolesHavePermission([ROLES.COMPLIANCE_REVIEWER], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
+    expect(rolesHavePermission([ROLES.FINANCE_ADMIN], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
+  })
 })
