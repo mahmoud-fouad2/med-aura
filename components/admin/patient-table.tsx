@@ -235,7 +235,8 @@ function PatientCasesTab({ userId }: { userId: string }) {
   )
 }
 
-function PatientBillingTab({ userId }: { userId: string }) {
+/** Exported: also reused by the Users admin drawer for patient-role accounts. */
+export function PatientBillingTab({ userId }: { userId: string }) {
   const [rows, setRows] = useState<MyPaymentRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, start] = useTransition()

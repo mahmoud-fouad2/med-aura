@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { UserRoleManager } from "@/components/admin/user-role-manager"
 import { UserAccountMenu } from "@/components/admin/user-account-menu"
+import { PatientBillingTab } from "@/components/admin/patient-table"
 import { EmptyState } from "@/components/ui/empty-state"
 import { getUserActivityAction } from "@/lib/actions/users"
 import { actionLabelAr } from "@/lib/audit-labels"
@@ -152,6 +153,8 @@ function UserDetailDrawer({
   canViewActivity: boolean
   selfId: string
 }) {
+  const isPatient = user.primaryRole === "patient" || user.roles.some((r) => r.key === "patient")
+
   return (
     <>
       <SheetHeader>
@@ -165,6 +168,7 @@ function UserDetailDrawer({
         <Tabs defaultValue="overview">
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+            {isPatient && <TabsTrigger value="billing">الفواتير</TabsTrigger>}
             {canAssign && <TabsTrigger value="roles">الأدوار</TabsTrigger>}
             {canAssign && <TabsTrigger value="security">الأمان</TabsTrigger>}
             {canViewActivity && <TabsTrigger value="activity">النشاط</TabsTrigger>}
@@ -194,6 +198,12 @@ function UserDetailDrawer({
               </DetailGroup>
             )}
           </TabsContent>
+
+          {isPatient && (
+            <TabsContent value="billing">
+              <PatientBillingTab userId={user.id} />
+            </TabsContent>
+          )}
 
           {canAssign && (
             <TabsContent value="roles" className="space-y-3">
