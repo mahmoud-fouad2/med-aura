@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { DoctorCard } from "@/components/search/doctor-card"
+import { UseMyLocationButton } from "@/components/search/use-my-location-button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { searchDoctors, type SearchParams } from "@/lib/data/doctors"
@@ -57,7 +58,11 @@ export default async function SearchPage({
     consultation: firstParam(sp.consultation) as SearchParams["consultation"],
     surgical: firstParam(sp.surgical) as SearchParams["surgical"],
     page: Number(firstParam(sp.page) ?? "1") || 1,
+    sort: firstParam(sp.sort) as SearchParams["sort"],
+    lat: firstParam(sp.lat) ? Number(firstParam(sp.lat)) : undefined,
+    lng: firstParam(sp.lng) ? Number(firstParam(sp.lng)) : undefined,
   }
+  const nearestActive = params.sort === "nearest" && params.lat != null && params.lng != null
 
   const user = await getCurrentUser()
 
@@ -104,6 +109,13 @@ export default async function SearchPage({
     q.set("page", String(p))
     return `/search?${q.toString()}`
   }
+
+  const currentQuery = new URLSearchParams(
+    Object.entries(sp).flatMap(([k, v]) => {
+      const val = firstParam(v)
+      return val ? [[k, val] as [string, string]] : []
+    }),
+  ).toString()
 
   const activeFilters = [
     params.category,
@@ -225,13 +237,16 @@ export default async function SearchPage({
                 نتائج تناسب بحثك
               </h2>
             </div>
-            {activeFilters > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                render={<Link href="/search">مسح الفلاتر ({activeFilters})</Link>}
-              />
-            )}
+            <div className="flex items-center gap-2">
+              <UseMyLocationButton active={nearestActive} currentQuery={currentQuery} />
+              {activeFilters > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href="/search">مسح الفلاتر ({activeFilters})</Link>}
+                />
+              )}
+            </div>
           </div>
 
           <details className="mb-5 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:hidden">

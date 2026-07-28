@@ -150,10 +150,12 @@ export function DoctorCard({
           <div className="grid grid-cols-2 gap-2 text-xs">
             <MiniFact
               icon={MapPin}
-              label="الموقع"
-              value={[doctor.city, countryNameAr(doctor.country)]
-                .filter(Boolean)
-                .join("، ")}
+              label={doctor.distanceKm != null ? "المسافة" : "الموقع"}
+              value={
+                doctor.distanceKm != null
+                  ? `${doctor.distanceKm.toFixed(1)} كم`
+                  : [doctor.city, countryNameAr(doctor.country)].filter(Boolean).join("، ")
+              }
             />
             <MiniFact
               icon={Stethoscope}
