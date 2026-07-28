@@ -126,6 +126,9 @@ function Details({
 
   const intl = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US"
   const starts = new Date(appointment.startsAt)
+  const durationMinutes = Math.round(
+    (new Date(appointment.endsAt).getTime() - starts.getTime()) / 60_000,
+  )
   const typeLabel =
     appointment.type === "VIDEO_CONSULTATION"
       ? t.booking.typeVideo
@@ -211,6 +214,16 @@ function Details({
             minute: "2-digit",
           })}
         />
+        {durationMinutes > 0 ? (
+          <>
+            <RowDivider />
+            <DetailRow
+              icon="hourglass-outline"
+              label={t.appointmentDetails.duration}
+              value={`${durationMinutes} ${t.appointmentDetails.minutes}`}
+            />
+          </>
+        ) : null}
         <RowDivider />
         <DetailRow
           icon={

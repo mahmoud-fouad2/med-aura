@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { ActivityIndicator, FlatList, Pressable, View } from "react-native"
+import { useMemo, useState } from "react"
+import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Sharing from "expo-sharing"
@@ -18,6 +18,15 @@ function paymentTone(status: string): "success" | "warning" | "danger" | "info" 
   return "warning"
 }
 
+/** Icon per payment purpose/type — a plain amount+date row otherwise reads identically for every entry. */
+function paymentIcon(payment: Payment): keyof typeof Ionicons.glyphMap {
+  if (payment.appointmentType === "VIDEO_CONSULTATION") return "videocam-outline"
+  if (payment.appointmentType === "IN_PERSON_CONSULTATION") return "medkit-outline"
+  if (payment.purpose === "DEPOSIT") return "wallet-outline"
+  if (payment.purpose === "FINAL_PAYMENT" || payment.purpose === "PARTIAL_PAYMENT") return "card-outline"
+  return "receipt-outline"
+}
+
 /**
  * A patient's own payment/billing history — reached from Profile. Never
  * shown to a doctor viewer (billing is patient-only, matching
@@ -28,7 +37,18 @@ export default function Billing() {
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const query = usePayments()
-  const rows = query.data?.payments ?? []
+  const [search, setSearch] = useState("")
+  const payments = query.data?.payments
+  const allRows = useMemo(() => payments ?? [], [payments])
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return allRows
+    return allRows.filter((p) =>
+      [p.serviceNameAr, p.serviceNameEn, p.doctorName, p.centerName, p.reference]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(q)),
+    )
+  }, [allRows, search])
 
   return (
     <View
@@ -60,6 +80,37 @@ export default function Billing() {
         </AppText>
       </View>
 
+      {!query.isLoading && !query.isError && allRows.length > 0 ? (
+        <View style={{ paddingHorizontal: spacing.screen, paddingBottom: spacing.md }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.sm,
+              backgroundColor: colors.card,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: radius.lg,
+              paddingHorizontal: spacing.md,
+            }}
+          >
+            <Ionicons name="search" size={18} color={colors.textFaint} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder={t.billing.searchPlaceholder}
+              placeholderTextColor={colors.textFaint}
+              style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: colors.text }}
+            />
+            {search ? (
+              <Pressable onPress={() => setSearch("")} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={colors.textFaint} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
       {query.isLoading ? (
         <View style={{ padding: spacing.screen, gap: spacing.md }}>
           {[0, 1, 2].map((i) => (
@@ -80,11 +131,15 @@ export default function Billing() {
           refreshing={query.isRefetching}
           onRefresh={() => void query.refetch()}
           ListEmptyComponent={
-            <EmptyState
-              icon="receipt-outline"
-              title={t.billing.empty}
-              body={t.billing.emptyBody}
-            />
+            search.trim() ? (
+              <EmptyState icon="search-outline" title={t.billing.noResults} />
+            ) : (
+              <EmptyState
+                icon="receipt-outline"
+                title={t.billing.empty}
+                body={t.billing.emptyBody}
+              />
+            )
           }
           renderItem={({ item }) => <PaymentCard payment={item} locale={locale} />}
         />
@@ -132,15 +187,29 @@ function PaymentCard({ payment, locale }: { payment: Payment; locale: string }) 
   return (
     <Card style={{ gap: spacing.md }}>
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md }}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <AppText variant="body" weight="bold" numberOfLines={1}>
-            {serviceLabel}
-          </AppText>
-          {payment.doctorName || payment.centerName ? (
-            <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
-              {[payment.doctorName, payment.centerName].filter(Boolean).join(" · ")}
+        <View style={{ flexDirection: "row", flex: 1, gap: spacing.sm }}>
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: radius.md,
+              backgroundColor: colors.primarySoft,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name={paymentIcon(payment)} size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText variant="body" weight="bold" numberOfLines={1}>
+              {serviceLabel}
             </AppText>
-          ) : null}
+            {payment.doctorName || payment.centerName ? (
+              <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                {[payment.doctorName, payment.centerName].filter(Boolean).join(" · ")}
+              </AppText>
+            ) : null}
+          </View>
         </View>
         <View
           style={{
