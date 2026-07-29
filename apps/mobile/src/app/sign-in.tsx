@@ -10,17 +10,16 @@ import {
 import { Link, router } from "expo-router"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card } from "../components/ui"
 import { brandAssets, Logo } from "../components/brand"
+import { GoogleGlyph } from "../components/google-glyph"
 import { authClient } from "../lib/auth-client"
 import { setRememberMe } from "../lib/session-prefs"
 import { registerForPushNotifications } from "../lib/push-notifications"
 import { api } from "../lib/api"
-import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
-import { colors, radius, spacing } from "../theme"
+import { colors, radius, shadows, spacing } from "../theme"
 
 export default function SignIn() {
   const { t } = useI18n()
@@ -60,10 +59,12 @@ export default function SignIn() {
     setError(null)
     setGoogleLoading(true)
     await setRememberMe(remember).catch(() => undefined)
-    // The Expo plugin opens the native browser (expo-web-browser) for the
-    // OAuth round trip and only resolves once it's done — same shape as the
-    // email/password call above, just a different provider.
-    const { error } = await authClient.signIn.social({ provider: "google" })
+    // The Expo plugin opens an in-app browser tab for the OAuth round trip —
+    // but only auto-closes and hands control back to the app once it sees a
+    // navigation to `callbackURL`. Without it, the browser has nothing to
+    // watch for and the user is left stranded on whatever page Google's
+    // flow lands on instead of returning to the app.
+    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: "medaura://" })
     if (error) {
       setGoogleLoading(false)
       setError(t.auth.genericError)
@@ -197,12 +198,7 @@ export default function SignIn() {
               </AppText>
             </Pressable>
 
-            <Pressable
-              onPress={() =>
-                void WebBrowser.openBrowserAsync(`${API_URL}/forgot-password`)
-              }
-              hitSlop={8}
-            >
+            <Pressable onPress={() => router.push("/forgot-password")} hitSlop={8}>
               <AppText variant="sub" weight="medium" color={colors.primary}>
                 {t.auth.forgot}
               </AppText>
@@ -236,15 +232,16 @@ export default function SignIn() {
             alignItems: "center",
             justifyContent: "center",
             gap: 10,
-            height: 48,
+            height: 50,
             borderRadius: radius.md,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: "#FFFFFF",
             opacity: googleLoading ? 0.6 : 1,
+            ...shadows.card,
           }}
         >
-          <Ionicons name="logo-google" size={18} color="#4285F4" />
+          <GoogleGlyph size={18} />
           <AppText variant="body" weight="medium">
             {googleLoading ? t.common.loading : t.auth.continueWithGoogle}
           </AppText>

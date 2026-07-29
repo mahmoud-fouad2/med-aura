@@ -237,30 +237,49 @@ export default function Explore() {
           </Pressable>
         )}
         {locationNotice ? (
-          <View style={{ gap: 6 }}>
-            <AppText variant="caption" color={colors.textFaint}>
-              {locationNotice.kind === "denied"
-                ? t.filters.nearestDenied
-                : locationNotice.kind === "error"
-                  ? t.filters.nearestError
-                  : t.filters.nearestUnavailable}
-            </AppText>
-            {locationNotice.kind === "denied" ? (
-              <View style={{ flexDirection: "row", gap: spacing.sm }}>
-                <Pressable onPress={() => setFilterOpen(true)} hitSlop={4}>
-                  <AppText variant="caption" weight="bold" color={colors.primary}>
-                    {t.filters.chooseCity}
-                  </AppText>
-                </Pressable>
-                {!locationNotice.canAskAgain ? (
-                  <Pressable onPress={() => void Linking.openSettings()} hitSlop={4}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: spacing.sm,
+              borderRadius: radius.lg,
+              padding: spacing.sm,
+              backgroundColor: locationNotice.kind === "unavailable" ? colors.infoSoft : colors.card,
+              borderWidth: locationNotice.kind === "unavailable" ? 0 : 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Ionicons
+              name={locationNotice.kind === "unavailable" ? "information-circle" : "alert-circle-outline"}
+              size={16}
+              color={locationNotice.kind === "unavailable" ? colors.info : colors.textFaint}
+              style={{ marginTop: 1 }}
+            />
+            <View style={{ flex: 1, gap: 6 }}>
+              <AppText variant="caption" color={locationNotice.kind === "unavailable" ? colors.info : colors.textFaint}>
+                {locationNotice.kind === "denied"
+                  ? t.filters.nearestDenied
+                  : locationNotice.kind === "error"
+                    ? t.filters.nearestError
+                    : t.filters.nearestUnavailable}
+              </AppText>
+              {locationNotice.kind === "denied" ? (
+                <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                  <Pressable onPress={() => setFilterOpen(true)} hitSlop={4}>
                     <AppText variant="caption" weight="bold" color={colors.primary}>
-                      {t.filters.openSettings}
+                      {t.filters.chooseCity}
                     </AppText>
                   </Pressable>
-                ) : null}
-              </View>
-            ) : null}
+                  {!locationNotice.canAskAgain ? (
+                    <Pressable onPress={() => void Linking.openSettings()} hitSlop={4}>
+                      <AppText variant="caption" weight="bold" color={colors.primary}>
+                        {t.filters.openSettings}
+                      </AppText>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
           </View>
         ) : null}
 

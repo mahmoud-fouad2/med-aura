@@ -22,12 +22,13 @@ import {
   ChevronForward,
 } from "../components/ui"
 import { brandAssets, Logo } from "../components/brand"
+import { GoogleGlyph } from "../components/google-glyph"
 import { authClient } from "../lib/auth-client"
 import { api, NetworkError } from "../lib/api"
 import { registerForPushNotifications } from "../lib/push-notifications"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
-import { colors, radius, spacing } from "../theme"
+import { colors, radius, shadows, spacing } from "../theme"
 import { Field, inputStyle } from "./sign-in"
 
 type AccountType = "patient" | "doctor"
@@ -56,7 +57,11 @@ export default function SignUp() {
     // Public sign-up always creates a patient — the same invariant the
     // email/password form enforces. A doctor account still needs the full
     // accreditation application, which Google's profile can't supply.
-    const { error } = await authClient.signIn.social({ provider: "google" })
+    //
+    // callbackURL is required so the in-app browser tab knows when to
+    // auto-close and hand control back — without it the OAuth flow strands
+    // the user on whatever web page it lands on. See sign-in.tsx.
+    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: "medaura://" })
     if (error) {
       setGoogleLoading(false)
       setError(t.auth.genericError)
@@ -165,16 +170,17 @@ export default function SignUp() {
             alignItems: "center",
             justifyContent: "center",
             gap: 10,
-            height: 48,
+            height: 50,
             borderRadius: radius.md,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: "#FFFFFF",
             opacity: googleLoading ? 0.6 : 1,
             marginBottom: spacing.lg,
+            ...shadows.card,
           }}
         >
-          <Ionicons name="logo-google" size={18} color="#4285F4" />
+          <GoogleGlyph size={18} />
           <AppText variant="body" weight="medium">
             {googleLoading ? t.common.loading : t.auth.continueWithGoogle}
           </AppText>
