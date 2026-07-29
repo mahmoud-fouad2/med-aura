@@ -14,6 +14,7 @@ import {
 import { stateArt } from "../components/brand"
 import { QueryErrorState } from "../components/query-error"
 import { api, useNotifications, type AppNotification } from "../lib/api"
+import { resolveNativeNotificationRoute } from "../lib/notification-routes"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -33,10 +34,20 @@ export default function Notifications() {
 
   const open = (n: AppNotification) => {
     if (!n.readAt) markRead.mutate({ id: n.id })
-    // Video notifications stay inside the app — the appointments tab leads
-    // straight to the consultation entry. Everything else opens its web page.
     if (n.type.startsWith("VIDEO_")) {
       router.push("/(tabs)/appointments")
+      return
+    }
+    // Most notification types (case updates, safety alerts, follow-ups,
+    // quotes, refunds…) carry a /dashboard/cases/{id} or /dashboard/
+    // appointments href built for the web dashboard — but native screens for
+    // both already exist. Route there directly instead of punting to a
+    // browser; only genuinely web-only destinations (the doctor/center full
+    // dashboard, support tickets — no native ticket screen yet) still open
+    // the browser.
+    const nativeRoute = resolveNativeNotificationRoute(n.href)
+    if (nativeRoute) {
+      router.push(nativeRoute)
       return
     }
     if (n.href) {
