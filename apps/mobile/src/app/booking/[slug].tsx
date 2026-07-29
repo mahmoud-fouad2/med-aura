@@ -95,14 +95,17 @@ export default function Booking() {
 
   // Success state replaces the whole screen — one clear next action.
   if (done) {
+    const bookedStart = selectedSlot ? new Date(selectedSlot) : null
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.background }}
+        contentContainerStyle={{
+          flexGrow: 1,
           alignItems: "center",
           justifyContent: "center",
           padding: spacing.xl,
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: insets.bottom + spacing.xl,
           gap: spacing.lg,
         }}
       >
@@ -126,6 +129,39 @@ export default function Booking() {
             {done.paymentConfigured ? t.booking.successPay : t.booking.successPending}
           </AppText>
         </View>
+
+        {/* Recap of what was just booked — reassurance, not decoration:
+            confirms the doctor/time/date actually matches what was picked. */}
+        {doctor.data && bookedStart ? (
+          <Card style={{ alignSelf: "stretch", gap: spacing.md }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+              <Avatar name={doctor.data.name} photoUrl={doctor.data.photoUrl} size={44} />
+              <View style={{ flex: 1 }}>
+                <AppText variant="body" weight="bold" numberOfLines={1}>
+                  {doctor.data.name}
+                </AppText>
+                {doctor.data.title ? (
+                  <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                    {doctor.data.title}
+                  </AppText>
+                ) : null}
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", gap: spacing.sm }}>
+              <RecapChip
+                icon="time-outline"
+                label={t.appointmentDetails.time}
+                value={bookedStart.toLocaleTimeString(intl, { hour: "2-digit", minute: "2-digit" })}
+              />
+              <RecapChip
+                icon="calendar-outline"
+                label={t.appointmentDetails.date}
+                value={bookedStart.toLocaleDateString(intl, { day: "numeric", month: "long" })}
+              />
+            </View>
+          </Card>
+        ) : null}
+
         <View style={{ alignSelf: "stretch", gap: spacing.sm }}>
           {done.paymentConfigured && done.checkoutUrl ? (
             <Button
@@ -140,7 +176,7 @@ export default function Booking() {
             onPress={() => router.replace("/(tabs)/appointments")}
           />
         </View>
-      </View>
+      </ScrollView>
     )
   }
 
@@ -380,6 +416,40 @@ export default function Booking() {
           />
         </View>
       ) : null}
+    </View>
+  )
+}
+
+function RecapChip({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  label: string
+  value: string
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.sm,
+        padding: spacing.sm,
+        borderRadius: radius.lg,
+        backgroundColor: colors.primarySoft,
+      }}
+    >
+      <Ionicons name={icon} size={16} color={colors.primary} />
+      <View style={{ flex: 1 }}>
+        <AppText variant="caption" color={colors.textMuted}>
+          {label}
+        </AppText>
+        <AppText variant="sub" weight="bold" numberOfLines={1}>
+          {value}
+        </AppText>
+      </View>
     </View>
   )
 }

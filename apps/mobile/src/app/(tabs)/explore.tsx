@@ -355,7 +355,7 @@ function DoctorRow({ doctor }: { doctor: Doctor }) {
       onPress={() => router.push(`/doctor/${doctor.slug}`)}
       style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}
     >
-      <Avatar name={doctor.name} photoUrl={doctor.photoUrl} size={60} />
+      <Avatar name={doctor.name} photoUrl={doctor.photoUrl} size={72} />
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <AppText variant="body" weight="bold" numberOfLines={1} style={{ flexShrink: 1 }}>
