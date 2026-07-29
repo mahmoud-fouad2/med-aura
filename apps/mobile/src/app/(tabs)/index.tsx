@@ -254,24 +254,30 @@ export default function Home() {
         </View>
       ) : (
       <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
-        {/* Quick actions */}
+        {/* Quick actions — a 2x2 grid rather than a cramped single row gives
+            each action real tap-target weight and lets the label sit beside
+            its icon instead of underneath it. */}
         <View
           style={[
             {
-              flexDirection: "row",
               backgroundColor: colors.card,
               borderRadius: radius.xl,
               borderWidth: 1,
               borderColor: colors.border,
-              paddingVertical: spacing.lg,
+              padding: spacing.md,
+              gap: spacing.sm,
             },
             shadows.raised,
           ]}
         >
-          <QuickAction icon="search" label={t.home.exploreAction} onPress={() => router.push("/(tabs)/explore")} />
-          <QuickAction icon="sparkles" label={t.services.title} onPress={() => router.push("/services")} />
-          <QuickAction icon="calendar" label={t.home.myAppointments} onPress={() => router.push("/(tabs)/appointments")} />
-          <QuickAction icon="person" label={t.home.myProfile} onPress={() => router.push("/(tabs)/profile")} />
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <QuickAction icon="medkit-outline" label={t.home.exploreAction} onPress={() => router.push("/(tabs)/explore")} />
+            <QuickAction icon="sparkles-outline" label={t.services.title} onPress={() => router.push("/services")} />
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <QuickAction icon="calendar-outline" label={t.home.myAppointments} onPress={() => router.push("/(tabs)/appointments")} />
+            <QuickAction icon="person-outline" label={t.home.myProfile} onPress={() => router.push("/(tabs)/profile")} />
+          </View>
         </View>
 
         {/* Next appointment */}
@@ -356,22 +362,34 @@ function QuickAction({
   onPress: () => void
 }) {
   return (
-    <Pressable onPress={onPress} style={{ flex: 1, alignItems: "center", gap: 6 }}>
+    <Pressable
+      onPress={onPress}
+      style={{
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: spacing.sm,
+        borderRadius: radius.lg,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.sm,
+      }}
+    >
+      <AppText variant="sub" weight="medium">
+        {label}
+      </AppText>
       <View
         style={{
-          width: 46,
-          height: 46,
+          width: 40,
+          height: 40,
           borderRadius: radius.lg,
           backgroundColor: colors.primarySoft,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Ionicons name={icon} size={20} color={colors.primary} />
+        <Ionicons name={icon} size={19} color={colors.primary} />
       </View>
-      <AppText variant="caption" weight="medium" color={colors.textMuted}>
-        {label}
-      </AppText>
     </Pressable>
   )
 }
