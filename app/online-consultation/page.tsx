@@ -6,7 +6,7 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { FeatureGrid } from "@/components/marketing/feature-grid"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
-import { SITE_NAME, absoluteUrl, breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo"
+import { SITE_NAME, absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
   title: "الاستشارة أونلاين",
@@ -67,7 +67,7 @@ export default function OnlineConsultationPage() {
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
       <main className="flex-1">

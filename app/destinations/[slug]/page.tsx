@@ -22,6 +22,7 @@ import {
   buildPageMetadata,
   geoCoordinatesJsonLd,
   itemListJsonLd,
+  jsonLdScript,
 } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
@@ -96,7 +97,7 @@ export default async function DestinationDetailPage({
       <SiteHeader />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border bg-background">

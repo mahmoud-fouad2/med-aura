@@ -19,6 +19,7 @@ import {
   absoluteUrl,
   breadcrumbJsonLd,
   buildPageMetadata,
+  jsonLdScript,
   serviceImageForProcedure,
 } from "@/lib/seo"
 
@@ -109,7 +110,7 @@ export default async function ProcedureDetailPage({
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumb]) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript([jsonLd, breadcrumb]) }}
       />
       <SiteHeader />
       <main className="flex-1">

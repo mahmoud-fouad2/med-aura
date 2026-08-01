@@ -29,7 +29,7 @@ import { getI18n } from "@/lib/i18n"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
 import { firstParam } from "@/lib/utils"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -144,7 +144,7 @@ export default async function SearchPage({
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
       <main className="flex-1 bg-section-soft">

@@ -8,6 +8,7 @@ import {
   DEFAULT_TITLE,
   SITE_NAME,
   absoluteUrl,
+  jsonLdScript,
   organizationJsonLd,
   websiteJsonLd,
 } from "@/lib/seo"
@@ -128,11 +129,11 @@ export default async function RootLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd()) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(websiteJsonLd()) }}
         />
       </head>
       <body className="font-sans antialiased">

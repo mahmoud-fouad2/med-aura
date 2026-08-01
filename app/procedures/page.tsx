@@ -16,6 +16,7 @@ import {
   breadcrumbJsonLd,
   buildPageMetadata,
   itemListJsonLd,
+  jsonLdScript,
   serviceImageForCategory,
 } from "@/lib/seo"
 
@@ -54,7 +55,7 @@ export default async function ProceduresPage() {
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([breadcrumb, listJsonLd]) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript([breadcrumb, listJsonLd]) }}
       />
       <SiteHeader />
       <main className="flex-1">

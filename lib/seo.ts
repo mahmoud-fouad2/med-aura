@@ -120,6 +120,19 @@ export function buildPageMetadata({
   }
 }
 
+/**
+ * JSON.stringify for a JSON-LD <script> tag's dangerouslySetInnerHTML.
+ * Several JSON-LD payloads embed admin-editable free text verbatim (FAQ
+ * answers, doctor bios) — plain JSON.stringify only escapes what JSON
+ * syntax requires, not `<`, so a literal "</script>" inside that text
+ * would close the tag early and let anything after it run as raw HTML/JS.
+ * Escaping `<` to its JSON unicode form neutralizes that while staying
+ * byte-identical JSON (browsers parse < as < either way).
+ */
+export function jsonLdScript(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c")
+}
+
 export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
   return {
     "@context": "https://schema.org",

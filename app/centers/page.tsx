@@ -22,7 +22,7 @@ import { query } from "@/lib/db/query"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
 import { countryNameAr } from "@/lib/status-labels"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -67,7 +67,7 @@ export default async function CentersPage() {
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
       <main className="flex-1">

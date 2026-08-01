@@ -11,7 +11,7 @@ import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Stagger, StaggerItem } from "@/components/motion"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
   title: "كيف تعمل المنصة",
@@ -56,7 +56,7 @@ export default function HowItWorksPage() {
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
       <main className="flex-1">

@@ -11,7 +11,7 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { Reveal } from "@/components/motion"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, faqPageJsonLd } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, faqPageJsonLd, jsonLdScript } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -48,7 +48,7 @@ export default async function FaqPage() {
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
       <main className="flex-1">

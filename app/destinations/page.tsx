@@ -10,7 +10,7 @@ import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listDestinations } from "@/lib/data/destinations"
 import { query } from "@/lib/db/query"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -46,7 +46,7 @@ export default async function DestinationsPage() {
     <div className="flex min-h-svh flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
       <main className="flex-1">

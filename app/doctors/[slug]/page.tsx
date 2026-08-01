@@ -23,7 +23,7 @@ import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
 import { currencyAr, countryNameAr } from "@/lib/status-labels"
 import { getI18n } from "@/lib/i18n"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -138,7 +138,7 @@ export default async function DoctorProfilePage({
       <SiteHeader />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify([jsonLd, breadcrumb]) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript([jsonLd, breadcrumb]) }}
       />
       <main className="relative flex-1 overflow-hidden bg-section-soft">
         <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
