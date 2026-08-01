@@ -1,6 +1,6 @@
 import { createAuthClient } from "better-auth/react"
 import { expoClient } from "@better-auth/expo/client"
-import { API_URL, APP_SCHEME } from "./config"
+import { API_URL, APP_SCHEME, AUTH_STORAGE_PREFIX } from "./config"
 import { safeSecureStore } from "./secure-storage"
 
 /**
@@ -13,17 +13,23 @@ export const authClient = createAuthClient({
   plugins: [
     expoClient({
       scheme: APP_SCHEME,
-      storagePrefix: "medaura",
+      storagePrefix: AUTH_STORAGE_PREFIX,
       // MUST match the server's `advanced.cookiePrefix` (lib/auth.ts). The
       // plugin only persists Set-Cookie values whose name starts with this —
       // with the default ("better-auth") our `__Secure-medaura.session_token`
       // was silently dropped, so every API call went out unauthenticated and
       // the session never survived a restart.
       cookiePrefix: "medaura",
-      // NEVER pass the raw SecureStore module here — @better-auth/expo reads
-      // it synchronously at client-creation time (module load, before any
-      // error boundary exists), and an unguarded native Keystore/Keychain
-      // read can throw and take the whole app down. See secure-storage.ts.
+      // NEVER pass the raw SecureStore module here. @better-auth/expo reads
+      // storage.getItem() *synchronously* right here, at client-creation
+      // time — and expo-secure-store's sync getItem is a real native crash
+      // vector (a Keystore key invalidated by a biometric/PIN change, OS
+      // update, or corrupted entry can crash the whole app before any JS
+      // try/catch runs, not just throw a catchable error). safeSecureStore
+      // never calls the sync API at all — it's an in-memory buffer that
+      // index.js populates via the async API (which safely rejects instead
+      // of crashing) before this module is ever imported. See
+      // secure-storage.ts and index.js.
       storage: safeSecureStore,
     }),
   ],
