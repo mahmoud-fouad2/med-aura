@@ -10,6 +10,54 @@ import { usePayments, downloadInvoicePdf, type Payment } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
+/**
+ * A summary card at the top of the list — matches the Stitch reference's
+ * prominent purple balance card, but shows only real, honest totals (a
+ * transaction count, and a paid-amount sum). The reference's card also has
+ * a "Pay All" CTA for an outstanding balance — that assumes an in-app
+ * payment-collection flow this app doesn't have (payments happen via
+ * Stripe Checkout during booking, not as a later balance settlement), so
+ * it's deliberately not reproduced here rather than faked as a dead button.
+ */
+function BillingSummaryCard({ payments }: { payments: Payment[] }) {
+  const { t } = useI18n()
+  const paid = payments.filter((p) => p.status === "PAID")
+  // Summing across mixed currencies would produce a meaningless number —
+  // only show a total when every paid entry shares one currency (the
+  // overwhelmingly common real case).
+  const currencies = new Set(paid.map((p) => p.currency))
+  const total =
+    currencies.size === 1 && paid.length > 0
+      ? paid.reduce((sum, p) => sum + Number(p.amount), 0)
+      : null
+
+  return (
+    <View style={{ paddingHorizontal: spacing.screen, paddingBottom: spacing.md }}>
+      <View
+        style={{
+          backgroundColor: colors.primary,
+          borderRadius: radius.xl,
+          padding: spacing.xl,
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <AppText variant="sub" color="rgba(255,255,255,0.75)">
+          {payments.length} {t.billing.summaryCount}
+        </AppText>
+        {total != null ? (
+          <AppText variant="hero" weight="heavy" color="#FFFFFF" style={{ writingDirection: "ltr" }}>
+            {total.toLocaleString()} {paid[0].currency}
+          </AppText>
+        ) : null}
+        <AppText variant="caption" color="rgba(255,255,255,0.65)">
+          {t.billing.summaryPaidLabel}
+        </AppText>
+      </View>
+    </View>
+  )
+}
+
 function paymentTone(status: string): "success" | "warning" | "danger" | "info" | "neutral" {
   if (status === "PAID") return "success"
   if (status === "FAILED" || status === "DISPUTED") return "danger"
@@ -79,6 +127,10 @@ export default function Billing() {
           {t.billing.title}
         </AppText>
       </View>
+
+      {!query.isLoading && !query.isError && allRows.length > 0 ? (
+        <BillingSummaryCard payments={allRows} />
+      ) : null}
 
       {!query.isLoading && !query.isError && allRows.length > 0 ? (
         <View style={{ paddingHorizontal: spacing.screen, paddingBottom: spacing.md }}>

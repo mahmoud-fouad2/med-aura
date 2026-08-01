@@ -304,6 +304,8 @@ const ar = {
     receiptError: "تعذّر تحميل الإيصال. حاول مرة أخرى.",
     searchPlaceholder: "ابحث في المدفوعات…",
     noResults: "لا نتائج مطابقة للبحث.",
+    summaryCount: "عملية دفع",
+    summaryPaidLabel: "إجمالي المدفوع",
   },
   paymentPurpose: {
     CONSULTATION_FEE: "رسوم استشارة",
@@ -768,6 +770,8 @@ const en: typeof ar = {
     receiptError: "Couldn't load the receipt. Try again.",
     searchPlaceholder: "Search payments…",
     noResults: "No results match your search.",
+    summaryCount: "transactions",
+    summaryPaidLabel: "Total paid",
   },
   paymentPurpose: {
     CONSULTATION_FEE: "Consultation fee",
