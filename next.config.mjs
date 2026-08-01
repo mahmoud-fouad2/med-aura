@@ -44,6 +44,19 @@ const nextConfig = {
           },
         ]
       : [],
+    // Next's defaults (8 deviceSizes x 8 imageSizes = up to 64 distinct
+    // sharp-transform variants per unique source image) are real memory/CPU
+    // pressure on a small instance — this is the leading suspect for the
+    // Render "exceeded memory limit" auto-restarts, timed right after real
+    // doctor/procedure photos started flowing through the optimizer. Trimmed
+    // to the breakpoints this app's own `sizes` props actually use (verified
+    // via grep across components/ and app/) plus one 2x/hero tier — real
+    // reduction in transform variants, not a guess.
+    deviceSizes: [640, 828, 1080, 1920],
+    imageSizes: [16, 32, 64, 128, 256],
+    // Doctor/procedure photos rarely change once set — cache the optimized
+    // result for a week instead of re-transforming on every cold cache miss.
+    minimumCacheTTL: 604800,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }]
