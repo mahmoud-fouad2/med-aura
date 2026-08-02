@@ -345,7 +345,9 @@ export async function listCentersForSelect(): Promise<{ id: string; name: string
 export type DoctorProcedureOption = {
   id: string
   nameAr: string
+  nameEn: string
   categoryNameAr: string
+  categoryNameEn: string
   assigned: boolean
   priceFrom: string | null
 }
@@ -355,7 +357,13 @@ export async function listDoctorProcedureOptions(doctorId: string): Promise<Doct
   if (!isDbConfigured) return []
   const [procedures, assigned] = await Promise.all([
     db
-      .select({ id: procedureT.id, nameAr: procedureT.nameAr, categoryNameAr: procedureCategory.nameAr })
+      .select({
+        id: procedureT.id,
+        nameAr: procedureT.nameAr,
+        nameEn: procedureT.nameEn,
+        categoryNameAr: procedureCategory.nameAr,
+        categoryNameEn: procedureCategory.nameEn,
+      })
       .from(procedureT)
       .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
       .orderBy(procedureCategory.sortOrder, procedureT.nameAr),

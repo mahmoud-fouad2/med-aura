@@ -134,6 +134,26 @@ export type AppNotification = {
   createdAt: string
 }
 
+export type PracticeProcedure = {
+  id: string
+  nameAr: string
+  nameEn: string
+  categoryNameAr: string
+  categoryNameEn: string
+  assigned: boolean
+  priceFrom: string | null
+}
+
+export type MyPractice = {
+  consultationFee: string | null
+  currency: string
+  offersVideo: boolean
+  offersInPerson: boolean
+  published: boolean
+  status: string
+  procedures: PracticeProcedure[]
+}
+
 export type TicketCategory = "ACCOUNT" | "BOOKING" | "BILLING" | "MEDICAL" | "TECHNICAL" | "OTHER"
 
 export type TicketSummary = {
@@ -327,6 +347,22 @@ export const api = {
     }),
   avatarRemove: () =>
     request<{ removed: boolean }>("/api/mobile/v1/me/avatar", { method: "DELETE" }),
+  myPractice: () => request<MyPractice>("/api/mobile/v1/me/practice"),
+  updateMyPractice: (input: {
+    consultationFee?: number
+    currency: string
+    offersVideo: boolean
+    offersInPerson: boolean
+  }) =>
+    request<{ updated: boolean }>("/api/mobile/v1/me/practice", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  toggleMyProcedure: (input: { procedureId: string; assign: boolean }) =>
+    request<{ updated: boolean }>("/api/mobile/v1/me/practice/procedures", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
   registerPushToken: (input: { token: string; platform: "android" | "ios" }) =>
     request<{ registered: boolean }>("/api/mobile/v1/push-tokens", {
       method: "POST",
@@ -537,6 +573,9 @@ export const useSlots = (slug: string, type: ConsultationType) =>
 
 export const useMe = () =>
   useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: 60_000 })
+
+export const useMyPractice = () =>
+  useQuery({ queryKey: ["my-practice"], queryFn: api.myPractice, staleTime: 30_000 })
 
 export const useNotifications = () =>
   useQuery({

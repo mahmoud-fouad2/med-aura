@@ -270,3 +270,102 @@ export async function getDoctorActivityAction(
   const entries = await listActivityForEntityIds([doctorId], 30)
   return { status: "ok", entries }
 }
+
+// --- Self-service (the doctor managing their own practice) ---------------
+// Ownership — the row's userId matches the caller's session — is the
+// authorization here, not an RBAC permission like the admin actions above.
+// The doctorId is always resolved server-side from the session, never
+// accepted from the caller, so there's no way to target another doctor's row.
+
+const updateMyPracticeSchema = z.object({
+  consultationFee: z.coerce.number().min(0).optional(),
+  currency: z.string().trim().length(3),
+  offersVideo: z.boolean(),
+  offersInPerson: z.boolean(),
+})
+
+/** A doctor updating their own price/currency/consultation types. */
+export async function updateMyPracticeAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const parsed = updateMyPracticeSchema.safeParse(input)
+    if (!parsed.success) throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
+    const data = parsed.data
+    if (!data.offersVideo && !data.offersInPerson) {
+      throw validation("اختر نوع استشارة واحدًا على الأقل.")
+    }
+
+    const existing = (
+      await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.userId, user.id)).limit(1)
+    )[0]
+    if (!existing) throw new AppError("NOT_FOUND")
+
+    await db
+      .update(doctorProfile)
+      .set({
+        consultationFee: data.consultationFee != null ? String(data.consultationFee) : null,
+        currency: data.currency,
+        offersVideo: data.offersVideo,
+        offersInPerson: data.offersInPerson,
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(doctorProfile.id, existing.id))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "doctor.self.update",
+      actorUserId: user.id,
+      entityType: "doctor_profile",
+      entityId: existing.id,
+      ...meta,
+    })
+
+    revalidatePath("/doctors")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const toggleMyProcedureSchema = z.object({ procedureId: z.string().min(1), assign: z.boolean() })
+
+/** Self-service equivalent of toggleDoctorProcedureAction above. */
+export async function toggleMyProcedureAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const parsed = toggleMyProcedureSchema.safeParse(input)
+    if (!parsed.success) throw validation("بيانات غير صحيحة")
+    const { procedureId, assign } = parsed.data
+
+    const existing = (
+      await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.userId, user.id)).limit(1)
+    )[0]
+    if (!existing) throw new AppError("NOT_FOUND")
+
+    if (assign) {
+      await db.insert(doctorProcedure).values({ doctorId: existing.id, procedureId }).onConflictDoNothing()
+    } else {
+      await db
+        .delete(doctorProcedure)
+        .where(and(eq(doctorProcedure.doctorId, existing.id), eq(doctorProcedure.procedureId, procedureId)))
+    }
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: assign ? "doctor.procedure.self_assign" : "doctor.procedure.self_unassign",
+      actorUserId: user.id,
+      entityType: "doctor_profile",
+      entityId: existing.id,
+      metadata: { procedureId },
+      ...meta,
+    })
+
+    revalidatePath("/doctors")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}

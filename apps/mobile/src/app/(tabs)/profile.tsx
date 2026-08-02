@@ -206,6 +206,17 @@ export default function Profile() {
         ) : null}
       </Section>
 
+      {/* My practice — doctor accounts only. */}
+      {me.data?.accountType === "doctor" ? (
+        <Section title={t.profile.sectionPractice}>
+          <Row
+            icon="briefcase-outline"
+            label={t.practice.title}
+            onPress={() => router.push("/practice/settings")}
+          />
+        </Section>
+      ) : null}
+
       {/* Language & appearance */}
       <Section title={t.profile.sectionAppearance}>
         <Row
