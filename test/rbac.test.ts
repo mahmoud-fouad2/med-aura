@@ -83,4 +83,22 @@ describe("RBAC permission model", () => {
     expect(rolesHavePermission([ROLES.COMPLIANCE_REVIEWER], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
     expect(rolesHavePermission([ROLES.FINANCE_ADMIN], PERMISSIONS.SUPPORT_MANAGE)).toBe(false)
   })
+
+  it("only super admin can send a mass broadcast — every other role, including support/compliance/finance, is denied", () => {
+    expect(rolesHavePermission([ROLES.SUPER_ADMIN], PERMISSIONS.NOTIFICATIONS_BROADCAST)).toBe(true)
+    for (const r of [
+      ROLES.PATIENT,
+      ROLES.DOCTOR,
+      ROLES.CENTER_OWNER,
+      ROLES.CENTER_ADMIN,
+      ROLES.CENTER_STAFF,
+      ROLES.CONCIERGE,
+      ROLES.COMPLIANCE_REVIEWER,
+      ROLES.FINANCE_ADMIN,
+      ROLES.SUPPORT_AGENT,
+      ROLES.CONTENT_ADMIN,
+    ]) {
+      expect(rolesHavePermission([r], PERMISSIONS.NOTIFICATIONS_BROADCAST)).toBe(false)
+    }
+  })
 })

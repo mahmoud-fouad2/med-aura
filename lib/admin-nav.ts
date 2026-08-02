@@ -71,6 +71,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/dashboard/notifications", label: "الإشعارات", icon: "Bell", anyOf: [], external: true },
       { href: "/admin/messages", label: "رسائل التواصل", icon: "MessageCircle", anyOf: [P.SUPPORT_MANAGE] },
       { href: "/admin/tickets", label: "تذاكر الدعم", icon: "LifeBuoy", anyOf: [P.SUPPORT_MANAGE] },
+      { href: "/admin/broadcast", label: "إشعار جماعي", icon: "Megaphone", anyOf: [P.NOTIFICATIONS_BROADCAST] },
     ],
   },
   {

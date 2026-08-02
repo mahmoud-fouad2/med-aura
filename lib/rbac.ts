@@ -95,6 +95,10 @@ export const PERMISSIONS = {
 
   // Support inbox (public contact-form submissions)
   SUPPORT_MANAGE: "support:manage",
+
+  // Mass push/in-app announcements to members — super admin only (not
+  // granted to any role below), given the blast radius of "every member."
+  NOTIFICATIONS_BROADCAST: "notifications:broadcast",
 } as const
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
