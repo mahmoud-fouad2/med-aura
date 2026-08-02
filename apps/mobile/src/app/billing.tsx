@@ -4,7 +4,7 @@ import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
-import { AppText, Card, ChevronBack, EmptyState, Skeleton } from "../components/ui"
+import { AppText, Card, ChevronBack, EmptyState, IconBadge, Skeleton, StatusPill } from "../components/ui"
 import { QueryErrorState } from "../components/query-error"
 import { usePayments, downloadInvoicePdf, type Payment } from "../lib/api"
 import { useI18n } from "../lib/i18n"
@@ -240,18 +240,7 @@ function PaymentCard({ payment, locale }: { payment: Payment; locale: string }) 
     <Card style={{ gap: spacing.md }}>
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md }}>
         <View style={{ flexDirection: "row", flex: 1, gap: spacing.sm }}>
-          <View
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: radius.md,
-              backgroundColor: colors.primarySoft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name={paymentIcon(payment)} size={18} color={colors.primary} />
-          </View>
+          <IconBadge icon={paymentIcon(payment)} size={38} />
           <View style={{ flex: 1, gap: 2 }}>
             <AppText variant="body" weight="bold" numberOfLines={1}>
               {serviceLabel}
@@ -263,36 +252,10 @@ function PaymentCard({ payment, locale }: { payment: Payment; locale: string }) 
             ) : null}
           </View>
         </View>
-        <View
-          style={{
-            paddingHorizontal: spacing.md,
-            paddingVertical: 3,
-            borderRadius: radius.full,
-            backgroundColor: {
-              success: colors.successSoft,
-              warning: colors.warningSoft,
-              danger: colors.dangerSoft,
-              info: colors.infoSoft,
-              neutral: "#F1EFF6",
-            }[paymentTone(payment.status)],
-          }}
-        >
-          <AppText
-            variant="caption"
-            weight="bold"
-            color={
-              {
-                success: colors.success,
-                warning: colors.warning,
-                danger: colors.danger,
-                info: colors.info,
-                neutral: colors.textMuted,
-              }[paymentTone(payment.status)]
-            }
-          >
-            {t.paymentStatus[payment.status] ?? payment.status}
-          </AppText>
-        </View>
+        <StatusPill
+          label={t.paymentStatus[payment.status] ?? payment.status}
+          tone={paymentTone(payment.status)}
+        />
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>

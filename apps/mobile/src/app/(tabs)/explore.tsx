@@ -22,7 +22,7 @@ import {
 } from "../../lib/api"
 import { requestLocation, type Coords } from "../../lib/location"
 import { useI18n } from "../../lib/i18n"
-import { colors, radius, spacing } from "../../theme"
+import { colors, radius, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
 export default function Explore() {
   const { t } = useI18n()
@@ -244,19 +244,22 @@ export default function Explore() {
               gap: spacing.sm,
               borderRadius: radius.lg,
               padding: spacing.sm,
-              backgroundColor: locationNotice.kind === "unavailable" ? colors.infoSoft : colors.card,
+              // "Unavailable" is a soft, brand-tinted note (no centers with
+              // coordinates yet) — not a system alert, so it gets the same
+              // purple-tint language as everything else, not a blue banner.
+              backgroundColor: locationNotice.kind === "unavailable" ? colors.primarySoft : colors.card,
               borderWidth: locationNotice.kind === "unavailable" ? 0 : 1,
               borderColor: colors.border,
             }}
           >
             <Ionicons
               name={locationNotice.kind === "unavailable" ? "information-circle" : "alert-circle-outline"}
-              size={16}
-              color={locationNotice.kind === "unavailable" ? colors.info : colors.textFaint}
+              size={14}
+              color={locationNotice.kind === "unavailable" ? colors.primary : colors.textFaint}
               style={{ marginTop: 1 }}
             />
             <View style={{ flex: 1, gap: 6 }}>
-              <AppText variant="caption" color={locationNotice.kind === "unavailable" ? colors.info : colors.textFaint}>
+              <AppText variant="caption" color={locationNotice.kind === "unavailable" ? colors.primary : colors.textFaint}>
                 {locationNotice.kind === "denied"
                   ? t.filters.nearestDenied
                   : locationNotice.kind === "error"
@@ -318,7 +321,11 @@ export default function Explore() {
         <FlatList
           data={rows}
           keyExtractor={(d) => d.id}
-          contentContainerStyle={{ padding: spacing.screen, gap: spacing.md }}
+          contentContainerStyle={{
+            padding: spacing.screen,
+            paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.lg,
+            gap: spacing.md,
+          }}
           refreshing={doctors.isRefetching && !doctors.isFetchingNextPage}
           onRefresh={() => void doctors.refetch()}
           onEndReachedThreshold={0.4}
@@ -355,14 +362,14 @@ function DoctorRow({ doctor }: { doctor: Doctor }) {
       onPress={() => router.push(`/doctor/${doctor.slug}`)}
       style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}
     >
-      <Avatar name={doctor.name} photoUrl={doctor.photoUrl} size={72} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <Avatar name={doctor.name} photoUrl={doctor.photoUrl} size={78} />
+      <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <AppText variant="body" weight="bold" numberOfLines={1} style={{ flexShrink: 1 }}>
             {doctor.name}
           </AppText>
           {doctor.verified && (
-            <Ionicons name="shield-checkmark" size={14} color={colors.gold} />
+            <Ionicons name="shield-checkmark" size={15} color={colors.info} />
           )}
         </View>
         {doctor.title ? (

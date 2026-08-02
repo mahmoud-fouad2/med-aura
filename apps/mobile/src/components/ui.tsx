@@ -302,6 +302,65 @@ export function StatusPill({
   )
 }
 
+/**
+ * Tinted, rounded icon container — the one "icon badge" shape every screen
+ * should reach for (section headings, list-row category icons, quick
+ * actions) instead of each screen inventing its own size/radius/tint.
+ */
+export function IconBadge({
+  icon,
+  size = 40,
+  tone = "primary",
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  size?: number
+  tone?: "primary" | "success" | "warning" | "danger" | "info" | "gold"
+}) {
+  const map = {
+    primary: { bg: colors.primarySoft, fg: colors.primary },
+    success: { bg: colors.successSoft, fg: colors.success },
+    warning: { bg: colors.warningSoft, fg: colors.warning },
+    danger: { bg: colors.dangerSoft, fg: colors.danger },
+    info: { bg: colors.infoSoft, fg: colors.info },
+    gold: { bg: colors.goldSoft, fg: colors.gold },
+  }[tone]
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.32,
+        backgroundColor: map.bg,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Ionicons name={icon} size={Math.round(size * 0.45)} color={map.fg} />
+    </View>
+  )
+}
+
+/** Icon-badge + heading — the section-title language shared across Home,
+ *  Explore, Tickets, Billing, and Practice Settings. */
+export function SectionHeading({
+  icon,
+  title,
+  tone = "primary",
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  title: string
+  tone?: "primary" | "success" | "warning" | "danger" | "info" | "gold"
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+      <IconBadge icon={icon} size={32} tone={tone} />
+      <AppText variant="heading" weight="bold">
+        {title}
+      </AppText>
+    </View>
+  )
+}
+
 /** Pulsing skeleton block for list/card loading. */
 export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
   const opacity = useSharedValue(0.5)

@@ -10,10 +10,12 @@ import {
   Button,
   Card,
   EmptyState,
+  IconBadge,
+  SectionHeading,
   Skeleton,
   StatusPill,
 } from "../../components/ui"
-import { brandAssets, Logo, stateArt } from "../../components/brand"
+import { brandAssets, stateArt } from "../../components/brand"
 import {
   NetworkError,
   useHome,
@@ -25,7 +27,7 @@ import {
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
 import { useI18n } from "../../lib/i18n"
-import { colors, radius, shadows, spacing } from "../../theme"
+import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
 export default function Home() {
   const { t, locale } = useI18n()
@@ -64,7 +66,7 @@ export default function Home() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ paddingBottom: spacing.xxl }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.lg }}
       refreshControl={
         <RefreshControl
           refreshing={home.isRefetching}
@@ -90,6 +92,10 @@ export default function Home() {
           style={{ position: "absolute", width: "100%", height: "100%" }}
           contentFit="cover"
         />
+        {/* Two clean corners — avatar and the bell each get their own,
+            rather than clustering together and leaving the (now removed)
+            tiny logo to hold down the opposite corner alone. The brand
+            moment lives on the splash screen instead, at real size. */}
         <View
           style={{
             flexDirection: "row",
@@ -98,54 +104,51 @@ export default function Home() {
             marginBottom: spacing.lg,
           }}
         >
-          <Logo height={26} variant="white" />
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-            <Pressable
-              onPress={() => router.push("/notifications")}
-              accessibilityRole="button"
-              accessibilityLabel={t.inbox.title}
-              hitSlop={8}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 19,
-                backgroundColor: "rgba(255,255,255,0.16)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
-              {(inbox.data?.unread ?? 0) > 0 ? (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -2,
-                    end: -2,
-                    minWidth: 17,
-                    height: 17,
-                    borderRadius: 9,
-                    paddingHorizontal: 4,
-                    backgroundColor: colors.gold,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <AppText variant="caption" weight="bold" color={colors.ink}>
-                    {Math.min(inbox.data?.unread ?? 0, 9)}
-                  </AppText>
-                </View>
-              ) : null}
-            </Pressable>
-            <Pressable
-              onPress={() => router.push("/(tabs)/profile")}
-              accessibilityRole="button"
-              accessibilityLabel={t.home.myProfile}
-              hitSlop={8}
-              style={{ borderRadius: 19, borderWidth: 2, borderColor: "rgba(255,255,255,0.5)" }}
-            >
-              <Avatar name={resolvedName || "؟"} photoUrl={me.data?.photoUrl} size={34} />
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            accessibilityRole="button"
+            accessibilityLabel={t.inbox.title}
+            hitSlop={8}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: "rgba(255,255,255,0.16)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
+            {(inbox.data?.unread ?? 0) > 0 ? (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  end: -2,
+                  minWidth: 17,
+                  height: 17,
+                  borderRadius: 9,
+                  paddingHorizontal: 4,
+                  backgroundColor: colors.gold,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppText variant="caption" weight="bold" color={colors.ink}>
+                  {Math.min(inbox.data?.unread ?? 0, 9)}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/(tabs)/profile")}
+            accessibilityRole="button"
+            accessibilityLabel={t.home.myProfile}
+            hitSlop={8}
+            style={{ borderRadius: 19, borderWidth: 2, borderColor: "rgba(255,255,255,0.5)" }}
+          >
+            <Avatar name={resolvedName || "؟"} photoUrl={me.data?.photoUrl} size={34} />
+          </Pressable>
         </View>
         <View style={{ gap: 4 }}>
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
@@ -167,12 +170,17 @@ export default function Home() {
           <Button
             label={t.home.heroCta}
             onPress={() => router.push("/(tabs)/explore")}
-            style={{
-              marginTop: spacing.lg,
-              backgroundColor: colors.gold,
-              alignSelf: "flex-start",
-              paddingVertical: 11,
-            }}
+            style={[
+              {
+                marginTop: spacing.lg,
+                backgroundColor: colors.gold,
+                alignSelf: "flex-start",
+                borderRadius: radius.full,
+                paddingVertical: 17,
+                paddingHorizontal: spacing.xxl,
+              },
+              shadows.raised,
+            ]}
           />
         ) : null}
       </View>
@@ -202,7 +210,7 @@ export default function Home() {
               card above, previously computed and thrown away. The most
               actionable view for a doctor starting their day. */}
           {todaysAppointments.length > 0 ? (
-            <Section title={t.home.todaysSchedule}>
+            <Section title={t.home.todaysSchedule} icon="today-outline">
               <View style={{ gap: spacing.md }}>
                 {todaysAppointments.map((a) => (
                   <AppointmentCard key={a.id} appointment={a} locale={locale} statusLabels={t.status} />
@@ -212,7 +220,7 @@ export default function Home() {
           ) : null}
 
           {/* Next patient */}
-          <Section title={t.home.nextPatientAppointment}>
+          <Section title={t.home.nextPatientAppointment} icon="calendar-outline">
             {home.isLoading ? (
               <Card style={{ gap: spacing.md }}>
                 <Skeleton style={{ width: "60%" }} />
@@ -281,7 +289,7 @@ export default function Home() {
         </View>
 
         {/* Next appointment */}
-        <Section title={t.home.nextAppointment}>
+        <Section title={t.home.nextAppointment} icon="calendar-outline">
           {home.isLoading ? (
             <Card style={{ gap: spacing.md }}>
               <Skeleton style={{ width: "60%" }} />
@@ -320,7 +328,7 @@ export default function Home() {
         {/* Featured doctors — hidden on failure: the next-appointment card
             already carries the error + retry, one message is enough. */}
         {home.isError ? null : (
-        <Section title={t.home.featuredDoctors}>
+        <Section title={t.home.featuredDoctors} icon="star-outline">
           {home.isLoading ? (
             <View style={{ flexDirection: "row", gap: spacing.md }}>
               <Skeleton style={{ flex: 1, height: 150, borderRadius: radius.xl }} />
@@ -341,12 +349,24 @@ export default function Home() {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  icon,
+  children,
+}: {
+  title: string
+  icon?: keyof typeof Ionicons.glyphMap
+  children: React.ReactNode
+}) {
   return (
     <View style={{ gap: spacing.md }}>
-      <AppText variant="heading" weight="bold">
-        {title}
-      </AppText>
+      {icon ? (
+        <SectionHeading icon={icon} title={title} />
+      ) : (
+        <AppText variant="heading" weight="bold">
+          {title}
+        </AppText>
+      )}
       {children}
     </View>
   )
@@ -364,32 +384,24 @@ function QuickAction({
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: spacing.sm,
-        borderRadius: radius.lg,
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.sm,
-      }}
+      style={({ pressed }) => [
+        {
+          flex: 1,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: spacing.sm,
+          borderRadius: radius.lg,
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.sm,
+        },
+        pressed && { backgroundColor: colors.primarySoft },
+      ]}
     >
       <AppText variant="sub" weight="medium">
         {label}
       </AppText>
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: radius.lg,
-          backgroundColor: colors.primarySoft,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Ionicons name={icon} size={19} color={colors.primary} />
-      </View>
+      <IconBadge icon={icon} size={46} />
     </Pressable>
   )
 }
@@ -502,8 +514,8 @@ function FeaturedDoctor({ doctor, verifiedLabel }: { doctor: Doctor; verifiedLab
       </View>
       {doctor.verified && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-          <Ionicons name="shield-checkmark" size={12} color={colors.gold} />
-          <AppText variant="caption" weight="medium" color={colors.gold}>
+          <Ionicons name="shield-checkmark" size={12} color={colors.info} />
+          <AppText variant="caption" weight="medium" color={colors.info}>
             {verifiedLabel}
           </AppText>
         </View>

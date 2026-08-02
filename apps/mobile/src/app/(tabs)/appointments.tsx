@@ -15,7 +15,7 @@ import { stateArt } from "../../components/brand"
 import { QueryErrorState } from "../../components/query-error"
 import { useAppointments, type Appointment } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
-import { colors, radius, spacing } from "../../theme"
+import { colors, radius, spacing, TAB_BAR_HEIGHT } from "../../theme"
 import { appointmentTone } from "./index"
 
 export default function Appointments() {
@@ -97,7 +97,11 @@ export default function Appointments() {
         <FlatList
           data={rows}
           keyExtractor={(a) => a.id}
-          contentContainerStyle={{ padding: spacing.screen, gap: spacing.md }}
+          contentContainerStyle={{
+            padding: spacing.screen,
+            paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.lg,
+            gap: spacing.md,
+          }}
           refreshing={query.isRefetching}
           onRefresh={() => void query.refetch()}
           ListEmptyComponent={

@@ -80,3 +80,13 @@ export const motion = {
   base: 240,
   slow: 380,
 } as const
+
+/**
+ * The bottom tab bar's own content height, excluding the device's safe-area
+ * inset (added separately by each screen via useSafeAreaInsets().bottom).
+ * One shared constant so (tabs)/_layout.tsx and every tab screen's scroll
+ * content agree on how much bottom clearance a tab screen needs — screens
+ * were each guessing a flat spacing.xxl before, which isn't tall enough to
+ * clear the real bar and let the last card sit clear of it.
+ */
+export const TAB_BAR_HEIGHT = 62

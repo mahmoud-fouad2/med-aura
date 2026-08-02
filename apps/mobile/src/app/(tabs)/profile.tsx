@@ -30,7 +30,7 @@ import { unregisterThisDevice } from "../../lib/push-notifications"
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
 import { useI18n, type Locale } from "../../lib/i18n"
-import { colors, radius, spacing } from "../../theme"
+import { colors, radius, spacing, TAB_BAR_HEIGHT } from "../../theme"
 import { ONBOARDING_KEY } from "../index"
 
 /** Notification switches persist on-device until the push backend exists. */
@@ -122,7 +122,7 @@ export default function Profile() {
         paddingTop: insets.top + spacing.md,
         padding: spacing.screen,
         gap: spacing.lg,
-        paddingBottom: spacing.xxl,
+        paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.lg,
       }}
     >
       <AppText variant="title" weight="heavy">

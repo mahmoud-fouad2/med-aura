@@ -13,7 +13,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
-import { AppText, Button, Card, ChevronBack, Skeleton, StatusPill } from "../../components/ui"
+import {
+  AppText,
+  Button,
+  Card,
+  ChevronBack,
+  SectionHeading,
+  Skeleton,
+  StatusPill,
+} from "../../components/ui"
 import { QueryErrorState } from "../../components/query-error"
 import {
   api,
@@ -120,34 +128,6 @@ function StatusCard({ practice }: { practice: MyPractice }) {
         tone={STATUS_TONE[practice.status] ?? "neutral"}
       />
     </Card>
-  )
-}
-
-function SectionHeading({
-  icon,
-  title,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  title: string
-}) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: radius.sm,
-          backgroundColor: colors.primarySoft,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Ionicons name={icon} size={16} color={colors.primary} />
-      </View>
-      <AppText variant="heading" weight="bold">
-        {title}
-      </AppText>
-    </View>
   )
 }
 

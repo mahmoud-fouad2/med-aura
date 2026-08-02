@@ -2,7 +2,7 @@ import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useI18n } from "../../lib/i18n"
-import { colors } from "../../theme"
+import { colors, TAB_BAR_HEIGHT } from "../../theme"
 
 export default function TabsLayout() {
   const { t } = useI18n()
@@ -12,16 +12,20 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textFaint,
+        // textMuted rather than textFaint — the lightest gray read as
+        // barely-there on a real screen instead of clearly "inactive."
+        tabBarInactiveTintColor: colors.textMuted,
         // A fixed height replaces React Navigation's own inset-aware sizing,
         // so the device's Android nav bar (3-button or gesture pill) would
         // otherwise sit on top of — or hide — this tab bar. Adding
         // insets.bottom here is what keeps every tab reachable and tappable
-        // above the system bar on every device.
+        // above the system bar on every device. TAB_BAR_HEIGHT is shared
+        // with every tab screen's own bottom padding so scrolled content
+        // always clears the bar instead of guessing a flat spacing value.
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: 62 + insets.bottom,
+          height: TAB_BAR_HEIGHT + insets.bottom,
           paddingTop: 6,
           paddingBottom: insets.bottom + 8,
         },
