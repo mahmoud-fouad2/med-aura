@@ -1,32 +1,34 @@
 // Custom entry point (package.json "main") instead of the default
-// "expo-router/entry" directly. This exists for exactly one reason: to
-// pre-warm the secure-storage buffer (src/lib/secure-storage.ts) via the
-// *async* SecureStore API before src/lib/auth-client.ts is ever imported.
+// "expo-router/entry" directly. Its one job: kick off warming the
+// secure-storage buffer (src/lib/secure-storage.ts) via the *async*
+// SecureStore API as early as possible, in TRUE parallel with everything
+// else — never gating `require("expo-router/entry")` on it.
 //
-// @better-auth/expo's expoClient() plugin calls storage.getItem()
-// *synchronously* the moment createAuthClient() runs, at module-evaluation
-// time. expo-secure-store's sync getItem is a native crash vector on
-// Android when a Keystore key can't be read (invalidated by a biometric/PIN
-// change, an OS update, a corrupted entry) — the crash happens before any
-// JS try/catch can run. That was the "close the app after signing in, then
-// it won't reopen — have to uninstall and reinstall" crash: the very next
-// sync read of the session data written on first login could crash natively
-// on the second launch.
+// An earlier version of this file *awaited* the warm-up before requiring
+// expo-router/entry, reasoning that @better-auth/expo's expoClient() plugin
+// reads the buffer synchronously at createAuthClient()-time, so the buffer
+// had to be warm first. That reasoning was correct about the read being
+// synchronous, but wrong about the fix: safeSecureStore.getItem() is a
+// plain in-memory Map read (see secure-storage.ts) — it cannot crash
+// whether the buffer is warm or empty, empty just means "nothing restored
+// yet". Deferring the require() behind an async native-bridge round trip
+// delayed expo-router's renderRootComponent()/AppRegistry.registerComponent()
+// call by an unpredictable amount — exactly the kind of non-standard,
+// device-dependent timing risk that crashed real devices immediately on
+// launch (never caught by typecheck/lint/vitest/expo-doctor, since none of
+// them actually boot the app). Registering the root must happen
+// synchronously, at the same tick native expects it.
 //
-// The fix (see secure-storage.ts) never calls the sync API — it's an
-// in-memory buffer, and this file populates it via getItemAsync (which
-// safely rejects instead of crashing) BEFORE requiring expo-router's real
-// entry, which is what first imports auth-client.ts. The native splash
-// screen is already covering the screen at this point (shown by the OS
-// immediately at launch, independent of JS), so this adds a few
-// milliseconds under the splash, never a visible delay or blank frame.
+// Losing nothing by not awaiting: index.tsx's boot gate already calls
+// authClient.getSession() inside a useEffect (after mount, several ticks
+// after this file even runs) and holds the native/branded splash until
+// that resolves — by then the warm-up below has virtually always already
+// finished, since a local Keystore read takes single-digit milliseconds.
 import { warmSecureStore } from "./src/lib/secure-storage"
 import { AUTH_STORAGE_PREFIX } from "./src/lib/config"
 
 const KEYS = [`${AUTH_STORAGE_PREFIX}_cookie`, `${AUTH_STORAGE_PREFIX}_session_data`]
 
-warmSecureStore(KEYS)
-  .catch(() => undefined)
-  .then(() => {
-    require("expo-router/entry")
-  })
+void warmSecureStore(KEYS).catch(() => undefined)
+
+require("expo-router/entry")
