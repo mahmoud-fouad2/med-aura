@@ -14,11 +14,20 @@ describe("resolveNativeNotificationRoute", () => {
     expect(resolveNativeNotificationRoute("/dashboard/appointments")).toBe("/(tabs)/appointments")
   })
 
-  it("returns null for hrefs with no native screen yet (falls back to the browser)", () => {
+  it("maps a support ticket href to the native ticket thread", () => {
+    expect(resolveNativeNotificationRoute("/dashboard/support/ticket-1")).toBe("/support/ticket-1")
+  })
+
+  it("strips a trailing query string from the ticket id", () => {
+    expect(resolveNativeNotificationRoute("/dashboard/support/ticket-1?foo=bar")).toBe("/support/ticket-1")
+  })
+
+  it("returns null for hrefs with no native screen (falls back to the browser)", () => {
     expect(resolveNativeNotificationRoute("/dashboard/doctor")).toBeNull()
     expect(resolveNativeNotificationRoute("/dashboard/center")).toBeNull()
     expect(resolveNativeNotificationRoute("/dashboard")).toBeNull()
-    expect(resolveNativeNotificationRoute("/dashboard/support/ticket-1")).toBeNull()
+    // Staff triage link — admin ticket tooling stays web-only by design.
+    expect(resolveNativeNotificationRoute("/admin/tickets?open=ticket-1")).toBeNull()
   })
 
   it("returns null for missing hrefs", () => {

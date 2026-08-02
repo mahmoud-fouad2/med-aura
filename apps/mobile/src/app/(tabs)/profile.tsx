@@ -277,6 +277,12 @@ export default function Profile() {
       {/* Support & info */}
       <Section title={t.profile.sectionSupport}>
         <Row
+          icon="chatbubbles-outline"
+          label={t.profile.myTickets}
+          onPress={() => router.push("/support")}
+        />
+        <Divider />
+        <Row
           icon="help-buoy-outline"
           label={t.profile.support}
           onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/contact`)}

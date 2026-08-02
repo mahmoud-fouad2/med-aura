@@ -39,12 +39,12 @@ export default function Notifications() {
       return
     }
     // Most notification types (case updates, safety alerts, follow-ups,
-    // quotes, refunds…) carry a /dashboard/cases/{id} or /dashboard/
-    // appointments href built for the web dashboard — but native screens for
-    // both already exist. Route there directly instead of punting to a
-    // browser; only genuinely web-only destinations (the doctor/center full
-    // dashboard, support tickets — no native ticket screen yet) still open
-    // the browser.
+    // quotes, refunds, support ticket replies…) carry a /dashboard/cases/{id},
+    // /dashboard/appointments, or /dashboard/support/{id} href built for the
+    // web dashboard — but native screens for all three already exist. Route
+    // there directly instead of punting to a browser; only genuinely
+    // web-only destinations (the doctor/center full dashboard, staff
+    // /admin/tickets triage) still open the browser.
     const nativeRoute = resolveNativeNotificationRoute(n.href)
     if (nativeRoute) {
       router.push(nativeRoute)

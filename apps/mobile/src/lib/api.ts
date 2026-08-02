@@ -134,6 +134,37 @@ export type AppNotification = {
   createdAt: string
 }
 
+export type TicketCategory = "ACCOUNT" | "BOOKING" | "BILLING" | "MEDICAL" | "TECHNICAL" | "OTHER"
+
+export type TicketSummary = {
+  id: string
+  subject: string
+  status: string
+  category: string | null
+  lastMessageAt: string
+  unreadForMe: boolean
+  createdAt: string
+}
+
+export type TicketMessage = {
+  id: string
+  senderName: string
+  body: string
+  createdAt: string
+  /** Computed server-side against the signed-in viewer — never re-derive
+   *  this client-side against a possibly-stale useMe() id. */
+  mine: boolean
+}
+
+export type TicketDetail = {
+  id: string
+  subject: string
+  status: string
+  category: string | null
+  createdAt: string
+  messages: TicketMessage[]
+}
+
 export type VideoDenyReason =
   | "not_found"
   | "not_authorized"
@@ -314,6 +345,18 @@ export const api = {
     request<{ updated: boolean }>("/api/mobile/v1/notifications", {
       method: "POST",
       body: JSON.stringify(input),
+    }),
+  tickets: () => request<{ tickets: TicketSummary[] }>("/api/mobile/v1/tickets"),
+  createTicket: (input: { subject: string; category?: TicketCategory; body: string }) =>
+    request<{ ticketId: string }>("/api/mobile/v1/tickets", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  ticket: (id: string) => request<TicketDetail>(`/api/mobile/v1/tickets/${id}`),
+  replyTicket: (id: string, body: string) =>
+    request<{ replied: boolean }>(`/api/mobile/v1/tickets/${id}`, {
+      method: "POST",
+      body: JSON.stringify({ body }),
     }),
   home: () => request<HomeData>("/api/mobile/v1/home"),
   appointments: () =>
@@ -500,6 +543,16 @@ export const useNotifications = () =>
     queryKey: ["notifications"],
     queryFn: api.notifications,
     staleTime: 30_000,
+  })
+
+export const useTickets = () =>
+  useQuery({ queryKey: ["tickets"], queryFn: api.tickets, staleTime: 30_000 })
+
+export const useTicket = (id: string) =>
+  useQuery({
+    queryKey: ["ticket", id],
+    queryFn: () => api.ticket(id),
+    staleTime: 15_000,
   })
 
 export const useVideoState = (appointmentId: string, opts?: { poll?: boolean; enabled?: boolean }) =>
