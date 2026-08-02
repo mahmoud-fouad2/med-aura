@@ -26,6 +26,16 @@ const buildCpus =
     : 2
 
 const nextConfig = {
+  // Standalone mode traces only the dependencies each route actually uses
+  // into .next/standalone, instead of `next start` loading the full
+  // framework + the entire node_modules tree into memory. This is Next's
+  // own recommended setting for memory-constrained container deployments
+  // (Render, Docker, etc.) — a meaningfully smaller baseline footprint,
+  // not a traffic-dependent optimization like the image-variant trimming.
+  // Requires scripts/prepare-standalone.mjs (postbuild) to copy public/,
+  // .next/static/, and drizzle/ into the traced output — none of those are
+  // reachable via static import, so the tracer can't find them on its own.
+  output: "standalone",
   experimental: {
     cpus: buildCpus,
   },
