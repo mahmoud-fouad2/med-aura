@@ -18,6 +18,7 @@ import {
   deleteProcedureAction,
   type ActionResult,
 } from "@/lib/actions/catalog"
+import { resizeImageFile } from "@/lib/client/image-resize"
 
 export type CategoryRow = {
   id: string
@@ -383,10 +384,15 @@ function ProcedureImageUploader({
   const [busy, setBusy] = useState<"main" | "gallery" | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function upload(file: File, slot: "main" | "gallery") {
+  async function upload(rawFile: File, slot: "main" | "gallery") {
     setBusy(slot)
     setError(null)
     try {
+      // Downscale before upload — see lib/client/image-resize.ts. Every
+      // consumer downstream (the web image optimizer, the mobile app
+      // fetching R2 directly) gets a reasonably sized source instead of
+      // whatever the admin's camera produced.
+      const file = await resizeImageFile(rawFile)
       const presignRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
