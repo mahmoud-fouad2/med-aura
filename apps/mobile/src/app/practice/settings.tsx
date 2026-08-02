@@ -123,6 +123,34 @@ function StatusCard({ practice }: { practice: MyPractice }) {
   )
 }
 
+function SectionHeading({
+  icon,
+  title,
+}: {
+  icon: keyof typeof Ionicons.glyphMap
+  title: string
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: radius.sm,
+          backgroundColor: colors.primarySoft,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Ionicons name={icon} size={16} color={colors.primary} />
+      </View>
+      <AppText variant="heading" weight="bold">
+        {title}
+      </AppText>
+    </View>
+  )
+}
+
 function PracticeForm({ initial }: { initial: MyPractice }) {
   const { t } = useI18n()
   const queryClient = useQueryClient()
@@ -161,9 +189,7 @@ function PracticeForm({ initial }: { initial: MyPractice }) {
 
   return (
     <Card style={{ gap: spacing.lg }}>
-      <AppText variant="heading" weight="bold">
-        {t.practice.priceTitle}
-      </AppText>
+      <SectionHeading icon="pricetag-outline" title={t.practice.priceTitle} />
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <View style={{ flex: 2 }}>
           <Field label={t.practice.price}>
@@ -198,9 +224,7 @@ function PracticeForm({ initial }: { initial: MyPractice }) {
 
       <View style={{ height: 1, backgroundColor: colors.border }} />
 
-      <AppText variant="heading" weight="bold">
-        {t.practice.typesTitle}
-      </AppText>
+      <SectionHeading icon="options-outline" title={t.practice.typesTitle} />
       <ToggleRow
         label={t.practice.videoLabel}
         hint={t.practice.videoHint}
@@ -296,9 +320,7 @@ function ProceduresSection({ procedures }: { procedures: PracticeProcedure[] }) 
   return (
     <Card style={{ gap: spacing.lg }}>
       <View style={{ gap: spacing.xs }}>
-        <AppText variant="heading" weight="bold">
-          {t.practice.servicesTitle}
-        </AppText>
+        <SectionHeading icon="medkit-outline" title={t.practice.servicesTitle} />
         <AppText variant="sub" color={colors.textMuted}>
           {t.practice.servicesHint}
         </AppText>

@@ -325,6 +325,8 @@ const ar = {
     createError: "تعذّر فتح التذكرة. حاول مرة أخرى.",
     replyError: "تعذّر إرسال الرد. حاول مرة أخرى.",
     notFound: "هذه التذكرة غير موجودة.",
+    searchPlaceholder: "ابحث في التذاكر…",
+    noResults: "لا نتائج مطابقة للبحث.",
   },
   practice: {
     title: "إعدادات الممارسة",
@@ -853,6 +855,8 @@ const en: typeof ar = {
     createError: "Couldn't open the ticket. Try again.",
     replyError: "Couldn't send the reply. Try again.",
     notFound: "This ticket doesn't exist.",
+    searchPlaceholder: "Search tickets…",
+    noResults: "No results match your search.",
   },
   practice: {
     title: "Practice settings",
