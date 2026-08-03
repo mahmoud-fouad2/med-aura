@@ -11,7 +11,8 @@ import {
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
-import { AppText, Button, Card, ChevronBack } from "../components/ui"
+import { Ionicons } from "@expo/vector-icons"
+import { AppText, Button, Card, ChevronBack, SectionHeading } from "../components/ui"
 import { authClient } from "../lib/auth-client"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -99,24 +100,32 @@ export default function ChangePassword() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <Card style={{ gap: spacing.lg }}>
+        <Card style={{ gap: spacing.lg, alignItems: done ? "center" : undefined }}>
           {done ? (
             <>
               <View
                 style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: radius.lg,
                   backgroundColor: colors.successSoft,
-                  borderRadius: radius.md,
-                  padding: spacing.md,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                <AppText variant="sub" color={colors.success}>
-                  {t.password.changed}
-                </AppText>
+                <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} />
               </View>
+              <AppText variant="hero" weight="heavy" style={{ textAlign: "center" }}>
+                {t.password.changed}
+              </AppText>
+              <AppText variant="sub" color={colors.textMuted} style={{ textAlign: "center" }}>
+                {t.password.changedBody}
+              </AppText>
               <Button label={t.common.back} onPress={() => router.back()} />
             </>
           ) : (
             <>
+              <SectionHeading icon="lock-closed-outline" title={t.password.sectionNew} />
               <Field label={t.password.current}>
                 <TextInput
                   value={current}
@@ -148,6 +157,9 @@ export default function ChangePassword() {
                 />
               </Field>
 
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+
+              <SectionHeading icon="shield-checkmark-outline" title={t.password.sectionSessions} />
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
                 <Switch
                   value={revokeOthers}

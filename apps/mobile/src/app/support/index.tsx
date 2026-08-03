@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 import { FlatList, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -35,7 +35,7 @@ const CATEGORY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 /** Patient/doctor self-service ticket list — mirrors the web dashboard's
  *  /dashboard/support. Staff triage stays on /admin/tickets, web-only. */
 export default function SupportTickets() {
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
   const insets = useSafeAreaInsets()
   const query = useTickets()
   const [search, setSearch] = useState("")
@@ -142,36 +142,30 @@ export default function SupportTickets() {
               />
             )
           }
-          renderItem={({ item }) => (
-            <TicketRow
-              ticket={item}
-              locale={locale}
-              onPress={() => router.push(`/support/${item.id}`)}
-            />
-          )}
+          renderItem={renderTicketRow}
         />
       )}
     </View>
   )
 }
 
-function TicketRow({
-  ticket,
-  locale,
-  onPress,
-}: {
-  ticket: TicketSummary
-  locale: string
-  onPress: () => void
-}) {
-  const { t } = useI18n()
+// Module-level, stable reference — search-typing re-renders the screen on
+// every keystroke (ahead of the debounce filtering), and an inline
+// renderItem closure would be recreated each time, defeating FlatList's
+// ability to skip re-rendering rows that haven't changed.
+function renderTicketRow({ item }: { item: TicketSummary }) {
+  return <TicketRow ticket={item} />
+}
+
+const TicketRow = memo(function TicketRow({ ticket }: { ticket: TicketSummary }) {
+  const { t, locale } = useI18n()
   const when = new Date(ticket.lastMessageAt).toLocaleDateString(
     locale === "ar" ? "ar-SA-u-nu-latn" : "en-US",
     { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" },
   )
   return (
     <Card
-      onPress={onPress}
+      onPress={() => router.push(`/support/${ticket.id}`)}
       style={{
         gap: spacing.md,
         borderColor: ticket.unreadForMe ? colors.primary : colors.border,
@@ -233,4 +227,4 @@ function TicketRow({
       </View>
     </Card>
   )
-}
+})

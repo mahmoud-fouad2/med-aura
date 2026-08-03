@@ -45,6 +45,7 @@ const ar = {
   editProfile: {
     save: "حفظ التغييرات",
     saved: "تم حفظ بياناتك.",
+    sectionTitle: "معلوماتك الشخصية",
   },
   password: {
     current: "كلمة المرور الحالية",
@@ -54,8 +55,11 @@ const ar = {
     tooShort: "كلمة المرور يجب ألا تقل عن 8 أحرف.",
     wrongCurrent: "كلمة المرور الحالية غير صحيحة.",
     changed: "تم تغيير كلمة المرور.",
+    changedBody: "يمكنك الآن استخدام كلمة المرور الجديدة لتسجيل الدخول.",
     revokeOthers: "تسجيل الخروج من الأجهزة الأخرى",
     revokeOthersHint: "ينهي الجلسات المفتوحة على أي جهاز آخر",
+    sectionNew: "كلمة مرور جديدة",
+    sectionSessions: "الجلسات الأخرى",
   },
   onboarding: {
     slides: [
@@ -581,6 +585,7 @@ const en: typeof ar = {
   editProfile: {
     save: "Save changes",
     saved: "Your details were saved.",
+    sectionTitle: "Your personal info",
   },
   password: {
     current: "Current password",
@@ -590,8 +595,11 @@ const en: typeof ar = {
     tooShort: "Password must be at least 8 characters.",
     wrongCurrent: "The current password is incorrect.",
     changed: "Password changed.",
+    changedBody: "You can now use your new password to sign in.",
     revokeOthers: "Sign out of other devices",
     revokeOthersHint: "Ends sessions open on any other device",
+    sectionNew: "New password",
+    sectionSessions: "Other sessions",
   },
   onboarding: {
     slides: [

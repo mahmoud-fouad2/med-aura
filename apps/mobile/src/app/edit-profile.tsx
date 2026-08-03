@@ -16,6 +16,7 @@ import {
   Button,
   Card,
   ChevronBack,
+  SectionHeading,
   Skeleton,
 } from "../components/ui"
 import { useMe, api, NetworkError, type Me } from "../lib/api"
@@ -135,6 +136,7 @@ function ProfileForm({ initial }: { initial: Me }) {
 
   return (
     <Card style={{ gap: spacing.lg }}>
+      <SectionHeading icon="person-outline" title={t.editProfile.sectionTitle} />
       <Field label={t.auth.name}>
         <TextInput
           value={name}

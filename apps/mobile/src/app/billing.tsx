@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { memo, useCallback, useMemo, useState } from "react"
 import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -98,6 +98,14 @@ export default function Billing() {
     )
   }, [allRows, search])
 
+  // Stable across `search` keystrokes (only changes if locale does) — an
+  // inline renderItem closure would be recreated every keystroke, defeating
+  // FlatList's ability to skip re-rendering rows that haven't changed.
+  const renderPayment = useCallback(
+    ({ item }: { item: Payment }) => <PaymentCard payment={item} locale={locale} />,
+    [locale],
+  )
+
   return (
     <View
       style={{
@@ -193,14 +201,14 @@ export default function Billing() {
               />
             )
           }
-          renderItem={({ item }) => <PaymentCard payment={item} locale={locale} />}
+          renderItem={renderPayment}
         />
       )}
     </View>
   )
 }
 
-function PaymentCard({ payment, locale }: { payment: Payment; locale: string }) {
+const PaymentCard = memo(function PaymentCard({ payment, locale }: { payment: Payment; locale: string }) {
   const { t } = useI18n()
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState(false)
@@ -318,4 +326,4 @@ function PaymentCard({ payment, locale }: { payment: Payment; locale: string }) 
       ) : null}
     </Card>
   )
-}
+})
