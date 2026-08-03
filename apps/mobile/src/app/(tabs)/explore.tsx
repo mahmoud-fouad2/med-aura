@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { memo, useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, FlatList, Linking, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -345,14 +345,22 @@ export default function Explore() {
           ListEmptyComponent={
             <EmptyState icon="search-outline" title={t.explore.empty} />
           }
-          renderItem={({ item }) => <DoctorRow doctor={item} />}
+          renderItem={renderDoctorRow}
         />
       )}
     </View>
   )
 }
 
-function DoctorRow({ doctor }: { doctor: Doctor }) {
+// Module-level, stable reference — search-typing re-renders Explore on
+// every keystroke (via the raw `search` state, ahead of the debounce), and
+// an inline `renderItem` closure would get recreated each time, defeating
+// FlatList's ability to skip re-rendering rows that haven't changed.
+function renderDoctorRow({ item }: { item: Doctor }) {
+  return <DoctorRow doctor={item} />
+}
+
+const DoctorRow = memo(function DoctorRow({ doctor }: { doctor: Doctor }) {
   const { t } = useI18n()
   const location = [doctor.city, t.countries[doctor.country] ?? doctor.country]
     .filter(Boolean)
@@ -385,4 +393,4 @@ function DoctorRow({ doctor }: { doctor: Doctor }) {
       <ChevronForward size={18} />
     </Card>
   )
-}
+})

@@ -133,7 +133,6 @@ const ar = {
     heroCta: "احجزي استشارتك",
     heroBody: "رحلتك التجميلية تبدأ بقرار موثوق.",
     heroBodyProvider: "نتمنى لك يومًا موفقًا مع مرضاك.",
-    openDashboard: "فتح لوحة الطبيب",
     quickActions: "إجراءات سريعة",
     bookAction: "حجز موعد",
     exploreAction: "استكشاف الأطباء",
@@ -287,6 +286,13 @@ const ar = {
     documentError: "تعذّر فتح الملف. حاول مرة أخرى.",
     notFound: "لا يمكن عرض ملف هذا المريض.",
     notFoundHint: "قد تكون الموافقة على مشاركة الملف غير مفعّلة، أو أن الملف غير مرتبط بهذا الموعد.",
+  },
+  myCases: {
+    title: "حالاتي المشتركة",
+    empty: "لا توجد حالات مشتركة بعد.",
+    emptyBody: "ستظهر هنا ملفات المرضى التي يشاركونها معك.",
+    pendingConsent: "بانتظار الإذن",
+    pendingConsentHint: "لا يمكن الاطّلاع قبل منح المريض الإذن.",
   },
   billing: {
     title: "الفواتير والمدفوعات",
@@ -663,7 +669,6 @@ const en: typeof ar = {
     heroCta: "Book a consultation",
     heroBody: "Your aesthetic journey starts with a trusted decision.",
     heroBodyProvider: "We wish you a great day with your patients.",
-    openDashboard: "Open doctor dashboard",
     quickActions: "Quick actions",
     bookAction: "Book",
     exploreAction: "Explore doctors",
@@ -817,6 +822,13 @@ const en: typeof ar = {
     documentError: "Couldn't open the file. Try again.",
     notFound: "This patient's case can't be shown.",
     notFoundHint: "Sharing consent may not be active, or the case isn't linked to this appointment.",
+  },
+  myCases: {
+    title: "My shared cases",
+    empty: "No shared cases yet.",
+    emptyBody: "Patient files shared with you will show up here.",
+    pendingConsent: "Awaiting consent",
+    pendingConsentHint: "Can't be viewed until the patient grants consent.",
   },
   billing: {
     title: "Invoices & billing",

@@ -98,6 +98,15 @@ export type CaseSummary = {
   documents: CaseDocument[]
 }
 
+export type DoctorCaseItem = {
+  id: string
+  reference: string
+  status: string
+  procedureName: string
+  patientName: string
+  consentActive: boolean
+}
+
 export type HomeData = {
   firstName: string
   upcomingCount: number
@@ -406,6 +415,7 @@ export const api = {
     request<{ appointments: Appointment[] }>("/api/mobile/v1/appointments"),
   caseSummary: (caseId: string) =>
     request<CaseSummary>(`/api/mobile/v1/cases/${caseId}`),
+  myCases: () => request<{ cases: DoctorCaseItem[] }>("/api/mobile/v1/cases"),
   payments: () => request<{ payments: Payment[] }>("/api/mobile/v1/payments"),
   videoState: (appointmentId: string) =>
     request<VideoState>(`/api/mobile/v1/appointments/${appointmentId}/video`),
@@ -517,6 +527,9 @@ export const useCaseSummary = (caseId: string | null) =>
     enabled: caseId != null,
     staleTime: 30_000,
   })
+
+export const useMyCases = () =>
+  useQuery({ queryKey: ["my-cases"], queryFn: api.myCases, staleTime: 30_000 })
 
 export const usePayments = () =>
   useQuery({

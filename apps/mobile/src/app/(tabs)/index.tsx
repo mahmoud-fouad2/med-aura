@@ -2,7 +2,6 @@ import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
 import {
   AppText,
@@ -25,7 +24,6 @@ import {
   type Doctor,
 } from "../../lib/api"
 import { authClient } from "../../lib/auth-client"
-import { API_URL } from "../../lib/config"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
@@ -185,9 +183,11 @@ export default function Home() {
         ) : null}
       </View>
 
-      {/* Provider (doctor/staff): real today's-schedule data, natively —
-          only full calendar/availability editing still lives on the web
-          dashboard, linked below rather than replacing this screen. */}
+      {/* Provider (doctor/staff): today's-schedule, next patient, and shared
+          cases are all native now. Availability/calendar editing has no
+          editor anywhere yet — admin or self-service — so there's
+          deliberately no link standing in for a feature that doesn't
+          exist on either platform. */}
       {!isPatient ? (
         <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
           {/* Stats */}
@@ -254,10 +254,10 @@ export default function Home() {
             onPress={() => router.push("/(tabs)/appointments")}
           />
           <Button
-            label={t.home.openDashboard}
-            icon="open-outline"
+            label={t.myCases.title}
+            icon="folder-open-outline"
             variant="ghost"
-            onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/dashboard`)}
+            onPress={() => router.push("/cases")}
           />
         </View>
       ) : (
