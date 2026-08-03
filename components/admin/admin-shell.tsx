@@ -8,24 +8,20 @@ import { Logo, LogoMark } from "@/components/brand/logo"
 import { AdminIcon } from "@/components/admin/admin-icon"
 import { CommandPalette } from "@/components/admin/command-palette"
 import { Button } from "@/components/ui/button"
-import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import type { AdminNavGroup } from "@/lib/admin-nav"
-import type { Locale } from "@/lib/i18n/config"
 
 export function AdminShell({
   user,
   nav,
-  locale,
   unreadNotifications = 0,
   children,
 }: {
   user: { name: string; email: string }
   nav: AdminNavGroup[]
-  locale: Locale
   unreadNotifications?: number
   children: React.ReactNode
 }) {
@@ -127,7 +123,6 @@ export function AdminShell({
                 )}
               </Link>
               <ThemeToggle />
-              <LanguageSwitcher locale={locale} />
               <UserMenu name={user.name} email={user.email} />
             </div>
           </div>

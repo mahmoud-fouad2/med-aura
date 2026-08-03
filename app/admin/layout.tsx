@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 import { requireAuthPage } from "@/lib/session"
 import { getUserPermissions } from "@/lib/rbac"
-import { getLocale } from "@/lib/i18n"
 import { getUnreadNotificationCount } from "@/lib/data/notifications"
 import { ADMIN_SHELL_ENTRY_PERMISSIONS, visibleAdminNav } from "@/lib/admin-nav"
 import { AdminShell } from "@/components/admin/admin-shell"
@@ -22,15 +21,12 @@ export default async function AdminLayout({
   const canEnter = ADMIN_SHELL_ENTRY_PERMISSIONS.some((p) => perms.has(p))
   if (!canEnter) redirect("/403")
 
-  const [locale, unreadNotifications] = await Promise.all([
-    getLocale(),
-    getUnreadNotificationCount(user.id),
-  ])
+  const unreadNotifications = await getUnreadNotificationCount(user.id)
 
   const nav = visibleAdminNav(perms)
 
   return (
-    <AdminShell user={user} nav={nav} locale={locale} unreadNotifications={unreadNotifications}>
+    <AdminShell user={user} nav={nav} unreadNotifications={unreadNotifications}>
       {children}
     </AdminShell>
   )
