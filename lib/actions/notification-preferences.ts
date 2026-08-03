@@ -14,6 +14,7 @@ export type PreferencesRow = {
   emailEnabled: boolean
   smsEnabled: boolean
   whatsappEnabled: boolean
+  offersEnabled: boolean
   smsPhone: string | null
   whatsappPhone: string | null
   mutedEvents: string[]
@@ -33,6 +34,7 @@ export async function getPreferencesForCurrentUser(): Promise<PreferencesRow> {
       emailEnabled: true,
       smsEnabled: false,
       whatsappEnabled: false,
+      offersEnabled: false,
       smsPhone: null,
       whatsappPhone: null,
       mutedEvents: [],
@@ -43,6 +45,7 @@ export async function getPreferencesForCurrentUser(): Promise<PreferencesRow> {
     emailEnabled: row.emailEnabled,
     smsEnabled: row.smsEnabled,
     whatsappEnabled: row.whatsappEnabled,
+    offersEnabled: row.offersEnabled,
     smsPhone: row.smsPhone,
     whatsappPhone: row.whatsappPhone,
     mutedEvents: row.mutedEvents ?? [],
@@ -158,5 +161,38 @@ export async function updatePreferencesAction(
 
   revalidatePath("/dashboard/notifications")
   revalidatePath("/dashboard/notifications/preferences")
+  return { status: "ok" }
+}
+
+/**
+ * Self-service opt-in/out for marketing/offers broadcasts specifically
+ * (lib/actions/broadcast.ts) — a narrower, lower-stakes toggle than the
+ * full channel preferences above, exposed to the native app's Profile
+ * screen. Kept separate from updatePreferencesAction because it answers a
+ * different question ("should I receive marketing pushes at all") rather
+ * than "which delivery channel."
+ */
+export async function updateOffersPreferenceAction(
+  offersEnabled: boolean,
+): Promise<ActionResult> {
+  const user = await requireUser()
+  await db
+    .insert(notificationPreference)
+    .values({ userId: user.id, offersEnabled })
+    .onConflictDoUpdate({
+      target: notificationPreference.userId,
+      set: { offersEnabled, updatedAt: new Date() },
+    })
+
+  const meta = await requestMeta()
+  await writeAudit({
+    action: "notification.preferences.offers.update",
+    actorUserId: user.id,
+    entityType: "notification_preference",
+    entityId: user.id,
+    metadata: { offersEnabled },
+    ...meta,
+  })
+
   return { status: "ok" }
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "notification_preference" ADD COLUMN "offersEnabled" boolean DEFAULT false NOT NULL;

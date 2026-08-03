@@ -347,6 +347,13 @@ export const api = {
     }),
   avatarRemove: () =>
     request<{ removed: boolean }>("/api/mobile/v1/me/avatar", { method: "DELETE" }),
+  notificationPreferences: () =>
+    request<{ offersEnabled: boolean }>("/api/mobile/v1/me/notification-preferences"),
+  updateOffersPreference: (offersEnabled: boolean) =>
+    request<{ updated: boolean }>("/api/mobile/v1/me/notification-preferences", {
+      method: "PATCH",
+      body: JSON.stringify({ offersEnabled }),
+    }),
   myPractice: () => request<MyPractice>("/api/mobile/v1/me/practice"),
   updateMyPractice: (input: {
     consultationFee?: number
@@ -576,6 +583,13 @@ export const useMe = () =>
 
 export const useMyPractice = () =>
   useQuery({ queryKey: ["my-practice"], queryFn: api.myPractice, staleTime: 30_000 })
+
+export const useNotificationPreferences = () =>
+  useQuery({
+    queryKey: ["notification-preferences"],
+    queryFn: api.notificationPreferences,
+    staleTime: 60_000,
+  })
 
 export const useNotifications = () =>
   useQuery({

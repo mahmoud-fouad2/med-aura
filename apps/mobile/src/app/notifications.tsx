@@ -47,7 +47,10 @@ export default function Notifications() {
     // /admin/tickets triage) still open the browser.
     const nativeRoute = resolveNativeNotificationRoute(n.href)
     if (nativeRoute) {
-      router.push(nativeRoute)
+      // resolveNativeNotificationRoute builds paths from runtime notification
+      // data (ids), so it can't be a statically-known Href literal — same
+      // reason typed routes need a cast at any genuinely dynamic call site.
+      router.push(nativeRoute as Parameters<typeof router.push>[0])
       return
     }
     if (n.href) {

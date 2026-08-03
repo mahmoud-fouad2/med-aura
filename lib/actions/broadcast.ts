@@ -1,9 +1,9 @@
 "use server"
 
 import { z } from "zod"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { user } from "@/lib/db/schema"
+import { user, notificationPreference } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
@@ -22,11 +22,20 @@ const broadcastSchema = z.object({
 
 /**
  * Sends an in-app + push notification to every account in the chosen
- * audience. Super-admin only — see NOTIFICATIONS_BROADCAST in lib/rbac.ts —
- * given the blast radius of "every member" has no equivalent anywhere else
- * in this app. Reuses notify() per recipient, the same insert+push path
- * every other notification goes through (delivery bookkeeping, stale-token
+ * audience that has actually opted in to offers/marketing (offersEnabled —
+ * default false, opt-in, matching the mobile Profile toggle this reuses).
+ * Super-admin only — see NOTIFICATIONS_BROADCAST in lib/rbac.ts — given the
+ * blast radius of "every member" has no equivalent anywhere else in this
+ * app. Reuses notify() per recipient, the same insert+push path every
+ * other notification goes through (delivery bookkeeping, stale-token
  * cleanup), rather than a second, parallel send path.
+ *
+ * Reach note: since this is opt-in, a user who has never touched the
+ * "News & offers" toggle is excluded (no notificationPreference row = not
+ * opted in) — this can mean low initial reach until users opt in. That's a
+ * deliberate consent choice (preserving the toggle's existing default),
+ * not a bug; switching to opt-out is a one-line default-value change if a
+ * product owner decides differently.
  */
 export async function sendBroadcastAction(
   input: unknown,
@@ -39,16 +48,21 @@ export async function sendBroadcastAction(
     if (!parsed.success) throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
     const { title, body, audience } = parsed.data
 
+    const roleCondition =
+      audience === "patients"
+        ? eq(user.role, "patient")
+        : audience === "doctors"
+          ? eq(user.role, "doctor")
+          : undefined
+
     const recipients = await db
       .select({ id: user.id })
       .from(user)
-      .where(
-        audience === "patients"
-          ? eq(user.role, "patient")
-          : audience === "doctors"
-            ? eq(user.role, "doctor")
-            : undefined,
+      .innerJoin(
+        notificationPreference,
+        and(eq(notificationPreference.userId, user.id), eq(notificationPreference.offersEnabled, true)),
       )
+      .where(roleCondition)
 
     for (const r of recipients) {
       await notify({

@@ -803,6 +803,11 @@ export const notificationPreference = pgTable("notification_preference", {
   emailEnabled: boolean("emailEnabled").notNull().default(true),
   smsEnabled: boolean("smsEnabled").notNull().default(false),
   whatsappEnabled: boolean("whatsappEnabled").notNull().default(false),
+  // Marketing/offers broadcasts specifically (lib/actions/broadcast.ts) — opt-in,
+  // unlike the operational channels above. Kept as its own column rather than
+  // folded into mutedEvents since it's a channel-agnostic audience opt-out,
+  // not a per-event mute.
+  offersEnabled: boolean("offersEnabled").notNull().default(false),
   // Optional phone override; when null the user profile phone is used.
   smsPhone: text("smsPhone"),
   whatsappPhone: text("whatsappPhone"),

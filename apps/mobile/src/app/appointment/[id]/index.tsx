@@ -2,7 +2,6 @@ import { useState } from "react"
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as WebBrowser from "expo-web-browser"
 import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
 import { VideoCard } from "../../../components/video-card"
@@ -13,12 +12,12 @@ import {
   ChevronBack,
   ChevronForward,
   EmptyState,
+  IconBadge,
   Skeleton,
   StatusPill,
 } from "../../../components/ui"
 import { QueryErrorState } from "../../../components/query-error"
 import { useAppointments, useMe, downloadInvoicePdf, type Appointment } from "../../../lib/api"
-import { API_URL } from "../../../lib/config"
 import { useI18n } from "../../../lib/i18n"
 import { colors, radius, spacing } from "../../../theme"
 import { appointmentTone } from "../../(tabs)/index"
@@ -164,18 +163,7 @@ function Details({
           onPress={() => router.push(`/case/${appointment.caseId}`)}
           style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}
         >
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: radius.lg,
-              backgroundColor: colors.primarySoft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="folder-open-outline" size={19} color={colors.primary} />
-          </View>
+          <IconBadge icon="folder-open-outline" size={40} />
           <View style={{ flex: 1, gap: 2 }}>
             <AppText variant="sub" weight="bold">
               {t.appointmentDetails.viewCaseSummary}
@@ -315,21 +303,10 @@ function Details({
 
       {/* Support */}
       <Card
-        onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/contact`)}
+        onPress={() => router.push("/support")}
         style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}
       >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: radius.lg,
-            backgroundColor: colors.primarySoft,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="help-buoy-outline" size={19} color={colors.primary} />
-        </View>
+        <IconBadge icon="chatbubbles-outline" size={40} />
         <View style={{ flex: 1, gap: 2 }}>
           <AppText variant="sub" weight="bold">
             {t.appointmentDetails.contactSupport}

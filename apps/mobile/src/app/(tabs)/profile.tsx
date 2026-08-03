@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Switch, View } from "react-native"
 import { router } from "expo-router"
 import Constants from "expo-constants"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import * as WebBrowser from "expo-web-browser"
 import * as SecureStore from "expo-secure-store"
 import * as Haptics from "expo-haptics"
@@ -18,7 +18,7 @@ import {
 } from "../../components/ui"
 import { BottomSheet } from "../../components/bottom-sheet"
 import { AvatarPickerSheet } from "../../components/avatar-picker-sheet"
-import { useMe, type Me } from "../../lib/api"
+import { api, useMe, useNotificationPreferences, type Me } from "../../lib/api"
 import {
   authenticate,
   biometricAvailability,
@@ -38,7 +38,6 @@ const NOTIFY_KEYS = {
   appointments: "medaura.notify.appointments",
   payments: "medaura.notify.payments",
   files: "medaura.notify.files",
-  offers: "medaura.notify.offers",
 } as const
 
 export default function Profile() {
@@ -236,8 +235,13 @@ export default function Profile() {
         />
       </Section>
 
-      {/* Notifications — stored on-device; the push backend is not wired yet,
-          so these are preferences the app will honour once it is. */}
+      {/* Notifications. Appointments/payments/files stay on-device only —
+          deliberately: enforcing per-event-type suppression server-side
+          risks silently dropping an operationally important notification if
+          the type-to-category mapping is ever wrong, so this is scoped down
+          rather than faked. Offers/marketing is the one real, server-backed
+          toggle — it's the lowest-stakes category and it gates
+          lib/actions/broadcast.ts's recipient list for real (opt-in). */}
       <Section title={t.profile.sectionNotifications}>
         <ToggleRow
           storageKey={NOTIFY_KEYS.appointments}
@@ -260,11 +264,7 @@ export default function Profile() {
           defaultValue
         />
         <Divider />
-        <ToggleRow
-          storageKey={NOTIFY_KEYS.offers}
-          label={t.profile.notifyOffers}
-          hint={t.profile.notifyOffersHint}
-        />
+        <OffersToggleRow />
       </Section>
 
       {/* Security */}
@@ -571,6 +571,66 @@ function ToggleRow({
         trackColor={{ true: colors.primary, false: colors.border }}
         thumbColor="#FFFFFF"
         accessibilityLabel={label}
+      />
+    </View>
+  )
+}
+
+/** Same look as ToggleRow, but backed by the real server-side preference
+ *  (lib/actions/notification-preferences.ts) instead of SecureStore — this
+ *  is the one notification toggle that actually gates something today
+ *  (lib/actions/broadcast.ts's recipient list), so it needs a real
+ *  loading/saving round trip rather than an optimistic local flip. */
+function OffersToggleRow() {
+  const { t } = useI18n()
+  const query = useNotificationPreferences()
+  const queryClient = useQueryClient()
+  const [error, setError] = useState(false)
+
+  const save = useMutation({
+    mutationFn: (next: boolean) => api.updateOffersPreference(next),
+    onMutate: async (next) => {
+      setError(false)
+      await queryClient.cancelQueries({ queryKey: ["notification-preferences"] })
+      const previous = queryClient.getQueryData<{ offersEnabled: boolean }>([
+        "notification-preferences",
+      ])
+      queryClient.setQueryData(["notification-preferences"], { offersEnabled: next })
+      return { previous }
+    },
+    onError: (_err, _next, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["notification-preferences"], context.previous)
+      }
+      setError(true)
+    },
+  })
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.md,
+        padding: spacing.lg,
+      }}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText variant="body">{t.profile.notifyOffers}</AppText>
+        <AppText variant="caption" color={error ? colors.danger : colors.textFaint}>
+          {error ? t.common.loadFailed : t.profile.notifyOffersHint}
+        </AppText>
+      </View>
+      <Switch
+        value={query.data?.offersEnabled ?? false}
+        disabled={query.isLoading}
+        onValueChange={(next) => {
+          void Haptics.selectionAsync()
+          save.mutate(next)
+        }}
+        trackColor={{ true: colors.primary, false: colors.border }}
+        thumbColor="#FFFFFF"
+        accessibilityLabel={t.profile.notifyOffers}
       />
     </View>
   )

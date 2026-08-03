@@ -134,6 +134,13 @@
       "when": 1785171119093,
       "tag": "0018_supreme_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785766036583,
+      "tag": "0019_woozy_loners",
+      "breakpoints": true
     }
   ]
 }

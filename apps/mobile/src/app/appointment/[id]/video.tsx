@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as WebBrowser from "expo-web-browser"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import Daily, {
@@ -14,7 +13,6 @@ import Daily, {
 import { AppText, Avatar, Button, Card, ChevronBack, Skeleton } from "../../../components/ui"
 import { BottomSheet } from "../../../components/bottom-sheet"
 import { api, useVideoState } from "../../../lib/api"
-import { API_URL } from "../../../lib/config"
 import { useI18n } from "../../../lib/i18n"
 import { colors, radius, spacing } from "../../../theme"
 
@@ -401,7 +399,7 @@ export default function VideoConsultation() {
           style={{ marginTop: spacing.md }}
         />
         <Pressable
-          onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/contact`)}
+          onPress={() => router.push("/support")}
           accessibilityRole="button"
         >
           <AppText variant="sub" weight="medium" color={colors.primary}>
@@ -601,7 +599,7 @@ export default function VideoConsultation() {
             />
 
             <Pressable
-              onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/contact`)}
+              onPress={() => router.push("/support")}
               accessibilityRole="button"
               style={{ alignSelf: "center" }}
             >
