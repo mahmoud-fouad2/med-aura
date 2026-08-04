@@ -3,6 +3,7 @@ import { Bell } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { NavLinks } from "@/components/layout/nav-links"
 import { getLocale } from "@/lib/i18n"
 
@@ -43,6 +44,7 @@ export async function AppShell({
                 </span>
               )}
             </Link>
+            <ThemeToggle className="hidden sm:inline-flex" />
             <LanguageSwitcher locale={locale} />
             <UserMenu name={user.name} email={user.email} />
           </div>
