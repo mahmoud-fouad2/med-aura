@@ -12,14 +12,15 @@ import {
 } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { StatusBadge } from "@/components/admin/status-badge"
+import { StatusBadge, userAccountStatusTone } from "@/components/admin/status-badge"
 import { UserRoleManager } from "@/components/admin/user-role-manager"
 import { UserAccountMenu } from "@/components/admin/user-account-menu"
 import { PatientBillingTab } from "@/components/admin/patient-table"
 import { EmptyState } from "@/components/ui/empty-state"
 import { getUserActivityAction } from "@/lib/actions/users"
 import { actionLabelAr } from "@/lib/audit-labels"
-import { roleAr } from "@/lib/status-labels"
+import { roleAr, userAccountStatusAr } from "@/lib/status-labels"
+import { dtfMedium } from "@/lib/format"
 import type { ActivityRow } from "@/lib/data/admin-activity"
 
 export type AdminUserRow = {
@@ -35,18 +36,6 @@ export type AdminUserRow = {
 }
 
 type RoleOption = { key: string; nameAr: string }
-
-function statusTone(status: string): "success" | "danger" | "neutral" {
-  return status === "active" ? "success" : status === "suspended" ? "danger" : "neutral"
-}
-function statusLabel(status: string): string {
-  return status === "active" ? "نشط" : status === "suspended" ? "موقوف" : "معطَّل"
-}
-function fmtDate(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(d),
-  )
-}
 
 /**
  * Users admin table + row-details drawer (Overview / Roles & Permissions /
@@ -109,7 +98,7 @@ export function UserTable({
           {
             header: "الحالة",
             mobile: "badge",
-            cell: (u) => <StatusBadge tone={statusTone(u.status)} label={statusLabel(u.status)} />,
+            cell: (u) => <StatusBadge tone={userAccountStatusTone(u.status)} label={userAccountStatusAr(u.status)} />,
           },
           {
             header: "آخر دخول",
@@ -176,16 +165,16 @@ function UserDetailDrawer({
 
           <TabsContent value="overview" className="space-y-4">
             <DetailGroup>
-              <DetailRow label="الحالة" value={<StatusBadge tone={statusTone(user.status)} label={statusLabel(user.status)} />} />
+              <DetailRow label="الحالة" value={<StatusBadge tone={userAccountStatusTone(user.status)} label={userAccountStatusAr(user.status)} />} />
               <DetailRow label="الدور الأساسي" value={roleAr(user.primaryRole)} />
               <DetailRow
                 label="الهاتف"
                 value={user.phone ? <span dir="ltr">{user.phone}</span> : "—"}
               />
-              <DetailRow label="تاريخ التسجيل" value={fmtDate(user.createdAt)} />
+              <DetailRow label="تاريخ التسجيل" value={dtfMedium(user.createdAt)} />
               <DetailRow
                 label="آخر دخول"
-                value={user.lastLoginAt ? fmtDate(user.lastLoginAt) : "لم يسجّل دخول بعد"}
+                value={user.lastLoginAt ? dtfMedium(user.lastLoginAt) : "لم يسجّل دخول بعد"}
               />
             </DetailGroup>
             {user.roles.length > 0 && (
@@ -287,7 +276,7 @@ function UserActivityTab({ userId }: { userId: string }) {
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-foreground">{actionLabelAr(e.action)}</p>
             <span className="whitespace-nowrap text-[11px] text-muted-foreground">
-              {fmtDate(e.createdAt)}
+              {dtfMedium(e.createdAt)}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">بواسطة {e.actorName ?? "النظام"}</p>

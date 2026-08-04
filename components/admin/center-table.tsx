@@ -24,12 +24,12 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
+import { Field } from "@/components/admin/field"
 import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
 import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
@@ -42,12 +42,9 @@ import {
 } from "@/lib/actions/center"
 import { actionLabelAr } from "@/lib/audit-labels"
 import { countryNameAr, providerStatusAr } from "@/lib/status-labels"
+import { dfMedium } from "@/lib/format"
 import type { AdminCenterRow, CenterDoctorRow } from "@/lib/data/admin-directory"
 import type { ActivityRow } from "@/lib/data/admin-activity"
-
-function fmtDate(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium" }).format(new Date(d))
-}
 
 export function CenterTable({ rows }: { rows: AdminCenterRow[] }) {
   const [selected, setSelected] = useState<AdminCenterRow | null>(null)
@@ -170,7 +167,7 @@ function CenterDetailDrawer({ center }: { center: AdminCenterRow }) {
             <div className="space-y-1.5 rounded-lg border border-border/60 p-3 text-sm">
               <Row label="الموقع" value={`${center.city ? `${center.city}، ` : ""}${countryNameAr(center.country)}`} />
               <Row label="عدد الأطباء" value={center.doctorCount.toLocaleString("ar-SA-u-nu-latn")} />
-              <Row label="تاريخ الإنشاء" value={fmtDate(center.createdAt)} />
+              <Row label="تاريخ الإنشاء" value={dfMedium(center.createdAt)} />
             </div>
 
             <div className="space-y-2 rounded-lg border border-border/60 p-3">
@@ -375,14 +372,6 @@ function CenterEditForm({ centerId }: { centerId: string }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      {children}
-    </div>
-  )
-}
 
 function CenterDoctorsTab({ centerId }: { centerId: string }) {
   const [doctors, setDoctors] = useState<CenterDoctorRow[] | null>(null)
@@ -470,7 +459,7 @@ function CenterActivityTab({ centerId }: { centerId: string }) {
         <li key={e.id} className="rounded-lg border border-border/60 p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-foreground">{actionLabelAr(e.action)}</p>
-            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{fmtDate(e.createdAt)}</span>
+            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{dfMedium(e.createdAt)}</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">بواسطة {e.actorName ?? "النظام"}</p>
         </li>

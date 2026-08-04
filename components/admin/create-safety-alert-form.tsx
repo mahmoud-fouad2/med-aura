@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Field } from "@/components/admin/field"
 import { createSafetyAlertManual } from "@/lib/actions/safety"
 
 const SEVERITIES = [
@@ -66,38 +67,33 @@ export function CreateSafetyAlertForm({
           <DialogTitle>إنشاء تنبيه سلامة</DialogTitle>
         </DialogHeader>
         <DialogBody className="space-y-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="alert-severity">مستوى الخطورة</label>
+          <Field label="مستوى الخطورة">
             <select
-              id="alert-severity"
               value={severity}
               onChange={(e) => setSeverity(e.target.value)}
-              className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+              className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
             >
               {SEVERITIES.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="alert-summary">الوصف</label>
-            <Textarea id="alert-summary" rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="وصف الحالة أو سبب التنبيه" />
-          </div>
+          </Field>
+          <Field label="الوصف">
+            <Textarea rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="وصف الحالة أو سبب التنبيه" />
+          </Field>
           {assignees.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="alert-assignee">تعيين مسؤول (اختياري)</label>
+            <Field label="تعيين مسؤول (اختياري)">
               <select
-                id="alert-assignee"
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
                 <option value="">بدون تعيين</option>
                 {assignees.map((a) => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
-            </div>
+            </Field>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </DialogBody>

@@ -26,6 +26,11 @@ export function providerStatusTone(status: string): StatusTone {
   return "warning"
 }
 
+/** active/suspended/disabled — shared by admin user + patient listings. */
+export function userAccountStatusTone(status: string): StatusTone {
+  return status === "active" ? "success" : status === "suspended" ? "danger" : "neutral"
+}
+
 /**
  * Status badge that never relies on color alone: every tone pairs a fixed
  * icon with the label, so severity/state reads correctly even without color

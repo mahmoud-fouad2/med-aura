@@ -38,6 +38,22 @@ export function dtf(d: Date | string): string {
   return dateTimeFmt.format(typeof d === "string" ? new Date(d) : d)
 }
 
+// Locale-preset ("medium") variants — visually denser than df/dtf above, used
+// by admin tables (record lists, activity logs) where every row needs a
+// timestamp and a shorter column reads better. Previously reimplemented
+// identically in 6 separate admin table components.
+const dateMediumFmt = new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium" })
+
+export function dfMedium(d: Date | string): string {
+  return dateMediumFmt.format(typeof d === "string" ? new Date(d) : d)
+}
+
+const dateTimeMediumFmt = new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" })
+
+export function dtfMedium(d: Date | string): string {
+  return dateTimeMediumFmt.format(typeof d === "string" ? new Date(d) : d)
+}
+
 /** Strip the Arabic doctor honorific so greetings never render "أهلًا د.". */
 export function firstNameOf(fullName: string): string {
   const cleaned = fullName.replace(/^\s*(د|دكتور|دكتوره|دكتورة|Dr)\.?\s*/i, "").trim()

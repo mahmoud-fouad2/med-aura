@@ -12,27 +12,18 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { StatusBadge } from "@/components/admin/status-badge"
+import { StatusBadge, userAccountStatusTone } from "@/components/admin/status-badge"
 import { UserAccountMenu } from "@/components/admin/user-account-menu"
 import { EmptyState } from "@/components/ui/empty-state"
 import { getUserActivityAction } from "@/lib/actions/users"
 import { getPatientCasesAction, getPatientPaymentsAction, getPatientNotificationsAction } from "@/lib/actions/admin-patients"
 import { actionLabelAr } from "@/lib/audit-labels"
-import { caseStatusAr, invoiceStatusAr, countryNameAr } from "@/lib/status-labels"
+import { caseStatusAr, invoiceStatusAr, countryNameAr, userAccountStatusAr } from "@/lib/status-labels"
+import { dtfMedium } from "@/lib/format"
 import type { AdminPatientRow } from "@/lib/data/admin-directory"
 import type { PatientCaseRow, PatientNotificationRow } from "@/lib/data/admin-patient-detail"
 import type { MyPaymentRow } from "@/lib/data/invoice"
 import type { ActivityRow } from "@/lib/data/admin-activity"
-
-function statusTone(status: string): "success" | "danger" | "neutral" {
-  return status === "active" ? "success" : status === "suspended" ? "danger" : "neutral"
-}
-function statusLabel(status: string): string {
-  return status === "active" ? "نشط" : status === "suspended" ? "موقوف" : "معطَّل"
-}
-function fmtDate(d: Date | string): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(new Date(d))
-}
 
 /**
  * Patients admin table + row-details drawer. Reuses the exact same shell,
@@ -72,7 +63,7 @@ export function PatientTable({ rows, canViewActivity, canManageAccount }: { rows
           {
             header: "الحالة",
             mobile: "badge",
-            cell: (p) => <StatusBadge tone={statusTone(p.status)} label={statusLabel(p.status)} />,
+            cell: (p) => <StatusBadge tone={userAccountStatusTone(p.status)} label={userAccountStatusAr(p.status)} />,
           },
           {
             header: "الحالات الطبية",
@@ -138,14 +129,14 @@ function PatientDetailDrawer({
 
           <TabsContent value="overview" className="space-y-4">
             <DetailGroup>
-              <DetailRow label="الحالة" value={<StatusBadge tone={statusTone(patient.status)} label={statusLabel(patient.status)} />} />
+              <DetailRow label="الحالة" value={<StatusBadge tone={userAccountStatusTone(patient.status)} label={userAccountStatusAr(patient.status)} />} />
               <DetailRow label="الهاتف" value={patient.phone ? <span dir="ltr">{patient.phone}</span> : "—"} />
               <DetailRow
                 label="الموقع"
                 value={`${patient.city ? `${patient.city}، ` : ""}${patient.residenceCountry ? countryNameAr(patient.residenceCountry) : "—"}`}
               />
               <DetailRow label="عدد الحالات الطبية" value={patient.caseCount.toLocaleString("ar-SA-u-nu-latn")} />
-              <DetailRow label="تاريخ التسجيل" value={fmtDate(patient.createdAt)} />
+              <DetailRow label="تاريخ التسجيل" value={dtfMedium(patient.createdAt)} />
             </DetailGroup>
           </TabsContent>
 
@@ -223,7 +214,7 @@ function PatientCasesTab({ userId }: { userId: string }) {
             <Link href={`/admin/cases?q=${encodeURIComponent(c.reference)}`} className="text-sm font-medium text-primary hover:underline">
               {c.reference}
             </Link>
-            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{fmtDate(c.createdAt)}</span>
+            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{dtfMedium(c.createdAt)}</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {c.procedureNameAr} · {caseStatusAr(c.status)}
@@ -272,7 +263,7 @@ export function PatientBillingTab({ userId }: { userId: string }) {
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {p.serviceNameAr ?? p.appointmentType ?? "—"}
-            {p.doctorName ? ` · د. ${p.doctorName}` : ""} · {fmtDate(p.createdAt)}
+            {p.doctorName ? ` · د. ${p.doctorName}` : ""} · {dtfMedium(p.createdAt)}
           </p>
         </li>
       ))}
@@ -312,7 +303,7 @@ function PatientNotificationsTab({ userId }: { userId: string }) {
             <p className="text-sm font-medium text-foreground">{n.title}</p>
             {!n.readAt && <StatusBadge tone="info" label="غير مقروء" />}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">{fmtDate(n.createdAt)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{dtfMedium(n.createdAt)}</p>
         </li>
       ))}
     </ul>
@@ -349,7 +340,7 @@ function PatientActivityTab({ userId }: { userId: string }) {
         <li key={e.id} className="rounded-lg border border-border/60 p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-foreground">{actionLabelAr(e.action)}</p>
-            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{fmtDate(e.createdAt)}</span>
+            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{dtfMedium(e.createdAt)}</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">بواسطة {e.actorName ?? "النظام"}</p>
         </li>

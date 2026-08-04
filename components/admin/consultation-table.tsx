@@ -22,6 +22,7 @@ import {
   currencyAr,
   paymentStatusAr,
 } from "@/lib/status-labels"
+import { dtfMedium } from "@/lib/format"
 
 export type ConsultationRow = {
   id: string
@@ -48,11 +49,6 @@ function statusTone(s: string): StatusTone {
   return "neutral"
 }
 
-function fmtDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(d),
-  )
-}
 
 /**
  * Consultations admin table + row-details drawer. `canRecordManualPayment`
@@ -83,7 +79,7 @@ export function ConsultationTable({
           { header: "الحالة", cell: (r) => <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />, mobile: "badge" },
           { header: "المريض", cell: (r) => r.patientName, mobile: "title" },
           { header: "الطبيب", cell: (r) => r.counterpartName },
-          { header: "الموعد", cell: (r) => <span className="text-xs text-muted-foreground">{fmtDateTime(r.startsAt)}</span> },
+          { header: "الموعد", cell: (r) => <span className="text-xs text-muted-foreground">{dtfMedium(r.startsAt)}</span> },
           {
             header: "السعر",
             cell: (r) => (r.priceAmount ? `${r.priceAmount} ${currencyAr(r.currency)}` : "—"),
@@ -113,7 +109,7 @@ export function ConsultationTable({
                   <DetailRow label="المريض" value={selected.patientName} />
                   <DetailRow label="الطبيب" value={selected.counterpartName} />
                   <DetailRow label="نوع الاستشارة" value={appointmentTypeAr(selected.type)} />
-                  <DetailRow label="الموعد" value={fmtDateTime(selected.startsAt)} />
+                  <DetailRow label="الموعد" value={dtfMedium(selected.startsAt)} />
                 </DetailGroup>
 
                 <DetailGroup title="الدفع">

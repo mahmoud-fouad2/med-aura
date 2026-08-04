@@ -16,6 +16,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Field } from "@/components/admin/field"
 import { createFollowUpTask } from "@/lib/actions/follow-up"
 
 const TYPES = [
@@ -103,14 +104,5 @@ export function CreateFollowUpTaskForm({ caseId }: { caseId: string }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-foreground">{label}</label>
-      {children}
-    </div>
   )
 }

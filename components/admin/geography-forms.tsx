@@ -27,6 +27,7 @@ import {
 import { CountryCombobox } from "@/components/admin/country-combobox"
 import { CountrySelectCombobox } from "@/components/admin/country-select-combobox"
 import { TimezoneCombobox } from "@/components/admin/timezone-combobox"
+import { Field } from "@/components/admin/field"
 import {
   upsertCountryAction,
   toggleCountryActiveAction,
@@ -454,22 +455,3 @@ export function GeoDeleteButton({
   )
 }
 
-function Field({
-  label,
-  hint,
-  full,
-  children,
-}: {
-  label: string
-  hint?: string
-  full?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <label className={"space-y-1 " + (full ? "sm:col-span-2" : "")}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-      {hint && <span className="block text-[11px] leading-relaxed text-muted-foreground/80">{hint}</span>}
-    </label>
-  )
-}

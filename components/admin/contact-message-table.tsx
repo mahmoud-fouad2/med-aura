@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { setContactMessageStatusAction, replyToContactMessageAction } from "@/lib/actions/admin-support"
+import { dtfMedium } from "@/lib/format"
 import type { AdminContactMessageRow } from "@/lib/data/admin-support"
 
 function statusTone(status: string): StatusTone {
@@ -28,11 +29,6 @@ function statusLabel(status: string): string {
   if (status === "new") return "جديدة"
   if (status === "archived") return "مؤرشفة"
   return "مقروءة"
-}
-function fmtDate(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(d),
-  )
 }
 
 export function ContactMessageTable({ rows, emailConfigured }: { rows: AdminContactMessageRow[]; emailConfigured: boolean }) {
@@ -66,7 +62,7 @@ export function ContactMessageTable({ rows, emailConfigured }: { rows: AdminCont
               </div>
             ),
           },
-          { header: "التاريخ", cell: (m) => <span className="text-xs text-muted-foreground">{fmtDate(m.createdAt)}</span> },
+          { header: "التاريخ", cell: (m) => <span className="text-xs text-muted-foreground">{dtfMedium(m.createdAt)}</span> },
         ]}
       />
 
@@ -163,7 +159,7 @@ function MessageDetail({
           ) : null}
           <div className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">تاريخ الإرسال</span>
-            <span className="font-medium text-foreground">{fmtDate(message.createdAt)}</span>
+            <span className="font-medium text-foreground">{dtfMedium(message.createdAt)}</span>
           </div>
         </div>
 
@@ -176,7 +172,7 @@ function MessageDetail({
 
         {message.repliedAt && (
           <p className="inline-flex items-center gap-1 text-xs text-success">
-            <CheckCircle2 className="size-3.5" /> تم الرد بتاريخ {fmtDate(message.repliedAt)}
+            <CheckCircle2 className="size-3.5" /> تم الرد بتاريخ {dtfMedium(message.repliedAt)}
           </p>
         )}
 

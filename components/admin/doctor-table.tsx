@@ -26,12 +26,12 @@ import {
 } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
+import { Field } from "@/components/admin/field"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
@@ -46,14 +46,12 @@ import {
 } from "@/lib/actions/doctor"
 import { actionLabelAr } from "@/lib/audit-labels"
 import { countryNameAr, providerStatusAr, licenseStatusAr, appointmentTypeAr } from "@/lib/status-labels"
+import { dfMedium } from "@/lib/format"
 import type { AdminDoctorRow, DoctorProcedureOption, DoctorLicenseInfo, AvailabilityRuleRow } from "@/lib/data/admin-directory"
 import type { ActivityRow } from "@/lib/data/admin-activity"
 
 const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
 
-function fmtDate(d: Date): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", { dateStyle: "medium" }).format(new Date(d))
-}
 function fmtTime(t: string): string {
   return t.slice(0, 5)
 }
@@ -174,7 +172,7 @@ function DoctorDetailDrawer({ doctor, centers }: { doctor: AdminDoctorRow; cente
               <Row label="المركز" value={doctor.centerName ?? "—"} />
               <Row label="الموقع" value={`${doctor.city ? `${doctor.city}، ` : ""}${countryNameAr(doctor.country)}`} />
               <Row label="سنوات الخبرة" value={`${doctor.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة`} />
-              <Row label="تاريخ الانضمام" value={fmtDate(doctor.createdAt)} />
+              <Row label="تاريخ الانضمام" value={dfMedium(doctor.createdAt)} />
             </div>
 
             <div className="space-y-2 rounded-lg border border-border/60 p-3">
@@ -478,14 +476,6 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      {children}
-    </div>
-  )
-}
 
 function DoctorProceduresTab({ doctorId }: { doctorId: string }) {
   const [procedures, setProcedures] = useState<DoctorProcedureOption[] | null>(null)
@@ -613,7 +603,7 @@ function DoctorActivityTab({ doctorId }: { doctorId: string }) {
         <li key={e.id} className="rounded-lg border border-border/60 p-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-foreground">{actionLabelAr(e.action)}</p>
-            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{fmtDate(e.createdAt)}</span>
+            <span className="whitespace-nowrap text-[11px] text-muted-foreground">{dfMedium(e.createdAt)}</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">بواسطة {e.actorName ?? "النظام"}</p>
         </li>

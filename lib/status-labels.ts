@@ -269,3 +269,7 @@ export const quoteStatusAr = (s: string): string => QUOTE[s] ?? s
 export const procedureBookingStatusAr = (s: string): string => PROCEDURE_BOOKING[s] ?? s
 export const centerRoleAr = (s: string): string => CENTER_ROLE[s] ?? s
 export const providerStatusAr = (s: string): string => PROVIDER_STATUS[s] ?? s
+
+/** active/suspended/disabled — shared by admin user + patient listings. */
+export const userAccountStatusAr = (s: string): string =>
+  s === "active" ? "نشط" : s === "suspended" ? "موقوف" : "معطَّل"

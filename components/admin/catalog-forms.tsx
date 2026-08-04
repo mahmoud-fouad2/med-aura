@@ -29,6 +29,7 @@ import {
 } from "@/lib/actions/catalog"
 import { resizeImageFile } from "@/lib/client/image-resize"
 import { CATEGORY_ICON_NAMES, CATEGORY_ICONS } from "@/components/marketing/category-icon"
+import { Field } from "@/components/admin/field"
 import { cn } from "@/lib/utils"
 
 export type CategoryRow = {
@@ -124,7 +125,7 @@ export function CategoryFormButton({
           {existing && <input type="hidden" name="id" value={existing.id} />}
           <DialogBody className="space-y-3">
             {existing ? (
-              <CategoryImageUploader categoryId={existing.id} imageKey={existing.imageKey} imageUrl={existing.imageUrl} r2Enabled={r2Enabled} />
+              <CategoryImageUploader categoryId={existing.id} imageUrl={existing.imageUrl} r2Enabled={r2Enabled} />
             ) : (
               <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 احفظ القسم أولًا، ثم افتح التعديل لإضافة صورة.
@@ -221,91 +222,68 @@ export function CategoryFormButton({
   )
 }
 
-function CategoryImageUploader({
-  categoryId,
-  imageKey,
+/** Shown instead of any uploader when the R2 bucket isn't configured on this deploy. */
+function ImageUploadDisabledNotice() {
+  return (
+    <p className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+      <ImageOff className="size-3.5 shrink-0" /> رفع الصور غير مفعّل حاليًا على هذا الخادم.
+    </p>
+  )
+}
+
+/**
+ * One "current image, with a trigger to replace/upload and a delete button"
+ * slot — the exact UI category's single image and a procedure's main image
+ * share; only the request each makes on upload/remove differs, so that part
+ * is left to the caller rather than baked in here. Manages its own busy/
+ * error state so the caller doesn't have to.
+ */
+function ImageSlot({
+  label,
   imageUrl,
-  r2Enabled,
+  onUpload,
+  onRemove,
+  externallyDisabled,
 }: {
-  categoryId: string
-  imageKey: string | null
+  label: string
   imageUrl: string | null
-  r2Enabled: boolean
+  onUpload: (file: File) => Promise<void>
+  onRemove?: () => Promise<void>
+  externallyDisabled?: boolean
 }) {
-  const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const disabled = busy || Boolean(externallyDisabled)
 
-  async function upload(rawFile: File) {
+  async function handleUpload(file: File) {
     setBusy(true)
     setError(null)
     try {
-      const file = await resizeImageFile(rawFile)
-      const presignRes = await fetch(`/api/admin/categories/${categoryId}/image`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size }),
-      })
-      const presign = await presignRes.json()
-      if (!presignRes.ok) throw new Error(presign.error ?? "تعذّر بدء الرفع")
-
-      const putRes = await fetch(presign.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      })
-      if (!putRes.ok) throw new Error("تعذّر رفع الصورة")
-
-      const finalizeRes = await fetch(`/api/admin/categories/${categoryId}/image`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectKey: presign.objectKey }),
-      })
-      const finalize = await finalizeRes.json()
-      if (!finalizeRes.ok) throw new Error(finalize.error ?? "تعذّر حفظ الصورة")
-
-      toast.success("تم رفع الصورة")
-      router.refresh()
+      await onUpload(file)
     } catch (err) {
-      const message = err instanceof Error ? err.message : "تعذّر رفع الصورة"
-      setError(message)
-      toast.error(message)
+      setError(err instanceof Error ? err.message : "تعذّر رفع الصورة")
     } finally {
       setBusy(false)
     }
   }
 
-  async function remove() {
-    if (!imageKey) return
+  async function handleRemove() {
+    if (!onRemove) return
     setBusy(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/categories/${categoryId}/image`, { method: "DELETE" })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "تعذّر حذف الصورة")
-      toast.success("تم حذف الصورة")
-      router.refresh()
+      await onRemove()
     } catch (err) {
-      const message = err instanceof Error ? err.message : "تعذّر حذف الصورة"
-      setError(message)
-      toast.error(message)
+      setError(err instanceof Error ? err.message : "تعذّر حذف الصورة")
     } finally {
       setBusy(false)
     }
-  }
-
-  if (!r2Enabled) {
-    return (
-      <p className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-        <ImageOff className="size-3.5 shrink-0" /> رفع الصور غير مفعّل حاليًا على هذا الخادم.
-      </p>
-    )
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-border/60 p-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">صورة القسم</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <label className="cursor-pointer">
           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
             <ImagePlus className="size-3.5" /> {imageUrl ? "استبدال" : "رفع صورة"}
@@ -314,32 +292,89 @@ function CategoryImageUploader({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
-            disabled={busy}
+            disabled={disabled}
             onChange={(e) => {
               const file = e.target.files?.[0]
               e.target.value = ""
-              if (file) void upload(file)
+              if (file) void handleUpload(file)
             }}
           />
         </label>
       </div>
-      {imageUrl && imageKey && (
+      {imageUrl && (
         <div className="relative inline-block">
           <Image src={imageUrl} alt="" width={120} height={80} className="rounded-lg border border-border object-cover" />
-          <button
-            type="button"
-            onClick={() => void remove()}
-            disabled={busy}
-            className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
-            aria-label="حذف صورة القسم"
-          >
-            <X className="size-3" />
-          </button>
+          {onRemove && (
+            <button
+              type="button"
+              onClick={() => void handleRemove()}
+              disabled={disabled}
+              className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+              aria-label={`حذف ${label}`}
+            >
+              <X className="size-3" />
+            </button>
+          )}
         </div>
       )}
       {busy && <p className="text-xs text-muted-foreground">جارٍ المعالجة…</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
+  )
+}
+
+function CategoryImageUploader({
+  categoryId,
+  imageUrl,
+  r2Enabled,
+}: {
+  categoryId: string
+  imageUrl: string | null
+  r2Enabled: boolean
+}) {
+  const router = useRouter()
+  if (!r2Enabled) return <ImageUploadDisabledNotice />
+
+  return (
+    <ImageSlot
+      label="صورة القسم"
+      imageUrl={imageUrl}
+      onUpload={async (rawFile) => {
+        const file = await resizeImageFile(rawFile)
+        const presignRes = await fetch(`/api/admin/categories/${categoryId}/image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size }),
+        })
+        const presign = await presignRes.json()
+        if (!presignRes.ok) throw new Error(presign.error ?? "تعذّر بدء الرفع")
+
+        const putRes = await fetch(presign.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        })
+        if (!putRes.ok) throw new Error("تعذّر رفع الصورة")
+
+        const finalizeRes = await fetch(`/api/admin/categories/${categoryId}/image`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objectKey: presign.objectKey }),
+        })
+        const finalize = await finalizeRes.json()
+        if (!finalizeRes.ok) throw new Error(finalize.error ?? "تعذّر حفظ الصورة")
+
+        toast.success("تم رفع الصورة")
+        router.refresh()
+      }}
+      onRemove={async () => {
+        const res = await fetch(`/api/admin/categories/${categoryId}/image`, { method: "DELETE" })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? "تعذّر حذف الصورة")
+        toast.success("تم حذف الصورة")
+        router.refresh()
+      }}
+    />
   )
 }
 
@@ -552,117 +587,103 @@ function ProcedureImageUploader({
   r2Enabled: boolean
 }) {
   const router = useRouter()
-  const [busy, setBusy] = useState<"main" | "gallery" | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [galleryBusy, setGalleryBusy] = useState(false)
+  const [galleryError, setGalleryError] = useState<string | null>(null)
 
-  async function upload(rawFile: File, slot: "main" | "gallery") {
-    setBusy(slot)
-    setError(null)
+  // Downscale before upload — see lib/client/image-resize.ts. Every consumer
+  // downstream (the web image optimizer, the mobile app fetching R2 directly)
+  // gets a reasonably sized source instead of whatever the admin's camera produced.
+  async function uploadToSlot(rawFile: File, slot: "main" | "gallery") {
+    const file = await resizeImageFile(rawFile)
+    const presignRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size, slot }),
+    })
+    const presign = await presignRes.json()
+    if (!presignRes.ok) throw new Error(presign.error ?? "تعذّر بدء الرفع")
+
+    const putRes = await fetch(presign.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    })
+    if (!putRes.ok) throw new Error("تعذّر رفع الصورة")
+
+    const finalizeRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objectKey: presign.objectKey, slot }),
+    })
+    const finalize = await finalizeRes.json()
+    if (!finalizeRes.ok) throw new Error(finalize.error ?? "تعذّر حفظ الصورة")
+  }
+
+  async function removeObject(objectKey: string) {
+    const res = await fetch(`/api/admin/procedures/${procedureId}/image`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objectKey }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error ?? "تعذّر حذف الصورة")
+  }
+
+  async function handleGalleryUpload(file: File) {
+    setGalleryBusy(true)
+    setGalleryError(null)
     try {
-      // Downscale before upload — see lib/client/image-resize.ts. Every
-      // consumer downstream (the web image optimizer, the mobile app
-      // fetching R2 directly) gets a reasonably sized source instead of
-      // whatever the admin's camera produced.
-      const file = await resizeImageFile(rawFile)
-      const presignRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size, slot }),
-      })
-      const presign = await presignRes.json()
-      if (!presignRes.ok) throw new Error(presign.error ?? "تعذّر بدء الرفع")
-
-      const putRes = await fetch(presign.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      })
-      if (!putRes.ok) throw new Error("تعذّر رفع الصورة")
-
-      const finalizeRes = await fetch(`/api/admin/procedures/${procedureId}/image`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectKey: presign.objectKey, slot }),
-      })
-      const finalize = await finalizeRes.json()
-      if (!finalizeRes.ok) throw new Error(finalize.error ?? "تعذّر حفظ الصورة")
-
+      await uploadToSlot(file, "gallery")
       toast.success("تم رفع الصورة")
       router.refresh()
     } catch (err) {
       const message = err instanceof Error ? err.message : "تعذّر رفع الصورة"
-      setError(message)
+      setGalleryError(message)
       toast.error(message)
     } finally {
-      setBusy(null)
+      setGalleryBusy(false)
     }
   }
 
-  async function remove(objectKey: string) {
-    setBusy("main")
-    setError(null)
+  async function handleGalleryRemove(objectKey: string) {
+    setGalleryBusy(true)
+    setGalleryError(null)
     try {
-      const res = await fetch(`/api/admin/procedures/${procedureId}/image`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectKey }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "تعذّر حذف الصورة")
+      await removeObject(objectKey)
       toast.success("تم حذف الصورة")
       router.refresh()
     } catch (err) {
       const message = err instanceof Error ? err.message : "تعذّر حذف الصورة"
-      setError(message)
+      setGalleryError(message)
       toast.error(message)
     } finally {
-      setBusy(null)
+      setGalleryBusy(false)
     }
   }
 
-  if (!r2Enabled) {
-    return (
-      <p className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-        <ImageOff className="size-3.5 shrink-0" /> رفع الصور غير مفعّل حاليًا على هذا الخادم.
-      </p>
-    )
-  }
+  if (!r2Enabled) return <ImageUploadDisabledNotice />
 
   return (
     <div className="space-y-3 rounded-lg border border-border/60 p-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">الصورة الرئيسية</span>
-        <label className="cursor-pointer">
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-            <ImagePlus className="size-3.5" /> {imageUrl ? "استبدال" : "رفع صورة"}
-          </span>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            disabled={busy !== null}
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              e.target.value = ""
-              if (file) void upload(file, "main")
-            }}
-          />
-        </label>
-      </div>
-      {imageUrl && imageKey && (
-        <div className="relative inline-block">
-          <Image src={imageUrl} alt="" width={120} height={80} className="rounded-lg border border-border object-cover" />
-          <button
-            type="button"
-            onClick={() => void remove(imageKey)}
-            disabled={busy !== null}
-            className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
-            aria-label="حذف الصورة الرئيسية"
-          >
-            <X className="size-3" />
-          </button>
-        </div>
-      )}
+      <ImageSlot
+        label="الصورة الرئيسية"
+        imageUrl={imageUrl}
+        externallyDisabled={galleryBusy}
+        onUpload={async (file) => {
+          await uploadToSlot(file, "main")
+          toast.success("تم رفع الصورة")
+          router.refresh()
+        }}
+        onRemove={
+          imageKey
+            ? async () => {
+                await removeObject(imageKey)
+                toast.success("تم حذف الصورة")
+                router.refresh()
+              }
+            : undefined
+        }
+      />
 
       <div className="flex items-center justify-between border-t border-border/60 pt-3">
         <span className="text-xs font-medium text-muted-foreground">صور المعرض</span>
@@ -674,11 +695,11 @@ function ProcedureImageUploader({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
-            disabled={busy !== null}
+            disabled={galleryBusy}
             onChange={(e) => {
               const file = e.target.files?.[0]
               e.target.value = ""
-              if (file) void upload(file, "gallery")
+              if (file) void handleGalleryUpload(file)
             }}
           />
         </label>
@@ -692,8 +713,8 @@ function ProcedureImageUploader({
               )}
               <button
                 type="button"
-                onClick={() => void remove(g.key)}
-                disabled={busy !== null}
+                onClick={() => void handleGalleryRemove(g.key)}
+                disabled={galleryBusy}
                 className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
                 aria-label="حذف صورة من المعرض"
               >
@@ -704,8 +725,8 @@ function ProcedureImageUploader({
         </div>
       )}
 
-      {busy && <p className="text-xs text-muted-foreground">جارٍ المعالجة…</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {galleryBusy && <p className="text-xs text-muted-foreground">جارٍ المعالجة…</p>}
+      {galleryError && <p className="text-xs text-destructive">{galleryError}</p>}
     </div>
   )
 }
@@ -793,19 +814,3 @@ export function CatalogDeleteButton({
   )
 }
 
-function Field({
-  label,
-  full,
-  children,
-}: {
-  label: string
-  full?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <label className={"space-y-1 " + (full ? "sm:col-span-2" : "")}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </label>
-  )
-}
