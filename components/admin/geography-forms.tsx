@@ -6,8 +6,17 @@ import { Plus, Pencil, Save, X, Power, Trash2, RotateCcw, Check } from "lucide-r
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectTrigger,
@@ -108,56 +117,58 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
     }
   }
 
-  if (!open) {
-    return (
-      <Button
-        type="button"
-        variant={existing ? "ghost" : "default"}
-        size={existing ? "icon-sm" : "sm"}
-        aria-label={existing ? "تعديل الدولة" : "إضافة دولة"}
-        onClick={() => setOpen(true)}
+  return (
+    <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant={existing ? "ghost" : "default"}
+            size={existing ? "icon-sm" : "sm"}
+            aria-label={existing ? "تعديل الدولة" : "إضافة دولة"}
+          />
+        }
       >
         {existing ? <Pencil className="size-4" /> : <><Plus className="size-4" /> دولة جديدة</>}
-      </Button>
-    )
-  }
-
-  return (
-    <Card className="space-y-5 border-primary/40 p-4 sm:p-5">
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-        <Field label={existing ? "البحث عن دولة لتطبيق بياناتها الجاهزة" : "اختر دولة من القائمة لملء البيانات تلقائيًا"}>
-          <CountryCombobox onSelect={handlePick} />
-        </Field>
-
-        {pendingPreset && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-background p-2.5 text-xs">
-            <CountryFlag code={pendingPreset.code} className="h-4 w-6" />
-            <span className="flex-1 text-foreground">
-              تطبيق بيانات <strong>{pendingPreset.nameAr}</strong> سيستبدل القيم الحالية في الحقول أدناه.
-            </span>
-            <Button type="button" size="xs" onClick={() => applyPreset(pendingPreset)}>
-              <Check className="size-3.5" /> تطبيق
-            </Button>
-            <Button type="button" size="xs" variant="ghost" onClick={() => setPendingPreset(null)}>
-              تجاهل
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <form
-        action={(fd) =>
-          start(async () => {
-            const res = await upsertCountryAction(fd)
-            handle(res, "تم حفظ الدولة.", () => {
-              setOpen(false)
-              router.refresh()
+      </DialogTrigger>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{existing ? `تعديل دولة "${existing.nameAr}"` : "دولة جديدة"}</DialogTitle>
+        </DialogHeader>
+        <form
+          action={(fd) =>
+            start(async () => {
+              const res = await upsertCountryAction(fd)
+              handle(res, "تم حفظ الدولة.", () => {
+                setOpen(false)
+                router.refresh()
+              })
             })
-          })
-        }
-        className="space-y-5"
-      >
-        {existing && <input type="hidden" name="id" value={existing.id} />}
+          }
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {existing && <input type="hidden" name="id" value={existing.id} />}
+          <DialogBody className="space-y-5">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <Field label={existing ? "البحث عن دولة لتطبيق بياناتها الجاهزة" : "اختر دولة من القائمة لملء البيانات تلقائيًا"}>
+            <CountryCombobox onSelect={handlePick} />
+          </Field>
+
+          {pendingPreset && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-background p-2.5 text-xs">
+              <CountryFlag code={pendingPreset.code} className="h-4 w-6" />
+              <span className="flex-1 text-foreground">
+                تطبيق بيانات <strong>{pendingPreset.nameAr}</strong> سيستبدل القيم الحالية في الحقول أدناه.
+              </span>
+              <Button type="button" size="xs" onClick={() => applyPreset(pendingPreset)}>
+                <Check className="size-3.5" /> تطبيق
+              </Button>
+              <Button type="button" size="xs" variant="ghost" onClick={() => setPendingPreset(null)}>
+                تجاهل
+              </Button>
+            </div>
+          )}
+        </div>
 
         <FormSection title="معلومات أساسية">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -256,17 +267,18 @@ export function CountryFormButton({ existing }: { existing?: CountryRow }) {
             <span className="text-sm text-muted-foreground">متاحة للاستخدام على المنصة</span>
           </label>
         </FormSection>
-
-        <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
-          <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={pending}>
-            <X className="size-4" /> إلغاء
-          </Button>
-          <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…" disabled={pending}>
-            <Save className="size-4" /> حفظ
-          </Button>
-        </div>
-      </form>
-    </Card>
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="ghost" size="sm" disabled={pending} />}>
+              <X className="size-4" /> إلغاء
+            </DialogClose>
+            <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…" disabled={pending}>
+              <Save className="size-4" /> حفظ
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -293,72 +305,75 @@ export function CityFormButton({
   const router = useRouter()
   const [countryId, setCountryId] = useState(existing?.countryId ?? "")
 
-  if (!open) {
-    return (
-      <Button
-        type="button"
-        variant={existing ? "ghost" : "default"}
-        size={existing ? "icon-sm" : "sm"}
-        aria-label={existing ? "تعديل المدينة" : "إضافة مدينة"}
-        onClick={() => setOpen(true)}
+  return (
+    <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant={existing ? "ghost" : "default"}
+            size={existing ? "icon-sm" : "sm"}
+            aria-label={existing ? "تعديل المدينة" : "إضافة مدينة"}
+          />
+        }
       >
         {existing ? <Pencil className="size-4" /> : <><Plus className="size-4" /> مدينة جديدة</>}
-      </Button>
-    )
-  }
-
-  return (
-    <Card className="space-y-3 border-primary/40 p-4">
-      <form
-        action={(fd) =>
-          start(async () => {
-            const res = await upsertCityAction(fd)
-            handle(res, "تم حفظ المدينة.", () => {
-              setOpen(false)
-              router.refresh()
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{existing ? `تعديل مدينة "${existing.nameAr}"` : "مدينة جديدة"}</DialogTitle>
+        </DialogHeader>
+        <form
+          action={(fd) =>
+            start(async () => {
+              const res = await upsertCityAction(fd)
+              handle(res, "تم حفظ المدينة.", () => {
+                setOpen(false)
+                router.refresh()
+              })
             })
-          })
-        }
-        className="space-y-3"
-      >
-        {existing && <input type="hidden" name="id" value={existing.id} />}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="الدولة">
-            <CountrySelectCombobox
-              name="countryId"
-              options={countries}
-              value={countryId}
-              onValueChange={setCountryId}
-            />
-          </Field>
-          <Field label="متاحة للاستخدام">
-            <label className="flex h-9 items-center gap-2">
-              <input
-                type="checkbox"
-                name="active"
-                defaultChecked={existing?.active ?? true}
-                className="size-4 accent-primary"
+          }
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {existing && <input type="hidden" name="id" value={existing.id} />}
+          <DialogBody className="grid gap-3 sm:grid-cols-2">
+            <Field label="الدولة">
+              <CountrySelectCombobox
+                name="countryId"
+                options={countries}
+                value={countryId}
+                onValueChange={setCountryId}
               />
-              <span className="text-sm text-muted-foreground">نشطة</span>
-            </label>
-          </Field>
-          <Field label="الاسم بالعربية">
-            <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required minLength={2} />
-          </Field>
-          <Field label="الاسم بالإنجليزية">
-            <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required minLength={2} dir="ltr" />
-          </Field>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={pending}>
-            <X className="size-4" /> إلغاء
-          </Button>
-          <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
-            <Save className="size-4" /> حفظ
-          </Button>
-        </div>
-      </form>
-    </Card>
+            </Field>
+            <Field label="متاحة للاستخدام">
+              <label className="flex h-9 items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="active"
+                  defaultChecked={existing?.active ?? true}
+                  className="size-4 accent-primary"
+                />
+                <span className="text-sm text-muted-foreground">نشطة</span>
+              </label>
+            </Field>
+            <Field label="الاسم بالعربية">
+              <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required minLength={2} />
+            </Field>
+            <Field label="الاسم بالإنجليزية">
+              <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required minLength={2} dir="ltr" />
+            </Field>
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="ghost" size="sm" disabled={pending} />}>
+              <X className="size-4" /> إلغاء
+            </DialogClose>
+            <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
+              <Save className="size-4" /> حفظ
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

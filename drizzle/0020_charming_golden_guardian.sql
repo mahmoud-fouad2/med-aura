@@ -1,0 +1,1 @@
+ALTER TABLE "procedure_category" ADD COLUMN "imageKey" text;

@@ -7,8 +7,17 @@ import { Plus, Pencil, Save, X, EyeOff, Eye, Trash2, ImagePlus, ImageOff } from 
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   upsertCategoryAction,
   upsertProcedureAction,
@@ -19,6 +28,8 @@ import {
   type ActionResult,
 } from "@/lib/actions/catalog"
 import { resizeImageFile } from "@/lib/client/image-resize"
+import { CATEGORY_ICON_NAMES, CATEGORY_ICONS } from "@/components/marketing/category-icon"
+import { cn } from "@/lib/utils"
 
 export type CategoryRow = {
   id: string
@@ -28,6 +39,8 @@ export type CategoryRow = {
   descriptionAr?: string | null
   descriptionEn?: string | null
   icon?: string | null
+  imageKey: string | null
+  imageUrl: string | null
   sortOrder: number
   visible: boolean
 }
@@ -62,112 +75,271 @@ async function handleResult(res: ActionResult, onOk: () => void) {
   }
 }
 
-export function CategoryFormButton({ existing }: { existing?: CategoryRow }) {
+export function CategoryFormButton({
+  existing,
+  r2Enabled,
+}: {
+  existing?: CategoryRow
+  r2Enabled: boolean
+}) {
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
   const router = useRouter()
+  const [icon, setIcon] = useState(
+    existing?.icon && CATEGORY_ICON_NAMES.includes(existing.icon as (typeof CATEGORY_ICON_NAMES)[number])
+      ? existing.icon
+      : CATEGORY_ICON_NAMES[0],
+  )
 
-  if (!open) {
-    return (
-      <Button
-        type="button"
-        variant={existing ? "ghost" : "default"}
-        size={existing ? "icon-sm" : "sm"}
-        aria-label={existing ? "تعديل القسم" : "إضافة قسم"}
-        onClick={() => setOpen(true)}
+  return (
+    <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant={existing ? "ghost" : "default"}
+            size={existing ? "icon-sm" : "sm"}
+            aria-label={existing ? "تعديل القسم" : "إضافة قسم"}
+          />
+        }
       >
         {existing ? <Pencil className="size-4" /> : <><Plus className="size-4" /> قسم جديد</>}
-      </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{existing ? `تعديل قسم "${existing.nameAr}"` : "قسم جديد"}</DialogTitle>
+        </DialogHeader>
+        <form
+          action={(fd) =>
+            start(async () => {
+              const res = await upsertCategoryAction(fd)
+              handleResult(res, () => {
+                setOpen(false)
+                router.refresh()
+              })
+            })
+          }
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {existing && <input type="hidden" name="id" value={existing.id} />}
+          <DialogBody className="space-y-3">
+            {existing ? (
+              <CategoryImageUploader categoryId={existing.id} imageKey={existing.imageKey} imageUrl={existing.imageUrl} r2Enabled={r2Enabled} />
+            ) : (
+              <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                احفظ القسم أولًا، ثم افتح التعديل لإضافة صورة.
+              </p>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="الرابط الفريد">
+              <Input
+                name="slug"
+                defaultValue={existing?.slug ?? ""}
+                placeholder="body-contouring"
+                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                required
+                dir="ltr"
+              />
+            </Field>
+            <Field label="ترتيب العرض">
+              <Input
+                type="number"
+                name="sortOrder"
+                defaultValue={existing?.sortOrder ?? 0}
+                min={0}
+                max={9999}
+              />
+            </Field>
+            <Field label="الاسم بالعربية">
+              <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required />
+            </Field>
+            <Field label="الاسم بالإنجليزية">
+              <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
+            </Field>
+            <Field label="الأيقونة" full>
+              <input type="hidden" name="icon" value={icon} />
+              <div className="flex flex-wrap gap-2">
+                {CATEGORY_ICON_NAMES.map((name) => {
+                  const IconComp = CATEGORY_ICONS[name]
+                  const selected = icon === name
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setIcon(name)}
+                      aria-pressed={selected}
+                      aria-label={name}
+                      className={cn(
+                        "flex size-10 items-center justify-center rounded-xl border transition-colors",
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                      )}
+                    >
+                      <IconComp className="size-5" />
+                    </button>
+                  )
+                })}
+              </div>
+            </Field>
+            <Field label="ظاهر للجمهور">
+              <label className="flex h-9 items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="visible"
+                  defaultChecked={existing?.visible ?? true}
+                  className="size-4 accent-primary"
+                />
+                <span className="text-sm text-muted-foreground">مرئي</span>
+              </label>
+            </Field>
+            <Field label="وصف عربي (اختياري)" full>
+              <Input name="descriptionAr" defaultValue={existing?.descriptionAr ?? ""} />
+            </Field>
+            <Field label="وصف إنجليزي (اختياري)" full>
+              <Input
+                name="descriptionEn"
+                defaultValue={existing?.descriptionEn ?? ""}
+                dir="ltr"
+              />
+            </Field>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="ghost" size="sm" disabled={pending} />}
+            >
+              <X className="size-4" /> إلغاء
+            </DialogClose>
+            <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
+              <Save className="size-4" /> حفظ
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CategoryImageUploader({
+  categoryId,
+  imageKey,
+  imageUrl,
+  r2Enabled,
+}: {
+  categoryId: string
+  imageKey: string | null
+  imageUrl: string | null
+  r2Enabled: boolean
+}) {
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function upload(rawFile: File) {
+    setBusy(true)
+    setError(null)
+    try {
+      const file = await resizeImageFile(rawFile)
+      const presignRes = await fetch(`/api/admin/categories/${categoryId}/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, contentType: file.type, sizeBytes: file.size }),
+      })
+      const presign = await presignRes.json()
+      if (!presignRes.ok) throw new Error(presign.error ?? "تعذّر بدء الرفع")
+
+      const putRes = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+      if (!putRes.ok) throw new Error("تعذّر رفع الصورة")
+
+      const finalizeRes = await fetch(`/api/admin/categories/${categoryId}/image`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objectKey: presign.objectKey }),
+      })
+      const finalize = await finalizeRes.json()
+      if (!finalizeRes.ok) throw new Error(finalize.error ?? "تعذّر حفظ الصورة")
+
+      toast.success("تم رفع الصورة")
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "تعذّر رفع الصورة"
+      setError(message)
+      toast.error(message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function remove() {
+    if (!imageKey) return
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/categories/${categoryId}/image`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "تعذّر حذف الصورة")
+      toast.success("تم حذف الصورة")
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "تعذّر حذف الصورة"
+      setError(message)
+      toast.error(message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!r2Enabled) {
+    return (
+      <p className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <ImageOff className="size-3.5 shrink-0" /> رفع الصور غير مفعّل حاليًا على هذا الخادم.
+      </p>
     )
   }
 
   return (
-    <Card className="space-y-3 border-primary/40 p-4">
-      <form
-        action={(fd) =>
-          start(async () => {
-            const res = await upsertCategoryAction(fd)
-            handleResult(res, () => {
-              setOpen(false)
-              router.refresh()
-            })
-          })
-        }
-        className="space-y-3"
-      >
-        {existing && <input type="hidden" name="id" value={existing.id} />}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="الرابط الفريد">
-            <Input
-              name="slug"
-              defaultValue={existing?.slug ?? ""}
-              placeholder="body-contouring"
-              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-              required
-              dir="ltr"
-            />
-          </Field>
-          <Field label="ترتيب العرض">
-            <Input
-              type="number"
-              name="sortOrder"
-              defaultValue={existing?.sortOrder ?? 0}
-              min={0}
-              max={9999}
-            />
-          </Field>
-          <Field label="الاسم بالعربية">
-            <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required />
-          </Field>
-          <Field label="الاسم بالإنجليزية">
-            <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
-          </Field>
-          <Field label="الأيقونة (اختياري)">
-            <Input
-              name="icon"
-              defaultValue={existing?.icon ?? ""}
-              placeholder="Sparkles"
-              dir="ltr"
-            />
-          </Field>
-          <Field label="ظاهر للجمهور">
-            <label className="flex h-9 items-center gap-2">
-              <input
-                type="checkbox"
-                name="visible"
-                defaultChecked={existing?.visible ?? true}
-                className="size-4 accent-primary"
-              />
-              <span className="text-sm text-muted-foreground">مرئي</span>
-            </label>
-          </Field>
-          <Field label="وصف عربي (اختياري)" full>
-            <Input name="descriptionAr" defaultValue={existing?.descriptionAr ?? ""} />
-          </Field>
-          <Field label="وصف إنجليزي (اختياري)" full>
-            <Input
-              name="descriptionEn"
-              defaultValue={existing?.descriptionEn ?? ""}
-              dir="ltr"
-            />
-          </Field>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button
+    <div className="space-y-3 rounded-lg border border-border/60 p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">صورة القسم</span>
+        <label className="cursor-pointer">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+            <ImagePlus className="size-3.5" /> {imageUrl ? "استبدال" : "رفع صورة"}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ""
+              if (file) void upload(file)
+            }}
+          />
+        </label>
+      </div>
+      {imageUrl && imageKey && (
+        <div className="relative inline-block">
+          <Image src={imageUrl} alt="" width={120} height={80} className="rounded-lg border border-border object-cover" />
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpen(false)}
-            disabled={pending}
+            onClick={() => void remove()}
+            disabled={busy}
+            className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+            aria-label="حذف صورة القسم"
           >
-            <X className="size-4" /> إلغاء
-          </Button>
-          <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
-            <Save className="size-4" /> حفظ
-          </Button>
+            <X className="size-3" />
+          </button>
         </div>
-      </form>
-    </Card>
+      )}
+      {busy && <p className="text-xs text-muted-foreground">جارٍ المعالجة…</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   )
 }
 
@@ -184,36 +356,38 @@ export function ProcedureFormButton({
   const [pending, start] = useTransition()
   const router = useRouter()
 
-  if (!open) {
-    return (
-      <Button
-        type="button"
-        variant={existing ? "ghost" : "default"}
-        size={existing ? "icon-sm" : "sm"}
-        aria-label={existing ? "تعديل الإجراء" : "إضافة إجراء"}
-        onClick={() => setOpen(true)}
+  return (
+    <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant={existing ? "ghost" : "default"}
+            size={existing ? "icon-sm" : "sm"}
+            aria-label={existing ? "تعديل الإجراء" : "إضافة إجراء"}
+          />
+        }
       >
         {existing ? <Pencil className="size-4" /> : <><Plus className="size-4" /> إجراء جديد</>}
-      </Button>
-    )
-  }
-
-  return (
-    <Card className="space-y-3 border-primary/40 p-4">
-      <form
-        action={(fd) =>
-          start(async () => {
-            const res = await upsertProcedureAction(fd)
-            handleResult(res, () => {
-              setOpen(false)
-              router.refresh()
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{existing ? `تعديل إجراء "${existing.nameAr}"` : "إجراء جديد"}</DialogTitle>
+        </DialogHeader>
+        <form
+          action={(fd) =>
+            start(async () => {
+              const res = await upsertProcedureAction(fd)
+              handleResult(res, () => {
+                setOpen(false)
+                router.refresh()
+              })
             })
-          })
-        }
-        className="space-y-3"
-      >
-        {existing && <input type="hidden" name="id" value={existing.id} />}
-
+          }
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {existing && <input type="hidden" name="id" value={existing.id} />}
+          <DialogBody className="space-y-3">
         {existing ? (
           <ProcedureImageUploader procedureId={existing.id} imageKey={existing.imageKey} imageUrl={existing.imageUrl} gallery={existing.gallery} r2Enabled={r2Enabled} />
         ) : (
@@ -347,23 +521,20 @@ export function ProcedureFormButton({
             </Field>
           </div>
         </details>
-
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpen(false)}
-            disabled={pending}
-          >
-            <X className="size-4" /> إلغاء
-          </Button>
-          <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
-            <Save className="size-4" /> حفظ
-          </Button>
-        </div>
-      </form>
-    </Card>
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="ghost" size="sm" disabled={pending} />}
+            >
+              <X className="size-4" /> إلغاء
+            </DialogClose>
+            <Button type="submit" size="sm" loading={pending} loadingText="جارٍ الحفظ…">
+              <Save className="size-4" /> حفظ
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

@@ -60,6 +60,9 @@ export const procedureCategory = pgTable(
     descriptionAr: text("descriptionAr"),
     descriptionEn: text("descriptionEn"),
     icon: text("icon"), // lucide icon name or asset key
+    // R2 object key — public bucket, resolved via getPublicUrl(). Null/empty
+    // renders a graceful placeholder, never a broken image.
+    imageKey: text("imageKey"),
     sortOrder: integer("sortOrder").notNull().default(0),
     // hidden categories (e.g. intimate cosmetic, dental) until enabled by admin
     visible: boolean("visible").notNull().default(true),

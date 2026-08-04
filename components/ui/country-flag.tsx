@@ -1,3 +1,4 @@
+import * as Flags from "country-flag-icons/react/3x2"
 import { cn } from "@/lib/utils"
 
 /**
@@ -12,12 +13,12 @@ function hueForCode(code: string): number {
 }
 
 /**
- * Renders a country's ISO code as a small designed badge rather than the
- * Unicode flag emoji — regional-indicator flag emoji don't render as actual
- * flags on Windows (most fonts show the bare two-letter code or a broken
- * glyph instead), so relying on them looked broken rather than just plain.
- * This is deterministic across every OS/browser and doesn't depend on font
- * support at all.
+ * Renders a country's actual flag (real SVG art, not the Unicode flag emoji —
+ * regional-indicator flag emoji don't render as actual flags on most Windows
+ * fonts, showing the bare two-letter code or a broken glyph instead). Falls
+ * back to a designed two-letter badge for codes with no matching flag (or no
+ * code yet), so an unrecognized value still looks intentional rather than
+ * broken.
  */
 export function CountryFlag({
   code,
@@ -28,8 +29,21 @@ export function CountryFlag({
 }) {
   const upper = code?.trim().toUpperCase() ?? ""
   const valid = /^[A-Z]{2}$/.test(upper)
-  const hue = valid ? hueForCode(upper) : 0
+  const Flag = valid
+    ? (Flags as Record<string, React.ComponentType<{ className?: string; title?: string; "aria-hidden"?: boolean | "true" | "false" }>>)[upper]
+    : undefined
 
+  if (Flag) {
+    return (
+      <Flag
+        aria-hidden="true"
+        title={upper}
+        className={cn("inline-block shrink-0 rounded-[3px] object-cover ring-1 ring-black/10", className)}
+      />
+    )
+  }
+
+  const hue = valid ? hueForCode(upper) : 0
   return (
     <span
       aria-hidden="true"

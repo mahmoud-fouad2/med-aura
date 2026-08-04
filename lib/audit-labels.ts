@@ -72,6 +72,11 @@ const ACTION_LABELS_AR: Record<string, string> = {
   // Content / catalog
   "catalog.procedure_create": "إنشاء إجراء",
   "catalog.category_create": "إنشاء قسم",
+  "catalog.procedure.image.set": "تحديث صورة إجراء",
+  "catalog.procedure.gallery.add": "إضافة صورة لمعرض إجراء",
+  "catalog.procedure.image.remove": "حذف صورة إجراء",
+  "catalog.category.image.set": "تحديث صورة قسم",
+  "catalog.category.image.remove": "حذف صورة قسم",
   "before_after_case.approve": "اعتماد قبل/بعد",
 
   // Consent / notifications

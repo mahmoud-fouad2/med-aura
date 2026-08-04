@@ -27,6 +27,10 @@ export default async function AdminProceduresPage() {
   ])
   const categoryOptions = categories.map((c) => ({ id: c.id, nameAr: c.nameAr }))
   const r2Enabled = isR2Configured()
+  const categoriesWithImages = categories.map((c) => ({
+    ...c,
+    imageUrl: c.imageKey ? getPublicUrl(c.imageKey) : null,
+  }))
   const procedures = proceduresRaw.map((p) => ({
     ...p,
     imageUrl: p.imageKey ? getPublicUrl(p.imageKey) : null,
@@ -46,9 +50,9 @@ export default async function AdminProceduresPage() {
       <Card className="overflow-hidden p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="font-heading text-sm font-bold text-foreground">الأقسام</h2>
-          <CategoryFormButton />
+          <CategoryFormButton r2Enabled={r2Enabled} />
         </div>
-        {categories.length === 0 ? (
+        {categoriesWithImages.length === 0 ? (
           <EmptyState
             icon={Sparkles}
             title="لا توجد أقسام مضافة"
@@ -57,10 +61,15 @@ export default async function AdminProceduresPage() {
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
-              {categories.map((c) => (
+              {categoriesWithImages.map((c) => (
                 <MobileDataCard
                   key={c.id}
-                  title={c.nameAr}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <CatalogThumb url={c.imageUrl} size={32} />
+                      {c.nameAr}
+                    </span>
+                  }
                   subtitle={<span dir="ltr">/{c.slug}</span>}
                   badge={
                     <StatusBadge
@@ -77,7 +86,7 @@ export default async function AdminProceduresPage() {
                   ]}
                   actions={
                     <div className="flex items-center gap-1">
-                      <CategoryFormButton existing={c} />
+                      <CategoryFormButton existing={c} r2Enabled={r2Enabled} />
                       <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
                       <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
                     </div>
@@ -89,6 +98,7 @@ export default async function AdminProceduresPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground">
+                    <Th>—</Th>
                     <Th>القسم</Th>
                     <Th>الحالة</Th>
                     <Th>ترتيب</Th>
@@ -97,8 +107,11 @@ export default async function AdminProceduresPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {categories.map((c) => (
+                  {categoriesWithImages.map((c) => (
                     <tr key={c.id} className="transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <CatalogThumb url={c.imageUrl} size={40} />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{c.nameAr}</div>
                         <div dir="ltr" className="text-xs text-muted-foreground">
@@ -117,7 +130,7 @@ export default async function AdminProceduresPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <CategoryFormButton existing={c} />
+                          <CategoryFormButton existing={c} r2Enabled={r2Enabled} />
                           <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
                           <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
                         </div>
@@ -150,7 +163,7 @@ export default async function AdminProceduresPage() {
                   key={p.id}
                   title={
                     <span className="flex items-center gap-2">
-                      <ProcedureThumb url={p.imageUrl} size={32} />
+                      <CatalogThumb url={p.imageUrl} size={32} />
                       {p.nameAr}
                     </span>
                   }
@@ -199,7 +212,7 @@ export default async function AdminProceduresPage() {
                   {procedures.map((p) => (
                     <tr key={p.id} className="transition-colors hover:bg-muted/30">
                       <td className="px-4 py-3">
-                        <ProcedureThumb url={p.imageUrl} size={40} />
+                        <CatalogThumb url={p.imageUrl} size={40} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{p.nameAr}</div>
@@ -245,7 +258,7 @@ function Th({ children }: { children: React.ReactNode }) {
   return <th className="px-4 py-2.5 text-start font-medium">{children}</th>
 }
 
-function ProcedureThumb({ url, size }: { url: string | null; size: number }) {
+function CatalogThumb({ url, size }: { url: string | null; size: number }) {
   if (!url) {
     return (
       <div

@@ -31,6 +31,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
+import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
   updateCenterAction,
   setCenterStatusAction,
@@ -342,8 +343,8 @@ function CenterEditForm({ centerId }: { centerId: string }) {
         <Textarea rows={3} value={data.description} onChange={(e) => setData({ ...data, description: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="الدولة (رمز ISO)">
-          <Input dir="ltr" value={data.country} onChange={(e) => setData({ ...data, country: e.target.value.toUpperCase() })} />
+        <Field label="الدولة">
+          <CountrySelectField country={data.country} onChange={(code) => setData({ ...data, country: code })} />
         </Field>
         <Field label="المدينة">
           <Input value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />

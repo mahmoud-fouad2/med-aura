@@ -6,6 +6,16 @@ import { CalendarPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { createFollowUpTask } from "@/lib/actions/follow-up"
 
 const TYPES = [
@@ -50,48 +60,49 @@ export function CreateFollowUpTaskForm({ caseId }: { caseId: string }) {
     router.refresh()
   }
 
-  if (!open) {
-    return (
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <CalendarPlus className="size-4" /> جدولة مهمة متابعة
-      </Button>
-    )
-  }
-
   return (
-    <div className="space-y-3 rounded-xl border border-border p-4">
-      <h3 className="font-heading font-bold text-foreground">جدولة مهمة متابعة</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="نوع المهمة">
-          <select value={type} onChange={(e) => setType(e.target.value)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
-            {TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="تاريخ الاستحقاق">
-          <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
-        </Field>
-      </div>
-      <Field label="العنوان">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: متابعة أسبوعين بعد الإجراء" />
-      </Field>
-      <Field label="تعليمات (اختياري)">
-        <Textarea rows={2} value={instructions} onChange={(e) => setInstructions(e.target.value)} />
-      </Field>
-      {type === "PHOTO_UPLOAD" && (
-        <Field label="عدد الصور المطلوبة">
-          <Input type="number" min={1} max={10} value={requiredPhotos} onChange={(e) => setRequiredPhotos(Number(e.target.value))} />
-        </Field>
-      )}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <div className="flex gap-2">
-        <Button size="sm" disabled={busy || title.trim().length < 3 || !dueAt} onClick={onSubmit}>
-          {busy ? "جارٍ الجدولة…" : "جدولة المهمة"}
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>إلغاء</Button>
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
+      <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        <CalendarPlus className="size-4" /> جدولة مهمة متابعة
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>جدولة مهمة متابعة</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="نوع المهمة">
+              <select value={type} onChange={(e) => setType(e.target.value)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
+                {TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="تاريخ الاستحقاق">
+              <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+            </Field>
+          </div>
+          <Field label="العنوان">
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثال: متابعة أسبوعين بعد الإجراء" />
+          </Field>
+          <Field label="تعليمات (اختياري)">
+            <Textarea rows={2} value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+          </Field>
+          {type === "PHOTO_UPLOAD" && (
+            <Field label="عدد الصور المطلوبة">
+              <Input type="number" min={1} max={10} value={requiredPhotos} onChange={(e) => setRequiredPhotos(Number(e.target.value))} />
+            </Field>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </DialogBody>
+        <DialogFooter>
+          <DialogClose render={<Button size="sm" variant="ghost" disabled={busy} />}>إلغاء</DialogClose>
+          <Button size="sm" disabled={busy || title.trim().length < 3 || !dueAt} onClick={onSubmit}>
+            {busy ? "جارٍ الجدولة…" : "جدولة المهمة"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

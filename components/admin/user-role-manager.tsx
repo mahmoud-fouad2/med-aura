@@ -2,11 +2,18 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { UserCog, X, ShieldAlert, Check, Plus } from "lucide-react"
+import { UserCog, ShieldAlert, Check, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { toggleUserRoleAction } from "@/lib/actions/users"
 
 type RoleOption = { key: string; nameAr: string }
@@ -35,20 +42,6 @@ export function UserRoleManager({
   const [pending, start] = useTransition()
   const router = useRouter()
 
-  if (!open) {
-    return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-label={`إدارة أدوار ${userName}`}
-        onClick={() => setOpen(true)}
-      >
-        <UserCog className="size-4" />
-      </Button>
-    )
-  }
-
   function toggle(role: RoleOption, has: boolean): Promise<boolean> {
     return new Promise((resolve) => {
       setBusyKey(role.key)
@@ -72,21 +65,17 @@ export function UserRoleManager({
   }
 
   return (
-    <Card className="w-72 space-y-3 border-primary/40 p-3 text-start shadow-elegant">
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-xs font-bold text-foreground">
-          أدوار {userName}
-        </p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label="إغلاق"
-          onClick={() => setOpen(false)}
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={<Button type="button" variant="ghost" size="icon-sm" aria-label={`إدارة أدوار ${userName}`} />}
+      >
+        <UserCog className="size-4" />
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>أدوار {userName}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-3">
       <div className="flex flex-wrap gap-1.5">
         {allRoles.map((r) => {
           const has = currentKeys.includes(r.key)
@@ -151,6 +140,8 @@ export function UserRoleManager({
           هذا حسابك — لا يمكنك إزالة صلاحية مدير النظام عن نفسك.
         </p>
       )}
-    </Card>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -71,6 +71,7 @@ export type AdminCategoryRow = {
   descriptionAr: string | null
   descriptionEn: string | null
   icon: string | null
+  imageKey: string | null
   sortOrder: number
   visible: boolean
   procedureCount: number
@@ -91,6 +92,7 @@ export async function listCategoriesForAdmin(): Promise<AdminCategoryRow[]> {
     descriptionAr: c.descriptionAr,
     descriptionEn: c.descriptionEn,
     icon: c.icon,
+    imageKey: c.imageKey,
     sortOrder: c.sortOrder,
     visible: c.visible,
     procedureCount: countByCategory.get(c.id) ?? 0,

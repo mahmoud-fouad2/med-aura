@@ -1,5 +1,7 @@
 /** Arabic labels for status enums shown in the UI. */
 
+import { COUNTRY_PRESETS } from "@/lib/geo"
+
 const CURRENCY: Record<string, string> = {
   SAR: "ر.س",
   AED: "د.إ",
@@ -46,9 +48,18 @@ const COUNTRY: Record<string, string> = {
   LB: "لبنان",
 }
 
+/** Wider lookup for display only — covers every country an admin can pick via
+ * CountryCombobox (lib/geo.ts's ~40-country preset list), a superset of
+ * COUNTRY_CODES below. Kept separate from COUNTRY_CODES so it never changes
+ * what a *patient* can select at signup, only how an already-stored code is
+ * displayed (e.g. a center/doctor country an admin picked from the wider list). */
+const COUNTRY_NAMES_AR: Record<string, string> = Object.fromEntries(
+  COUNTRY_PRESETS.map((p) => [p.code, p.nameAr]),
+)
+
 /** Arabic country name for a stored ISO alpha-2 code — falls back to the stored value itself
  * (e.g. a value already spelled out in Arabic) for anything not in the map. */
-export const countryNameAr = (value: string): string => COUNTRY[value] ?? value
+export const countryNameAr = (value: string): string => COUNTRY_NAMES_AR[value] ?? COUNTRY[value] ?? value
 
 /** ISO codes of the countries the platform serves — signup/profile selects. */
 export const COUNTRY_CODES = Object.keys(COUNTRY)

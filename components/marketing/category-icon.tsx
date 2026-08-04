@@ -3,6 +3,12 @@ import { cn } from "@/lib/utils"
 
 const ICONS: Record<string, LucideIcon> = { Smile, Gem, Activity, Sparkles, Scissors, SmilePlus }
 
+/** Every icon name a category's `icon` column can resolve to — the single
+ *  source of truth for both the admin picker and the public-site badge, so
+ *  the two can never drift out of sync. */
+export const CATEGORY_ICON_NAMES = Object.keys(ICONS) as (keyof typeof ICONS)[]
+export const CATEGORY_ICONS = ICONS
+
 /** Resolves a category's stored lucide icon name to a component, with a safe fallback. */
 export function resolveCategoryIcon(icon: string | null | undefined): LucideIcon {
   return (icon && ICONS[icon]) || Sparkles
