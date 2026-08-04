@@ -163,6 +163,16 @@ export type MyPractice = {
   procedures: PracticeProcedure[]
 }
 
+export type AvailabilityRule = {
+  id: string
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  slotMinutes: number
+  type: string
+  active: boolean
+}
+
 export type TicketCategory = "ACCOUNT" | "BOOKING" | "BILLING" | "MEDICAL" | "TECHNICAL" | "OTHER"
 
 export type TicketSummary = {
@@ -378,6 +388,25 @@ export const api = {
     request<{ updated: boolean }>("/api/mobile/v1/me/practice/procedures", {
       method: "POST",
       body: JSON.stringify(input),
+    }),
+  myAvailability: () => request<{ rules: AvailabilityRule[] }>("/api/mobile/v1/me/availability"),
+  upsertAvailabilityRule: (input: {
+    id?: string
+    dayOfWeek: number
+    startTime: string
+    endTime: string
+    slotMinutes: number
+    type: "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
+    active: boolean
+  }) =>
+    request<{ updated: boolean }>("/api/mobile/v1/me/availability", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  deleteAvailabilityRule: (id: string) =>
+    request<{ deleted: boolean }>("/api/mobile/v1/me/availability", {
+      method: "DELETE",
+      body: JSON.stringify({ id }),
     }),
   registerPushToken: (input: { token: string; platform: "android" | "ios" }) =>
     request<{ registered: boolean }>("/api/mobile/v1/push-tokens", {
@@ -596,6 +625,9 @@ export const useMe = () =>
 
 export const useMyPractice = () =>
   useQuery({ queryKey: ["my-practice"], queryFn: api.myPractice, staleTime: 30_000 })
+
+export const useMyAvailability = () =>
+  useQuery({ queryKey: ["my-availability"], queryFn: api.myAvailability, staleTime: 30_000 })
 
 export const useNotificationPreferences = () =>
   useQuery({

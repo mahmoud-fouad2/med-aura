@@ -27,7 +27,7 @@ import {
 import { CountryCombobox } from "@/components/admin/country-combobox"
 import { CountrySelectCombobox } from "@/components/admin/country-select-combobox"
 import { TimezoneCombobox } from "@/components/admin/timezone-combobox"
-import { Field } from "@/components/admin/field"
+import { Field } from "@/components/ui/field"
 import {
   upsertCountryAction,
   toggleCountryActiveAction,

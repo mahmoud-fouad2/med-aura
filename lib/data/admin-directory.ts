@@ -410,11 +410,15 @@ export type AvailabilityRuleRow = {
   dayOfWeek: number
   startTime: string
   endTime: string
+  slotMinutes: number
   type: string
   active: boolean
 }
 
-/** Read-only — there is no editor for this anywhere yet (admin or doctor self-service). */
+/** Read-only from the admin drawer (support/diagnostic view only); the doctor's
+ *  own self-service editor at /dashboard/doctor/availability reuses this same
+ *  reader — see upsertMyAvailabilityRuleAction / deleteMyAvailabilityRuleAction
+ *  in lib/actions/doctor.ts for the write side. */
 export async function listAvailabilityForDoctor(doctorId: string): Promise<AvailabilityRuleRow[]> {
   if (!isDbConfigured) return []
   return db
@@ -423,6 +427,7 @@ export async function listAvailabilityForDoctor(doctorId: string): Promise<Avail
       dayOfWeek: availabilityRule.dayOfWeek,
       startTime: availabilityRule.startTime,
       endTime: availabilityRule.endTime,
+      slotMinutes: availabilityRule.slotMinutes,
       type: availabilityRule.type,
       active: availabilityRule.active,
     })

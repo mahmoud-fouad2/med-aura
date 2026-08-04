@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
-import { Field } from "@/components/admin/field"
+import { Field } from "@/components/ui/field"
 import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
 import { CountrySelectField } from "@/components/admin/country-select-field"
 import {

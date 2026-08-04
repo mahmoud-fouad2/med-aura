@@ -273,3 +273,8 @@ export const providerStatusAr = (s: string): string => PROVIDER_STATUS[s] ?? s
 /** active/suspended/disabled — shared by admin user + patient listings. */
 export const userAccountStatusAr = (s: string): string =>
   s === "active" ? "نشط" : s === "suspended" ? "موقوف" : "معطَّل"
+
+const DAY_NAMES_AR = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+
+/** 0 = Sunday … 6 = Saturday, matching availability_rule.dayOfWeek. */
+export const dayOfWeekAr = (n: number): string => DAY_NAMES_AR[n] ?? String(n)

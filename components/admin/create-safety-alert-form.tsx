@@ -15,7 +15,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Field } from "@/components/admin/field"
+import { Field } from "@/components/ui/field"
 import { createSafetyAlertManual } from "@/lib/actions/safety"
 
 const SEVERITIES = [

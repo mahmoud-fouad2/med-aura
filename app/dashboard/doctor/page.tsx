@@ -159,7 +159,7 @@ export default async function DoctorDashboardPage() {
                 size="sm"
                 variant="outline"
                 className="w-full"
-                render={<Link href="/dashboard/doctor">إدارة التوفر</Link>}
+                render={<Link href="/dashboard/doctor/availability">إدارة التوفر</Link>}
               />
             </div>
           )

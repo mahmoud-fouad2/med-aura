@@ -108,6 +108,7 @@ export default function PracticeSettings() {
                 a procedure-toggle-triggered refetch never clobbers typing. */}
             <PracticeForm initial={query.data} />
             <ProceduresSection procedures={query.data.procedures} />
+            <AvailabilityLinkCard />
             <NeedHelpCard />
           </>
         )}
@@ -358,6 +359,24 @@ function ProceduresSection({ procedures }: { procedures: PracticeProcedure[] }) 
           </View>
         </View>
       ))}
+    </Card>
+  )
+}
+
+function AvailabilityLinkCard() {
+  const { t } = useI18n()
+  return (
+    <Card style={{ gap: spacing.md }}>
+      <SectionHeading icon="time-outline" title={t.availability.title} />
+      <AppText variant="sub" color={colors.textMuted}>
+        {t.availability.subtitle}
+      </AppText>
+      <Button
+        label={t.availability.title}
+        icon="calendar-outline"
+        variant="secondary"
+        onPress={() => router.push("/practice/availability")}
+      />
     </Card>
   )
 }

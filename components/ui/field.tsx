@@ -1,12 +1,10 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Label + control wrapper for admin forms — the whole field is one <label>
- * so clicking the caption focuses the input without needing to thread a
- * matching id/htmlFor through every call site. Previously reimplemented
- * (with small style drift — text-sm vs text-xs, muted vs foreground) in
- * catalog-forms, geography-forms, center-table, doctor-table, and
- * create-followup-task-form; this is the single version all of them use now.
+ * Label + control wrapper for forms — the whole field is one <label> so
+ * clicking the caption focuses the input without needing to thread a
+ * matching id/htmlFor through every call site. Shared by admin forms and
+ * the doctor/patient self-service forms alike; not specific to either.
  */
 export function Field({
   label,

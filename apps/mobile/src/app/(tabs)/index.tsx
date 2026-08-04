@@ -183,11 +183,8 @@ export default function Home() {
         ) : null}
       </View>
 
-      {/* Provider (doctor/staff): today's-schedule, next patient, and shared
-          cases are all native now. Availability/calendar editing has no
-          editor anywhere yet — admin or self-service — so there's
-          deliberately no link standing in for a feature that doesn't
-          exist on either platform. */}
+      {/* Provider (doctor/staff): today's-schedule, next patient, shared
+          cases, and (doctors only) availability are all native now. */}
       {!isPatient ? (
         <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
           {/* Stats */}
@@ -259,6 +256,14 @@ export default function Home() {
             variant="ghost"
             onPress={() => router.push("/cases")}
           />
+          {accountType === "doctor" ? (
+            <Button
+              label={t.availability.title}
+              icon="time-outline"
+              variant="ghost"
+              onPress={() => router.push("/practice/availability")}
+            />
+          ) : null}
         </View>
       ) : (
       <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>

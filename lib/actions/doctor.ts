@@ -4,7 +4,7 @@ import { z } from "zod"
 import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
-import { doctorProfile, doctorProcedure } from "@/lib/db/schema"
+import { doctorProfile, doctorProcedure, availabilityRule } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
@@ -363,6 +363,147 @@ export async function toggleMyProcedureAction(input: unknown): Promise<ActionRes
     })
 
     revalidatePath("/doctors")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+/** Resolves the calling doctor's own doctorProfile id, or throws NOT_FOUND — used by every
+ *  self-service availability action below so a rule id can never be targeted across accounts. */
+async function requireMyDoctorId(userId: string): Promise<string> {
+  const existing = (
+    await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.userId, userId)).limit(1)
+  )[0]
+  if (!existing) throw new AppError("NOT_FOUND")
+  return existing.id
+}
+
+/** A doctor's own weekly availability rules, for the self-service editor. */
+export async function getMyAvailabilityAction(): Promise<
+  { status: "ok"; rules: AvailabilityRuleRow[] } | { status: "error"; message: string }
+> {
+  try {
+    const user = await requireUser()
+    const doctorId = await requireMyDoctorId(user.id)
+    const rules = await listAvailabilityForDoctor(doctorId)
+    return { status: "ok", rules }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { status: "error", message: safe.userMessage }
+  }
+}
+
+const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/
+
+const upsertAvailabilityRuleSchema = z.object({
+  id: z.string().optional(),
+  dayOfWeek: z.coerce.number().int().min(0).max(6),
+  startTime: z.string().regex(timeRe, "وقت البداية غير صحيح"),
+  endTime: z.string().regex(timeRe, "وقت النهاية غير صحيح"),
+  slotMinutes: z.coerce.number().int().min(5).max(240),
+  type: z.enum(["VIDEO_CONSULTATION", "IN_PERSON_CONSULTATION"]),
+  active: z.boolean(),
+})
+
+/** Create (no id) or update (id present) one weekly availability rule. */
+export async function upsertMyAvailabilityRuleAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const parsed = upsertAvailabilityRuleSchema.safeParse(input)
+    if (!parsed.success) throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
+    const data = parsed.data
+    if (data.startTime >= data.endTime) {
+      throw validation("وقت النهاية يجب أن يكون بعد وقت البداية.")
+    }
+
+    const doctorId = await requireMyDoctorId(user.id)
+
+    if (data.id) {
+      const existingRule = (
+        await db
+          .select({ id: availabilityRule.id, doctorId: availabilityRule.doctorId })
+          .from(availabilityRule)
+          .where(eq(availabilityRule.id, data.id))
+          .limit(1)
+      )[0]
+      if (!existingRule || existingRule.doctorId !== doctorId) throw new AppError("NOT_FOUND")
+
+      await db
+        .update(availabilityRule)
+        .set({
+          dayOfWeek: data.dayOfWeek,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          slotMinutes: data.slotMinutes,
+          type: data.type,
+          active: data.active,
+          updatedAt: new Date(),
+        })
+        .where(eq(availabilityRule.id, data.id))
+    } else {
+      await db.insert(availabilityRule).values({
+        doctorId,
+        dayOfWeek: data.dayOfWeek,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        slotMinutes: data.slotMinutes,
+        type: data.type,
+        active: data.active,
+      })
+    }
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: data.id ? "doctor.availability.self_update" : "doctor.availability.self_create",
+      actorUserId: user.id,
+      entityType: "doctor_profile",
+      entityId: doctorId,
+      metadata: { dayOfWeek: data.dayOfWeek, startTime: data.startTime, endTime: data.endTime, type: data.type },
+      ...meta,
+    })
+
+    revalidatePath("/dashboard/doctor/availability")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const deleteMyAvailabilityRuleSchema = z.object({ id: z.string().min(1) })
+
+export async function deleteMyAvailabilityRuleAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const parsed = deleteMyAvailabilityRuleSchema.safeParse(input)
+    if (!parsed.success) throw validation("بيانات غير صحيحة")
+    const { id } = parsed.data
+
+    const doctorId = await requireMyDoctorId(user.id)
+    const existingRule = (
+      await db
+        .select({ id: availabilityRule.id, doctorId: availabilityRule.doctorId })
+        .from(availabilityRule)
+        .where(eq(availabilityRule.id, id))
+        .limit(1)
+    )[0]
+    if (!existingRule || existingRule.doctorId !== doctorId) throw new AppError("NOT_FOUND")
+
+    await db.delete(availabilityRule).where(eq(availabilityRule.id, id))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "doctor.availability.self_delete",
+      actorUserId: user.id,
+      entityType: "doctor_profile",
+      entityId: doctorId,
+      metadata: { ruleId: id },
+      ...meta,
+    })
+
+    revalidatePath("/dashboard/doctor/availability")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)

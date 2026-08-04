@@ -29,7 +29,7 @@ import {
 } from "@/lib/actions/catalog"
 import { resizeImageFile } from "@/lib/client/image-resize"
 import { CATEGORY_ICON_NAMES, CATEGORY_ICONS } from "@/components/marketing/category-icon"
-import { Field } from "@/components/admin/field"
+import { Field } from "@/components/ui/field"
 import { cn } from "@/lib/utils"
 
 export type CategoryRow = {

@@ -31,7 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Field } from "@/components/admin/field"
+import { Field } from "@/components/ui/field"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
@@ -45,12 +45,10 @@ import {
   getDoctorActivityAction,
 } from "@/lib/actions/doctor"
 import { actionLabelAr } from "@/lib/audit-labels"
-import { countryNameAr, providerStatusAr, licenseStatusAr, appointmentTypeAr } from "@/lib/status-labels"
+import { countryNameAr, providerStatusAr, licenseStatusAr, appointmentTypeAr, dayOfWeekAr } from "@/lib/status-labels"
 import { dfMedium } from "@/lib/format"
 import type { AdminDoctorRow, DoctorProcedureOption, DoctorLicenseInfo, AvailabilityRuleRow } from "@/lib/data/admin-directory"
 import type { ActivityRow } from "@/lib/data/admin-activity"
-
-const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
 
 function fmtTime(t: string): string {
   return t.slice(0, 5)
@@ -255,7 +253,9 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-/** License + availability — both read-only; there is no editor for either anywhere in the app yet. */
+/** License + availability — both read-only here by design; the doctor manages
+ *  their own availability at /dashboard/doctor/availability (this stays a
+ *  support/diagnostic view for admins, not a second place to edit it). */
 function DoctorOverviewExtras({ doctorId }: { doctorId: string }) {
   const [data, setData] = useState<{ license: DoctorLicenseInfo | null; availability: AvailabilityRuleRow[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -307,10 +307,10 @@ function DoctorOverviewExtras({ doctorId }: { doctorId: string }) {
             {data.availability.map((a) => (
               <li key={a.id} className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
-                  {DAY_NAMES[a.dayOfWeek] ?? a.dayOfWeek} · {appointmentTypeAr(a.type)}
+                  {dayOfWeekAr(a.dayOfWeek)} · {appointmentTypeAr(a.type)}
                 </span>
                 <span className="tabular-nums text-foreground" dir="ltr">
-                  {fmtTime(a.startTime)}–{fmtTime(a.endTime)} {!a.active && "(معطّل)"}
+                  {fmtTime(a.startTime)}–{fmtTime(a.endTime)} · {a.slotMinutes}د {!a.active && "(معطّل)"}
                 </span>
               </li>
             ))}

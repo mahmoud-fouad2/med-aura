@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Field } from "@/components/admin/field"
+import { Field } from "@/components/ui/field"
 import { createFollowUpTask } from "@/lib/actions/follow-up"
 
 const TYPES = [
