@@ -132,78 +132,78 @@ export function CategoryFormButton({
               </p>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="الرابط الفريد">
-              <Input
-                name="slug"
-                defaultValue={existing?.slug ?? ""}
-                placeholder="body-contouring"
-                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-                required
-                dir="ltr"
-              />
-            </Field>
-            <Field label="ترتيب العرض">
-              <Input
-                type="number"
-                name="sortOrder"
-                defaultValue={existing?.sortOrder ?? 0}
-                min={0}
-                max={9999}
-              />
-            </Field>
-            <Field label="الاسم بالعربية">
-              <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required />
-            </Field>
-            <Field label="الاسم بالإنجليزية">
-              <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
-            </Field>
-            <Field label="الأيقونة" full>
-              <input type="hidden" name="icon" value={icon} />
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_ICON_NAMES.map((name) => {
-                  const IconComp = CATEGORY_ICONS[name]
-                  const selected = icon === name
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setIcon(name)}
-                      aria-pressed={selected}
-                      aria-label={name}
-                      className={cn(
-                        "flex size-10 items-center justify-center rounded-xl border transition-colors",
-                        selected
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
-                      )}
-                    >
-                      <IconComp className="size-5" />
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-            <Field label="ظاهر للجمهور">
-              <label className="flex h-9 items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="visible"
-                  defaultChecked={existing?.visible ?? true}
-                  className="size-4 accent-primary"
+              <Field label="الرابط الفريد">
+                <Input
+                  name="slug"
+                  defaultValue={existing?.slug ?? ""}
+                  placeholder="body-contouring"
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  required
+                  dir="ltr"
                 />
-                <span className="text-sm text-muted-foreground">مرئي</span>
-              </label>
-            </Field>
-            <Field label="وصف عربي (اختياري)" full>
-              <Input name="descriptionAr" defaultValue={existing?.descriptionAr ?? ""} />
-            </Field>
-            <Field label="وصف إنجليزي (اختياري)" full>
-              <Input
-                name="descriptionEn"
-                defaultValue={existing?.descriptionEn ?? ""}
-                dir="ltr"
-              />
-            </Field>
+              </Field>
+              <Field label="ترتيب العرض">
+                <Input
+                  type="number"
+                  name="sortOrder"
+                  defaultValue={existing?.sortOrder ?? 0}
+                  min={0}
+                  max={9999}
+                />
+              </Field>
+              <Field label="الاسم بالعربية">
+                <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required />
+              </Field>
+              <Field label="الاسم بالإنجليزية">
+                <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
+              </Field>
+              <Field label="الأيقونة" full>
+                <input type="hidden" name="icon" value={icon} />
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_ICON_NAMES.map((name) => {
+                    const IconComp = CATEGORY_ICONS[name]
+                    const selected = icon === name
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => setIcon(name)}
+                        aria-pressed={selected}
+                        aria-label={name}
+                        className={cn(
+                          "flex size-10 items-center justify-center rounded-xl border transition-colors",
+                          selected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                        )}
+                      >
+                        <IconComp className="size-5" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </Field>
+              <Field label="ظاهر للجمهور">
+                <label className="flex h-9 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="visible"
+                    defaultChecked={existing?.visible ?? true}
+                    className="size-4 accent-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">مرئي</span>
+                </label>
+              </Field>
+              <Field label="وصف عربي (اختياري)" full>
+                <Input name="descriptionAr" defaultValue={existing?.descriptionAr ?? ""} />
+              </Field>
+              <Field label="وصف إنجليزي (اختياري)" full>
+                <Input
+                  name="descriptionEn"
+                  defaultValue={existing?.descriptionEn ?? ""}
+                  dir="ltr"
+                />
+              </Field>
             </div>
           </DialogBody>
           <DialogFooter>
@@ -423,139 +423,139 @@ export function ProcedureFormButton({
         >
           {existing && <input type="hidden" name="id" value={existing.id} />}
           <DialogBody className="space-y-3">
-        {existing ? (
-          <ProcedureImageUploader procedureId={existing.id} imageKey={existing.imageKey} imageUrl={existing.imageUrl} gallery={existing.gallery} r2Enabled={r2Enabled} />
-        ) : (
-          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            احفظ الإجراء أولًا، ثم افتح التعديل لإضافة الصور.
-          </p>
-        )}
+            {existing ? (
+              <ProcedureImageUploader procedureId={existing.id} imageKey={existing.imageKey} imageUrl={existing.imageUrl} gallery={existing.gallery} r2Enabled={r2Enabled} />
+            ) : (
+              <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                احفظ الإجراء أولًا، ثم افتح التعديل لإضافة الصور.
+              </p>
+            )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="القسم">
-            <select
-              name="categoryId"
-              defaultValue={existing?.categoryId ?? ""}
-              required
-              className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="" disabled>
-                اختر قسمًا…
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nameAr}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="الرابط الفريد">
-            <Input
-              name="slug"
-              defaultValue={existing?.slug ?? ""}
-              placeholder="rhinoplasty"
-              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-              required
-              dir="ltr"
-            />
-          </Field>
-          <Field label="الاسم بالعربية">
-            <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required />
-          </Field>
-          <Field label="الاسم بالإنجليزية">
-            <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
-          </Field>
-          <Field label="أيام النقاهة (اختياري)">
-            <Input
-              type="number"
-              name="recoveryDays"
-              defaultValue={existing?.recoveryDays ?? ""}
-              min={0}
-              max={365}
-            />
-          </Field>
-          <Field label="ترتيب العرض">
-            <Input
-              type="number"
-              name="sortOrder"
-              defaultValue={existing?.sortOrder ?? 0}
-              min={0}
-              max={9999}
-            />
-          </Field>
-          <Field label="جراحي؟">
-            <label className="flex h-9 items-center gap-2">
-              <input
-                type="checkbox"
-                name="isSurgical"
-                defaultChecked={existing?.isSurgical ?? false}
-                className="size-4 accent-primary"
-              />
-              <span className="text-sm text-muted-foreground">جراحي</span>
-            </label>
-          </Field>
-          <Field label="ظاهر للجمهور">
-            <label className="flex h-9 items-center gap-2">
-              <input
-                type="checkbox"
-                name="visible"
-                defaultChecked={existing?.visible ?? true}
-                className="size-4 accent-primary"
-              />
-              <span className="text-sm text-muted-foreground">مرئي</span>
-            </label>
-          </Field>
-          <Field label="الوصف بالعربية" full>
-            <textarea
-              name="descriptionAr"
-              defaultValue={existing?.descriptionAr ?? ""}
-              rows={3}
-              className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </Field>
-          <Field label="الوصف بالإنجليزية" full>
-            <textarea
-              name="descriptionEn"
-              defaultValue={existing?.descriptionEn ?? ""}
-              rows={3}
-              dir="ltr"
-              className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-          </Field>
-        </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="القسم">
+                <select
+                  name="categoryId"
+                  defaultValue={existing?.categoryId ?? ""}
+                  required
+                  className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="" disabled>
+                    اختر قسمًا…
+                  </option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nameAr}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="الرابط الفريد">
+                <Input
+                  name="slug"
+                  defaultValue={existing?.slug ?? ""}
+                  placeholder="rhinoplasty"
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  required
+                  dir="ltr"
+                />
+              </Field>
+              <Field label="الاسم بالعربية">
+                <Input name="nameAr" defaultValue={existing?.nameAr ?? ""} required />
+              </Field>
+              <Field label="الاسم بالإنجليزية">
+                <Input name="nameEn" defaultValue={existing?.nameEn ?? ""} required dir="ltr" />
+              </Field>
+              <Field label="أيام النقاهة (اختياري)">
+                <Input
+                  type="number"
+                  name="recoveryDays"
+                  defaultValue={existing?.recoveryDays ?? ""}
+                  min={0}
+                  max={365}
+                />
+              </Field>
+              <Field label="ترتيب العرض">
+                <Input
+                  type="number"
+                  name="sortOrder"
+                  defaultValue={existing?.sortOrder ?? 0}
+                  min={0}
+                  max={9999}
+                />
+              </Field>
+              <Field label="جراحي؟">
+                <label className="flex h-9 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="isSurgical"
+                    defaultChecked={existing?.isSurgical ?? false}
+                    className="size-4 accent-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">جراحي</span>
+                </label>
+              </Field>
+              <Field label="ظاهر للجمهور">
+                <label className="flex h-9 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="visible"
+                    defaultChecked={existing?.visible ?? true}
+                    className="size-4 accent-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">مرئي</span>
+                </label>
+              </Field>
+              <Field label="الوصف بالعربية" full>
+                <textarea
+                  name="descriptionAr"
+                  defaultValue={existing?.descriptionAr ?? ""}
+                  rows={3}
+                  className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </Field>
+              <Field label="الوصف بالإنجليزية" full>
+                <textarea
+                  name="descriptionEn"
+                  defaultValue={existing?.descriptionEn ?? ""}
+                  rows={3}
+                  dir="ltr"
+                  className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </Field>
+            </div>
 
-        <details className="rounded-lg border border-border/60 p-3">
-          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
-            بيانات SEO (اختياري)
-          </summary>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Field label="عنوان SEO (عربي)">
-              <Input name="seoTitleAr" defaultValue={existing?.seoTitleAr ?? ""} maxLength={160} />
-            </Field>
-            <Field label="عنوان SEO (إنجليزي)">
-              <Input name="seoTitleEn" defaultValue={existing?.seoTitleEn ?? ""} maxLength={160} dir="ltr" />
-            </Field>
-            <Field label="وصف SEO (عربي)" full>
-              <textarea
-                name="seoDescriptionAr"
-                defaultValue={existing?.seoDescriptionAr ?? ""}
-                rows={2}
-                maxLength={300}
-                className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              />
-            </Field>
-            <Field label="وصف SEO (إنجليزي)" full>
-              <textarea
-                name="seoDescriptionEn"
-                defaultValue={existing?.seoDescriptionEn ?? ""}
-                rows={2}
-                maxLength={300}
-                dir="ltr"
-                className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              />
-            </Field>
-          </div>
-        </details>
+            <details className="rounded-lg border border-border/60 p-3">
+              <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                بيانات SEO (اختياري)
+              </summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <Field label="عنوان SEO (عربي)">
+                  <Input name="seoTitleAr" defaultValue={existing?.seoTitleAr ?? ""} maxLength={160} />
+                </Field>
+                <Field label="عنوان SEO (إنجليزي)">
+                  <Input name="seoTitleEn" defaultValue={existing?.seoTitleEn ?? ""} maxLength={160} dir="ltr" />
+                </Field>
+                <Field label="وصف SEO (عربي)" full>
+                  <textarea
+                    name="seoDescriptionAr"
+                    defaultValue={existing?.seoDescriptionAr ?? ""}
+                    rows={2}
+                    maxLength={300}
+                    className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  />
+                </Field>
+                <Field label="وصف SEO (إنجليزي)" full>
+                  <textarea
+                    name="seoDescriptionEn"
+                    defaultValue={existing?.seoDescriptionEn ?? ""}
+                    rows={2}
+                    maxLength={300}
+                    dir="ltr"
+                    className="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  />
+                </Field>
+              </div>
+            </details>
           </DialogBody>
           <DialogFooter>
             <DialogClose
