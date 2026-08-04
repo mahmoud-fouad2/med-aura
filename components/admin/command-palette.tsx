@@ -3,50 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Command } from "cmdk"
-import {
-  Search,
-  FileHeart,
-  Users,
-  CalendarClock,
-  ClipboardList,
-  ShieldAlert,
-  Stethoscope,
-  Building2,
-  ClipboardCheck,
-  Wallet,
-  Bell,
-  Sparkles,
-  Globe2,
-  UserCog,
-  History,
-  Activity,
-  Settings2,
-  LayoutDashboard,
-  LifeBuoy,
-  type LucideIcon,
-} from "lucide-react"
+import { Search } from "lucide-react"
+import { AdminIcon } from "@/components/admin/admin-icon"
 import type { AdminNavGroup } from "@/lib/admin-nav"
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  LayoutDashboard,
-  FileHeart,
-  Users,
-  CalendarClock,
-  ClipboardList,
-  ShieldAlert,
-  Stethoscope,
-  Building2,
-  ClipboardCheck,
-  Wallet,
-  Bell,
-  Sparkles,
-  Globe2,
-  UserCog,
-  History,
-  Activity,
-  Settings2,
-  LifeBuoy,
-}
 
 export function CommandPalette({ nav }: { nav: AdminNavGroup[] }) {
   const [open, setOpen] = useState(false)
@@ -118,23 +77,23 @@ export function CommandPalette({ nav }: { nav: AdminNavGroup[] }) {
                   heading={group.title}
                   className="[&_[cmdk-group-heading]]:mb-1 [&_[cmdk-group-heading]]:mt-2 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground"
                 >
-                  {group.items.map((item) => {
-                    const Icon = ICON_MAP[item.icon] ?? LayoutDashboard
-                    return (
-                      <Command.Item
-                        key={item.href}
-                        value={`${item.label} ${item.href}`}
-                        onSelect={() => go(item.href)}
-                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary"
-                      >
-                        <Icon className="size-4 shrink-0 text-muted-foreground group-data-[selected=true]:text-primary" />
-                        <span className="flex-1 truncate">{item.label}</span>
-                        <span className="text-[10px] text-muted-foreground/70">
-                          {item.href}
-                        </span>
-                      </Command.Item>
-                    )
-                  })}
+                  {group.items.map((item) => (
+                    <Command.Item
+                      key={item.href}
+                      value={`${item.label} ${item.href}`}
+                      onSelect={() => go(item.href)}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary"
+                    >
+                      <AdminIcon
+                        name={item.icon}
+                        className="size-4 shrink-0 text-muted-foreground group-data-[selected=true]:text-primary"
+                      />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      <span className="text-[10px] text-muted-foreground/70">
+                        {item.href}
+                      </span>
+                    </Command.Item>
+                  ))}
                 </Command.Group>
               ))}
             </Command.List>
