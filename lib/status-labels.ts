@@ -58,8 +58,9 @@ const COUNTRY_NAMES_AR: Record<string, string> = Object.fromEntries(
 )
 
 /** Arabic country name for a stored ISO alpha-2 code — falls back to the stored value itself
- * (e.g. a value already spelled out in Arabic) for anything not in the map. */
-export const countryNameAr = (value: string): string => COUNTRY_NAMES_AR[value] ?? COUNTRY[value] ?? value
+ * (e.g. a value already spelled out in Arabic) for anything not in the map. COUNTRY_NAMES_AR is
+ * a strict superset of COUNTRY (same 10 codes, identical Arabic names), so no separate fallback. */
+export const countryNameAr = (value: string): string => COUNTRY_NAMES_AR[value] ?? value
 
 /** ISO codes of the countries the platform serves — signup/profile selects. */
 export const COUNTRY_CODES = Object.keys(COUNTRY)

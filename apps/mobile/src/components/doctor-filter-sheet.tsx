@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { Pressable, ScrollView, View } from "react-native"
-import { AppText, Button } from "./ui"
+import { ScrollView, View } from "react-native"
+import { AppText, Button, Chip } from "./ui"
 import { BottomSheet } from "./bottom-sheet"
 import { type DoctorFilters, type FilterFacets } from "../lib/api"
 import { useI18n } from "../lib/i18n"
-import { colors, radius, spacing } from "../theme"
+import { spacing } from "../theme"
 
 /** Price buckets are honest presets over the consultation fee (SAR). */
 const PRICE_BUCKETS: {
@@ -231,36 +231,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Chip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string
-  active: boolean
-  onPress: () => void
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={{
-        borderRadius: radius.full,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 7,
-        borderWidth: 1,
-        borderColor: active ? colors.primary : colors.border,
-        backgroundColor: active ? colors.primarySoft : colors.card,
-      }}
-    >
-      <AppText
-        variant="caption"
-        weight={active ? "bold" : "regular"}
-        color={active ? colors.primary : colors.textMuted}
-      >
-        {label}
-      </AppText>
-    </Pressable>
-  )
-}

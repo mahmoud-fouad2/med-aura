@@ -22,7 +22,10 @@ export { isR2Configured }
 
 let client: S3Client | null = null
 
-function getClient(): S3Client {
+/** The shared R2 client — exported so one-off ops scripts (e.g.
+ *  scripts/setup-r2-cors.ts) reuse the same endpoint/credentials wiring
+ *  instead of re-deriving it. */
+export function getClient(): S3Client {
   if (!isR2Configured()) {
     throw notConfigured("خدمة رفع الملفات غير مفعّلة حاليًا.")
   }

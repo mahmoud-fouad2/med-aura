@@ -380,6 +380,24 @@ async function requireMyDoctorId(userId: string): Promise<string> {
   return existing.id
 }
 
+/** Resolves the caller's doctorId and confirms they own the given availability
+ *  rule — the two lookups are independent until compared, so they run in
+ *  parallel. Throws NOT_FOUND either way (unknown doctor, unknown rule, or a
+ *  rule that belongs to someone else all look the same to the caller). */
+async function requireOwnedAvailabilityRule(ruleId: string, userId: string): Promise<string> {
+  const [doctorId, rule] = await Promise.all([
+    requireMyDoctorId(userId),
+    db
+      .select({ id: availabilityRule.id, doctorId: availabilityRule.doctorId })
+      .from(availabilityRule)
+      .where(eq(availabilityRule.id, ruleId))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ])
+  if (!rule || rule.doctorId !== doctorId) throw new AppError("NOT_FOUND")
+  return doctorId
+}
+
 /** A doctor's own weekly availability rules, for the self-service editor. */
 export async function getMyAvailabilityAction(): Promise<
   { status: "ok"; rules: AvailabilityRuleRow[] } | { status: "error"; message: string }
@@ -418,18 +436,11 @@ export async function upsertMyAvailabilityRuleAction(input: unknown): Promise<Ac
       throw validation("وقت النهاية يجب أن يكون بعد وقت البداية.")
     }
 
-    const doctorId = await requireMyDoctorId(user.id)
+    const doctorId = data.id
+      ? await requireOwnedAvailabilityRule(data.id, user.id)
+      : await requireMyDoctorId(user.id)
 
     if (data.id) {
-      const existingRule = (
-        await db
-          .select({ id: availabilityRule.id, doctorId: availabilityRule.doctorId })
-          .from(availabilityRule)
-          .where(eq(availabilityRule.id, data.id))
-          .limit(1)
-      )[0]
-      if (!existingRule || existingRule.doctorId !== doctorId) throw new AppError("NOT_FOUND")
-
       await db
         .update(availabilityRule)
         .set({
@@ -481,16 +492,7 @@ export async function deleteMyAvailabilityRuleAction(input: unknown): Promise<Ac
     if (!parsed.success) throw validation("بيانات غير صحيحة")
     const { id } = parsed.data
 
-    const doctorId = await requireMyDoctorId(user.id)
-    const existingRule = (
-      await db
-        .select({ id: availabilityRule.id, doctorId: availabilityRule.doctorId })
-        .from(availabilityRule)
-        .where(eq(availabilityRule.id, id))
-        .limit(1)
-    )[0]
-    if (!existingRule || existingRule.doctorId !== doctorId) throw new AppError("NOT_FOUND")
-
+    const doctorId = await requireOwnedAvailabilityRule(id, user.id)
     await db.delete(availabilityRule).where(eq(availabilityRule.id, id))
 
     const meta = await requestMeta()

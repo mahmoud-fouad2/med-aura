@@ -302,6 +302,46 @@ export function StatusPill({
   )
 }
 
+/** Selectable pill — filter/option chips (day-of-week, price bucket,
+ *  language, consultation type, …). One shape for every "pick one of a
+ *  few" control instead of each screen reimplementing the same Pressable. */
+export function Chip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string
+  active: boolean
+  onPress: () => void
+}) {
+  return (
+    <Pressable
+      onPress={() => {
+        void Haptics.selectionAsync()
+        onPress()
+      }}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      style={{
+        borderRadius: radius.full,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 7,
+        borderWidth: 1,
+        borderColor: active ? colors.primary : colors.border,
+        backgroundColor: active ? colors.primarySoft : colors.card,
+      }}
+    >
+      <AppText
+        variant="caption"
+        weight={active ? "bold" : "regular"}
+        color={active ? colors.primary : colors.textMuted}
+      >
+        {label}
+      </AppText>
+    </Pressable>
+  )
+}
+
 /**
  * Tinted, rounded icon container — the one "icon badge" shape every screen
  * should reach for (section headings, list-row category icons, quick

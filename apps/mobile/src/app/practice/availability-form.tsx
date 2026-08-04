@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
-import { AppText, Button, Card, ChevronBack } from "../../components/ui"
+import { AppText, Button, Card, ChevronBack, Chip } from "../../components/ui"
 import { api, useMyAvailability } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -100,7 +100,7 @@ export default function AvailabilityForm() {
           <Field label={t.availability.day}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
               {t.availability.days.map((label, day) => (
-                <Chip key={day} label={label} selected={dayOfWeek === day} onPress={() => setDayOfWeek(day)} />
+                <Chip key={day} label={label} active={dayOfWeek === day} onPress={() => setDayOfWeek(day)} />
               ))}
             </View>
           </Field>
@@ -118,7 +118,7 @@ export default function AvailabilityForm() {
                 <Chip
                   key={m}
                   label={`${m} ${t.availability.minutesSuffix}`}
-                  selected={slotMinutes === m}
+                  active={slotMinutes === m}
                   onPress={() => setSlotMinutes(m)}
                 />
               ))}
@@ -173,31 +173,6 @@ export default function AvailabilityForm() {
   )
 }
 
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={() => {
-        void Haptics.selectionAsync()
-        onPress()
-      }}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      style={{
-        paddingHorizontal: spacing.md,
-        paddingVertical: 8,
-        borderRadius: radius.full,
-        borderWidth: 1,
-        borderColor: selected ? colors.primary : colors.border,
-        backgroundColor: selected ? colors.primarySoft : "#FFFFFF",
-      }}
-    >
-      <AppText variant="caption" weight={selected ? "bold" : "regular"} color={selected ? colors.primary : colors.textMuted}>
-        {label}
-      </AppText>
-    </Pressable>
-  )
-}
-
 function TypeButton({
   label,
   icon,
@@ -242,7 +217,7 @@ function TimeChipRow({ value, onChange }: { value: string; onChange: (t: string)
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
       {TIME_OPTIONS.map((time) => (
-        <Chip key={time} label={time} selected={value === time} onPress={() => onChange(time)} />
+        <Chip key={time} label={time} active={value === time} onPress={() => onChange(time)} />
       ))}
     </ScrollView>
   )

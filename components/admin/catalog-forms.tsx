@@ -222,6 +222,29 @@ export function CategoryFormButton({
   )
 }
 
+/** Runs an async image action (upload/remove) with consistent busy/error/toast
+ *  handling — shared by ImageSlot's own upload/remove and the procedure
+ *  gallery's, which used to each hand-roll this wiring and had drifted (only
+ *  one of the two toasted on failure). */
+async function runImageAction(
+  setBusy: (busy: boolean) => void,
+  setError: (error: string | null) => void,
+  fn: () => Promise<void>,
+  fallbackMessage: string,
+) {
+  setBusy(true)
+  setError(null)
+  try {
+    await fn()
+  } catch (err) {
+    const message = err instanceof Error ? err.message : fallbackMessage
+    setError(message)
+    toast.error(message)
+  } finally {
+    setBusy(false)
+  }
+}
+
 /** Shown instead of any uploader when the R2 bucket isn't configured on this deploy. */
 function ImageUploadDisabledNotice() {
   return (
@@ -256,28 +279,12 @@ function ImageSlot({
   const disabled = busy || Boolean(externallyDisabled)
 
   async function handleUpload(file: File) {
-    setBusy(true)
-    setError(null)
-    try {
-      await onUpload(file)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذّر رفع الصورة")
-    } finally {
-      setBusy(false)
-    }
+    await runImageAction(setBusy, setError, () => onUpload(file), "تعذّر رفع الصورة")
   }
 
   async function handleRemove() {
     if (!onRemove) return
-    setBusy(true)
-    setError(null)
-    try {
-      await onRemove()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذّر حذف الصورة")
-    } finally {
-      setBusy(false)
-    }
+    await runImageAction(setBusy, setError, onRemove, "تعذّر حذف الصورة")
   }
 
   return (
@@ -630,35 +637,29 @@ function ProcedureImageUploader({
   }
 
   async function handleGalleryUpload(file: File) {
-    setGalleryBusy(true)
-    setGalleryError(null)
-    try {
-      await uploadToSlot(file, "gallery")
-      toast.success("تم رفع الصورة")
-      router.refresh()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "تعذّر رفع الصورة"
-      setGalleryError(message)
-      toast.error(message)
-    } finally {
-      setGalleryBusy(false)
-    }
+    await runImageAction(
+      setGalleryBusy,
+      setGalleryError,
+      async () => {
+        await uploadToSlot(file, "gallery")
+        toast.success("تم رفع الصورة")
+        router.refresh()
+      },
+      "تعذّر رفع الصورة",
+    )
   }
 
   async function handleGalleryRemove(objectKey: string) {
-    setGalleryBusy(true)
-    setGalleryError(null)
-    try {
-      await removeObject(objectKey)
-      toast.success("تم حذف الصورة")
-      router.refresh()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "تعذّر حذف الصورة"
-      setGalleryError(message)
-      toast.error(message)
-    } finally {
-      setGalleryBusy(false)
-    }
+    await runImageAction(
+      setGalleryBusy,
+      setGalleryError,
+      async () => {
+        await removeObject(objectKey)
+        toast.success("تم حذف الصورة")
+        router.refresh()
+      },
+      "تعذّر حذف الصورة",
+    )
   }
 
   if (!r2Enabled) return <ImageUploadDisabledNotice />

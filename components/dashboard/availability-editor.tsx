@@ -30,6 +30,10 @@ import type { AvailabilityRuleRow } from "@/lib/data/admin-directory"
 const DAYS = [0, 1, 2, 3, 4, 5, 6]
 const SLOT_OPTIONS = [15, 20, 30, 45, 60, 90]
 type ConsultationType = "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
+const CONSULTATION_TYPES: { value: ConsultationType; label: string; icon: typeof Video }[] = [
+  { value: "VIDEO_CONSULTATION", label: "فيديو", icon: Video },
+  { value: "IN_PERSON_CONSULTATION", label: "حضوري", icon: Building2 },
+]
 
 function fmtTime(t: string): string {
   return t.slice(0, 5)
@@ -204,32 +208,22 @@ function AvailabilityRuleFormButton({ existing }: { existing?: AvailabilityRuleR
 
           <Field label="نوع الاستشارة">
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setType("VIDEO_CONSULTATION")}
-                aria-pressed={type === "VIDEO_CONSULTATION"}
-                className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                  type === "VIDEO_CONSULTATION"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
-                )}
-              >
-                <Video className="size-4" /> فيديو
-              </button>
-              <button
-                type="button"
-                onClick={() => setType("IN_PERSON_CONSULTATION")}
-                aria-pressed={type === "IN_PERSON_CONSULTATION"}
-                className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                  type === "IN_PERSON_CONSULTATION"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
-                )}
-              >
-                <Building2 className="size-4" /> حضوري
-              </button>
+              {CONSULTATION_TYPES.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setType(value)}
+                  aria-pressed={type === value}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                    type === value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4" /> {label}
+                </button>
+              ))}
             </div>
           </Field>
 

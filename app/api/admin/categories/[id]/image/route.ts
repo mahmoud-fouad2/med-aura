@@ -74,16 +74,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     // from being pointed at another's object key.
     if (!objectKey.startsWith(`catalog/categories/${id}/main/`))
       return NextResponse.json({ error: "غير مصرّح بهذه العملية." }, { status: 403 })
-    if (!(await objectExists(objectKey)))
-      return NextResponse.json({ error: "تعذّر العثور على الصورة المرفوعة. حاول مرة أخرى." }, { status: 404 })
-
-    const row = (
-      await db
+    const [exists, row] = await Promise.all([
+      objectExists(objectKey),
+      db
         .select({ id: procedureCategory.id, imageKey: procedureCategory.imageKey })
         .from(procedureCategory)
         .where(eq(procedureCategory.id, id))
         .limit(1)
-    )[0]
+        .then((rows) => rows[0]),
+    ])
+    if (!exists)
+      return NextResponse.json({ error: "تعذّر العثور على الصورة المرفوعة. حاول مرة أخرى." }, { status: 404 })
     if (!row) throw new AppError("NOT_FOUND")
 
     const previousKey = row.imageKey
