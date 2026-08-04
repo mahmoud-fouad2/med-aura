@@ -24,6 +24,7 @@
     "db:bootstrap-admin": "tsx scripts/bootstrap-admin.ts",
     "db:health": "tsx scripts/db-health.ts",
     "db:status": "tsx scripts/check-database.ts",
+    "r2:setup-cors": "tsx scripts/setup-r2-cors.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
