@@ -24,17 +24,10 @@ import { isStripeConfigured, isR2Configured, isEmailConfigured } from "@/lib/env
 import { Badge } from "@/components/ui/badge"
 import { caseStatusAr, paymentPurposeAr, currencyAr, safetyAlertSeverityAr } from "@/lib/status-labels"
 import { actionLabelAr } from "@/lib/audit-labels"
+import { safeName } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
-
-/** A stored name that's already corrupted (e.g. lost in a bad encoding
- *  round-trip somewhere upstream) shouldn't render as raw "????" in a
- *  professional admin surface — show an honest "unknown" label instead. */
-function safeName(name: string, fallback = "مستخدم غير معروف"): string {
-  const trimmed = name.trim()
-  return !trimmed || /^[?？\s]+$/.test(trimmed) ? fallback : name
-}
 
 type ActivityRow = { id: string; actorName: string | null; action: string; createdAt: Date }
 

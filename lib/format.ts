@@ -60,3 +60,18 @@ export function firstNameOf(fullName: string): string {
   const first = cleaned.split(/\s+/)[0]
   return first || fullName.trim() || "بك"
 }
+
+/** True for a string that's lost to a bad encoding round-trip somewhere
+ *  upstream (before it ever reached this app — seen on several accounts,
+ *  mostly QA test signups): empty, or nothing but "?" characters. */
+export function isGarbled(text: string): boolean {
+  const trimmed = text.trim()
+  return !trimmed || /^[?？\s]+$/.test(trimmed)
+}
+
+/** A stored name that's garbled shouldn't render as raw "????" in a
+ *  professional admin surface — show an honest "unknown" label instead.
+ *  Display-only: the underlying bad data is untouched. */
+export function safeName(name: string, fallback = "مستخدم غير معروف"): string {
+  return isGarbled(name) ? fallback : name
+}

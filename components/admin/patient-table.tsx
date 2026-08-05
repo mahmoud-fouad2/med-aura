@@ -19,7 +19,7 @@ import { getUserActivityAction } from "@/lib/actions/users"
 import { getPatientCasesAction, getPatientPaymentsAction, getPatientNotificationsAction } from "@/lib/actions/admin-patients"
 import { actionLabelAr } from "@/lib/audit-labels"
 import { caseStatusAr, invoiceStatusAr, countryNameAr, userAccountStatusAr } from "@/lib/status-labels"
-import { dtfMedium } from "@/lib/format"
+import { dtfMedium, safeName, isGarbled } from "@/lib/format"
 import type { AdminPatientRow } from "@/lib/data/admin-directory"
 import type { PatientCaseRow, PatientNotificationRow } from "@/lib/data/admin-patient-detail"
 import type { MyPaymentRow } from "@/lib/data/invoice"
@@ -50,7 +50,7 @@ export function PatientTable({ rows, canViewActivity, canManageAccount }: { rows
                   {p.name.trim().charAt(0) || "؟"}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{p.name}</p>
+                  <p className="truncate font-medium text-foreground">{safeName(p.name)}</p>
                   <p dir="ltr" className="truncate text-xs text-muted-foreground">{p.email}</p>
                 </div>
               </div>
@@ -58,7 +58,7 @@ export function PatientTable({ rows, canViewActivity, canManageAccount }: { rows
           },
           {
             header: "الموقع",
-            cell: (p) => `${p.city ? `${p.city}، ` : ""}${p.residenceCountry ? countryNameAr(p.residenceCountry) : "—"}`,
+            cell: (p) => `${p.city && !isGarbled(p.city) ? `${p.city}، ` : ""}${p.residenceCountry ? countryNameAr(p.residenceCountry) : "—"}`,
           },
           {
             header: "الحالة",
@@ -110,7 +110,7 @@ function PatientDetailDrawer({
   return (
     <>
       <SheetHeader>
-        <SheetTitle>{patient.name}</SheetTitle>
+        <SheetTitle>{safeName(patient.name)}</SheetTitle>
         <SheetDescription dir="ltr" className="text-start">
           {patient.email}
         </SheetDescription>
@@ -133,7 +133,7 @@ function PatientDetailDrawer({
               <DetailRow label="الهاتف" value={patient.phone ? <span dir="ltr">{patient.phone}</span> : "—"} />
               <DetailRow
                 label="الموقع"
-                value={`${patient.city ? `${patient.city}، ` : ""}${patient.residenceCountry ? countryNameAr(patient.residenceCountry) : "—"}`}
+                value={`${patient.city && !isGarbled(patient.city) ? `${patient.city}، ` : ""}${patient.residenceCountry ? countryNameAr(patient.residenceCountry) : "—"}`}
               />
               <DetailRow label="عدد الحالات الطبية" value={patient.caseCount.toLocaleString("ar-SA-u-nu-latn")} />
               <DetailRow label="تاريخ التسجيل" value={dtfMedium(patient.createdAt)} />
