@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Plus, Pencil, Save, X, EyeOff, Eye, Trash2, ImagePlus, ImageOff } from "lucide-react"
+import { Plus, Pencil, Save, X, EyeOff, Eye, Trash2, ImagePlus, ImageOff, MoreVertical } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,13 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 import {
   upsertCategoryAction,
   upsertProcedureAction,
@@ -732,86 +739,91 @@ function ProcedureImageUploader({
   )
 }
 
-export function ToggleVisibleButton({
+/**
+ * Replaces what used to be two separate always-visible icon buttons
+ * (toggle-visible, delete) sitting right next to Edit in every row — three
+ * equal-weight buttons with no distinction between a safe toggle and a
+ * destructive delete. Edit stays its own visible button (the action you
+ * take most often); this menu holds the two secondary ones, with delete
+ * visually separated and red inside it instead of sitting flush against
+ * the others.
+ */
+export function CatalogRowActionsMenu({
   kind,
   id,
+  name,
   visible,
 }: {
   kind: "category" | "procedure"
   id: string
+  name: string
   visible: boolean
 }) {
   const [pending, start] = useTransition()
-  const router = useRouter()
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label={visible ? "إخفاء" : "إظهار"}
-      loading={pending}
-      onClick={() =>
-        start(async () => {
-          const res =
-            kind === "category"
-              ? await toggleCategoryVisibleAction(id)
-              : await toggleProcedureVisibleAction(id)
-          if (res.status === "ok") {
-            toast.success(visible ? "تم الإخفاء" : "تم الإظهار")
-            router.refresh()
-          } else {
-            toast.error(res.message)
-          }
-        })
-      }
-    >
-      {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-    </Button>
-  )
-}
-
-export function CatalogDeleteButton({
-  kind,
-  id,
-  name,
-}: {
-  kind: "category" | "procedure"
-  id: string
-  name: string
-}) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const router = useRouter()
   const kindLabel = kind === "category" ? "القسم" : "الإجراء"
-  return (
-    <ConfirmDialog
-      trigger={
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label="حذف"
-          title="حذف"
-        >
-          <Trash2 className="size-4 text-destructive" />
-        </Button>
-      }
-      title={`حذف ${kindLabel} "${name}"؟`}
-      description={`سيُحذف "${name}" نهائيًا ولا يمكن التراجع عن هذا الإجراء. إن كان مرتبطًا بحالات مرضى أو أطباء سنمنع الحذف ونوضح لك السبب.`}
-      confirmLabel="حذف نهائيًا"
-      tone="destructive"
-      onConfirm={async () => {
-        const res =
-          kind === "category"
-            ? await deleteCategoryAction(id)
-            : await deleteProcedureAction(id)
-        if (res.status === "ok") {
-          toast.success("تم الحذف.")
-          router.refresh()
-          return true
-        }
+
+  function toggleVisible() {
+    start(async () => {
+      const res =
+        kind === "category"
+          ? await toggleCategoryVisibleAction(id)
+          : await toggleProcedureVisibleAction(id)
+      if (res.status === "ok") {
+        toast.success(visible ? "تم الإخفاء" : "تم الإظهار")
+        router.refresh()
+      } else {
         toast.error(res.message)
-        return false
-      }}
-    />
+      }
+    })
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<Button type="button" variant="ghost" size="icon-sm" aria-label="مزيد من الإجراءات" loading={pending} />}
+        >
+          <MoreVertical className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={toggleVisible} disabled={pending}>
+            {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {visible ? "إخفاء" : "إظهار"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={() => setConfirmOpen(true)}>
+            <Trash2 className="size-4" /> حذف
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Controlled, not `trigger`-based — the trigger above lives inside
+          the dropdown's own dismissible layer, which would unmount this
+          dialog the instant the menu item click closes the menu. */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`حذف ${kindLabel} "${name}"؟`}
+        description={`سيُحذف "${name}" نهائيًا ولا يمكن التراجع عن هذا الإجراء. إن كان مرتبطًا بحالات مرضى أو أطباء سنمنع الحذف ونوضح لك السبب.`}
+        confirmLabel="حذف نهائيًا"
+        tone="destructive"
+        onConfirm={async () => {
+          const res =
+            kind === "category"
+              ? await deleteCategoryAction(id)
+              : await deleteProcedureAction(id)
+          if (res.status === "ok") {
+            toast.success("تم الحذف.")
+            router.refresh()
+            return true
+          }
+          toast.error(res.message)
+          return false
+        }}
+      />
+    </>
   )
 }
 

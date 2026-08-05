@@ -11,8 +11,7 @@ import { StatusBadge } from "@/components/admin/status-badge"
 import {
   CategoryFormButton,
   ProcedureFormButton,
-  ToggleVisibleButton,
-  CatalogDeleteButton,
+  CatalogRowActionsMenu,
 } from "@/components/admin/catalog-forms"
 
 export const dynamic = "force-dynamic"
@@ -87,8 +86,7 @@ export default async function AdminProceduresPage() {
                   actions={
                     <div className="flex items-center gap-1">
                       <CategoryFormButton existing={c} r2Enabled={r2Enabled} />
-                      <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
-                      <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
+                      <CatalogRowActionsMenu kind="category" id={c.id} name={c.nameAr} visible={c.visible} />
                     </div>
                   }
                 />
@@ -131,8 +129,7 @@ export default async function AdminProceduresPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <CategoryFormButton existing={c} r2Enabled={r2Enabled} />
-                          <ToggleVisibleButton kind="category" id={c.id} visible={c.visible} />
-                          <CatalogDeleteButton kind="category" id={c.id} name={c.nameAr} />
+                          <CatalogRowActionsMenu kind="category" id={c.id} name={c.nameAr} visible={c.visible} />
                         </div>
                       </td>
                     </tr>
@@ -188,8 +185,7 @@ export default async function AdminProceduresPage() {
                   actions={
                     <div className="flex items-center gap-1">
                       <ProcedureFormButton existing={p} categories={categoryOptions} r2Enabled={r2Enabled} />
-                      <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
-                      <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
+                      <CatalogRowActionsMenu kind="procedure" id={p.id} name={p.nameAr} visible={p.visible} />
                     </div>
                   }
                 />
@@ -238,8 +234,7 @@ export default async function AdminProceduresPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <ProcedureFormButton existing={p} categories={categoryOptions} r2Enabled={r2Enabled} />
-                          <ToggleVisibleButton kind="procedure" id={p.id} visible={p.visible} />
-                          <CatalogDeleteButton kind="procedure" id={p.id} name={p.nameAr} />
+                          <CatalogRowActionsMenu kind="procedure" id={p.id} name={p.nameAr} visible={p.visible} />
                         </div>
                       </td>
                     </tr>
