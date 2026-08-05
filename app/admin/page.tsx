@@ -1,8 +1,8 @@
 import Link from "next/link"
 import {
   Users, FileHeart, Activity, AlertTriangle, ClipboardCheck, Stethoscope,
-  Building2, ClipboardList, ShieldAlert, Wallet, Undo2, Bell,
-  CheckCircle2, XCircle, Database, Plug,
+  Building2, ClipboardList, ShieldAlert, Wallet, Bell,
+  CheckCircle2, XCircle, Database, Plug, CheckCheck, Mail, HardDrive, CreditCard,
 } from "lucide-react"
 import { requireAuthPage } from "@/lib/session"
 import { getUserPermissions, PERMISSIONS } from "@/lib/rbac"
@@ -14,7 +14,6 @@ import {
   getRecent30dActivity,
 } from "@/lib/data/admin-overview"
 import { ActivityChart } from "@/components/admin/activity-chart"
-import { PageHeader } from "@/components/dashboard/page-header"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
 import { listRecentActivity } from "@/lib/data/admin-activity"
@@ -24,8 +23,40 @@ import { getMigrationStatus } from "@/lib/db/migration-status"
 import { isStripeConfigured, isR2Configured, isEmailConfigured } from "@/lib/env"
 import { Badge } from "@/components/ui/badge"
 import { caseStatusAr, paymentPurposeAr, currencyAr, safetyAlertSeverityAr } from "@/lib/status-labels"
+import { actionLabelAr } from "@/lib/audit-labels"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
+
+/** A stored name that's already corrupted (e.g. lost in a bad encoding
+ *  round-trip somewhere upstream) shouldn't render as raw "????" in a
+ *  professional admin surface — show an honest "unknown" label instead. */
+function safeName(name: string, fallback = "مستخدم غير معروف"): string {
+  const trimmed = name.trim()
+  return !trimmed || /^[?？\s]+$/.test(trimmed) ? fallback : name
+}
+
+type ActivityRow = { id: string; actorName: string | null; action: string; createdAt: Date }
+
+/** Collapses repeated same-actor/same-action/same-day rows (e.g. eight
+ *  identical "logged in" audit entries) into one row with a count, instead
+ *  of listing every occurrence — same source data, just not restated. */
+function summarizeActivity(rows: ActivityRow[]) {
+  const groups: { key: string; actorName: string; actionLabel: string; count: number; latest: Date; id: string }[] = []
+  for (const r of rows) {
+    const actor = r.actorName ?? "النظام"
+    const actionLabel = actionLabelAr(r.action)
+    const key = `${actor}|${actionLabel}|${r.createdAt.toDateString()}`
+    const existing = groups.find((g) => g.key === key)
+    if (existing) {
+      existing.count += 1
+      if (r.createdAt > existing.latest) existing.latest = r.createdAt
+    } else {
+      groups.push({ key, actorName: actor, actionLabel, count: 1, latest: r.createdAt, id: r.id })
+    }
+  }
+  return groups.sort((a, b) => b.latest.getTime() - a.latest.getTime()).slice(0, 5)
+}
 
 export default async function AdminOverviewPage() {
   const user = await requireAuthPage("/admin")
@@ -52,46 +83,68 @@ export default async function AdminOverviewPage() {
     ])
   const pendingPayments = pendingPaymentsList.filter((p) => ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(p.status)).slice(0, 6)
   const openRefunds = refunds.filter((r) => ["REQUESTED", "UNDER_REVIEW", "APPROVED", "PROVIDER_CONFIRMED"].includes(r.status))
+  const activitySummary = summarizeActivity(recentActivity)
+
+  const systemChecks = dbStatus
+    ? [
+        { key: "db", label: "قاعدة البيانات", icon: Database, ok: dbStatus.connected && dbStatus.ready },
+        { key: "pay", label: "بوابة الدفع", icon: CreditCard, ok: isStripeConfigured() },
+        { key: "storage", label: "تخزين الملفات", icon: HardDrive, ok: isR2Configured() },
+        { key: "mail", label: "البريد", icon: Mail, ok: isEmailConfigured() },
+      ]
+    : []
+  const systemFailures = systemChecks.filter((c) => !c.ok)
+
+  // Everything in "Needs attention", one prioritized list — an item only
+  // exists here if its count is greater than zero.
+  type AttentionItem = { key: string; icon: React.ComponentType<{ className?: string }>; label: string; count: number; href: string }
+  const attentionItems: AttentionItem[] = [
+    ...(canSafety && highPrioritySafety.length > 0
+      ? [{ key: "safety", icon: ShieldAlert, label: "تنبيهات سلامة عالية الأولوية", count: highPrioritySafety.length, href: "/admin/safety-alerts" }]
+      : []),
+    ...(canCases && interventionCases.length > 0
+      ? [{ key: "intervention", icon: AlertTriangle, label: "حالات تحتاج تدخلًا", count: interventionCases.length, href: "/admin/cases" }]
+      : []),
+    ...(canAdmin && systemFailures.length > 0
+      ? [{ key: "system", icon: Database, label: "خدمات نظام غير سليمة", count: systemFailures.length, href: "/admin/system-health" }]
+      : []),
+    ...(canCases && kpis.overdueFollowUps > 0
+      ? [{ key: "followups", icon: ClipboardList, label: "متابعات متأخرة", count: kpis.overdueFollowUps, href: "/admin/follow-ups?status=overdue" }]
+      : []),
+    ...(canReview && recentApplications.length > 0
+      ? [{ key: "applications", icon: ClipboardCheck, label: "طلبات انضمام بانتظار المراجعة", count: recentApplications.length, href: "/admin/applications" }]
+      : []),
+    ...(canFinance && pendingPayments.length + openRefunds.length > 0
+      ? [{ key: "payments", icon: Wallet, label: "مدفوعات واسترجاعات معلّقة", count: pendingPayments.length + openRefunds.length, href: "/admin/finance" }]
+      : []),
+  ]
+
+  const nowLabel = new Date().toLocaleString("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" })
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="نظرة عامة تشغيلية"
-        title={`مرحبًا، ${user.name}`}
-        description="ملخّص واضح لحركة المنصة والمهام التي تحتاج متابعة، مع عرض الأقسام المناسبة لصلاحياتك."
-      />
+    <div className="space-y-5">
+      {/* 1. Compact header — no card wrapper, no repeated breadcrumb */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="font-heading text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/80">نظرة عامة تشغيلية</p>
+          <h1 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-[26px]">مرحبًا، {user.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">حركة المنصة والمهام التي تحتاج متابعة · آخر تحديث {nowLabel}</p>
+        </div>
+        {canCases && (
+          <Link href="/admin/cases" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+            <FileHeart className="size-4" /> إدارة الحالات
+          </Link>
+        )}
+      </div>
 
-      {/* Hero metrics — larger, more prominent */}
-      {canCases && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            icon={Users}
-            label="إجمالي المرضى"
-            value={kpis.totalPatients.toLocaleString("ar-SA-u-nu-latn")}
-            hint="مسجّلون على المنصة"
-            tone="primary"
-            emphasis
-          />
-          <MetricCard
-            icon={FileHeart}
-            label="حالات جديدة"
-            value={kpis.newCasesThisWeek.toLocaleString("ar-SA-u-nu-latn")}
-            hint="خلال آخر ٧ أيام"
-            tone="success"
-            emphasis
-          />
-          <MetricCard
-            icon={Activity}
-            label="الحالات النشطة"
-            value={kpis.activeCases.toLocaleString("ar-SA-u-nu-latn")}
-            hint="في أي مرحلة قبل الإغلاق"
-            href="/admin/cases"
-            tone="primary"
-            emphasis
-          />
+      {/* 2. Executive summary — one primary indicator, three smaller ones.
+          On mobile the primary spans both columns (full width); the rest
+          share a 2-column grid instead of stacking one-per-row. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="col-span-2 lg:col-span-1">
           <MetricCard
             icon={AlertTriangle}
-            label="تحتاج تدخلًا"
+            label="حالات تحتاج تدخلًا"
             value={kpis.casesNeedingIntervention.toLocaleString("ar-SA-u-nu-latn")}
             hint={kpis.casesNeedingIntervention > 0 ? "افتح قائمة الحالات الحرجة" : "كل شيء على ما يرام"}
             href="/admin/cases"
@@ -99,229 +152,204 @@ export default async function AdminOverviewPage() {
             emphasis
           />
         </div>
-      )}
-
-      {/* Secondary metrics — smaller */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard icon={Users} label="إجمالي المرضى" value={kpis.totalPatients.toLocaleString("ar-SA-u-nu-latn")} hint="مسجّلون على المنصة" tone="neutral" />
         {canReview && (
-          <>
-            <MetricCard
-              icon={ClipboardCheck}
-              label="طلبات انضمام"
-              value={kpis.pendingApplications.toLocaleString("ar-SA-u-nu-latn")}
-              hint={kpis.pendingApplications > 0 ? "بانتظار المراجعة" : "لا طلبات معلّقة"}
-              href="/admin/applications"
-              tone={kpis.pendingApplications > 0 ? "warning" : "neutral"}
-            />
-            <MetricCard
-              icon={Stethoscope}
-              label="أطباء معتمدون"
-              value={kpis.approvedDoctors.toLocaleString("ar-SA-u-nu-latn")}
-              href="/admin/doctors"
-              tone="neutral"
-            />
-            <MetricCard
-              icon={Building2}
-              label="مراكز معتمدة"
-              value={kpis.approvedCenters.toLocaleString("ar-SA-u-nu-latn")}
-              href="/admin/centers"
-              tone="neutral"
-            />
-          </>
-        )}
-        {canCases && (
           <MetricCard
-            icon={ClipboardList}
-            label="متابعات متأخرة"
-            value={kpis.overdueFollowUps.toLocaleString("ar-SA-u-nu-latn")}
-            href="/admin/follow-ups"
-            tone={kpis.overdueFollowUps > 0 ? "warning" : "neutral"}
-          />
-        )}
-        {canSafety && (
-          <MetricCard
-            icon={ShieldAlert}
-            label="تنبيهات سلامة مفتوحة"
-            value={kpis.openSafetyAlerts.toLocaleString("ar-SA-u-nu-latn")}
-            href="/admin/safety-alerts"
-            tone={kpis.openSafetyAlerts > 0 ? "danger" : "success"}
+            icon={ClipboardCheck}
+            label="طلبات معلّقة"
+            value={kpis.pendingApplications.toLocaleString("ar-SA-u-nu-latn")}
+            hint={kpis.pendingApplications > 0 ? "بانتظار المراجعة" : "لا طلبات معلّقة"}
+            href="/admin/applications"
+            tone={kpis.pendingApplications > 0 ? "warning" : "neutral"}
           />
         )}
         {canFinance && (
-          <>
-            <MetricCard
-              icon={Wallet}
-              label="مدفوعات معلّقة"
-              value={kpis.pendingPayments.toLocaleString("ar-SA-u-nu-latn")}
-              href="/admin/finance"
-              tone="warning"
-            />
-            <MetricCard
-              icon={Wallet}
-              label="إجمالي المحصّل"
-              value={`${(kpis.totalPaidAmount ?? 0).toLocaleString("ar-SA-u-nu-latn")} ر.س`}
-              href="/admin/finance"
-              tone="success"
-            />
-            <MetricCard
-              icon={Undo2}
-              label="طلبات استرجاع"
-              value={(kpis.openRefundRequests ?? 0).toLocaleString("ar-SA-u-nu-latn")}
-              href="/admin/finance#refunds"
-              tone={(kpis.openRefundRequests ?? 0) > 0 ? "warning" : "neutral"}
-            />
-          </>
+          <MetricCard icon={Wallet} label="إجمالي المحصّل" value={`${(kpis.totalPaidAmount ?? 0).toLocaleString("ar-SA-u-nu-latn")} ر.س`} href="/admin/finance" tone="success" />
         )}
-        <MetricCard
-          icon={Bell}
-          label="إشعارات غير مقروءة"
-          value={unreadNotifications.toLocaleString("ar-SA-u-nu-latn")}
-          href="/dashboard/notifications"
-          tone={unreadNotifications > 0 ? "warning" : "neutral"}
-        />
       </div>
 
-      {canCases && activity30d.length > 0 && (
+      {/* 3. Attention center — compact, prioritized rows; nothing rendered
+          for a zero count, one calm line if the whole list is empty. */}
+      {(canSafety || canCases || canReview || canFinance || canAdmin) && (
         <SectionCard
-          icon={Activity}
-          title="النشاط خلال آخر 30 يومًا"
-          description="حالات جديدة ودفعات ناجحة خلال الفترة الأخيرة."
+          icon={AlertTriangle}
+          title="يحتاج إلى انتباه"
+          description="كل ما يحتاج قرارًا منك الآن، مرتّبًا حسب الأولوية."
+          tone={attentionItems.length > 0 ? "danger" : "success"}
         >
-          <div className="p-5">
-            <ActivityChart data={activity30d} showFinance={canFinance} />
-          </div>
+          {attentionItems.length === 0 ? (
+            <EmptySection icon={CheckCheck} text="لا توجد عناصر تحتاج تدخلًا الآن — كل شيء تحت السيطرة." />
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {attentionItems.map((item) => (
+                <li key={item.key}>
+                  <Link href={item.href} className="flex items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-muted/40">
+                    <div className="flex items-center gap-2.5">
+                      <item.icon className="size-4 shrink-0 text-destructive" />
+                      <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                    </div>
+                    <Badge variant="destructive">{item.count.toLocaleString("ar-SA-u-nu-latn")}</Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {canCases && (
-          <SectionCard
-            icon={AlertTriangle}
-            title="حالات تحتاج تدخلًا الآن"
-            description="حالات على وشك تجاوز المهلة أو تحمل علامة خطر."
-            viewAllHref="/admin/cases"
-            tone={interventionCases.length > 0 ? "danger" : "primary"}
-          >
-            {interventionCases.length === 0 ? (
-              <EmptySection text="لا توجد حالات تحتاج تدخلًا حاليًا." />
-            ) : (
-              <ul className="divide-y divide-border/60">
-                {interventionCases.map((c) => (
-                  <ListRow key={c.id} href={`/dashboard/cases/${c.id}`} title={`${c.patientName} — ${c.procedureName}`} subtitle={c.reason} badge={caseStatusAr(c.status)} />
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-        )}
+      {/* 4. Main grid — wide working column + narrow side column */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          {canCases && (
+            <SectionCard icon={Activity} title="النشاط خلال آخر 30 يومًا" description="حالات جديدة ودفعات ناجحة.">
+              <div className="p-4">
+                {activity30d.length > 0 ? (
+                  <ActivityChart data={activity30d} showFinance={canFinance} />
+                ) : (
+                  <EmptySection icon={Activity} text="لا يوجد نشاط كافٍ لعرض اتجاه خلال آخر 30 يومًا بعد." />
+                )}
+              </div>
+            </SectionCard>
+          )}
 
-        {canReview && (
-          <SectionCard
-            icon={ClipboardCheck}
-            title="أحدث طلبات الانضمام"
-            description="طلبات الأطباء والمراكز بانتظار المراجعة."
-            viewAllHref="/admin/applications"
-            tone="primary"
-          >
-            {recentApplications.length === 0 ? (
-              <EmptySection text="لا توجد طلبات انضمام معلّقة." />
-            ) : (
-              <ul className="divide-y divide-border/60">
-                {recentApplications.map((a) => (
-                  <ListRow key={a.id} href="/admin/applications" title={a.applicantName} subtitle={a.kind === "DOCTOR" ? "طلب طبيب" : "طلب مركز"} badge={a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("ar-SA-u-nu-latn") : "—"} />
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-        )}
+          {canCases && (
+            <SectionCard icon={FileHeart} title="حالات تحتاج مراجعة" viewAllHref="/admin/cases" description="أحدث الحالات على وشك تجاوز المهلة أو تحمل علامة خطر.">
+              {interventionCases.length === 0 ? (
+                <EmptySection text="لا توجد حالات تحتاج تدخلًا حاليًا." />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {interventionCases.map((c) => (
+                    <ListRow key={c.id} href={`/dashboard/cases/${c.id}`} title={`${safeName(c.patientName)} — ${c.procedureName}`} subtitle={c.reason} badge={caseStatusAr(c.status)} />
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          )}
 
-        {canSafety && (
-          <SectionCard
-            icon={ShieldAlert}
-            title="تنبيهات سلامة عالية الأولوية"
-            description="حالات تحتاج تواصلًا سريعًا مع المريض."
-            viewAllHref="/admin/safety-alerts"
-            tone="danger"
-          >
-            {highPrioritySafety.length === 0 ? (
-              <EmptySection text="لا توجد تنبيهات سلامة عالية الأولوية حاليًا." />
-            ) : (
-              <ul className="divide-y divide-border/60">
-                {highPrioritySafety.map((a) => (
-                  <ListRow key={a.id} href={`/dashboard/cases/${a.caseId}`} title={a.patientName} subtitle={a.summary ?? "تنبيه سلامة"} badge={safetyAlertSeverityAr(a.severity)} badgeVariant="destructive" />
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-        )}
+          {canReview && (
+            <SectionCard icon={ClipboardCheck} title="أحدث طلبات الانضمام" viewAllHref="/admin/applications" description="طلبات الأطباء والمراكز بانتظار المراجعة.">
+              {recentApplications.length === 0 ? (
+                <EmptySection text="لا توجد طلبات انضمام معلّقة." />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {recentApplications.map((a) => (
+                    <ListRow key={a.id} href="/admin/applications" title={safeName(a.applicantName)} subtitle={a.kind === "DOCTOR" ? "طلب طبيب" : "طلب مركز"} badge={a.submittedAt ? new Date(a.submittedAt).toLocaleDateString("ar-SA-u-nu-latn") : "—"} />
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          )}
 
-        {canFinance && (
-          <SectionCard
-            icon={Wallet}
-            title="مدفوعات واسترجاعات معلّقة"
-            description="بانتظار المعالجة اليدوية أو تأكيد المزوّد."
-            viewAllHref="/admin/finance"
-            tone="warning"
-          >
-            {pendingPayments.length === 0 && openRefunds.length === 0 ? (
-              <EmptySection text="لا توجد مدفوعات أو استرجاعات معلّقة." />
-            ) : (
-              <ul className="divide-y divide-border/60">
-                {pendingPayments.map((p) => (
-                  <ListRow key={p.id} href="/admin/finance" title={p.payerName} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(p.currency)}`} badge="معلّقة" />
-                ))}
-                {openRefunds.map((r) => (
-                  <ListRow key={r.id} href="/admin/finance#refunds" title={r.requestedByName} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-        )}
+          {canFinance && (
+            <SectionCard icon={Wallet} title="مدفوعات واسترجاعات معلّقة" viewAllHref="/admin/finance" description="بانتظار المعالجة اليدوية أو تأكيد المزوّد.">
+              {pendingPayments.length === 0 && openRefunds.length === 0 ? (
+                <EmptySection text="لا توجد مدفوعات أو استرجاعات معلّقة." />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {pendingPayments.map((p) => (
+                    <ListRow key={p.id} href="/admin/finance" title={safeName(p.payerName)} subtitle={`${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(p.currency)}`} badge="معلّقة" />
+                  ))}
+                  {openRefunds.map((r) => (
+                    <ListRow key={r.id} href="/admin/finance#refunds" title={safeName(r.requestedByName)} subtitle={`استرجاع — ${Number(r.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(r.currency)}`} badge="بانتظار المعالجة" />
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          )}
 
-        {canAudit && (
-          <SectionCard
-            icon={Activity}
-            title="آخر النشاطات"
-            description="أحدث ٨ أحداث في سجل التدقيق."
-            viewAllHref="/admin/activity"
-            tone="neutral"
-          >
-            {recentActivity.length === 0 ? (
-              <EmptySection text="لا يوجد نشاط مسجّل بعد." />
-            ) : (
-              <ul className="divide-y divide-border/60">
-                {recentActivity.map((a) => (
-                  <ListRow key={a.id} href="/admin/activity" title={a.actorName ?? "النظام"} subtitle={a.action} badge={new Date(a.createdAt).toLocaleString("ar-SA-u-nu-latn")} />
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-        )}
+          {canSafety && (
+            <SectionCard icon={ShieldAlert} title="تنبيهات سلامة عالية الأولوية" viewAllHref="/admin/safety-alerts" description="حالات تحتاج تواصلًا سريعًا مع المريض.">
+              {highPrioritySafety.length === 0 ? (
+                <EmptySection text="لا توجد تنبيهات سلامة عالية الأولوية حاليًا." />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {highPrioritySafety.map((a) => (
+                    <ListRow key={a.id} href={`/dashboard/cases/${a.caseId}`} title={safeName(a.patientName)} subtitle={a.summary ?? "تنبيه سلامة"} badge={safetyAlertSeverityAr(a.severity)} badgeVariant="destructive" />
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          )}
+        </div>
 
-        {canAdmin && dbStatus && (
-          <SectionCard
-            icon={Database}
-            title="حالة النظام"
-            description="جاهزية الخدمات الأساسية للمنصة."
-            viewAllHref="/admin/system-health"
-            tone="success"
-          >
-            <div className="space-y-2 p-5 text-sm">
-              <StatusRow label="حفظ البيانات" ok={dbStatus.connected && dbStatus.ready} />
-              <StatusRow label="بوابة الدفع الإلكتروني" ok={isStripeConfigured()} />
-              <StatusRow label="التخزين السحابي للملفات" ok={isR2Configured()} />
-              <StatusRow label="البريد" ok={isEmailConfigured()} />
+        <div className="space-y-4 lg:col-span-1">
+          <QuickActions perms={perms} />
+
+          {canAdmin && systemChecks.length > 0 && (
+            <SectionCard icon={Database} title="حالة النظام" viewAllHref="/admin/system-health">
+              <div className="grid grid-cols-2 gap-2 p-4">
+                {systemChecks.map((c) => (
+                  <div key={c.key} className={cn("flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium", c.ok ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
+                    <c.icon className="size-3.5 shrink-0" />
+                    <span className="truncate">{c.label}</span>
+                    {c.ok ? <CheckCircle2 className="ms-auto size-3.5 shrink-0" /> : <XCircle className="ms-auto size-3.5 shrink-0" />}
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {canAudit && (
+            <SectionCard icon={Activity} title="آخر النشاطات" viewAllHref="/admin/activity" tone="neutral">
+              {activitySummary.length === 0 ? (
+                <EmptySection text="لا يوجد نشاط مسجّل بعد." />
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {activitySummary.map((a) => (
+                    <ListRow
+                      key={a.id}
+                      href="/admin/activity"
+                      title={a.actorName}
+                      subtitle={a.count > 1 ? `${a.actionLabel} — ${a.count.toLocaleString("ar-SA-u-nu-latn")} مرات اليوم` : a.actionLabel}
+                      badge={a.latest.toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" })}
+                    />
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          )}
+
+          {/* Secondary, informational-only figures — a compact strip, not
+              individual cards, since nothing here needs a decision. */}
+          {(canReview || unreadNotifications > 0) && (
+            <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-2xl border border-border/60 bg-card/70 px-4 py-3 text-xs">
+              {canReview && (
+                <>
+                  <StatChip icon={Stethoscope} label="أطباء معتمدون" value={kpis.approvedDoctors} />
+                  <StatChip icon={Building2} label="مراكز معتمدة" value={kpis.approvedCenters} />
+                </>
+              )}
+              <StatChip icon={Bell} label="إشعارات غير مقروءة" value={unreadNotifications} href="/dashboard/notifications" />
             </div>
-          </SectionCard>
-        )}
+          )}
+        </div>
       </div>
-
-      <QuickActions perms={perms} />
     </div>
   )
 }
 
-function EmptySection({ text }: { text: string }) {
-  return <p className="p-6 text-center text-sm text-muted-foreground">{text}</p>
+function StatChip({ icon: Icon, label, value, href }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; href?: string }) {
+  const content = (
+    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+      <Icon className="size-3.5 text-primary/70" />
+      {label}
+      <span className="font-heading font-bold tabular-nums text-foreground">{value.toLocaleString("ar-SA-u-nu-latn")}</span>
+    </span>
+  )
+  return href ? <Link href={href} className="transition-colors hover:text-foreground">{content}</Link> : content
+}
+
+function EmptySection({ text, icon: Icon }: { text: string; icon?: React.ComponentType<{ className?: string }> }) {
+  return (
+    <div className="flex flex-col items-center gap-2 p-8 text-center">
+      {Icon && (
+        <span className="flex size-9 items-center justify-center rounded-full bg-success/12 text-success">
+          <Icon className="size-[18px]" />
+        </span>
+      )}
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </div>
+  )
 }
 
 function ListRow({
@@ -339,7 +367,7 @@ function ListRow({
 }) {
   return (
     <li>
-      <Link href={href} className="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/40">
+      <Link href={href} className="flex items-center justify-between gap-3 px-5 py-3 text-sm transition-colors hover:bg-muted/40">
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{title}</p>
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
@@ -347,18 +375,6 @@ function ListRow({
         <Badge variant={badgeVariant} className="shrink-0">{badge}</Badge>
       </Link>
     </li>
-  )
-}
-
-function StatusRow({ label, ok }: { label: string; ok: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`inline-flex items-center gap-1 font-medium ${ok ? "text-success" : "text-destructive"}`}>
-        {ok ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
-        {ok ? "سليم" : "غير متاح"}
-      </span>
-    </div>
   )
 }
 
@@ -373,19 +389,18 @@ function QuickActions({ perms }: { perms: Set<string> }) {
 
   if (actions.length === 0) return null
   return (
-    <div>
-      <h2 className="mb-3 font-heading text-lg font-bold text-foreground">إجراءات سريعة</h2>
-      <div className="flex flex-wrap gap-3">
+    <SectionCard icon={Plug} title="إجراءات سريعة">
+      <div className="flex flex-col gap-1 p-3">
         {actions.map((a) => (
           <Link
             key={a.href}
             href={a.href}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-muted/40"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
           >
             <a.icon className="size-4 text-primary" /> {a.label}
           </Link>
         ))}
       </div>
-    </div>
+    </SectionCard>
   )
 }
