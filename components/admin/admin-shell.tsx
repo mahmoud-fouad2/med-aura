@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, PanelLeftClose, PanelLeftOpen, ChevronLeft, Bell } from "lucide-react"
+import { Menu, PanelLeftClose, PanelLeftOpen, ChevronLeft, ChevronDown, Bell } from "lucide-react"
 import { Logo, LogoMark } from "@/components/brand/logo"
 import { AdminIcon } from "@/components/admin/admin-icon"
 import { CommandPalette } from "@/components/admin/command-palette"
@@ -134,6 +134,11 @@ export function AdminShell({
   )
 }
 
+function isActiveHref(href: string, pathname: string): boolean {
+  const base = href.split("#")[0]
+  return base === "/admin" ? pathname === "/admin" : pathname.startsWith(base)
+}
+
 function SidebarInner({
   nav,
   pathname,
@@ -147,6 +152,26 @@ function SidebarInner({
   user: { name: string; email: string }
   onNavigate?: () => void
 }) {
+  const activeGroup = nav.find((g) => g.items.some((i) => isActiveHref(i.href, pathname)))?.title
+  // Recreated whenever the active group changes (e.g. navigating from one
+  // section to another) so the sidebar always opens on wherever you are,
+  // while still letting the user freely open/close any other group by hand.
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(activeGroup ? [activeGroup] : []))
+  const [lastActiveGroup, setLastActiveGroup] = useState(activeGroup)
+  if (activeGroup !== lastActiveGroup) {
+    setLastActiveGroup(activeGroup)
+    if (activeGroup) setOpenGroups((prev) => new Set(prev).add(activeGroup))
+  }
+
+  function toggleGroup(title: string) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(title)) next.delete(title)
+      else next.add(title)
+      return next
+    })
+  }
+
   return (
     <div className="flex h-full flex-col bg-card/92 text-sidebar-foreground">
       <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
@@ -154,43 +179,43 @@ function SidebarInner({
           {collapsed ? <LogoMark className="size-9 text-primary" /> : <Logo />}
         </Link>
       </div>
-      <nav className="flex-1 space-y-5 overflow-y-auto p-3">
-        {nav.map((group) => (
-          <div key={group.title}>
-            {!collapsed && (
-              <p className="mb-1.5 px-3 text-xs font-semibold text-muted-foreground">{group.title}</p>
-            )}
-            <ul className="space-y-0.5">
-              {group.items.map((item) => {
-                const baseHref = item.href.split("#")[0]
-                const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(baseHref)
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={onNavigate}
-                      aria-current={active ? "page" : undefined}
-                      title={collapsed ? item.label : undefined}
-                      className={cn(
-                        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-                        collapsed && "justify-center px-0",
-                        active
-                          ? "bg-primary/10 text-primary shadow-sm"
-                          : "text-muted-foreground hover:bg-secondary hover:text-primary",
-                      )}
-                    >
-                      {active && (
-                        <span className="absolute inset-y-1 -start-3 w-1 rounded-full bg-primary" />
-                      )}
-                      <AdminIcon name={item.icon} className="size-[18px] shrink-0" />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        {nav.map((group) => {
+          // Collapsed rail or a single-item group: a plain link, no
+          // accordion chrome — there's nothing meaningful to collapse.
+          if (collapsed || group.items.length === 1) {
+            return group.items.map((item) => (
+              <NavLink key={item.href} item={item} active={isActiveHref(item.href, pathname)} collapsed={collapsed} onNavigate={onNavigate} />
+            ))
+          }
+
+          const open = openGroups.has(group.title)
+          return (
+            <div key={group.title}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.title)}
+                aria-expanded={open}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+                  group.title === activeGroup ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className="flex-1 truncate text-start">{group.title}</span>
+                <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")} />
+              </button>
+              {open && (
+                <ul className="space-y-0.5 pb-1">
+                  {group.items.map((item) => (
+                    <li key={item.href}>
+                      <NavLink item={item} active={isActiveHref(item.href, pathname)} collapsed={false} onNavigate={onNavigate} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )
+        })}
       </nav>
       <div className={cn("border-t border-sidebar-border p-2", collapsed && "flex justify-center p-2")}>
         {collapsed ? (
@@ -200,5 +225,37 @@ function SidebarInner({
         )}
       </div>
     </div>
+  )
+}
+
+function NavLink({
+  item,
+  active,
+  collapsed,
+  onNavigate,
+}: {
+  item: AdminNavGroup["items"][number]
+  active: boolean
+  collapsed: boolean
+  onNavigate?: () => void
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      title={collapsed ? item.label : undefined}
+      className={cn(
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+        collapsed && "mb-0.5 justify-center px-0",
+        active
+          ? "bg-primary/10 text-primary shadow-sm"
+          : "text-muted-foreground hover:bg-secondary hover:text-primary",
+      )}
+    >
+      {active && <span className="absolute inset-y-1 -start-3 w-1 rounded-full bg-primary" />}
+      <AdminIcon name={item.icon} className="size-[18px] shrink-0" />
+      {!collapsed && <span className="truncate">{item.label}</span>}
+    </Link>
   )
 }
