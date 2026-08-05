@@ -43,9 +43,12 @@ export function MobileDataCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-foreground">{title}</p>
+          {/* title/subtitle are ReactNode, not text — callers commonly pass a
+              <div> (e.g. an avatar + name row), which is invalid inside a <p>
+              and was firing a real hydration error on every admin list. */}
+          <div className="font-medium text-foreground">{title}</div>
           {subtitle && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+            <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
           )}
         </div>
         {badge && <div className="shrink-0">{badge}</div>}
