@@ -1,5 +1,6 @@
 import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer"
 import path from "node:path"
+import fs from "node:fs"
 import type { PaymentReceiptData } from "@/lib/data/invoice"
 
 const BRAND_PRIMARY = "#4A1D96"
@@ -38,19 +39,50 @@ Font.register({
   ],
 })
 
+// @react-pdf/image's local-file detection runs the path through Node's
+// legacy url.parse() — on Windows that reads the drive letter ("C:...")
+// as a URL protocol, so it decides the path isn't local and tries to
+// fetch() it as a remote URL instead, which fails silently and the logo
+// never renders. Reading the file ourselves and handing over the raw
+// Buffer skips that path-parsing entirely (resolveImage's isBuffer()
+// branch is checked before any URL logic runs).
+const logoBuffer = fs.readFileSync(path.join(process.cwd(), "public", "brand", "med-aura-logo.png"))
+
 const ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/
 
 /** Splits text into runs so each character-class (Arabic-script vs. everything
  * else) can be given the font that actually has glyphs for it — e.g. "د. Ahmed"
  * needs the Arabic font for "د" and Helvetica for ". Ahmed" (the Arabic font's
- * subset doesn't cover Latin/digits/punctuation, only its own script). */
-function splitByScript(text: string): { text: string; arabic: boolean }[] {
+ * subset doesn't cover Latin/digits/punctuation, only its own script).
+ *
+ * Non-letter characters (spaces, digits, punctuation) are "neutral" and
+ * extend whichever run is already open rather than starting a new one —
+ * treating them as their own run boundary split a single Arabic name at
+ * every space (e.g. "د. أحمد يلماز" into four separate runs), and each
+ * run gets shaped independently with no context from its neighbors, so
+ * Arabic letters at a run's edge lost their correct joining form.
+ *
+ * A period closing an Arabic run still ends that run — reproduced on the
+ * real doctor name "د. أحمد يلماز" (rendered "ج أحمد يلم ز"): a single
+ * Arabic letter immediately before "." got substituted for the wrong
+ * glyph whenever more Arabic text followed in the same *rendered* run.
+ * "د" with no period, and the name alone with no "د." prefix, both
+ * shaped correctly on their own. This only actually fixes anything
+ * combined with NameValue rendering each part as its own sibling <Text>
+ * (see below) — nested spans or one unsplit <Text> both still hit it,
+ * since @react-pdf's own text layout recombines adjacent inline runs
+ * before fontkit ever sees a difference. */
+export function splitByScript(text: string): { text: string; arabic: boolean }[] {
   const parts: { text: string; arabic: boolean }[] = []
+  let sealed = false
   for (const ch of text) {
-    const isArabic = ARABIC_RE.test(ch)
     const last = parts[parts.length - 1]
-    if (last && last.arabic === isArabic) last.text += ch
-    else parts.push({ text: ch, arabic: isArabic })
+    const isLetter = /\p{L}/u.test(ch)
+    const isArabic = isLetter && ARABIC_RE.test(ch)
+    const canMerge = last && !sealed && (!isLetter || last.arabic === isArabic)
+    if (canMerge) last.text += ch
+    else parts.push({ text: ch, arabic: isLetter ? isArabic : (last?.arabic ?? false) })
+    sealed = ch === "." && parts[parts.length - 1].arabic
   }
   return parts
 }
@@ -67,6 +99,9 @@ const styles = StyleSheet.create({
   label: { fontSize: 8, color: MUTED, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 },
   value: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 10 },
   valueArabic: { fontFamily: "Alexandria", fontWeight: 700 },
+  nameRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
+  nameRowRtl: { flexDirection: "row-reverse" },
+  nameText: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK },
   table: { marginTop: 24, borderWidth: 1, borderColor: BORDER, borderRadius: 4 },
   tableHeaderRow: {
     flexDirection: "row",
@@ -116,15 +151,33 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 8, color: MUTED, lineHeight: 1.5 },
 })
 
+/**
+ * Renders each script run as its own sibling <Text> in a row, not nested
+ * spans inside one outer <Text> — see splitByScript's comment. Nesting
+ * (or even a single unsplit <Text>) hits the fontkit substitution bug;
+ * separate blocks shape independently and avoid it. flexWrap lets a long
+ * name wrap onto a second line like normal text would.
+ *
+ * Sibling boxes in a row don't get the automatic bidi reordering a
+ * single RTL paragraph would — they just lay out in array order, so an
+ * Arabic-containing value (parts in logical reading order: title, then
+ * name) rendered left-to-right put the title *last* instead of first.
+ * row-reverse puts the first logical part on the right where Arabic
+ * reading starts. Real names are practically always one script or the
+ * other, not mixed mid-name, so "any Arabic in the value → reverse the
+ * whole row" is correct for the cases that actually occur.
+ */
 function NameValue({ value }: { value: string }) {
+  const parts = splitByScript(value)
+  const isRtl = parts.some((p) => p.arabic)
   return (
-    <Text style={styles.value}>
-      {splitByScript(value).map((part, i) => (
-        <Text key={i} style={part.arabic ? styles.valueArabic : undefined}>
+    <View style={isRtl ? [styles.nameRow, styles.nameRowRtl] : styles.nameRow}>
+      {parts.map((part, i) => (
+        <Text key={i} style={part.arabic ? [styles.nameText, styles.valueArabic] : styles.nameText}>
           {part.text}
         </Text>
       ))}
-    </Text>
+    </View>
   )
 }
 
@@ -190,13 +243,12 @@ export function InvoiceDocument({ data }: { data: PaymentReceiptData }) {
     data.serviceNameEn ??
     (data.appointmentType ? APPOINTMENT_TYPE_LABEL[data.appointmentType] : null) ??
     (PURPOSE_LABEL[data.purpose] ?? data.purpose)
-  const logoPath = path.join(process.cwd(), "public", "brand", "med-aura-logo.png")
 
   return (
     <Document title={`Med Aura Invoice ${data.reference}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.headerRow}>
-          <Image src={logoPath} style={styles.logo} />
+          <Image src={logoBuffer} style={styles.logo} />
           <View>
             <Text style={styles.docTitle}>INVOICE / RECEIPT</Text>
             <Text style={styles.docMeta}>No. {data.reference}</Text>

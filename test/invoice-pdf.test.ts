@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { renderToBuffer } from "@react-pdf/renderer"
-import { InvoiceDocument } from "@/lib/pdf/invoice-document"
+import { InvoiceDocument, splitByScript } from "@/lib/pdf/invoice-document"
 import type { PaymentReceiptData } from "@/lib/data/invoice"
 
 function receipt(overrides: Partial<PaymentReceiptData> = {}): PaymentReceiptData {
@@ -52,5 +52,28 @@ describe("InvoiceDocument", () => {
   it("handles a null doctor/center gracefully", async () => {
     const buf = await renderToBuffer(InvoiceDocument({ data: receipt({ doctorName: null, centerName: null }) }))
     expect(buf.length).toBeGreaterThan(1000)
+  })
+})
+
+describe("splitByScript", () => {
+  it("keeps a whole Arabic name — including its spaces — as one run (regression: fragmented at every space, breaking letter-joining across fragments)", () => {
+    expect(splitByScript("محمد أحمد العتيبي")).toEqual([
+      { text: "محمد أحمد العتيبي", arabic: true },
+    ])
+  })
+
+  it("ends the run right after a period closing Arabic text, rather than merging what follows into it (regression: an Arabic letter immediately before '.' got substituted for the wrong glyph whenever more Arabic text followed in the same *rendered* run — real doctor name 'د. أحمد يلماز' rendered as 'ج أحمد يلم ز'; only fixed once each part also renders as its own sibling <Text> — see NameValue)", () => {
+    expect(splitByScript("د. أحمد يلماز")).toEqual([
+      { text: "د.", arabic: true },
+      { text: " أحمد يلماز", arabic: true },
+    ])
+  })
+
+  it("still splits at a real script change, attaching neutral characters to the preceding run", () => {
+    expect(splitByScript("Dr. محمد Ahmed")).toEqual([
+      { text: "Dr. ", arabic: false },
+      { text: "محمد ", arabic: true },
+      { text: "Ahmed", arabic: false },
+    ])
   })
 })
