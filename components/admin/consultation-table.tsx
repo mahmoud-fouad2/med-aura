@@ -126,15 +126,17 @@ export function ConsultationTable({
                 {selected.type === "VIDEO_CONSULTATION" ? (
                   <DetailGroup title="الاستشارة المرئية">
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Video className="size-4" />
-                      حالة غرفة الفيديو التفصيلية غير متاحة من هذه القائمة بعد — راجع سجل الحالة.
+                      <Video className="size-4 shrink-0" />
+                      {selected.caseId
+                        ? "حالة غرفة الفيديو التفصيلية غير متاحة من هذه القائمة — راجع سجل النشاط في الحالة المرتبطة أدناه."
+                        : "حالة غرفة الفيديو التفصيلية غير متاحة من هذه القائمة، ولا توجد حالة مرتبطة بهذا الموعد لعرض سجلها."}
                     </p>
                   </DetailGroup>
                 ) : null}
 
                 {selected.caseId ? (
                   <Link
-                    href={`/admin/cases?q=${encodeURIComponent(selected.reference)}`}
+                    href={`/dashboard/cases/${selected.caseId}`}
                     className="block text-sm font-medium text-primary hover:underline"
                   >
                     فتح الحالة المرتبطة ←
