@@ -43,7 +43,9 @@ export function AdminShell({
           collapsed ? "w-[76px]" : "w-72",
         )}
       >
-        <SidebarInner nav={nav} pathname={pathname} collapsed={collapsed} user={user} />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <SidebarInner nav={nav} pathname={pathname} collapsed={collapsed} user={user} />
+        </div>
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
