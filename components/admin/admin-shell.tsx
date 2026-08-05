@@ -58,12 +58,11 @@ export function AdminShell({
       {/* Mobile drawer */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="right" className="w-72 p-0" showCloseButton>
-          <SheetHeader className="border-b border-border">
-            <SheetTitle>
-              <Link href="/admin" onClick={() => setMobileOpen(false)}>
-                <Logo className="h-8" />
-              </Link>
-            </SheetTitle>
+          {/* SidebarInner renders its own bordered logo header below — this
+              title exists only so the dialog has an accessible name, not to
+              be seen (it was duplicating the same logo a second time). */}
+          <SheetHeader className="sr-only">
+            <SheetTitle>القائمة</SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             <SidebarInner
@@ -150,7 +149,7 @@ function SidebarInner({
     <div className="flex h-full flex-col bg-card/92 text-sidebar-foreground">
       <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
         <Link href="/admin" aria-label="Med Aura" onClick={onNavigate}>
-          {collapsed ? <LogoMark className="size-8 text-primary" /> : <Logo className="h-8" />}
+          {collapsed ? <LogoMark className="size-9 text-primary" /> : <Logo />}
         </Link>
       </div>
       <nav className="flex-1 space-y-5 overflow-y-auto p-3">
