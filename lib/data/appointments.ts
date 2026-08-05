@@ -133,6 +133,23 @@ export async function listAppointmentsForAdmin(
 
   const where = conditions.length > 0 ? and(...conditions) : undefined
 
+  // A bare LEFT JOIN on payment.appointmentId fans out into one row per
+  // payment for any appointment with more than one payment record (a failed
+  // attempt followed by a successful retry, for instance — not rare) —
+  // duplicating that appointment in the list with a different payment
+  // status on each copy, and inflating totalCount/pagination to match.
+  // DISTINCT ON picks exactly the latest payment per appointment first.
+  const latestPayment = db
+    .selectDistinctOn([payment.appointmentId], {
+      appointmentId: payment.appointmentId,
+      id: payment.id,
+      status: payment.status,
+      provider: payment.provider,
+    })
+    .from(payment)
+    .orderBy(payment.appointmentId, desc(payment.createdAt))
+    .as("latest_payment")
+
   const baseQuery = db
     .select({
       id: appointment.id,
@@ -145,22 +162,25 @@ export async function listAppointmentsForAdmin(
       currency: appointment.currency,
       counterpartName: doctorProfile.name,
       patientName: userT.name,
-      paymentStatus: payment.status,
-      paymentId: payment.id,
-      paymentProvider: payment.provider,
+      paymentStatus: latestPayment.status,
+      paymentId: latestPayment.id,
+      paymentProvider: latestPayment.provider,
       caseId: appointment.caseId,
     })
     .from(appointment)
     .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
     .innerJoin(userT, eq(appointment.patientUserId, userT.id))
-    .leftJoin(payment, eq(payment.appointmentId, appointment.id))
+    .leftJoin(latestPayment, eq(latestPayment.appointmentId, appointment.id))
 
+  // Doesn't select or filter on any payment field itself (the paymentStatus
+  // filter above already resolves to a plain appointment.id condition), so
+  // it never needed the payment join at all — that join was only ever
+  // along for the fan-out bug, never for anything the count used.
   const countQuery = db
     .select({ n: sql<number>`count(*)::int` })
     .from(appointment)
     .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
     .innerJoin(userT, eq(appointment.patientUserId, userT.id))
-    .leftJoin(payment, eq(payment.appointmentId, appointment.id))
 
   const [rows, countResult] = await Promise.all([
     baseQuery.where(where).orderBy(desc(appointment.startsAt)).limit(pageSize).offset((page - 1) * pageSize),

@@ -22,7 +22,7 @@ import {
   currencyAr,
   paymentStatusAr,
 } from "@/lib/status-labels"
-import { dtfMedium } from "@/lib/format"
+import { dtfMedium, safeName } from "@/lib/format"
 
 export type ConsultationRow = {
   id: string
@@ -77,7 +77,7 @@ export function ConsultationTable({
           { header: "المرجع", cell: (r) => <span dir="ltr" className="font-mono text-xs">{r.reference}</span> },
           { header: "النوع", cell: (r) => appointmentTypeAr(r.type) },
           { header: "الحالة", cell: (r) => <StatusBadge tone={statusTone(r.status)} label={appointmentStatusAr(r.status)} />, mobile: "badge" },
-          { header: "المريض", cell: (r) => r.patientName, mobile: "title" },
+          { header: "المريض", cell: (r) => safeName(r.patientName), mobile: "title" },
           { header: "الطبيب", cell: (r) => r.counterpartName },
           { header: "الموعد", cell: (r) => <span className="text-xs text-muted-foreground">{dtfMedium(r.startsAt)}</span> },
           {
@@ -106,7 +106,7 @@ export function ConsultationTable({
 
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4">
                 <DetailGroup>
-                  <DetailRow label="المريض" value={selected.patientName} />
+                  <DetailRow label="المريض" value={safeName(selected.patientName)} />
                   <DetailRow label="الطبيب" value={selected.counterpartName} />
                   <DetailRow label="نوع الاستشارة" value={appointmentTypeAr(selected.type)} />
                   <DetailRow label="الموعد" value={dtfMedium(selected.startsAt)} />
