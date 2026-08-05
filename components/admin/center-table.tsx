@@ -30,6 +30,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { Field } from "@/components/ui/field"
+import { FormSection } from "@/components/ui/form-section"
 import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
 import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
@@ -329,45 +330,56 @@ function CenterEditForm({ centerId }: { centerId: string }) {
   }
 
   return (
-    <div className="space-y-3">
-      <Field label="الاسم القانوني">
-        <Input value={data.legalName} onChange={(e) => setData({ ...data, legalName: e.target.value })} />
-      </Field>
-      <Field label="الاسم التجاري">
-        <Input value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} />
-      </Field>
-      <Field label="الوصف">
-        <Textarea rows={3} value={data.description} onChange={(e) => setData({ ...data, description: e.target.value })} />
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="الدولة">
-          <CountrySelectField country={data.country} onChange={(code) => setData({ ...data, country: code })} />
+    <div className="space-y-3 pb-1">
+      <FormSection title="الهوية">
+        <Field label="الاسم القانوني">
+          <Input value={data.legalName} onChange={(e) => setData({ ...data, legalName: e.target.value })} />
         </Field>
-        <Field label="المدينة">
-          <Input value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
+        <Field label="الاسم التجاري">
+          <Input value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} />
         </Field>
+        <Field label="الوصف">
+          <Textarea rows={3} value={data.description} onChange={(e) => setData({ ...data, description: e.target.value })} />
+        </Field>
+      </FormSection>
+
+      <FormSection title="الموقع">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="الدولة">
+            <CountrySelectField country={data.country} onChange={(code) => setData({ ...data, country: code })} />
+          </Field>
+          <Field label="المدينة">
+            <Input value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="العنوان">
+          <Input value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} />
+        </Field>
+      </FormSection>
+
+      <FormSection title="التواصل">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="الهاتف">
+            <Input dir="ltr" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
+          </Field>
+          <Field label="البريد الإلكتروني">
+            <Input dir="ltr" type="email" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="الموقع الإلكتروني">
+          <Input dir="ltr" value={data.website} onChange={(e) => setData({ ...data, website: e.target.value })} />
+        </Field>
+        <Field label="اللغات (مفصولة بفاصلة)">
+          <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="العربية, English" />
+        </Field>
+      </FormSection>
+
+      <div className="sticky bottom-0 -mx-4 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur">
+        {error ? <p className="mb-2 text-sm text-destructive">{error}</p> : null}
+        <Button size="sm" loading={busy} loadingText="جارٍ الحفظ…" onClick={onSave}>
+          <Save className="size-4" /> حفظ التعديلات
+        </Button>
       </div>
-      <Field label="العنوان">
-        <Input value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} />
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="الهاتف">
-          <Input dir="ltr" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
-        </Field>
-        <Field label="البريد الإلكتروني">
-          <Input dir="ltr" type="email" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
-        </Field>
-      </div>
-      <Field label="الموقع الإلكتروني">
-        <Input dir="ltr" value={data.website} onChange={(e) => setData({ ...data, website: e.target.value })} />
-      </Field>
-      <Field label="اللغات (مفصولة بفاصلة)">
-        <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="العربية, English" />
-      </Field>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button size="sm" loading={busy} loadingText="جارٍ الحفظ…" onClick={onSave}>
-        <Save className="size-4" /> حفظ التعديلات
-      </Button>
     </div>
   )
 }

@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Field } from "@/components/ui/field"
+import { FormSection } from "@/components/ui/form-section"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
@@ -486,15 +487,6 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
           <Save className="size-4" /> حفظ التعديلات
         </Button>
       </div>
-    </div>
-  )
-}
-
-function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-3 rounded-xl border border-border/60 p-3.5">
-      <h3 className="text-xs font-bold text-foreground">{title}</h3>
-      {children}
     </div>
   )
 }
