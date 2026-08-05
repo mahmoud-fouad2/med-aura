@@ -47,7 +47,17 @@ export async function listFollowUpsForAdmin(filters: FollowUpFilters = {}): Prom
   } else if (filters.status === "completed") {
     conditions.push(inArray(followUpTask.status, ["COMPLETED", "CANCELLED"]))
   } else if (filters.status) {
-    conditions.push(eq(followUpTask.status, filters.status as (typeof followUpTask.status.enumValues)[number]))
+    // filters.status is whatever the ?status= query param says — an old
+    // bookmark, a typo, or a stray value from somewhere else in the app
+    // reaches here as an arbitrary string. Casting it straight into eq()
+    // let an unrecognized value hit Postgres as an invalid enum literal
+    // and crash the whole page with an unhandled query error (reproduced
+    // live with ?status=all). Validate first; an unrecognized value is
+    // treated as "no filter" rather than a fatal error.
+    const validStatuses: readonly string[] = followUpTask.status.enumValues
+    if (validStatuses.includes(filters.status)) {
+      conditions.push(eq(followUpTask.status, filters.status as (typeof followUpTask.status.enumValues)[number]))
+    }
   }
 
   const rows = await db
