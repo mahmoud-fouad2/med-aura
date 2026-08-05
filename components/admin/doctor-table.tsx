@@ -399,79 +399,102 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
   }
 
   return (
-    <div className="space-y-3">
-      <Field label="الاسم">
-        <Input value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} />
-      </Field>
-      <Field label="المسمى المهني">
-        <Input value={data.title} onChange={(e) => setData({ ...data, title: e.target.value })} />
-      </Field>
-      <Field label="نبذة">
-        <Textarea rows={3} value={data.bio} onChange={(e) => setData({ ...data, bio: e.target.value })} />
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="الدولة">
-          <CountrySelectField country={data.country} onChange={(code) => setData({ ...data, country: code })} />
+    <div className="space-y-3 pb-1">
+      <FormSection title="المعلومات الأساسية">
+        <Field label="الاسم">
+          <Input value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} />
         </Field>
-        <Field label="المدينة">
-          <Input value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
+        <Field label="المسمى المهني">
+          <Input value={data.title} onChange={(e) => setData({ ...data, title: e.target.value })} />
         </Field>
+        <Field label="نبذة">
+          <Textarea rows={3} value={data.bio} onChange={(e) => setData({ ...data, bio: e.target.value })} />
+        </Field>
+      </FormSection>
+
+      <FormSection title="الموقع واللغات">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="الدولة">
+            <CountrySelectField country={data.country} onChange={(code) => setData({ ...data, country: code })} />
+          </Field>
+          <Field label="المدينة">
+            <Input value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
+          </Field>
+        </div>
+        <Field label="اللغات (مفصولة بفاصلة)">
+          <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="العربية, English" />
+        </Field>
+      </FormSection>
+
+      <FormSection title="تفاصيل الممارسة">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="سنوات الخبرة">
+            <Input
+              type="number"
+              min={0}
+              dir="ltr"
+              value={data.yearsExperience}
+              onChange={(e) => setData({ ...data, yearsExperience: Number(e.target.value) })}
+            />
+          </Field>
+          <Field label="المركز">
+            <select
+              value={data.centerId}
+              onChange={(e) => setData({ ...data, centerId: e.target.value })}
+              className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+            >
+              <option value="">بلا مركز (مستقل)</option>
+              {centers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="رسوم الاستشارة">
+            <Input
+              type="number"
+              min={0}
+              step="0.01"
+              dir="ltr"
+              value={data.consultationFee}
+              onChange={(e) => setData({ ...data, consultationFee: e.target.value })}
+            />
+          </Field>
+          <Field label="العملة">
+            <Input dir="ltr" className="uppercase" maxLength={3} value={data.currency} onChange={(e) => setData({ ...data, currency: e.target.value.toUpperCase() })} />
+          </Field>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox checked={data.offersVideo} onCheckedChange={(v) => setData({ ...data, offersVideo: v === true })} />
+            استشارة فيديو
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox checked={data.offersInPerson} onCheckedChange={(v) => setData({ ...data, offersInPerson: v === true })} />
+            حضوري
+          </label>
+        </div>
+      </FormSection>
+
+      {/* Sticky within the drawer's own scroll container (not the whole
+          page) — a long sectioned form shouldn't hide its save button
+          below the fold. */}
+      <div className="sticky bottom-0 -mx-4 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur">
+        {error ? <p className="mb-2 text-sm text-destructive">{error}</p> : null}
+        <Button size="sm" loading={busy} loadingText="جارٍ الحفظ…" onClick={onSave}>
+          <Save className="size-4" /> حفظ التعديلات
+        </Button>
       </div>
-      <Field label="اللغات (مفصولة بفاصلة)">
-        <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="العربية, English" />
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="سنوات الخبرة">
-          <Input
-            type="number"
-            min={0}
-            dir="ltr"
-            value={data.yearsExperience}
-            onChange={(e) => setData({ ...data, yearsExperience: Number(e.target.value) })}
-          />
-        </Field>
-        <Field label="المركز">
-          <select
-            value={data.centerId}
-            onChange={(e) => setData({ ...data, centerId: e.target.value })}
-            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
-          >
-            <option value="">بلا مركز (مستقل)</option>
-            {centers.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </Field>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="رسوم الاستشارة">
-          <Input
-            type="number"
-            min={0}
-            step="0.01"
-            dir="ltr"
-            value={data.consultationFee}
-            onChange={(e) => setData({ ...data, consultationFee: e.target.value })}
-          />
-        </Field>
-        <Field label="العملة">
-          <Input dir="ltr" className="uppercase" maxLength={3} value={data.currency} onChange={(e) => setData({ ...data, currency: e.target.value.toUpperCase() })} />
-        </Field>
-      </div>
-      <div className="flex flex-wrap gap-4">
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <Checkbox checked={data.offersVideo} onCheckedChange={(v) => setData({ ...data, offersVideo: v === true })} />
-          استشارة فيديو
-        </label>
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <Checkbox checked={data.offersInPerson} onCheckedChange={(v) => setData({ ...data, offersInPerson: v === true })} />
-          حضوري
-        </label>
-      </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button size="sm" loading={busy} loadingText="جارٍ الحفظ…" onClick={onSave}>
-        <Save className="size-4" /> حفظ التعديلات
-      </Button>
+    </div>
+  )
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3 rounded-xl border border-border/60 p-3.5">
+      <h3 className="text-xs font-bold text-foreground">{title}</h3>
+      {children}
     </div>
   )
 }
