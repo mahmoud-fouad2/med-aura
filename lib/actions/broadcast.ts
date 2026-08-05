@@ -10,9 +10,7 @@ import { writeAudit, requestMeta } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { toSafeError, validation } from "@/lib/errors"
 import type { ActionResult } from "@/lib/actions/provider"
-
-export const BROADCAST_AUDIENCES = ["all", "patients", "doctors"] as const
-export type BroadcastAudience = (typeof BROADCAST_AUDIENCES)[number]
+import { BROADCAST_AUDIENCES } from "@/lib/broadcast"
 
 const broadcastSchema = z.object({
   title: z.string().trim().min(3, "اكتب عنوانًا للإشعار").max(120),

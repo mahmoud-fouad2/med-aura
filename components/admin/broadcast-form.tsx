@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { sendBroadcastAction, BROADCAST_AUDIENCES, type BroadcastAudience } from "@/lib/actions/broadcast"
+import { sendBroadcastAction } from "@/lib/actions/broadcast"
+import { BROADCAST_AUDIENCES, type BroadcastAudience } from "@/lib/broadcast"
 
 const AUDIENCE_LABEL: Record<BroadcastAudience, string> = {
   all: "كل الأعضاء",
