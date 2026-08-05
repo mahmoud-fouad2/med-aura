@@ -113,7 +113,7 @@ export function UserTable({
       />
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent side="left" className="sm:max-w-md">
+        <SheetContent className="sm:max-w-md">
           {selected ? (
             <UserDetailDrawer
               user={selected}

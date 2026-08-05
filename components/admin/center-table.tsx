@@ -99,7 +99,7 @@ export function CenterTable({ rows }: { rows: AdminCenterRow[] }) {
       />
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent side="left" className="sm:max-w-lg">
+        <SheetContent className="sm:max-w-lg">
           {selected ? <CenterDetailDrawer center={selected} /> : null}
         </SheetContent>
       </Sheet>

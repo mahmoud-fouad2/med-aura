@@ -92,7 +92,7 @@ export function ConsultationTable({
       />
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent side="left">
+        <SheetContent>
           {selected ? (
             <>
               <SheetHeader>

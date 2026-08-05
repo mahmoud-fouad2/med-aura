@@ -101,7 +101,7 @@ export function DoctorTable({ rows, centers }: { rows: AdminDoctorRow[]; centers
       />
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent side="left" className="sm:max-w-lg">
+        <SheetContent className="sm:max-w-lg">
           {selected ? <DoctorDetailDrawer doctor={selected} centers={centers} /> : null}
         </SheetContent>
       </Sheet>

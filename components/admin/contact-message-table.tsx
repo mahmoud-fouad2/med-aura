@@ -67,7 +67,7 @@ export function ContactMessageTable({ rows, emailConfigured }: { rows: AdminCont
       />
 
       <Sheet open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent side="left">
+        <SheetContent>
           {selected ? (
             <MessageDetail message={selected} emailConfigured={emailConfigured} onChanged={() => setSelected(null)} />
           ) : null}
