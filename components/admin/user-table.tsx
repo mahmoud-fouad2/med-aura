@@ -20,7 +20,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { getUserActivityAction } from "@/lib/actions/users"
 import { actionLabelAr } from "@/lib/audit-labels"
 import { roleAr, userAccountStatusAr } from "@/lib/status-labels"
-import { dtfMedium } from "@/lib/format"
+import { dtfMedium, safeName } from "@/lib/format"
 import type { ActivityRow } from "@/lib/data/admin-activity"
 
 export type AdminUserRow = {
@@ -75,7 +75,7 @@ export function UserTable({
                   {u.name.trim().charAt(0) || "؟"}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{u.name}</p>
+                  <p className="truncate font-medium text-foreground">{safeName(u.name)}</p>
                   <p dir="ltr" className="truncate text-xs text-muted-foreground">{u.email}</p>
                 </div>
               </div>
@@ -147,7 +147,7 @@ function UserDetailDrawer({
   return (
     <>
       <SheetHeader>
-        <SheetTitle>{user.name}</SheetTitle>
+        <SheetTitle>{safeName(user.name)}</SheetTitle>
         <SheetDescription dir="ltr" className="text-start">
           {user.email}
         </SheetDescription>
@@ -201,7 +201,7 @@ function UserDetailDrawer({
               </p>
               <UserRoleManager
                 userId={user.id}
-                userName={user.name}
+                userName={safeName(user.name)}
                 currentKeys={user.roles.map((r) => r.key)}
                 allRoles={allRoles.map((r) => ({ key: r.key, nameAr: roleAr(r.key) }))}
                 selfId={selfId}
@@ -219,7 +219,7 @@ function UserDetailDrawer({
                 <span className="text-sm font-medium text-foreground">إجراءات الحساب</span>
                 <UserAccountMenu
                   userId={user.id}
-                  userName={user.name}
+                  userName={safeName(user.name)}
                   userPhone={user.phone}
                   isActive={user.status === "active"}
                   isSelf={user.id === selfId}

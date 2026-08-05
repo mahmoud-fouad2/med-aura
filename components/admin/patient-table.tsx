@@ -162,7 +162,7 @@ function PatientDetailDrawer({
                 <span className="text-sm font-medium text-foreground">إجراءات الحساب</span>
                 <UserAccountMenu
                   userId={patient.userId}
-                  userName={patient.name}
+                  userName={safeName(patient.name)}
                   userPhone={patient.phone}
                   isActive={patient.status === "active"}
                   isSelf={false}
