@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer"
 import path from "node:path"
 import type { PaymentReceiptData } from "@/lib/data/invoice"
 
@@ -7,10 +7,49 @@ const INK = "#1F1B24"
 const MUTED = "#6B6470"
 const BORDER = "#E4DEEC"
 
+// Names (doctor/center/payer) can be Arabic — Helvetica (the base-14 PDF font
+// used everywhere else in this document) has no Arabic glyphs at all, which
+// rendered as corrupted/missing characters. Registered separately from
+// Helvetica and only applied to the Arabic-script runs within a value (see
+// splitByScript/NameValue below), not the whole document.
+//
+// Must be .woff, not .woff2: @react-pdf's pdfkit/fontkit subsetter corrupts
+// its internal glyph-id state across repeated renders of the same
+// registered .woff2 font in one process (every render after the first ~2
+// throws "Offset is outside the bounds of the DataView" from
+// fontkit's TTFSubset) — reproduced locally, verified .woff does not
+// regress across 15+ repeated renders. This process serves many requests,
+// so that would have broken after the first couple of real invoices.
+const alexandriaFontsDir = path.join(process.cwd(), "node_modules/@fontsource/alexandria/files")
+Font.register({
+  family: "Alexandria",
+  fonts: [
+    { src: path.join(alexandriaFontsDir, "alexandria-arabic-400-normal.woff"), fontWeight: 400 },
+    { src: path.join(alexandriaFontsDir, "alexandria-arabic-700-normal.woff"), fontWeight: 700 },
+  ],
+})
+
+const ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/
+
+/** Splits text into runs so each character-class (Arabic-script vs. everything
+ * else) can be given the font that actually has glyphs for it — e.g. "د. Ahmed"
+ * needs the Arabic font for "د" and Helvetica for ". Ahmed" (the Arabic font's
+ * subset doesn't cover Latin/digits/punctuation, only its own script). */
+function splitByScript(text: string): { text: string; arabic: boolean }[] {
+  const parts: { text: string; arabic: boolean }[] = []
+  for (const ch of text) {
+    const isArabic = ARABIC_RE.test(ch)
+    const last = parts[parts.length - 1]
+    if (last && last.arabic === isArabic) last.text += ch
+    else parts.push({ text: ch, arabic: isArabic })
+  }
+  return parts
+}
+
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, color: INK, fontFamily: "Helvetica" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  logo: { width: 120, height: 32, objectFit: "contain" },
+  logo: { width: 100, height: 75, objectFit: "contain" },
   docTitle: { fontSize: 20, fontFamily: "Helvetica-Bold", color: BRAND_PRIMARY, textAlign: "right" },
   docMeta: { fontSize: 9, color: MUTED, textAlign: "right", marginTop: 4 },
   divider: { borderBottomWidth: 1, borderBottomColor: BORDER, marginVertical: 18 },
@@ -18,6 +57,7 @@ const styles = StyleSheet.create({
   colBlock: { flex: 1 },
   label: { fontSize: 8, color: MUTED, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 },
   value: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 10 },
+  valueArabic: { fontFamily: "Alexandria", fontWeight: 700 },
   table: { marginTop: 24, borderWidth: 1, borderColor: BORDER, borderRadius: 4 },
   tableHeaderRow: {
     flexDirection: "row",
@@ -66,6 +106,18 @@ const styles = StyleSheet.create({
   },
   footerText: { fontSize: 8, color: MUTED, lineHeight: 1.5 },
 })
+
+function NameValue({ value }: { value: string }) {
+  return (
+    <Text style={styles.value}>
+      {splitByScript(value).map((part, i) => (
+        <Text key={i} style={part.arabic ? styles.valueArabic : undefined}>
+          {part.text}
+        </Text>
+      ))}
+    </Text>
+  )
+}
 
 const STATUS_LABEL: Record<string, string> = {
   PAID: "Paid",
@@ -148,7 +200,7 @@ export function InvoiceDocument({ data }: { data: PaymentReceiptData }) {
         <View style={styles.twoCol}>
           <View style={styles.colBlock}>
             <Text style={styles.label}>Billed To</Text>
-            <Text style={styles.value}>{data.payerName}</Text>
+            <NameValue value={data.payerName} />
             <Text style={styles.label}>Email</Text>
             <Text style={styles.value}>{data.payerEmail}</Text>
           </View>
@@ -156,13 +208,13 @@ export function InvoiceDocument({ data }: { data: PaymentReceiptData }) {
             {data.doctorName ? (
               <>
                 <Text style={styles.label}>Doctor</Text>
-                <Text style={styles.value}>{data.doctorName}</Text>
+                <NameValue value={data.doctorName} />
               </>
             ) : null}
             {data.centerName ? (
               <>
                 <Text style={styles.label}>Center</Text>
-                <Text style={styles.value}>{data.centerName}</Text>
+                <NameValue value={data.centerName} />
               </>
             ) : null}
             {data.appointmentReference ? (
