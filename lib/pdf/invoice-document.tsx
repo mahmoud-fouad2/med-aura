@@ -20,7 +20,16 @@ const BORDER = "#E4DEEC"
 // fontkit's TTFSubset) — reproduced locally, verified .woff does not
 // regress across 15+ repeated renders. This process serves many requests,
 // so that would have broken after the first couple of real invoices.
-const alexandriaFontsDir = path.join(process.cwd(), "node_modules/@fontsource/alexandria/files")
+//
+// Copied into public/fonts/pdf/ rather than read from node_modules: this
+// path is a runtime path.join(process.cwd(), ...), not a static import, so
+// Next's output:"standalone" file-tracing can't see it as a dependency and
+// never copies it into the deployed build — scripts/prepare-standalone.mjs
+// only knows to hand-copy public/, .next/static/, and drizzle/ for exactly
+// this reason. Confirmed live: this crashed every real invoice whose
+// doctor/center name is Arabic with an uncaught ENOENT-class error (500),
+// silent in dev where the full node_modules tree is always present.
+const alexandriaFontsDir = path.join(process.cwd(), "public/fonts/pdf")
 Font.register({
   family: "Alexandria",
   fonts: [
