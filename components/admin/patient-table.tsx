@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { StatusBadge, userAccountStatusTone } from "@/components/admin/status-badge"
 import { UserAccountMenu } from "@/components/admin/user-account-menu"
+import { UserEditForm } from "@/components/admin/user-edit-form"
 import { EmptyState } from "@/components/ui/empty-state"
 import { getUserActivityAction } from "@/lib/actions/users"
 import { getPatientCasesAction, getPatientPaymentsAction, getPatientNotificationsAction } from "@/lib/actions/admin-patients"
@@ -120,6 +121,7 @@ function PatientDetailDrawer({
         <Tabs defaultValue="overview">
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+            {canManageAccount && <TabsTrigger value="edit">تعديل</TabsTrigger>}
             <TabsTrigger value="cases">الحالات</TabsTrigger>
             <TabsTrigger value="billing">الفواتير</TabsTrigger>
             <TabsTrigger value="notifications">الإشعارات</TabsTrigger>
@@ -139,6 +141,12 @@ function PatientDetailDrawer({
               <DetailRow label="تاريخ التسجيل" value={dtfMedium(patient.createdAt)} />
             </DetailGroup>
           </TabsContent>
+
+          {canManageAccount && (
+            <TabsContent value="edit">
+              <UserEditForm userId={patient.userId} isPatient />
+            </TabsContent>
+          )}
 
           <TabsContent value="cases">
             <PatientCasesTab userId={patient.userId} />
@@ -163,7 +171,6 @@ function PatientDetailDrawer({
                 <UserAccountMenu
                   userId={patient.userId}
                   userName={safeName(patient.name)}
-                  userPhone={patient.phone}
                   isActive={patient.status === "active"}
                   isSelf={false}
                 />

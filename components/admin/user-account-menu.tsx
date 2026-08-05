@@ -1,41 +1,27 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  MoreVertical,
-  Pencil,
-  Power,
-  LogOut,
-  KeyRound,
-  Save,
-} from "lucide-react"
+import { MoreVertical, Power, LogOut, KeyRound } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { FormDialog } from "@/components/ui/form-dialog"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import {
-  updateUserAction,
-  toggleUserStatusAction,
-  revokeUserSessionsAction,
-  adminRequestPasswordResetAction,
-} from "@/lib/actions/users"
+import { toggleUserStatusAction, revokeUserSessionsAction, adminRequestPasswordResetAction } from "@/lib/actions/users"
 
-type ActiveDialog = "edit" | "status" | "signout" | "reset" | null
+type ActiveDialog = "status" | "signout" | "reset" | null
 
 /**
- * Grouped account actions for one user row — edit, activate/disable, force
+ * Grouped account actions for one user row — activate/disable, force
  * sign-out, admin password-reset — behind a single "more actions" menu
  * instead of a row of icon buttons (spec: "Actions menu بدل ازدحام الأزرار").
+ * Editing profile fields lives in the drawer's own "تعديل" tab (UserEditForm),
+ * not here — these are account-security actions, not profile data.
  *
  * Every dialog is rendered as a SIBLING of the DropdownMenu, not nested
  * inside it: selecting a menu item closes the menu, which would unmount
@@ -45,13 +31,11 @@ type ActiveDialog = "edit" | "status" | "signout" | "reset" | null
 export function UserAccountMenu({
   userId,
   userName,
-  userPhone,
   isActive,
   isSelf,
 }: {
   userId: string
   userName: string
-  userPhone: string | null
   isActive: boolean
   isSelf: boolean
 }) {
@@ -69,10 +53,6 @@ export function UserAccountMenu({
           <MoreVertical className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem onClick={() => setActiveDialog("edit")}>
-            <Pencil className="size-4" /> تعديل الاسم والهاتف
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             variant={isActive ? "destructive" : "default"}
             onClick={() => setActiveDialog("status")}
@@ -92,14 +72,6 @@ export function UserAccountMenu({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <EditUserDialog
-        open={activeDialog === "edit"}
-        onOpenChange={(o) => setActiveDialog(o ? "edit" : null)}
-        userId={userId}
-        name={userName}
-        phone={userPhone}
-      />
 
       <ConfirmDialog
         open={activeDialog === "status"}
@@ -158,71 +130,5 @@ export function UserAccountMenu({
         }}
       />
     </>
-  )
-}
-
-function EditUserDialog({
-  open,
-  onOpenChange,
-  userId,
-  name,
-  phone,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  userId: string
-  name: string
-  phone: string | null
-}) {
-  const [pending, start] = useTransition()
-  const router = useRouter()
-  const formId = `edit-user-form-${userId}`
-
-  function submit(fd: FormData) {
-    start(async () => {
-      const res = await updateUserAction({
-        userId,
-        name: String(fd.get("name") ?? ""),
-        phone: String(fd.get("phone") ?? ""),
-      })
-      if (res.status === "ok") {
-        toast.success(res.message)
-        onOpenChange(false)
-        router.refresh()
-      } else {
-        toast.error(res.message)
-      }
-    })
-  }
-
-  return (
-    <FormDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="تعديل بيانات المستخدم"
-      description="الاسم ورقم الهاتف فقط — البريد الإلكتروني وكلمة المرور يديرهما المستخدم بنفسه."
-      preventClose={pending}
-      footer={
-        <>
-          <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => onOpenChange(false)}>
-            إلغاء
-          </Button>
-          <Button type="submit" form={formId} size="sm" loading={pending} loadingText="جارٍ الحفظ…">
-            <Save className="size-4" /> حفظ
-          </Button>
-        </>
-      }
-    >
-      <form id={formId} className="space-y-3" action={submit}>
-        <div className="space-y-1.5">
-          <Label htmlFor="edit-user-name">الاسم الكامل</Label>
-          <Input id="edit-user-name" name="name" defaultValue={name} required minLength={2} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="edit-user-phone">رقم الهاتف (اختياري)</Label>
-          <Input id="edit-user-phone" name="phone" defaultValue={phone ?? ""} dir="ltr" />
-        </div>
-      </form>
-    </FormDialog>
   )
 }

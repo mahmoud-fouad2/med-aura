@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { StatusBadge, userAccountStatusTone } from "@/components/admin/status-badge"
 import { UserRoleManager } from "@/components/admin/user-role-manager"
 import { UserAccountMenu } from "@/components/admin/user-account-menu"
+import { UserEditForm } from "@/components/admin/user-edit-form"
 import { PatientBillingTab } from "@/components/admin/patient-table"
 import { EmptyState } from "@/components/ui/empty-state"
 import { getUserActivityAction } from "@/lib/actions/users"
@@ -157,6 +158,7 @@ function UserDetailDrawer({
         <Tabs defaultValue="overview">
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+            {canAssign && <TabsTrigger value="edit">تعديل</TabsTrigger>}
             {isPatient && <TabsTrigger value="billing">الفواتير</TabsTrigger>}
             {canAssign && <TabsTrigger value="roles">الأدوار</TabsTrigger>}
             {canAssign && <TabsTrigger value="security">الأمان</TabsTrigger>}
@@ -187,6 +189,12 @@ function UserDetailDrawer({
               </DetailGroup>
             )}
           </TabsContent>
+
+          {canAssign && (
+            <TabsContent value="edit">
+              <UserEditForm userId={user.id} isPatient={isPatient} />
+            </TabsContent>
+          )}
 
           {isPatient && (
             <TabsContent value="billing">
@@ -220,7 +228,6 @@ function UserDetailDrawer({
                 <UserAccountMenu
                   userId={user.id}
                   userName={safeName(user.name)}
-                  userPhone={user.phone}
                   isActive={user.status === "active"}
                   isSelf={user.id === selfId}
                 />

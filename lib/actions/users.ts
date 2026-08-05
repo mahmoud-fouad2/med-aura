@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { and, count, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/lib/db"
-import { user as userT, userRole, role as roleT, session as sessionT } from "@/lib/db/schema"
+import { user as userT, userRole, role as roleT, session as sessionT, patientProfile } from "@/lib/db/schema"
 import { requirePermissionOrThrow } from "@/lib/session"
 import { PERMISSIONS, ROLES } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
@@ -125,6 +125,33 @@ export async function toggleUserRoleAction(input: {
   }
 }
 
+const optionalText = (max: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().trim().max(max).optional(),
+  )
+
+const optionalCountryCode = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z.string().trim().length(2, "اختر رمز دولة صالح").optional(),
+)
+
+const optionalPhone = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z.string().trim().max(30).regex(/^\+?[0-9\s-]{6,30}$/, "رقم غير صالح").optional(),
+)
+
+const optionalPastDate = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z
+    .string()
+    .refine((v) => {
+      const d = new Date(v)
+      return !Number.isNaN(d.getTime()) && d.getTime() <= Date.now()
+    }, "تاريخ الميلاد غير صالح")
+    .optional(),
+)
+
 const UpdateUserSchema = z.object({
   userId: z.string().min(1),
   name: z.string().trim().min(2, "الاسم مطلوب").max(160),
@@ -135,21 +162,51 @@ const UpdateUserSchema = z.object({
     .regex(/^\+?[0-9\s-]{6,30}$/, "رقم الهاتف غير صالح")
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  // Only patients have a patient_profile row — the edit form only sends
+  // these when editing a patient, gating whether that table gets touched.
+  isPatientProfile: z.boolean().optional().default(false),
+  dateOfBirth: optionalPastDate,
+  nationality: optionalCountryCode,
+  residenceCountry: optionalCountryCode,
+  city: optionalText(120),
+  emergencyContactName: optionalText(160),
+  emergencyContactPhone: optionalPhone,
 })
 
-/** Admin edits a user's own profile fields — name and phone only. Email and
- * password stay self-service (Better Auth owns those flows). */
+/**
+ * Admin edits a user's account fields (name, phone) and — for patients only
+ * — the demographic/emergency-contact fields on patient_profile. Email and
+ * password stay self-service (Better Auth owns those flows).
+ */
 export async function updateUserAction(input: {
   userId: string
   name: string
   phone?: string
+  isPatientProfile?: boolean
+  dateOfBirth?: string
+  nationality?: string
+  residenceCountry?: string
+  city?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
 }): Promise<ActionResult> {
   const actor = await requirePermissionOrThrow(PERMISSIONS.USER_READ_ANY)
   const parsed = UpdateUserSchema.safeParse(input)
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues[0]?.message ?? "بيانات غير صالحة" }
   }
-  const { userId, name, phone } = parsed.data
+  const {
+    userId,
+    name,
+    phone,
+    isPatientProfile,
+    dateOfBirth,
+    nationality,
+    residenceCountry,
+    city,
+    emergencyContactName,
+    emergencyContactPhone,
+  } = parsed.data
 
   const [updated] = await db
     .update(userT)
@@ -158,18 +215,88 @@ export async function updateUserAction(input: {
     .returning({ id: userT.id })
   if (!updated) return { status: "error", message: "المستخدم غير موجود" }
 
+  if (isPatientProfile) {
+    const existing = (
+      await db
+        .select({ id: patientProfile.id })
+        .from(patientProfile)
+        .where(eq(patientProfile.userId, userId))
+        .limit(1)
+    )[0]
+    const profileValues = {
+      dateOfBirth: dateOfBirth ?? null,
+      nationality: nationality ?? null,
+      residenceCountry: residenceCountry ?? null,
+      city: city ?? null,
+      emergencyContactName: emergencyContactName ?? null,
+      emergencyContactPhone: emergencyContactPhone ?? null,
+      updatedAt: new Date(),
+    }
+    if (existing) {
+      await db.update(patientProfile).set(profileValues).where(eq(patientProfile.id, existing.id))
+    } else {
+      await db.insert(patientProfile).values({ userId, ...profileValues })
+    }
+  }
+
   const meta = await requestMeta()
   await writeAudit({
     action: "user.update",
     actorUserId: actor.id,
     entityType: "user",
     entityId: userId,
-    metadata: { name, phone: phone ?? null },
+    metadata: {
+      name,
+      phone: phone ?? null,
+      ...(isPatientProfile ? { dateOfBirth, nationality, residenceCountry, city } : {}),
+    },
     ...meta,
   })
 
   revalidatePath("/admin/users")
+  revalidatePath("/admin/patients")
   return { status: "ok", message: "تم تحديث بيانات المستخدم." }
+}
+
+export type UserEditData = {
+  name: string
+  phone: string | null
+  dateOfBirth: string | null
+  nationality: string | null
+  residenceCountry: string | null
+  city: string | null
+  emergencyContactName: string | null
+  emergencyContactPhone: string | null
+}
+
+/** Full editable record for the admin "تعديل" tab — base account fields plus
+ * patient_profile fields (left-joined; doctors/staff have no such row, so
+ * these come back null and the caller — which already knows the account's
+ * role — decides whether to render/submit that section). */
+export async function getUserForEditAction(
+  userId: string,
+): Promise<{ status: "ok"; user: UserEditData } | { status: "error"; message: string }> {
+  await requirePermissionOrThrow(PERMISSIONS.USER_READ_ANY)
+  const row = (
+    await db
+      .select({
+        name: userT.name,
+        phone: userT.phone,
+        dateOfBirth: patientProfile.dateOfBirth,
+        nationality: patientProfile.nationality,
+        residenceCountry: patientProfile.residenceCountry,
+        city: patientProfile.city,
+        emergencyContactName: patientProfile.emergencyContactName,
+        emergencyContactPhone: patientProfile.emergencyContactPhone,
+      })
+      .from(userT)
+      .leftJoin(patientProfile, eq(patientProfile.userId, userT.id))
+      .where(eq(userT.id, userId))
+      .limit(1)
+  )[0]
+  if (!row) return { status: "error", message: "المستخدم غير موجود" }
+
+  return { status: "ok", user: row }
 }
 
 /**
