@@ -65,7 +65,7 @@ function SheetContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-3 right-3"
+                className="absolute top-3 end-3"
                 size="icon-sm"
               />
             }
@@ -84,7 +84,9 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-0.5 p-4", className)}
+      // pe-12 reserves room for the close button (absolute end-3, size-8) so
+      // a long title truncates before it, instead of running under it.
+      className={cn("flex flex-col gap-0.5 p-4 pe-12", className)}
       {...props}
     />
   )
@@ -105,7 +107,7 @@ function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
     <SheetPrimitive.Title
       data-slot="sheet-title"
       className={cn(
-        "font-heading text-base font-medium text-foreground",
+        "truncate font-heading text-base font-medium text-foreground",
         className
       )}
       {...props}
