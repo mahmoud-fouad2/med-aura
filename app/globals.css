@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-heading), 'Alexandria Fallback', system-ui, sans-serif;
-  --font-sans: var(--font-body), 'Alexandria Fallback', system-ui, sans-serif;
+  --font-heading: var(--font-arabic), var(--font-latin), 'IBM Plex Sans Arabic Fallback', system-ui, sans-serif;
+  --font-sans: var(--font-arabic), var(--font-latin), 'IBM Plex Sans Arabic Fallback', system-ui, sans-serif;
   --font-numbers: var(--font-numbers), var(--font-body), 'Inter Fallback', system-ui, sans-serif;
   --font-mono: var(--font-mono, ui-monospace), 'Menlo', 'Consolas', monospace;
   --color-sidebar-ring: var(--sidebar-ring);

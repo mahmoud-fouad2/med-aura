@@ -15,21 +15,36 @@ import {
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/pwa/sw-registration"
 
-const alexandria = localFont({
-  src: "../public/fonts/Alexandria-Variable.woff2",
-  variable: "--font-body",
-  weight: "400 700",
+// IBM Plex Sans Arabic ships as discrete per-weight, per-script files (no
+// single variable file covers both scripts the way Alexandria's did), so
+// one loader per script and CSS's own per-character font-family fallback —
+// not unicode-range, which next/font/local's src array has no option for —
+// is what actually routes Arabic letters to the Arabic-subset files and
+// Latin letters to the Latin-subset files. Both share one role (body and
+// heading no longer need separate files just to preload differently).
+const ibmPlexArabic = localFont({
+  src: [
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-400-normal.woff2", weight: "400" },
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-500-normal.woff2", weight: "500" },
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-600-normal.woff2", weight: "600" },
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-700-normal.woff2", weight: "700" },
+  ],
+  variable: "--font-arabic",
   display: "swap",
   preload: true,
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
 })
 
-const alexandriaHeading = localFont({
-  src: "../public/fonts/Alexandria-Variable.woff2",
-  variable: "--font-heading",
-  weight: "500 700",
+const ibmPlexLatin = localFont({
+  src: [
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-400-normal.woff2", weight: "400" },
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-500-normal.woff2", weight: "500" },
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-600-normal.woff2", weight: "600" },
+    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-700-normal.woff2", weight: "700" },
+  ],
+  variable: "--font-latin",
   display: "swap",
-  preload: false,
+  preload: true,
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
 })
 
@@ -117,7 +132,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir(locale)}
-      className={`${alexandria.variable} ${alexandriaHeading.variable} ${inter.variable} bg-background`}
+      className={`${ibmPlexArabic.variable} ${ibmPlexLatin.variable} ${inter.variable} bg-background`}
       suppressHydrationWarning
     >
       <head>
