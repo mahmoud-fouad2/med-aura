@@ -52,18 +52,18 @@ export function WorkspaceSection({
 }) {
   return (
     <div className={cn("overflow-hidden rounded-xl border border-border/60", className)}>
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          {Icon && <Icon className={cn("size-4 shrink-0", TONE_ICON[tone])} />}
+          {Icon && <Icon className={cn("size-[18px] shrink-0", TONE_ICON[tone])} />}
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-            {description && <p className="truncate text-[11px] text-muted-foreground">{description}</p>}
+            <h2 className="text-base font-bold text-foreground">{title}</h2>
+            {description && <p className="truncate text-xs text-muted-foreground">{description}</p>}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {action}
           {viewAllHref && (
-            <Link href={viewAllHref} className="text-xs font-medium text-primary hover:underline">
+            <Link href={viewAllHref} className="text-xs font-semibold text-primary hover:underline">
               عرض الكل
             </Link>
           )}
@@ -75,7 +75,7 @@ export function WorkspaceSection({
 }
 
 export function WorkspaceEmpty({ text }: { text: string }) {
-  return <p className="px-4 py-4 text-center text-xs text-muted-foreground">{text}</p>
+  return <p className="px-4 py-6 text-center text-sm text-muted-foreground">{text}</p>
 }
 
 /** One compact row, 52-58px tall. */
@@ -91,9 +91,9 @@ export function WorkspaceRow({
   badge?: React.ReactNode
 }) {
   return (
-    <Link href={href} className="flex min-h-[54px] items-center justify-between gap-3 px-4 py-2 text-sm transition-colors hover:bg-muted/40">
+    <Link href={href} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-muted/40">
       <div className="min-w-0">
-        <p className="truncate font-medium text-foreground">{title}</p>
+        <p className="truncate font-semibold text-foreground">{title}</p>
         <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
       {badge && <span className="shrink-0">{badge}</span>}

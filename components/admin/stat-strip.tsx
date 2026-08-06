@@ -19,19 +19,20 @@ const TONE_VALUE: Record<NonNullable<Stat["tone"]>, string> = {
 
 /**
  * Core metrics as one bordered strip split by internal dividers — not N
- * separate shadowed cards. No icon circles, no per-stat shadow. A zero
- * value never gets the alert tone (danger/warning) — it reads calm
- * (neutral or success), same visual weight as every other quiet number.
+ * separate shadowed cards. No icon circles, no per-stat shadow. Height is
+ * earned by real content (a large, bold value), not an arbitrary fixed
+ * box. A zero value never gets the alert tone (danger/warning) — it reads
+ * calm (neutral or success), same visual weight as every other quiet number.
  */
 export function StatStrip({ stats }: { stats: Stat[] }) {
   return (
-    <div className="grid h-[120px] grid-cols-2 divide-x divide-border/60 rounded-xl border border-border/60 rtl:divide-x-reverse sm:grid-cols-4">
+    <div className="grid grid-cols-2 divide-x divide-border/60 rounded-xl border border-border/60 rtl:divide-x-reverse sm:grid-cols-4">
       {stats.map((s) => {
         const content = (
-          <div className="flex h-full flex-col justify-center px-4">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className={cn("mt-1 font-heading text-2xl font-bold tabular-nums leading-none", TONE_VALUE[s.tone ?? "neutral"])}>{s.value}</p>
-            <p className="mt-1.5 truncate text-[11px] text-muted-foreground/80">{s.description}</p>
+          <div className="flex h-full flex-col justify-center gap-1.5 px-5 py-5">
+            <p className="text-xs font-semibold text-muted-foreground">{s.label}</p>
+            <p className={cn("font-heading text-[32px] font-extrabold tabular-nums leading-none", TONE_VALUE[s.tone ?? "neutral"])}>{s.value}</p>
+            <p className="truncate text-xs text-muted-foreground">{s.description}</p>
           </div>
         )
         return s.href ? (
