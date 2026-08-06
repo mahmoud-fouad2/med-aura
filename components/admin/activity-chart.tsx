@@ -34,7 +34,7 @@ export function ActivityChart({
   showFinance: boolean
 }) {
   return (
-    <div className="h-72 w-full" dir="ltr">
+    <div className="h-[260px] w-full" dir="ltr">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
           <defs>

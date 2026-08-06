@@ -39,8 +39,8 @@ export function AdminShell({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-card/92 shadow-elegant ease-premium transition-[width] duration-200 backdrop-blur md:flex",
-          collapsed ? "w-[76px]" : "w-72",
+          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-card/92 ease-premium transition-[width] duration-200 backdrop-blur md:flex",
+          collapsed ? "w-[72px]" : "w-60",
         )}
       >
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -59,7 +59,7 @@ export function AdminShell({
 
       {/* Mobile drawer */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="right" className="w-72 p-0" showCloseButton>
+        <SheetContent side="right" className="w-60 p-0" showCloseButton>
           {/* SidebarInner renders its own bordered logo header below — this
               title exists only so the dialog has an accessible name, not to
               be seen (it was duplicating the same logo a second time). */}
@@ -80,8 +80,8 @@ export function AdminShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 bg-background/72 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl">
-          <div className="flex h-[4.5rem] items-center gap-3 rounded-[1.45rem] border border-border/70 bg-card/92 px-4 shadow-elegant sm:px-6">
+        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
             <Button
               variant="ghost"
               size="icon"
@@ -92,21 +92,23 @@ export function AdminShell({
               <Menu className="size-5" />
             </Button>
 
-            <div className="hidden items-center gap-1.5 text-sm text-muted-foreground md:flex">
+            <div className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
               <Link href="/admin" className="hover:text-foreground">الإدارة</Link>
               {activeLabel && activeLabel !== "نظرة عامة" && (
                 <>
-                  <ChevronLeft className="size-3.5 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180" />
+                  <ChevronLeft className="size-3 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180" />
                   <span className="font-medium text-foreground">{activeLabel}</span>
                 </>
               )}
             </div>
 
-            <h1 className="font-heading text-lg font-bold text-foreground md:hidden">
+            <h1 className="font-heading text-base font-bold text-foreground md:hidden">
               {activeLabel ?? "الإدارة"}
             </h1>
 
-            <div className="mx-2 flex-1">
+            <div className="flex-1" />
+
+            <div className="hidden w-full max-w-xs md:block">
               <CommandPalette nav={nav} />
             </div>
 
@@ -114,11 +116,11 @@ export function AdminShell({
               <Link
                 href="/dashboard/notifications"
                 aria-label="الإشعارات"
-                className="relative flex size-10 items-center justify-center rounded-full border border-border/60 bg-background/70 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <Bell className="size-5" />
+                <Bell className="size-[18px]" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                  <span className="absolute top-1 end-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
                     {unreadNotifications > 9 ? "9+" : unreadNotifications}
                   </span>
                 )}
@@ -128,7 +130,7 @@ export function AdminShell({
             </div>
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   )
@@ -174,12 +176,12 @@ function SidebarInner({
 
   return (
     <div className="flex h-full flex-col bg-card/92 text-sidebar-foreground">
-      <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
+      <div className={cn("flex h-14 items-center border-b border-sidebar-border px-3.5", collapsed && "justify-center px-2")}>
         <Link href="/admin" aria-label="Med Aura" onClick={onNavigate}>
-          {collapsed ? <LogoMark className="size-9 text-primary" /> : <Logo />}
+          {collapsed ? <LogoMark className="size-7 text-primary" /> : <Logo className="h-7" />}
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {nav.map((group) => {
           // Collapsed rail or a single-item group: a plain link, no
           // accordion chrome — there's nothing meaningful to collapse.
@@ -197,15 +199,15 @@ function SidebarInner({
                 onClick={() => toggleGroup(group.title)}
                 aria-expanded={open}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
-                  group.title === activeGroup ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors",
+                  group.title === activeGroup ? "text-primary" : "text-foreground/65 hover:text-foreground",
                 )}
               >
                 <span className="flex-1 truncate text-start">{group.title}</span>
-                <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")} />
+                <ChevronDown className={cn("size-3 shrink-0 transition-transform duration-200", open && "rotate-180")} />
               </button>
               {open && (
-                <ul className="space-y-0.5 pb-1">
+                <ul className="space-y-0.5 pb-0.5">
                   {group.items.map((item) => (
                     <li key={item.href}>
                       <NavLink item={item} active={isActiveHref(item.href, pathname)} collapsed={false} onNavigate={onNavigate} />
@@ -217,7 +219,7 @@ function SidebarInner({
           )
         })}
       </nav>
-      <div className={cn("border-t border-sidebar-border p-2", collapsed && "flex justify-center p-2")}>
+      <div className={cn("border-t border-sidebar-border p-1.5", collapsed && "flex justify-center p-1.5")}>
         {collapsed ? (
           <UserMenu name={user.name} email={user.email} />
         ) : (
@@ -246,10 +248,10 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+        "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all duration-150",
         collapsed && "mb-0.5 justify-center px-0",
         active
-          ? "bg-primary/10 text-primary shadow-sm"
+          ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-secondary hover:text-primary",
       )}
     >
