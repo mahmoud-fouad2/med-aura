@@ -10,8 +10,8 @@ import { ConciergeBoard } from "@/components/concierge/concierge-board"
 import { ConciergeCaseTable } from "@/components/concierge/concierge-case-table"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { SectionCard } from "@/components/dashboard/section-card"
+import { MetricTile } from "@/components/admin/metric-tile"
+import { WorkspaceSection } from "@/components/admin/workspace-panel"
 
 export const dynamic = "force-dynamic"
 
@@ -41,7 +41,7 @@ export default async function ConciergeDashboardPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
+        <MetricTile
           icon={ClipboardList}
           label="مهام مفتوحة"
           value={openTasks.length.toLocaleString("ar-SA-u-nu-latn")}
@@ -49,7 +49,7 @@ export default async function ConciergeDashboardPage() {
           tone={openTasks.length > 0 ? "primary" : "success"}
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={AlertTriangle}
           label="مهام متأخرة"
           value={overdueTasks.length.toLocaleString("ar-SA-u-nu-latn")}
@@ -61,7 +61,7 @@ export default async function ConciergeDashboardPage() {
           tone={overdueTasks.length > 0 ? "danger" : "success"}
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={Activity}
           label="حالات نشطة"
           value={activeCases.length.toLocaleString("ar-SA-u-nu-latn")}
@@ -69,7 +69,7 @@ export default async function ConciergeDashboardPage() {
           tone="primary"
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={KanbanSquare}
           label="إجمالي الحالات"
           value={cases.length.toLocaleString("ar-SA-u-nu-latn")}
@@ -85,7 +85,7 @@ export default async function ConciergeDashboardPage() {
           <TabsTrigger value="cases">كل الحالات ({cases.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="tasks" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={KanbanSquare}
             title="لوحة المهام"
             description="مهام تشغيلية موزّعة على الفريق. اسحب أو غيّر الحالة لإعادة التوزيع."
@@ -93,10 +93,10 @@ export default async function ConciergeDashboardPage() {
             <div className="p-5">
               <ConciergeBoard tasks={tasks} assignableUsers={assignableUsers} />
             </div>
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
         <TabsContent value="cases" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={Activity}
             title="كل الحالات"
             description="جدول شامل لكل الحالات على المنصة مع فلاتر وتصفية."
@@ -104,7 +104,7 @@ export default async function ConciergeDashboardPage() {
             <div className="p-5">
               <ConciergeCaseTable cases={cases} />
             </div>
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
       </Tabs>
     </div>

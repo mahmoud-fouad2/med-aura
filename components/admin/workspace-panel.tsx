@@ -1,4 +1,6 @@
 import Link from "next/link"
+import type { LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 /**
  * One cohesive bordered panel split into a main + side column by a single
@@ -15,34 +17,59 @@ export function WorkspacePanel({ main, side }: { main: React.ReactNode; side: Re
   )
 }
 
-/** A lean bordered sub-section — a small header (title + optional description/"view all") plus content, not a heavy card. */
+export type WorkspaceSectionTone = "primary" | "success" | "warning" | "danger" | "neutral"
+
+const TONE_ICON: Record<WorkspaceSectionTone, string> = {
+  primary: "text-primary",
+  success: "text-success",
+  warning: "text-warning-foreground",
+  danger: "text-destructive",
+  neutral: "text-muted-foreground",
+}
+
+/** A lean bordered sub-section — a small header (icon + title + optional description/"view all"/action) plus content, not a heavy card. */
 export function WorkspaceSection({
   title,
   description,
   viewAllHref,
+  icon: Icon,
+  tone = "primary",
+  action,
+  padded = false,
   children,
   className,
 }: {
   title: string
   description?: string
   viewAllHref?: string
+  icon?: LucideIcon
+  tone?: WorkspaceSectionTone
+  action?: React.ReactNode
+  /** Applies default inner padding to children (for text-only/form content, not tables). */
+  padded?: boolean
   children: React.ReactNode
   className?: string
 }) {
   return (
-    <div className={`overflow-hidden rounded-xl border border-border/60 ${className ?? ""}`}>
+    <div className={cn("overflow-hidden rounded-xl border border-border/60", className)}>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-          {description && <p className="truncate text-[11px] text-muted-foreground">{description}</p>}
+        <div className="flex min-w-0 items-center gap-2.5">
+          {Icon && <Icon className={cn("size-4 shrink-0", TONE_ICON[tone])} />}
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+            {description && <p className="truncate text-[11px] text-muted-foreground">{description}</p>}
+          </div>
         </div>
-        {viewAllHref && (
-          <Link href={viewAllHref} className="shrink-0 text-xs font-medium text-primary hover:underline">
-            عرض الكل
-          </Link>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {action}
+          {viewAllHref && (
+            <Link href={viewAllHref} className="text-xs font-medium text-primary hover:underline">
+              عرض الكل
+            </Link>
+          )}
+        </div>
       </div>
-      {children}
+      {padded ? <div className="p-4">{children}</div> : children}
     </div>
   )
 }

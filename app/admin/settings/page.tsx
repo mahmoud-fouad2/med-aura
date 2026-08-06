@@ -27,8 +27,8 @@ import {
 } from "@/lib/env"
 import { videoJoinWindow } from "@/lib/video"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { SectionCard } from "@/components/dashboard/section-card"
+import { MetricTile } from "@/components/admin/metric-tile"
+import { WorkspaceSection } from "@/components/admin/workspace-panel"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "الإعدادات" }
@@ -113,7 +113,7 @@ export default async function AdminSettingsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard
+        <MetricTile
           icon={Plug}
           label="خدمات جاهزة"
           value={`${activeCount} / ${integrations.length}`}
@@ -125,7 +125,7 @@ export default async function AdminSettingsPage() {
           tone={activeIntegrations ? "success" : "warning"}
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={ShieldCheck}
           label="أدوار محفوظة"
           value={roles.length.toLocaleString("ar-SA-u-nu-latn")}
@@ -133,7 +133,7 @@ export default async function AdminSettingsPage() {
           tone="primary"
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={Settings2}
           label="أنواع الصلاحيات"
           value={Object.keys(PERMISSIONS).length.toLocaleString("ar-SA-u-nu-latn")}
@@ -143,7 +143,7 @@ export default async function AdminSettingsPage() {
         />
       </div>
 
-      <SectionCard
+      <WorkspaceSection
         icon={Sparkles}
         title="أقسام الإدارة"
         description="الوصول السريع لصفحات الإدارة والإعداد. تُخفى الأقسام التي لا تملك صلاحية الوصول إليها."
@@ -153,15 +153,15 @@ export default async function AdminSettingsPage() {
             <Link
               key={s.href}
               href={s.href}
-              className="group flex items-start gap-3 rounded-xl border border-border/70 bg-background p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_2px_4px_rgba(20,20,60,0.05),0_12px_28px_-12px_rgba(20,20,60,0.16)]"
+              className="group flex items-start gap-3 rounded-xl border border-border/60 bg-background p-4 transition-colors hover:border-primary/30 hover:bg-muted/30"
             >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 transition-colors group-hover:bg-primary group-hover:text-primary-foreground group-hover:ring-primary/20">
-                <s.icon className="size-[18px]" />
+              <span className="mt-0.5 flex shrink-0 items-center justify-center text-primary">
+                <s.icon className="size-4" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="flex items-center justify-between gap-2 font-medium text-foreground">
                   {s.label}
-                  <ArrowLeft className="size-4 shrink-0 text-muted-foreground/60 transition-all rtl:rotate-0 ltr:rotate-180 group-hover:text-primary rtl:group-hover:-translate-x-0.5 ltr:group-hover:translate-x-0.5" />
+                  <ArrowLeft className="size-4 shrink-0 text-muted-foreground/60 transition-colors rtl:rotate-0 ltr:rotate-180 group-hover:text-primary" />
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {s.desc}
@@ -170,10 +170,10 @@ export default async function AdminSettingsPage() {
             </Link>
           ))}
         </div>
-      </SectionCard>
+      </WorkspaceSection>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard
+        <WorkspaceSection
           icon={ShieldCheck}
           title="الأدوار المعرَّفة"
           description="الأدوار الافتراضية المدمجة مع عدد الصلاحيات لكل منها."
@@ -192,9 +192,9 @@ export default async function AdminSettingsPage() {
               </div>
             ))}
           </div>
-        </SectionCard>
+        </WorkspaceSection>
 
-        <SectionCard
+        <WorkspaceSection
           icon={Plug}
           title="حالة التكاملات"
           description="الخدمات الأساسية وحالة جاهزيتها."
@@ -243,7 +243,7 @@ export default async function AdminSettingsPage() {
               </li>
             ))}
           </ul>
-        </SectionCard>
+        </WorkspaceSection>
       </div>
     </div>
   )

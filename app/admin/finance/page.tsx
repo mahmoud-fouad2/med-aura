@@ -24,8 +24,8 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { RefundReviewPanel } from "@/components/finance/refund-review-panel"
 import { PageHeader } from "@/components/dashboard/page-header"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { SectionCard } from "@/components/dashboard/section-card"
+import { MetricTile } from "@/components/admin/metric-tile"
+import { WorkspaceSection } from "@/components/admin/workspace-panel"
 import {
   paymentStatusAr,
   paymentPurposeAr,
@@ -69,7 +69,7 @@ export default async function FinanceDashboardPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
+        <MetricTile
           icon={TrendingUp}
           label="إجمالي المحصّل"
           value={`${summary.totalCollected.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
@@ -77,7 +77,7 @@ export default async function FinanceDashboardPage() {
           tone="success"
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={Wallet}
           label="إجمالي الفواتير"
           value={`${summary.totalInvoiced.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
@@ -85,7 +85,7 @@ export default async function FinanceDashboardPage() {
           tone="primary"
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={AlertCircle}
           label="متبقٍ غير محصّل"
           value={`${summary.totalOutstanding.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
@@ -97,7 +97,7 @@ export default async function FinanceDashboardPage() {
           tone={summary.totalOutstanding > 0 ? "warning" : "success"}
           emphasis
         />
-        <MetricCard
+        <MetricTile
           icon={TrendingDown}
           label="إجمالي المسترجع"
           value={`${summary.totalRefunded.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
@@ -127,7 +127,7 @@ export default async function FinanceDashboardPage() {
         </TabsList>
 
         <TabsContent value="payments" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={Wallet}
             title="سجل المدفوعات"
             description="كل محاولات الدفع مع مرجعها وحالتها."
@@ -174,11 +174,11 @@ export default async function FinanceDashboardPage() {
                 }
               />
             )}
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={FileText}
             title="الفواتير"
             description="فواتير الحالات مع المتبقي والإجمالي."
@@ -218,11 +218,11 @@ export default async function FinanceDashboardPage() {
                 ]}
               />
             )}
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
 
         <TabsContent value="refunds" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={Undo2}
             title="طلبات الاسترجاع"
             description="مراجعة، اعتماد، ورفض طلبات الاسترجاع."
@@ -231,11 +231,11 @@ export default async function FinanceDashboardPage() {
             <div className="p-5">
               <RefundReviewPanel refunds={refunds} />
             </div>
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
 
         <TabsContent value="disputes" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={AlertCircle}
             title="مدفوعات متنازع عليها"
             description="نزاعات مفتوحة تحتاج ردًا سريعًا للمزوّد."
@@ -259,11 +259,11 @@ export default async function FinanceDashboardPage() {
                 ]}
               />
             )}
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
 
         <TabsContent value="webhooks" className="mt-4">
-          <SectionCard
+          <WorkspaceSection
             icon={Radio}
             title="تحديثات الدفع"
             description="آخر التحديثات الواردة من بوابة الدفع وحالة التعامل معها."
@@ -303,7 +303,7 @@ export default async function FinanceDashboardPage() {
                 ]}
               />
             )}
-          </SectionCard>
+          </WorkspaceSection>
         </TabsContent>
       </Tabs>
     </div>
