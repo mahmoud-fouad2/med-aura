@@ -192,10 +192,8 @@ export default async function ApplicationsPage({
                     <div className="flex min-w-0 items-start gap-3">
                       <span
                         className={
-                          "flex size-11 shrink-0 items-center justify-center rounded-2xl ring-1 " +
-                          (isDoctor
-                            ? "bg-primary/10 text-primary ring-primary/15"
-                            : "bg-secondary/60 text-secondary-foreground ring-border/70")
+                          "flex shrink-0 items-center justify-center " +
+                          (isDoctor ? "text-primary" : "text-secondary-foreground")
                         }
                       >
                         {isDoctor ? (

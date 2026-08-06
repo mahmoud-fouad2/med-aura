@@ -306,7 +306,7 @@ function TabLink({
       className={
         "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
         (active
-          ? "bg-primary text-primary-foreground shadow-[0_2px_8px_-2px_rgba(74,29,150,0.35)]"
+          ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground hover:bg-muted/70")
       }
     >
