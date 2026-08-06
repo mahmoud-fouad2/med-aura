@@ -1,4 +1,4 @@
-import { and, eq, desc, isNull, count } from "drizzle-orm"
+import { and, eq, desc, isNull, count, inArray } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { center, doctorProfile } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
@@ -43,23 +43,20 @@ export async function listPublishedCenters(): Promise<CenterCard[]> {
 
   if (rows.length === 0) return []
 
-  const result: CenterCard[] = []
-  for (const c of rows) {
-    const dc = (
-      await db
-        .select({ n: count() })
-        .from(doctorProfile)
-        .where(
-          and(
-            eq(doctorProfile.centerId, c.id),
-            eq(doctorProfile.published, true),
-            eq(doctorProfile.status, "approved"),
-          ),
-        )
-    )[0]?.n ?? 0
-    result.push({ ...c, doctorCount: dc })
-  }
-  return result
+  const doctorCounts = await db
+    .select({ centerId: doctorProfile.centerId, n: count() })
+    .from(doctorProfile)
+    .where(
+      and(
+        inArray(doctorProfile.centerId, rows.map((c) => c.id)),
+        eq(doctorProfile.published, true),
+        eq(doctorProfile.status, "approved"),
+      ),
+    )
+    .groupBy(doctorProfile.centerId)
+  const doctorCountById = new Map(doctorCounts.map((d) => [d.centerId, d.n]))
+
+  return rows.map((c) => ({ ...c, doctorCount: doctorCountById.get(c.id) ?? 0 }))
 }
 
 export type CenterDetail = CenterCard & {

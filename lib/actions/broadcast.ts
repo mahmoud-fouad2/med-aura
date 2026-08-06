@@ -62,14 +62,20 @@ export async function sendBroadcastAction(
       )
       .where(roleCondition)
 
-    for (const r of recipients) {
-      await notify({
-        userId: r.id,
-        type: "broadcast.announcement",
-        title,
-        body,
-        href: "/dashboard/notifications",
-      })
+    const BATCH_SIZE = 25
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const batch = recipients.slice(i, i + BATCH_SIZE)
+      await Promise.all(
+        batch.map((r) =>
+          notify({
+            userId: r.id,
+            type: "broadcast.announcement",
+            title,
+            body,
+            href: "/dashboard/notifications",
+          }),
+        ),
+      )
     }
 
     const meta = await requestMeta()
