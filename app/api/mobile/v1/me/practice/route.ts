@@ -27,6 +27,11 @@ export async function GET() {
       await db
         .select({
           id: doctorProfile.id,
+          bio: doctorProfile.bio,
+          qualifications: doctorProfile.qualifications,
+          certifications: doctorProfile.certifications,
+          fellowships: doctorProfile.fellowships,
+          memberships: doctorProfile.memberships,
           consultationFee: doctorProfile.consultationFee,
           currency: doctorProfile.currency,
           offersVideo: doctorProfile.offersVideo,
@@ -42,6 +47,11 @@ export async function GET() {
 
     const procedures = await listDoctorProcedureOptions(dp.id)
     return jsonOk({
+      bio: dp.bio,
+      qualifications: dp.qualifications,
+      certifications: dp.certifications,
+      fellowships: dp.fellowships,
+      memberships: dp.memberships,
       consultationFee: dp.consultationFee,
       currency: dp.currency,
       offersVideo: dp.offersVideo,
@@ -60,6 +70,11 @@ const PatchSchema = z.object({
   currency: z.string().trim().length(3),
   offersVideo: z.boolean(),
   offersInPerson: z.boolean(),
+  bio: z.string().trim().max(2000).optional(),
+  qualifications: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  certifications: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  fellowships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  memberships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
 })
 
 export async function PATCH(request: Request) {

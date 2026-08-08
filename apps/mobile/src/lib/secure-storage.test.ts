@@ -19,6 +19,11 @@ vi.mock("expo-secure-store", () => ({
   deleteItemAsync: (key: string) => mockDeleteItemAsync(key),
 }))
 
+// These tests cover the native SecureStore path. Loading the real adapter
+// would import React Native into Vitest's Node runtime, which has no native
+// platform bridge and is unrelated to the buffer behavior under test.
+vi.mock("./platform-storage", () => ({ browserStorage: () => null }))
+
 // Imported after the mock so the module under test binds to the fakes above,
 // never the real native module (which can't load outside a device/RN runtime).
 const { safeSecureStore, warmSecureStore } = await import("./secure-storage")

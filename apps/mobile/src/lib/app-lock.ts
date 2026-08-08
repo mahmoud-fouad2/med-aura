@@ -1,5 +1,5 @@
-import * as SecureStore from "expo-secure-store"
 import * as LocalAuthentication from "expo-local-authentication"
+import { readPlatformStorage, writePlatformStorage } from "./platform-storage"
 
 /**
  * Biometric app lock. The preference lives in the keychain/keystore next to
@@ -18,7 +18,7 @@ export function appLockEnabledSync(): boolean {
 
 export async function isAppLockEnabled(): Promise<boolean> {
   try {
-    cachedEnabled = (await SecureStore.getItemAsync(APP_LOCK_KEY)) === "1"
+    cachedEnabled = (await readPlatformStorage(APP_LOCK_KEY)) === "1"
   } catch {
     cachedEnabled = false
   }
@@ -27,7 +27,7 @@ export async function isAppLockEnabled(): Promise<boolean> {
 
 export async function setAppLockEnabled(enabled: boolean): Promise<void> {
   cachedEnabled = enabled
-  await SecureStore.setItemAsync(APP_LOCK_KEY, enabled ? "1" : "0")
+  await writePlatformStorage(APP_LOCK_KEY, enabled ? "1" : "0")
 }
 
 export type BiometricAvailability = "ready" | "no-hardware" | "not-enrolled"

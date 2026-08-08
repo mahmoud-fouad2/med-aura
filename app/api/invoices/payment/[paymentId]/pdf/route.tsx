@@ -1,9 +1,8 @@
-import { renderToBuffer } from "@react-pdf/renderer"
 import { getCurrentUser } from "@/lib/session"
 import { hasPermission, PERMISSIONS } from "@/lib/rbac"
 import { getPaymentReceiptData } from "@/lib/data/invoice"
 import { decideInvoiceAccess } from "@/lib/pdf/invoice-access"
-import { InvoiceDocument } from "@/lib/pdf/invoice-document"
+import { renderInvoiceReceipt } from "@/lib/pdf/invoice-receipt-renderer"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { logger } from "@/lib/logger"
 
@@ -40,15 +39,12 @@ export async function GET(
     return new Response("Not found.", { status: 404 })
   }
 
-  // @react-pdf can throw during layout for reasons that have nothing to do
-  // with this request's data (see the reproduction in
-  // test/invoice-pdf-arabic-name.test.ts). Uncaught, that returned Next's HTML
-  // error page under a 500 — which the native app's FileSystem.downloadAsync
-  // happily wrote to disk as a ".pdf". Catch it, log the real cause, and
-  // answer with a body that is unambiguously not a PDF.
+  // The receipt uses a direct PDFKit document per request. This intentionally
+  // avoids React-PDF TextKit's stateful bidi layout, which could fail after a
+  // Latin receipt followed by an Arabic one in the same server process.
   let buffer: Buffer
   try {
-    buffer = await renderToBuffer(<InvoiceDocument data={data} />)
+    buffer = await renderInvoiceReceipt(data)
   } catch (err) {
     logger.error("invoice pdf render failed", {
       paymentId,

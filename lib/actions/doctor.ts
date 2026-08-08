@@ -282,6 +282,11 @@ const updateMyPracticeSchema = z.object({
   currency: z.string().trim().length(3),
   offersVideo: z.boolean(),
   offersInPerson: z.boolean(),
+  bio: z.string().trim().max(2000).optional(),
+  qualifications: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  certifications: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  fellowships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  memberships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
 })
 
 /** A doctor updating their own price/currency/consultation types. */
@@ -307,6 +312,11 @@ export async function updateMyPracticeAction(input: unknown): Promise<ActionResu
         currency: data.currency,
         offersVideo: data.offersVideo,
         offersInPerson: data.offersInPerson,
+        ...(data.bio !== undefined ? { bio: data.bio || null } : {}),
+        ...(data.qualifications !== undefined ? { qualifications: data.qualifications } : {}),
+        ...(data.certifications !== undefined ? { certifications: data.certifications } : {}),
+        ...(data.fellowships !== undefined ? { fellowships: data.fellowships } : {}),
+        ...(data.memberships !== undefined ? { memberships: data.memberships } : {}),
         updatedBy: user.id,
         updatedAt: new Date(),
       })

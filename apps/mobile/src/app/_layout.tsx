@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { I18nManager } from "react-native"
+import { I18nManager, Platform } from "react-native"
 import { router, Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import * as SplashScreen from "expo-splash-screen"
@@ -34,6 +34,8 @@ const queryClient = new QueryClient({
       // Retrying an expired session can't succeed — fail fast to the redirect.
       retry: (failureCount, error) =>
         !(error instanceof SessionExpiredError) && failureCount < 1,
+      retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 5_000),
+      gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
     },
   },
@@ -52,6 +54,7 @@ export default function RootLayout() {
   }, [])
 
   useEffect(() => {
+    if (Platform.OS === "web") return
     // A tapped push always opens the in-app notifications list, never the
     // raw `href` the notification carries — that field is a web dashboard
     // route (e.g. /dashboard/cases/{id}) the native app has no matching

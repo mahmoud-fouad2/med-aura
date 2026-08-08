@@ -248,6 +248,10 @@ export function trustedAuthOrigins(): string[] {
     if (parsed.hostname === "www.medauraworld.com") {
       origins.add("https://medauraworld.com")
     }
+    if (isDev()) {
+      origins.add("http://localhost:8081")
+      origins.add("http://127.0.0.1:8081")
+    }
   }
   origins.add("medaura://")
   return Array.from(origins)

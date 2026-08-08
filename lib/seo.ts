@@ -17,12 +17,12 @@ export type GeoPoint = {
 }
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  "face-neck": "/demo-services/service-face-neck-premium.svg",
-  breast: "/demo-services/service-breast-aesthetics.svg",
-  body: "/demo-services/service-body-sculpting.svg",
-  skin: "/demo-services/service-skin-renewal.svg",
-  hair: "/demo-services/service-hair-restoration-premium.svg",
-  dental: "/demo-services/service-dental-smile-premium.svg",
+  "face-neck": "/demo-services/service-face-neck.png",
+  breast: "/demo-services/aesthetic-treatment-room.png",
+  body: "/demo-services/service-body-contouring.png",
+  skin: "/demo-services/service-skin-nonsurgical.png",
+  hair: "/demo-services/service-hair-restoration.png",
+  dental: "/demo-services/service-dental-smile.png",
 }
 
 const COUNTRY_GEO: Record<string, GeoPoint> = {
@@ -43,8 +43,8 @@ export function absoluteUrl(path = "/"): string {
 }
 
 export function serviceImageForCategory(slug: string | null | undefined): string {
-  if (!slug) return "/demo-services/experience-treatment-suite.svg"
-  return CATEGORY_IMAGES[slug] ?? "/demo-services/experience-treatment-suite.svg"
+  if (!slug) return "/demo-services/aesthetic-treatment-room.png"
+  return CATEGORY_IMAGES[slug] ?? "/demo-services/aesthetic-treatment-room.png"
 }
 
 export function serviceImageForProcedure(categorySlug: string | null | undefined): string {

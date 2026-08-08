@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, View } from "react-native"
+import { I18nManager, Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -155,6 +155,28 @@ export default function DoctorProfile() {
               </Section>
             ) : null}
 
+            {[
+              [t.doctor.qualifications, doctor.data.qualifications],
+              [t.doctor.certifications, doctor.data.certifications],
+              [t.doctor.fellowships, doctor.data.fellowships],
+              [t.doctor.memberships, doctor.data.memberships],
+            ].some(([, items]) => items.length > 0) ? (
+              <Section title={t.doctor.professionalProfile} icon="school-outline">
+                <View style={{ gap: spacing.lg }}>
+                  {[
+                    [t.doctor.qualifications, doctor.data.qualifications],
+                    [t.doctor.certifications, doctor.data.certifications],
+                    [t.doctor.fellowships, doctor.data.fellowships],
+                    [t.doctor.memberships, doctor.data.memberships],
+                  ].map(([label, items]) =>
+                    items.length > 0 ? (
+                      <CredentialGroup key={label} label={label} items={items} />
+                    ) : null,
+                  )}
+                </View>
+              </Section>
+            ) : null}
+
             {doctor.data.procedures.length ? (
               <Section title={t.doctor.procedures} icon="medkit-outline">
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
@@ -277,7 +299,7 @@ function Section({
 }) {
   return (
     <Card style={{ gap: spacing.sm }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+      <View style={{ flexDirection: I18nManager.isRTL ? "row-reverse" : "row", alignItems: "center", gap: spacing.sm }}>
         <IconBadge icon={icon} size={34} />
         <AppText variant="sub" weight="bold">
           {title}
@@ -319,7 +341,7 @@ function MetaChip({
   return (
     <View
       style={{
-        flexDirection: "row",
+        flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
         alignItems: "center",
         gap: 6,
         borderRadius: radius.full,
@@ -346,7 +368,7 @@ function InfoRow({
   subtitle?: string
 }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }}>
+    <View style={{ flexDirection: I18nManager.isRTL ? "row-reverse" : "row", alignItems: "flex-start", gap: spacing.sm }}>
       <IconBadge icon={icon} size={38} />
       <View style={{ flex: 1, gap: 2 }}>
         <AppText variant="body" weight="bold">
@@ -357,6 +379,33 @@ function InfoRow({
             {subtitle}
           </AppText>
         ) : null}
+      </View>
+    </View>
+  )
+}
+
+function CredentialGroup({ label, items }: { label: string; items: string[] }) {
+  return (
+    <View style={{ gap: spacing.sm }}>
+      <AppText variant="caption" weight="bold" color={colors.textMuted}>
+        {label}
+      </AppText>
+      <View style={{ gap: spacing.xs }}>
+        {items.map((item) => (
+          <View
+            key={item}
+            style={{
+              flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+              alignItems: "flex-start",
+              gap: spacing.sm,
+            }}
+          >
+            <Ionicons name="checkmark-circle" size={17} color={colors.success} />
+            <AppText variant="sub" color={colors.textMuted} style={{ flex: 1 }}>
+              {item}
+            </AppText>
+          </View>
+        ))}
       </View>
     </View>
   )

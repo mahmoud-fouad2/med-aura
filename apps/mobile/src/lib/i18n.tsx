@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import * as SecureStore from "expo-secure-store"
+import { readPlatformStorage, writePlatformStorage } from "./platform-storage"
 
 export type Locale = "ar" | "en"
 
@@ -226,6 +226,11 @@ const ar = {
     about: "نبذة",
     procedures: "الإجراءات",
     languages: "اللغات",
+    professionalProfile: "الخلفية المهنية",
+    qualifications: "المؤهلات العلمية",
+    certifications: "الشهادات والاعتمادات",
+    fellowships: "الزمالات",
+    memberships: "العضويات المهنية",
     center: "المركز",
     book: "احجزي استشارة",
     bookNote: "اختاري الموعد المناسب وأكملي الحجز من داخل التطبيق.",
@@ -350,6 +355,14 @@ const ar = {
     pricePlaceholder: "اتركه فارغًا إن لم يُحدَّد بعد",
     currency: "العملة",
     typesTitle: "أنواع الاستشارة",
+    professionalTitle: "الملف المهني",
+    professionalHint: "اكتبي سطرًا مستقلًا لكل مؤهل أو شهادة. لن يظهر شيء للمريض قبل حفظه.",
+    professionalBio: "نبذة مهنية",
+    onePerLine: "سطر واحد لكل عنصر",
+    qualifications: "المؤهلات العلمية",
+    certifications: "الشهادات والاعتمادات",
+    fellowships: "الزمالات",
+    memberships: "العضويات المهنية",
     videoLabel: "استشارة عن بُعد",
     videoHint: "تقبل حجوزات الفيديو",
     inPersonLabel: "استشارة حضورية",
@@ -796,6 +809,11 @@ const en: typeof ar = {
     about: "About",
     procedures: "Procedures",
     languages: "Languages",
+    professionalProfile: "Professional background",
+    qualifications: "Qualifications",
+    certifications: "Certifications",
+    fellowships: "Fellowships",
+    memberships: "Professional memberships",
     center: "Center",
     book: "Book a consultation",
     bookNote: "Pick a time and complete your booking inside the app.",
@@ -920,6 +938,14 @@ const en: typeof ar = {
     pricePlaceholder: "Leave blank if not set yet",
     currency: "Currency",
     typesTitle: "Consultation types",
+    professionalTitle: "Professional profile",
+    professionalHint: "Use one line for each qualification or credential. Nothing is shown to patients until saved.",
+    professionalBio: "Professional bio",
+    onePerLine: "One item per line",
+    qualifications: "Qualifications",
+    certifications: "Certifications",
+    fellowships: "Fellowships",
+    memberships: "Professional memberships",
     videoLabel: "Remote consultation",
     videoHint: "Accept video bookings",
     inPersonLabel: "In-person consultation",
@@ -1169,7 +1195,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("ar")
 
   useEffect(() => {
-    SecureStore.getItemAsync(LOCALE_KEY)
+    readPlatformStorage(LOCALE_KEY)
       .then((saved) => {
         if (saved === "en" || saved === "ar") setLocaleState(saved)
       })
@@ -1178,7 +1204,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback(async (l: Locale) => {
     setLocaleState(l)
-    await SecureStore.setItemAsync(LOCALE_KEY, l).catch(() => undefined)
+    await writePlatformStorage(LOCALE_KEY, l).catch(() => undefined)
     // The layout stays RTL-anchored (native `forcesRTL` in app.json): the
     // shell is designed RTL-first, so switching to English swaps the strings
     // instantly with no restart and no mirrored-relayout flash.

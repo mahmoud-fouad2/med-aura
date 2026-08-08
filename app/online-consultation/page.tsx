@@ -13,7 +13,7 @@ export const metadata = buildPageMetadata({
   description:
     "احجز استشارة تجميلية عبر الفيديو مع أطباء معتمدين، وشارك حالتك بخصوصية قبل اتخاذ قرارك.",
   path: "/online-consultation",
-  image: "/demo-services/service-online-consultation-premium.svg",
+  image: "/demo-services/service-online-consultation.png",
 })
 
 const features = [
@@ -46,7 +46,7 @@ export default function OnlineConsultationPage() {
       alternateName: "Online aesthetic consultation",
       description:
         "استشارة فيديو مع طبيب تجميل معتمد، مع مشاركة آمنة للصور والتقارير وخطة واضحة قبل القرار.",
-      image: absoluteUrl("/demo-services/service-online-consultation-premium.svg"),
+      image: absoluteUrl("/demo-services/service-online-consultation.png"),
       url: absoluteUrl("/online-consultation"),
       provider: {
         "@type": "Organization",
@@ -77,7 +77,7 @@ export default function OnlineConsultationPage() {
           subtitle="احجز استشارة فيديو مع طبيب معتمد، وشارك حالتك بخصوصية تامة، واحصل على خطة وسعر واضح قبل أي خطوة."
           primary={{ href: "/search?consultation=VIDEO_CONSULTATION", label: "ابحث عن طبيب للاستشارة" }}
           secondary={{ href: "/how-it-works", label: "كيف تعمل المنصة" }}
-          imageSrc="/demo-services/service-online-consultation-premium.svg"
+          imageSrc="/demo-services/service-online-consultation.png"
           imageAlt="استشارة تجميلية في عيادة حديثة"
           stats={[
             { label: "الاختيار", value: "طبيب مناسب" },
@@ -114,7 +114,7 @@ export default function OnlineConsultationPage() {
             </div>
             <div className="relative order-first mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-[2rem] border border-border shadow-elegant-lg lg:order-last">
               <Image
-                src="/demo-services/service-online-consultation-premium.svg"
+                src="/demo-services/service-online-consultation.png"
                 alt="استشارة تجميلية عبر الفيديو مع طبيب معتمد"
                 fill
                 className="object-cover"

@@ -5,7 +5,6 @@ import Constants from "expo-constants"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import * as WebBrowser from "expo-web-browser"
-import * as SecureStore from "expo-secure-store"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -29,6 +28,7 @@ import { setRememberMe } from "../../lib/session-prefs"
 import { unregisterThisDevice } from "../../lib/push-notifications"
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
+import { readPlatformStorage, removePlatformStorage, writePlatformStorage } from "../../lib/platform-storage"
 import { useI18n, type Locale } from "../../lib/i18n"
 import { colors, radius, spacing, TAB_BAR_HEIGHT } from "../../theme"
 import { ONBOARDING_KEY } from "../index"
@@ -229,7 +229,7 @@ export default function Profile() {
           icon="sparkles-outline"
           label={t.profile.aboutOnboarding}
           onPress={async () => {
-            await SecureStore.deleteItemAsync(ONBOARDING_KEY)
+            await removePlatformStorage(ONBOARDING_KEY)
             router.push("/onboarding")
           }}
         />
@@ -532,7 +532,7 @@ function ToggleRow({
   // settings screen from rendering.
   useEffect(() => {
     let alive = true
-    SecureStore.getItemAsync(storageKey)
+    readPlatformStorage(storageKey)
       .then((saved) => {
         if (alive && saved != null) setEnabled(saved === "1")
       })
@@ -545,7 +545,7 @@ function ToggleRow({
   const toggle = (next: boolean) => {
     setEnabled(next)
     void Haptics.selectionAsync()
-    void SecureStore.setItemAsync(storageKey, next ? "1" : "0").catch(() => undefined)
+    void writePlatformStorage(storageKey, next ? "1" : "0").catch(() => undefined)
   }
 
   return (

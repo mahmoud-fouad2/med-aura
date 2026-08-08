@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native"
+import { I18nManager, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -17,7 +17,7 @@ const CATEGORIES: TicketCategory[] = ["ACCOUNT", "BOOKING", "BILLING", "MEDICAL"
  *  (validation, audit, staff notification) the web dashboard's
  *  /dashboard/support/new form calls. */
 export default function NewTicket() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const [subject, setSubject] = useState("")
@@ -35,6 +35,16 @@ export default function NewTicket() {
   })
 
   const canSend = subject.trim().length >= 3 && body.trim().length >= 5 && !create.isPending
+  const validationHint =
+    subject.trim().length < 3
+      ? locale === "ar"
+        ? "أضيفي عنوانًا من 3 أحرف على الأقل للمتابعة."
+        : "Add a title with at least 3 characters to continue."
+      : body.trim().length < 5
+        ? locale === "ar"
+          ? "أضيفي تفاصيل أكثر قليلًا حتى يتمكن فريق الدعم من المساعدة."
+          : "Add a little more detail so support can help you."
+        : null
 
   return (
     <KeyboardAvoidingView
@@ -117,7 +127,13 @@ export default function NewTicket() {
           </Field>
 
           <Field label={t.tickets.category}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+            <View
+              style={{
+                flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+                flexWrap: "wrap",
+                gap: spacing.sm,
+              }}
+            >
               {CATEGORIES.map((c) => (
                 <CategoryChip
                   key={c}
@@ -150,6 +166,21 @@ export default function NewTicket() {
             </AppText>
           ) : null}
 
+          {validationHint ? (
+            <View
+              style={{
+                flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+                alignItems: "center",
+                gap: spacing.xs,
+              }}
+            >
+              <Ionicons name="information-circle-outline" size={16} color={colors.textFaint} />
+              <AppText variant="caption" color={colors.textMuted} style={{ flex: 1 }}>
+                {validationHint}
+              </AppText>
+            </View>
+          ) : null}
+
           <Button
             label={t.tickets.send}
             onPress={() => create.mutate()}
@@ -175,6 +206,7 @@ function CategoryChip({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       style={{
         paddingHorizontal: spacing.md,
         paddingVertical: 8,

@@ -107,6 +107,7 @@ export default function PracticeSettings() {
             {/* Mounted once loaded, so form state seeds from real values and
                 a procedure-toggle-triggered refetch never clobbers typing. */}
             <PracticeForm initial={query.data} />
+            <ProfessionalProfileForm initial={query.data} />
             <ProceduresSection procedures={query.data.procedures} />
             <AvailabilityLinkCard />
             <NeedHelpCard />
@@ -114,6 +115,87 @@ export default function PracticeSettings() {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+  )
+}
+
+function lines(value: string): string[] {
+  return value.split("\n").map((item) => item.trim()).filter(Boolean)
+}
+
+function ProfessionalProfileForm({ initial }: { initial: MyPractice }) {
+  const { t } = useI18n()
+  const queryClient = useQueryClient()
+  const [bio, setBio] = useState(initial.bio ?? "")
+  const [qualifications, setQualifications] = useState(initial.qualifications.join("\n"))
+  const [certifications, setCertifications] = useState(initial.certifications.join("\n"))
+  const [fellowships, setFellowships] = useState(initial.fellowships.join("\n"))
+  const [memberships, setMemberships] = useState(initial.memberships.join("\n"))
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  const save = useMutation({
+    mutationFn: () =>
+      api.updateMyPractice({
+        consultationFee: initial.consultationFee == null ? undefined : Number(initial.consultationFee),
+        currency: initial.currency,
+        offersVideo: initial.offersVideo,
+        offersInPerson: initial.offersInPerson,
+        bio: bio.trim(),
+        qualifications: lines(qualifications),
+        certifications: lines(certifications),
+        fellowships: lines(fellowships),
+        memberships: lines(memberships),
+      }),
+    onSuccess: () => {
+      setError(null)
+      setSaved(true)
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      void queryClient.invalidateQueries({ queryKey: ["my-practice"] })
+    },
+    onError: (err) => {
+      setSaved(false)
+      setError(err instanceof Error && err.message ? err.message : t.practice.saveError)
+    },
+  })
+
+  const inputs: { label: string; value: string; onChangeText: (value: string) => void; multiline?: boolean }[] = [
+    { label: t.practice.professionalBio, value: bio, onChangeText: setBio, multiline: true },
+    { label: t.practice.qualifications, value: qualifications, onChangeText: setQualifications, multiline: true },
+    { label: t.practice.certifications, value: certifications, onChangeText: setCertifications, multiline: true },
+    { label: t.practice.fellowships, value: fellowships, onChangeText: setFellowships, multiline: true },
+    { label: t.practice.memberships, value: memberships, onChangeText: setMemberships, multiline: true },
+  ]
+
+  return (
+    <Card style={{ gap: spacing.lg }}>
+      <View style={{ gap: spacing.xs }}>
+        <SectionHeading icon="school-outline" title={t.practice.professionalTitle} />
+        <AppText variant="caption" color={colors.textMuted}>
+          {t.practice.professionalHint}
+        </AppText>
+      </View>
+
+      {inputs.map((input) => (
+        <Field key={input.label} label={input.label} hint={input.multiline && input.label !== t.practice.professionalBio ? t.practice.onePerLine : undefined}>
+          <TextInput
+            value={input.value}
+            onChangeText={(value) => {
+              setSaved(false)
+              input.onChangeText(value)
+            }}
+            placeholderTextColor={colors.textFaint}
+            multiline={input.multiline}
+            maxLength={input.multiline ? 2000 : 180}
+            textAlignVertical={input.multiline ? "top" : "center"}
+            style={[inputStyle, input.multiline ? { minHeight: input.label === t.practice.professionalBio ? 108 : 78 } : undefined]}
+          />
+        </Field>
+      ))}
+
+      {error ? <AppText variant="caption" color={colors.danger}>{error}</AppText> : null}
+      {saved ? <AppText variant="caption" color={colors.success}>{t.practice.saved}</AppText> : null}
+      <Button label={t.practice.save} onPress={() => save.mutate()} loading={save.isPending} />
+    </Card>
   )
 }
 

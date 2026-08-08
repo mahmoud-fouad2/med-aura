@@ -27,7 +27,7 @@ export const metadata = buildPageMetadata({
   description:
     "تصفّح إجراءات التجميل الجراحية وغير الجراحية على Med Aura، حسب المنطقة والتعافي ونوع الاستشارة.",
   path: "/procedures",
-  image: "/demo-services/service-face-neck-premium.svg",
+  image: "/demo-services/service-face-neck.png",
 })
 
 export default async function ProceduresPage() {
@@ -63,7 +63,7 @@ export default async function ProceduresPage() {
           eyebrow="الإجراءات"
           title="اختَر الإجراء وأنت فاهم الخطوة"
           subtitle="استكشف الإجراءات الجراحية وغير الجراحية بصورة أوضح: ما طبيعتها، كم تحتاج للتعافي، ومن الأطباء المناسبين لها."
-          imageSrc="/demo-services/service-face-neck-premium.svg"
+          imageSrc="/demo-services/service-face-neck.png"
           imageAlt="غرفة علاج تجميلي حديثة"
           stats={[
             { label: "تصنيفات", value: visibleGroups.length.toLocaleString("ar-SA-u-nu-latn") },

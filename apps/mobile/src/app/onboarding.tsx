@@ -10,13 +10,13 @@ import {
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as SecureStore from "expo-secure-store"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated"
 import { AppText, Button } from "../components/ui"
 import { Logo, onboardingArt } from "../components/brand"
 import { useI18n } from "../lib/i18n"
+import { writePlatformStorage } from "../lib/platform-storage"
 import { colors, radius, spacing } from "../theme"
 import { ONBOARDING_KEY } from "./index"
 
@@ -38,7 +38,7 @@ export default function Onboarding() {
   const isLast = index === slides.length - 1
 
   const finish = async () => {
-    await SecureStore.setItemAsync(ONBOARDING_KEY, "1")
+    await writePlatformStorage(ONBOARDING_KEY, "1")
     router.replace("/sign-in")
   }
 

@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store"
+import { browserStorage } from "./platform-storage"
 
 /**
  * @better-auth/expo requires a *synchronous* storage interface — it calls
@@ -40,11 +41,16 @@ const seenKeys = new Set<string>()
 export const safeSecureStore = {
   getItem(key: string): string | null {
     seenKeys.add(key)
-    return buffer.get(key) ?? null
+    return buffer.get(key) ?? browserStorage()?.getItem(key) ?? null
   },
   setItem(key: string, value: string): void {
     seenKeys.add(key)
     buffer.set(key, value)
+    const storage = browserStorage()
+    if (storage) {
+      storage.setItem(key, value)
+      return
+    }
     // Fire-and-forget: a keychain write failure never blocks or crashes
     // the caller. Worst case, this key is missing after a hard restart —
     // the user re-signs in, no crash loop.
@@ -68,13 +74,16 @@ export async function warmSecureStore(keys: readonly string[]): Promise<void> {
     keys.map(async (key) => {
       seenKeys.add(key)
       try {
-        const value = await SecureStore.getItemAsync(key)
+        const storage = browserStorage()
+        const value = storage ? storage.getItem(key) : await SecureStore.getItemAsync(key)
         if (value != null) buffer.set(key, value)
       } catch (error) {
         console.warn(`[secure-store] warm("${key}") failed — dropping`, error)
         // Best-effort cleanup so the next launch doesn't hit the same bad
         // key. If the delete itself fails there's nothing more we can do.
-        void SecureStore.deleteItemAsync(key).catch(() => undefined)
+        const storage = browserStorage()
+        if (storage) storage.removeItem(key)
+        else void SecureStore.deleteItemAsync(key).catch(() => undefined)
       }
     }),
   )

@@ -79,7 +79,6 @@ export default function Explore() {
   function onPressNearest() {
     if (!facets.data?.hasNearestSupport) {
       setLocationNotice({ kind: "unavailable" })
-      setFilterOpen(true) // let them search by city right away instead.
       return
     }
     setLocationNotice(null)

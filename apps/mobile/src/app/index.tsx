@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
 import { Redirect } from "expo-router"
-import * as SecureStore from "expo-secure-store"
 import * as SplashScreen from "expo-splash-screen"
 import { authClient } from "../lib/auth-client"
 import { isRememberMe } from "../lib/session-prefs"
+import { readPlatformStorage } from "../lib/platform-storage"
 import { registerForPushNotifications } from "../lib/push-notifications"
 import { BrandSplash } from "../components/splash-screen"
 
@@ -26,7 +26,7 @@ export default function Boot() {
     let cancelled = false
     async function boot() {
       const [seen, remember, session] = await Promise.all([
-        SecureStore.getItemAsync(ONBOARDING_KEY),
+        readPlatformStorage(ONBOARDING_KEY),
         isRememberMe(),
         authClient.getSession().catch(() => null),
       ])

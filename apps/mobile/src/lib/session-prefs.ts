@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store"
+import { readPlatformStorage, writePlatformStorage } from "./platform-storage"
 
 /**
  * "Remember me" preference. The session cookie itself always lives in the
@@ -10,7 +10,7 @@ const REMEMBER_KEY = "medaura.rememberme"
 
 export async function isRememberMe(): Promise<boolean> {
   try {
-    const v = await SecureStore.getItemAsync(REMEMBER_KEY)
+    const v = await readPlatformStorage(REMEMBER_KEY)
     // Unset → treated as ON (first run defaults to remembering).
     return v !== "0"
   } catch {
@@ -19,5 +19,5 @@ export async function isRememberMe(): Promise<boolean> {
 }
 
 export async function setRememberMe(remember: boolean): Promise<void> {
-  await SecureStore.setItemAsync(REMEMBER_KEY, remember ? "1" : "0")
+  await writePlatformStorage(REMEMBER_KEY, remember ? "1" : "0")
 }

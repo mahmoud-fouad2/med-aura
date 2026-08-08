@@ -35,6 +35,10 @@ export type Doctor = {
 export type DoctorDetail = Doctor & {
   bio: string | null
   languages: string[]
+  qualifications: string[]
+  certifications: string[]
+  fellowships: string[]
+  memberships: string[]
   centerName: string | null
   centerCity: string | null
   licenseAuthority: string | null
@@ -158,6 +162,11 @@ export type PracticeProcedure = {
 }
 
 export type MyPractice = {
+  bio: string | null
+  qualifications: string[]
+  certifications: string[]
+  fellowships: string[]
+  memberships: string[]
   consultationFee: string | null
   currency: string
   offersVideo: boolean
@@ -296,25 +305,36 @@ export class SessionExpiredError extends Error {}
 /** The request never reached the server (no connectivity, DNS, timeout). */
 export class NetworkError extends Error {}
 
+const REQUEST_TIMEOUT_MS = 15_000
+
 async function request<T>(
   path: string,
   init?: RequestInit & { auth?: boolean },
 ): Promise<T> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(init?.body != null ? { "Content-Type": "application/json" } : {}),
     ...(init?.headers as Record<string, string>),
   }
-  if (init?.auth !== false) {
+  if (init?.auth !== false && Platform.OS !== "web") {
     const cookie = authClient.getCookie()
     if (cookie) headers.Cookie = cookie
   }
+  const abortController = new AbortController()
+  const timeout = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS)
   let res: Response
   try {
-    res = await fetch(`${API_URL}${path}`, { ...init, headers })
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers,
+      signal: init?.signal ?? abortController.signal,
+      ...(Platform.OS === "web" ? { credentials: "include" } : {}),
+    })
   } catch (cause) {
     // fetch itself rejecting means connectivity, not the server — the UI
     // must say "offline", never blame the data, and vice versa.
     throw new NetworkError("offline", { cause })
+  } finally {
+    clearTimeout(timeout)
   }
   if (res.status === 401) throw new SessionExpiredError()
   const body = (await res.json().catch(() => null)) as
@@ -383,6 +403,11 @@ export const api = {
     currency: string
     offersVideo: boolean
     offersInPerson: boolean
+    bio?: string
+    qualifications?: string[]
+    certifications?: string[]
+    fellowships?: string[]
+    memberships?: string[]
   }) =>
     request<{ updated: boolean }>("/api/mobile/v1/me/practice", {
       method: "PATCH",

@@ -69,7 +69,9 @@ const nextConfig = {
     minimumCacheTTL: 604800,
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }]
+    return [
+      { source: "/:path*", headers: securityHeaders },
+    ]
   },
 }
 

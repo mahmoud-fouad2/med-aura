@@ -323,6 +323,10 @@ export async function searchDoctors(
 export type PublicDoctor = DoctorCard & {
   bio: string | null
   languages: string[]
+  qualifications: string[]
+  certifications: string[]
+  fellowships: string[]
+  memberships: string[]
   centerName: string | null
   centerCity: string | null
   licenseAuthority: string | null
@@ -343,6 +347,10 @@ export async function getPublicDoctorBySlug(
       title: doctorProfile.title,
       bio: doctorProfile.bio,
       languages: doctorProfile.languages,
+      qualifications: doctorProfile.qualifications,
+      certifications: doctorProfile.certifications,
+      fellowships: doctorProfile.fellowships,
+      memberships: doctorProfile.memberships,
       country: doctorProfile.country,
       city: doctorProfile.city,
       yearsExperience: doctorProfile.yearsExperience,
