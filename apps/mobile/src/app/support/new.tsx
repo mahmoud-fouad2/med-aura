@@ -4,6 +4,7 @@ import { router } from "expo-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
+import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card, ChevronBack } from "../../components/ui"
 import { api, type TicketCategory } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
@@ -72,6 +73,38 @@ export default function NewTicket() {
         keyboardShouldPersistTaps="handled"
       >
         <Card style={{ gap: spacing.lg }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: spacing.md,
+              borderRadius: radius.lg,
+              backgroundColor: colors.primarySoft,
+              padding: spacing.md,
+            }}
+          >
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: radius.md,
+                backgroundColor: colors.card,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText variant="body" weight="bold" color={colors.primary}>
+                {t.tickets.newTicket}
+              </AppText>
+              <AppText variant="caption" color={colors.textMuted}>
+                {t.tickets.emptyBody}
+              </AppText>
+            </View>
+          </View>
+
           <Field label={t.tickets.subject}>
             <TextInput
               value={subject}

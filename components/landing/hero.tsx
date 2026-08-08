@@ -62,6 +62,21 @@ export function Hero({
     { icon: ShieldCheck, label: isAr ? "تحقّق من التراخيص" : "License Verification" },
   ]
 
+  const journeySteps = [
+    {
+      title: isAr ? "اختيار الإجراء المناسب" : "Choose the right procedure",
+      desc: isAr ? "ابدأ من البحث والمقارنة قبل أي قرار." : "Start with search and comparison before any decision.",
+    },
+    {
+      title: isAr ? "استشارة موثّقة" : "Verified consultation",
+      desc: isAr ? "شارك حالتك مع طبيب مناسب وبخصوصية واضحة." : "Share your case privately with the right doctor.",
+    },
+    {
+      title: isAr ? "خطة وسعر واضحان" : "Clear plan and price",
+      desc: isAr ? "اعرف الخطوات التالية بتفاصيل مفهومة." : "See the next steps with clarity before you travel or book.",
+    },
+  ]
+
   return (
     <section className="relative isolate min-h-svh overflow-hidden border-b border-border bg-background">
       <Image
@@ -75,9 +90,10 @@ export function Hero({
         sizes="100vw"
       />
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,transparent_0%,color-mix(in_oklab,var(--background)_78%,transparent)_43%,var(--background)_68%,var(--background)_100%)] ltr:bg-[linear-gradient(270deg,transparent_0%,color-mix(in_oklab,var(--background)_78%,transparent)_43%,var(--background)_68%,var(--background)_100%)]" />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,color-mix(in_oklab,var(--gold)_13%,transparent),transparent_28%),radial-gradient(circle_at_bottom_left,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_26%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
 
-      <div className="mx-auto flex min-h-svh max-w-7xl flex-col justify-center gap-8 px-4 py-24 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-svh max-w-7xl items-center gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[minmax(0,1fr)_26rem] lg:px-8">
         <FadeIn className="me-auto flex w-full max-w-2xl flex-col gap-6">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-3.5 py-1.5 text-sm font-semibold text-primary shadow-sm backdrop-blur-md">
             <Sparkles className="size-4 text-gold" />
@@ -135,25 +151,54 @@ export function Hero({
           </div>
         </FadeIn>
 
-        <FadeIn delay={0.15} className="me-auto grid w-full max-w-2xl gap-3 sm:grid-cols-3 lg:w-[44rem]">
-          {heroHighlights.map((h) => (
-            <div
-              key={h.title}
-              className="flex items-center gap-3 rounded-2xl border border-white/70 bg-card/88 p-4 shadow-elegant backdrop-blur-md"
-            >
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shadow-primary/30">
-                <h.icon className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-heading text-sm font-bold leading-snug text-foreground">
-                  {h.title}
-                </p>
-                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                  {h.desc}
-                </p>
+        <FadeIn delay={0.15} className="w-full">
+          <div className="rounded-[2rem] border border-white/70 bg-card/74 p-4 shadow-elegant-lg backdrop-blur-xl">
+            <div className="rounded-[1.6rem] bg-[linear-gradient(135deg,color-mix(in_oklab,var(--primary)_88%,white)_0%,color-mix(in_oklab,var(--primary)_66%,black)_100%)] p-5 text-primary-foreground shadow-elegant">
+              <p className="text-sm font-semibold text-primary-foreground/70">
+                {isAr ? "رحلة أوضح" : "Clearer journey"}
+              </p>
+              <h2 className="mt-2 font-heading text-2xl font-bold leading-tight">
+                {isAr ? "من المقارنة إلى الحجز بثقة" : "From comparison to booking with confidence"}
+              </h2>
+              <div className="mt-5 space-y-3">
+                {journeySteps.map((step, index) => (
+                  <div
+                    key={step.title}
+                    className="flex items-start gap-3 rounded-[1.4rem] border border-white/12 bg-white/10 px-4 py-4"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white/12 font-heading text-sm font-bold text-white">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-heading text-base font-bold text-white">{step.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-primary-foreground/72">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {heroHighlights.map((h) => (
+                <div
+                  key={h.title}
+                  className="flex items-center gap-3 rounded-[1.4rem] border border-white/70 bg-background/88 p-4 shadow-sm"
+                >
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm shadow-primary/30">
+                    <h.icon className="size-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-heading text-sm font-bold leading-snug text-foreground">
+                      {h.title}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {h.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </FadeIn>
       </div>
     </section>
@@ -168,7 +213,7 @@ function TrustPoint({
   label: string
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-card/82 p-4 shadow-sm backdrop-blur-md">
+    <div className="flex items-center gap-3 rounded-[1.4rem] border border-white/70 bg-card/82 p-4 shadow-sm backdrop-blur-md">
       <Icon
         className="size-6 shrink-0"
         style={{ color: "oklch(0.6 0.1 85)" }}

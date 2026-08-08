@@ -2,7 +2,6 @@ import { useState } from "react"
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
 import { VideoCard } from "../../../components/video-card"
 import {
@@ -17,7 +16,7 @@ import {
   StatusPill,
 } from "../../../components/ui"
 import { QueryErrorState } from "../../../components/query-error"
-import { useAppointments, useMe, downloadInvoicePdf, type Appointment } from "../../../lib/api"
+import { useAppointments, useMe, downloadInvoicePdf, presentDownloadedPdf, type Appointment } from "../../../lib/api"
 import { useI18n } from "../../../lib/i18n"
 import { colors, radius, spacing } from "../../../theme"
 import { appointmentTone } from "../../(tabs)/index"
@@ -113,9 +112,7 @@ function Details({
     setDownloadError(false)
     try {
       const fileUri = await downloadInvoicePdf(appointment.paymentId)
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, { mimeType: "application/pdf", UTI: "com.adobe.pdf" })
-      }
+      await presentDownloadedPdf(fileUri)
     } catch {
       setDownloadError(true)
     } finally {
@@ -281,7 +278,7 @@ function Details({
             </Pressable>
             {downloadError ? (
               <AppText variant="caption" color={colors.danger}>
-                {t.common.loadFailed}
+                {t.billing.receiptError}
               </AppText>
             ) : null}
           </>

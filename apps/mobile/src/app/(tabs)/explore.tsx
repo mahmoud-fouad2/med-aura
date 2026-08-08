@@ -102,67 +102,71 @@ export default function Explore() {
         <AppText variant="title" weight="heavy">
           {t.explore.title}
         </AppText>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing.sm,
-              backgroundColor: colors.card,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: radius.lg,
-              paddingHorizontal: spacing.md,
-            }}
-          >
-            <Ionicons name="search" size={18} color={colors.textFaint} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => setQuery(search.trim())}
-              returnKeyType="search"
-              placeholder={t.explore.searchPlaceholder}
-              placeholderTextColor={colors.textFaint}
-              style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: colors.text }}
-            />
-            {search ? (
-              <Pressable onPress={() => setSearch("")} hitSlop={8}>
-                <Ionicons name="close-circle" size={18} color={colors.textFaint} />
-              </Pressable>
-            ) : null}
-          </View>
-          {/* Filter button — badge shows how many filters are active. */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+            backgroundColor: colors.card,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.lg,
+            paddingHorizontal: spacing.md,
+          }}
+        >
+          <Ionicons name="search" size={18} color={colors.textFaint} />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={() => setQuery(search.trim())}
+            returnKeyType="search"
+            placeholder={t.explore.searchPlaceholder}
+            placeholderTextColor={colors.textFaint}
+            style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: colors.text }}
+          />
+          {search ? (
+            <Pressable onPress={() => setSearch("")} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.textFaint} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm }}>
           <Pressable
             onPress={() => setFilterOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={t.filters.button}
             style={{
-              width: 46,
-              height: 46,
-              borderRadius: radius.lg,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.sm,
+              borderRadius: radius.full,
               borderWidth: 1,
               borderColor: activeCount ? colors.primary : colors.border,
               backgroundColor: activeCount ? colors.primarySoft : colors.card,
-              alignItems: "center",
-              justifyContent: "center",
+              paddingHorizontal: spacing.md,
+              paddingVertical: 8,
             }}
           >
             <Ionicons
               name="options-outline"
-              size={20}
+              size={16}
               color={activeCount ? colors.primary : colors.textMuted}
             />
+            <AppText
+              variant="caption"
+              weight="bold"
+              color={activeCount ? colors.primary : colors.textMuted}
+            >
+              {t.filters.button}
+            </AppText>
             {activeCount ? (
               <View
                 style={{
-                  position: "absolute",
-                  top: -4,
-                  end: -4,
-                  minWidth: 17,
-                  height: 17,
-                  borderRadius: 9,
-                  paddingHorizontal: 4,
+                  minWidth: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  paddingHorizontal: 5,
                   backgroundColor: colors.primary,
                   alignItems: "center",
                   justifyContent: "center",
@@ -174,68 +178,87 @@ export default function Explore() {
               </View>
             ) : null}
           </Pressable>
+
+          {/* "Nearest to me" — permission requested only on this exact tap,
+              never on app open. Re-tap once active re-fetches the position. */}
+          {coords ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing.sm,
+                flexGrow: 1,
+                minWidth: 170,
+                backgroundColor: colors.primarySoft,
+                borderRadius: radius.full,
+                paddingHorizontal: spacing.md,
+                paddingVertical: 8,
+              }}
+            >
+              <Ionicons name="navigate" size={16} color={colors.primary} />
+              <AppText variant="caption" weight="medium" color={colors.primary} style={{ flex: 1 }}>
+                {t.filters.nearestBanner}
+              </AppText>
+              <Pressable
+                onPress={() => void fetchLocation()}
+                disabled={locationBusy}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t.filters.nearestUpdate}
+              >
+                <Ionicons name="refresh" size={16} color={colors.primary} />
+              </Pressable>
+              <Pressable
+                onPress={() => setCoords(null)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t.common.cancel}
+              >
+                <Ionicons name="close" size={16} color={colors.primary} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={onPressNearest}
+              accessibilityRole="button"
+              accessibilityLabel={t.filters.nearest}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                borderRadius: radius.full,
+                paddingHorizontal: spacing.md,
+                paddingVertical: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.card,
+              }}
+            >
+              <Ionicons name="navigate-outline" size={14} color={colors.textMuted} />
+              <AppText variant="caption" weight="medium" color={colors.textMuted}>
+                {t.filters.nearest}
+              </AppText>
+            </Pressable>
+          )}
+
+          {(activeCount > 0 || query) && !doctors.isLoading ? (
+            <View
+              style={{
+                borderRadius: radius.full,
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.border,
+                paddingHorizontal: spacing.md,
+                paddingVertical: 8,
+              }}
+            >
+              <AppText variant="caption" color={colors.textMuted}>
+                {total} {t.filters.results}
+              </AppText>
+            </View>
+          ) : null}
         </View>
 
-        {/* "Nearest to me" — permission requested only on this exact tap,
-            never on app open. Re-tap once active re-fetches the position. */}
-        {coords ? (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing.sm,
-              backgroundColor: colors.primarySoft,
-              borderRadius: radius.lg,
-              paddingHorizontal: spacing.md,
-              paddingVertical: 8,
-            }}
-          >
-            <Ionicons name="navigate" size={16} color={colors.primary} />
-            <AppText variant="caption" weight="medium" color={colors.primary} style={{ flex: 1 }}>
-              {t.filters.nearestBanner}
-            </AppText>
-            <Pressable
-              onPress={() => void fetchLocation()}
-              disabled={locationBusy}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t.filters.nearestUpdate}
-            >
-              <Ionicons name="refresh" size={16} color={colors.primary} />
-            </Pressable>
-            <Pressable
-              onPress={() => setCoords(null)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t.common.cancel}
-            >
-              <Ionicons name="close" size={16} color={colors.primary} />
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable
-            onPress={onPressNearest}
-            accessibilityRole="button"
-            accessibilityLabel={t.filters.nearest}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              alignSelf: "flex-start",
-              gap: 6,
-              borderRadius: radius.full,
-              paddingHorizontal: spacing.md,
-              paddingVertical: 7,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.card,
-            }}
-          >
-            <Ionicons name="navigate-outline" size={14} color={colors.textMuted} />
-            <AppText variant="caption" weight="medium" color={colors.textMuted}>
-              {t.filters.nearest}
-            </AppText>
-          </Pressable>
-        )}
         {locationNotice ? (
           <View
             style={{
@@ -244,9 +267,6 @@ export default function Explore() {
               gap: spacing.sm,
               borderRadius: radius.lg,
               padding: spacing.sm,
-              // "Unavailable" is a soft, brand-tinted note (no centers with
-              // coordinates yet) — not a system alert, so it gets the same
-              // purple-tint language as everything else, not a blue banner.
               backgroundColor: locationNotice.kind === "unavailable" ? colors.primarySoft : colors.card,
               borderWidth: locationNotice.kind === "unavailable" ? 0 : 1,
               borderColor: colors.border,
@@ -284,13 +304,6 @@ export default function Explore() {
               ) : null}
             </View>
           </View>
-        ) : null}
-
-        {/* Result count once any filter or search is active. */}
-        {(activeCount > 0 || query) && !doctors.isLoading ? (
-          <AppText variant="caption" color={colors.textMuted}>
-            {total} {t.filters.results}
-          </AppText>
         ) : null}
       </View>
 

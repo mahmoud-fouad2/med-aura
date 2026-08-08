@@ -28,7 +28,7 @@ import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
 export default function Home() {
-  const { t, locale } = useI18n()
+  const { t, locale, isRTL } = useI18n()
   const insets = useSafeAreaInsets()
   const me = useMe()
   const home = useHome()
@@ -77,10 +77,10 @@ export default function Home() {
       <View
         style={{
           paddingTop: insets.top + spacing.md,
-          paddingBottom: spacing.xxl + spacing.lg,
+          paddingBottom: spacing.xxl + spacing.xl,
           paddingHorizontal: spacing.screen,
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
+          borderBottomLeftRadius: 34,
+          borderBottomRightRadius: 34,
           backgroundColor: colors.primary,
           overflow: "hidden",
         }}
@@ -148,7 +148,7 @@ export default function Home() {
             <Avatar name={resolvedName || "؟"} photoUrl={me.data?.photoUrl} size={34} />
           </Pressable>
         </View>
-        <View style={{ gap: 4 }}>
+        <View style={{ gap: 4, maxWidth: "88%" }}>
           <AppText variant="sub" color="rgba(255,255,255,0.75)">
             {greeting}
           </AppText>
@@ -172,10 +172,11 @@ export default function Home() {
               {
                 marginTop: spacing.lg,
                 backgroundColor: colors.gold,
-                alignSelf: "flex-start",
+                alignSelf: isRTL ? "flex-end" : "flex-start",
                 borderRadius: radius.full,
                 paddingVertical: 17,
                 paddingHorizontal: spacing.xxl,
+                minWidth: 210,
               },
               shadows.raised,
             ]}
@@ -186,7 +187,7 @@ export default function Home() {
       {/* Provider (doctor/staff): today's-schedule, next patient, shared
           cases, and (doctors only) availability are all native now. */}
       {!isPatient ? (
-        <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
+        <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.lg }}>
           {/* Stats */}
           <View style={{ flexDirection: "row", gap: spacing.md }}>
             <StatCard
@@ -266,7 +267,7 @@ export default function Home() {
           ) : null}
         </View>
       ) : (
-      <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.xl }}>
+      <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.lg }}>
         {/* Quick actions — a 2x2 grid rather than a cramped single row gives
             each action real tap-target weight and lets the label sit beside
             its icon instead of underneath it. */}
@@ -277,12 +278,15 @@ export default function Home() {
               borderRadius: radius.xl,
               borderWidth: 1,
               borderColor: colors.border,
-              padding: spacing.md,
-              gap: spacing.sm,
+              padding: spacing.lg,
+              gap: spacing.md,
             },
             shadows.raised,
           ]}
         >
+          <AppText variant="sub" weight="bold" color={colors.textMuted}>
+            {t.home.quickActions}
+          </AppText>
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
             <QuickAction icon="medkit-outline" label={t.home.exploreAction} onPress={() => router.push("/(tabs)/explore")} />
             <QuickAction icon="sparkles-outline" label={t.services.title} onPress={() => router.push("/services")} />
@@ -397,13 +401,17 @@ function QuickAction({
           justifyContent: "space-between",
           gap: spacing.sm,
           borderRadius: radius.lg,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.background,
+          minHeight: 68,
           paddingVertical: spacing.md,
-          paddingHorizontal: spacing.sm,
+          paddingHorizontal: spacing.md,
         },
         pressed && { backgroundColor: colors.primarySoft },
       ]}
     >
-      <AppText variant="sub" weight="medium">
+      <AppText variant="sub" weight="medium" style={{ flex: 1 }}>
         {label}
       </AppText>
       <IconBadge icon={icon} size={46} />

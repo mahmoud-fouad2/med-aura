@@ -1,4 +1,4 @@
-import { View } from "react-native"
+import { I18nManager, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button } from "./ui"
 import { BottomSheet } from "./bottom-sheet"
@@ -41,7 +41,12 @@ export function LocationPermissionSheet({
             {t.filters.nearestExplain}
           </AppText>
         </View>
-        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        <View
+          style={{
+            flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+            gap: spacing.sm,
+          }}
+        >
           <View style={{ flex: 1 }}>
             <Button label={t.common.cancel} variant="secondary" onPress={onClose} disabled={busy} />
           </View>

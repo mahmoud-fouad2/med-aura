@@ -2,11 +2,10 @@ import { memo, useCallback, useMemo, useState } from "react"
 import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import * as Sharing from "expo-sharing"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Card, ChevronBack, EmptyState, IconBadge, Skeleton, StatusPill } from "../components/ui"
 import { QueryErrorState } from "../components/query-error"
-import { usePayments, downloadInvoicePdf, type Payment } from "../lib/api"
+import { usePayments, downloadInvoicePdf, presentDownloadedPdf, type Payment } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
@@ -234,9 +233,7 @@ const PaymentCard = memo(function PaymentCard({ payment, locale }: { payment: Pa
     setError(false)
     try {
       const fileUri = await downloadInvoicePdf(payment.paymentId)
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, { mimeType: "application/pdf", UTI: "com.adobe.pdf" })
-      }
+      await presentDownloadedPdf(fileUri)
     } catch {
       setError(true)
     } finally {

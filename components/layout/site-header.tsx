@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getCurrentUser } from "@/lib/session"
 import { getI18n } from "@/lib/i18n"
@@ -21,8 +22,8 @@ export async function SiteHeader() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 bg-background/70 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-[96rem] items-center justify-between gap-4 rounded-[1.65rem] border border-border/70 bg-card/92 px-4 shadow-elegant sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 bg-background/55 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-2xl">
+      <div className="mx-auto flex h-20 max-w-[96rem] items-center justify-between gap-4 rounded-[1.75rem] border border-white/70 bg-card/82 px-4 shadow-elegant-lg sm:px-6 lg:px-8">
         <Link href="/" aria-label="Med Aura">
           <Logo className="h-10 sm:h-12" />
         </Link>
@@ -32,12 +33,27 @@ export async function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground/74 transition-colors hover:bg-secondary hover:text-primary"
+              className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground/74 transition-all hover:-translate-y-0.5 hover:bg-secondary hover:text-primary"
             >
               {link.label}
             </Link>
           ))}
         </nav>
+
+        <div className="hidden xl:flex xl:min-w-[18rem] xl:flex-1 xl:justify-center">
+          <Link
+            href="/search"
+            className="group flex w-full max-w-md items-center gap-3 rounded-full border border-border/70 bg-background/84 px-4 py-3 text-sm text-muted-foreground transition-all hover:border-primary/30 hover:bg-card hover:text-foreground"
+          >
+            <Search className="size-4 shrink-0 text-primary/70 transition-transform group-hover:scale-105" />
+            <span className="min-w-0 flex-1 truncate">
+              {locale === "ar" ? "ابحث عن طبيب، مركز، أو إجراء" : "Search doctors, centers, or procedures"}
+            </span>
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-primary">
+              Ctrl K
+            </span>
+          </Link>
+        </div>
 
         <div className="flex items-center gap-2">
           <ThemeToggle className="hidden sm:inline-flex" />

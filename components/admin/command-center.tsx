@@ -19,9 +19,9 @@ export type AttentionItem = {
   tone?: AttentionTone
 }
 
-const ITEM_TONE: Record<AttentionTone, { icon: string; count: string; rail: string }> = {
-  critical: { icon: "text-destructive", count: "text-destructive", rail: "bg-destructive" },
-  routine: { icon: "text-primary", count: "text-foreground", rail: "bg-transparent" },
+const ITEM_TONE: Record<AttentionTone, { icon: string; count: string; rail: string; pill: string }> = {
+  critical: { icon: "text-destructive", count: "text-destructive", rail: "bg-destructive", pill: "bg-destructive/10 text-destructive" },
+  routine: { icon: "text-primary", count: "text-foreground", rail: "bg-primary/50", pill: "bg-primary/10 text-primary" },
 }
 
 /**
@@ -39,8 +39,8 @@ export function CommandCenter({ items }: { items: AttentionItem[] }) {
   const hasItems = items.length > 0
   const criticalCount = items.filter((i) => i.tone === "critical").length
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60">
-      <div className="flex items-center gap-2.5 border-b border-border/60 px-4 py-3">
+    <div className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-card/88 shadow-elegant">
+      <div className="flex items-center gap-3 border-b border-border/60 px-5 py-4">
         {criticalCount > 0 ? (
           <AlertTriangle className="size-[18px] shrink-0 text-destructive" />
         ) : (
@@ -50,7 +50,7 @@ export function CommandCenter({ items }: { items: AttentionItem[] }) {
         )}
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold text-foreground">يحتاج إلى انتباه</h2>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="truncate text-sm text-muted-foreground">
             {criticalCount > 0
               ? `${criticalCount.toLocaleString("ar-SA-u-nu-latn")} منها حرجة — مرتّبة حسب الأولوية`
               : hasItems
@@ -72,7 +72,7 @@ export function CommandCenter({ items }: { items: AttentionItem[] }) {
               <li key={item.key}>
                 <Link
                   href={item.href}
-                  className="group relative flex min-h-16 items-center gap-3 py-3 pe-4 ps-4 transition-colors hover:bg-muted/40"
+                  className="group relative flex min-h-16 items-center gap-3 py-3 pe-5 ps-5 transition-colors hover:bg-background/70"
                 >
                   <span
                     aria-hidden
@@ -89,8 +89,8 @@ export function CommandCenter({ items }: { items: AttentionItem[] }) {
                   </span>
                   <span
                     className={cn(
-                      "shrink-0 font-heading text-xl font-bold tabular-nums leading-none",
-                      t.count,
+                      "inline-flex min-w-10 shrink-0 items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
+                      t.pill,
                     )}
                   >
                     {item.count.toLocaleString("ar-SA-u-nu-latn")}

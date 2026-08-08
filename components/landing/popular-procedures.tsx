@@ -34,7 +34,7 @@ export async function PopularProcedures() {
   const rows = res.status === "ok" ? res.data : []
 
   return (
-    <section className="border-b border-border bg-background">
+    <section className="border-b border-border bg-section-soft">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="الإجراءات"
@@ -63,9 +63,9 @@ export async function PopularProcedures() {
               <StaggerItem key={p.slug}>
                 <Link
                   href={`/search?procedure=${p.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-card/85 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm"
+                  className="group flex h-full flex-col overflow-hidden rounded-[1.85rem] border border-white/70 bg-card/88 shadow-elegant transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm"
                 >
-                  <div className="relative h-28 overflow-hidden bg-muted">
+                  <div className="relative h-32 overflow-hidden bg-muted">
                     <Image
                       src={serviceImageForCategory(p.categorySlug)}
                       alt=""
@@ -78,6 +78,9 @@ export async function PopularProcedures() {
                     <ArrowLeft className="absolute bottom-5 left-4 size-4 text-white transition-transform duration-300 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1" />
                   </div>
                   <div className="flex flex-1 flex-col gap-3.5 p-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/70">
+                      {p.categoryNameAr}
+                    </p>
                     <h3 className="font-heading text-lg font-bold text-foreground">
                       {p.nameAr}
                     </h3>
@@ -85,8 +88,8 @@ export async function PopularProcedures() {
                       <Syringe className="size-3" />
                       {p.isSurgical ? "جراحي" : "غير جراحي"}
                     </Badge>
-                    <p className="mt-auto border-t border-border/40 pt-2 text-xs font-medium text-muted-foreground">
-                      {p.categoryNameAr}
+                    <p className="mt-auto border-t border-border/40 pt-3 text-xs font-medium text-muted-foreground">
+                      مناسب للمقارنة السريعة
                       {p.recoveryDays != null && p.recoveryDays > 0
                         ? ` · تعافٍ تقديري ${p.recoveryDays} يوم`
                         : ""}

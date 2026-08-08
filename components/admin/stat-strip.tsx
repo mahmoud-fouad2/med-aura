@@ -13,7 +13,7 @@ export type Stat = {
 }
 
 const TONE: Record<NonNullable<Stat["tone"]>, { value: string; icon: string }> = {
-  neutral: { value: "text-foreground", icon: "text-muted-foreground" },
+  neutral: { value: "text-foreground", icon: "text-primary" },
   danger: { value: "text-destructive", icon: "text-destructive" },
   success: { value: "text-success", icon: "text-success" },
   warning: { value: "text-warning", icon: "text-warning" },
@@ -31,28 +31,37 @@ const TONE: Record<NonNullable<Stat["tone"]>, { value: string; icon: string }> =
  */
 export function StatStrip({ stats }: { stats: Stat[] }) {
   return (
-    <div className="grid grid-cols-2 divide-x divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60 rtl:divide-x-reverse sm:grid-cols-4 sm:divide-y-0">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((s) => {
         const tone = TONE[s.tone ?? "neutral"]
         const content = (
-          <div className="flex h-full flex-col justify-center gap-2 px-5 py-5">
-            <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-              {s.icon && <s.icon className={cn("size-4 shrink-0", tone.icon)} />}
-              <span className="truncate">{s.label}</span>
-            </p>
-            <p
-              className={cn(
-                "font-heading text-[32px] font-bold tabular-nums leading-none",
-                tone.value,
+          <div className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/70 bg-card/88 p-5 shadow-elegant transition-all duration-200 hover:-translate-y-1 hover:shadow-elegant-lg">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/10 via-primary/70 to-gold/80" />
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {s.label}
+                </p>
+                <p
+                  className={cn(
+                    "mt-3 font-heading text-[34px] font-bold tabular-nums leading-none",
+                    tone.value,
+                  )}
+                >
+                  {s.value}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{s.description}</p>
+              </div>
+              {s.icon && (
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary shadow-sm">
+                  <s.icon className={cn("size-5", tone.icon)} />
+                </span>
               )}
-            >
-              {s.value}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">{s.description}</p>
+            </div>
           </div>
         )
         return s.href ? (
-          <Link key={s.key} href={s.href} className="transition-colors hover:bg-muted/40">
+          <Link key={s.key} href={s.href} className="block">
             {content}
           </Link>
         ) : (

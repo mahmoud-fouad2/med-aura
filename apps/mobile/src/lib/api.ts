@@ -1,5 +1,6 @@
-import { Platform } from "react-native"
+import { Linking, Platform } from "react-native"
 import * as FileSystem from "expo-file-system/legacy"
+import * as Sharing from "expo-sharing"
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -36,6 +37,9 @@ export type DoctorDetail = Doctor & {
   languages: string[]
   centerName: string | null
   centerCity: string | null
+  licenseAuthority: string | null
+  licenseLast4: string | null
+  lastVerifiedAt: string | null
 }
 
 export type Appointment = {
@@ -691,6 +695,43 @@ export async function downloadInvoicePdf(paymentId: string): Promise<string> {
     throw new Error("تعذّر تحميل الفاتورة. حاول مرة أخرى.")
   }
   return result.uri
+}
+
+function isShareSheetDismissal(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  const message = error.message.toLowerCase()
+  return (
+    message.includes("cancel") ||
+    message.includes("dismiss") ||
+    message.includes("did not share")
+  )
+}
+
+export async function presentDownloadedPdf(fileUri: string): Promise<void> {
+  let shareError: unknown = null
+
+  if (await Sharing.isAvailableAsync()) {
+    try {
+      await Sharing.shareAsync(fileUri, {
+        mimeType: "application/pdf",
+        UTI: "com.adobe.pdf",
+      })
+      return
+    } catch (error) {
+      if (isShareSheetDismissal(error)) return
+      shareError = error
+    }
+  }
+
+  const canOpen = await Linking.canOpenURL(fileUri).catch(() => false)
+  if (canOpen) {
+    await Linking.openURL(fileUri)
+    return
+  }
+
+  throw shareError instanceof Error
+    ? shareError
+    : new Error("تعذّر فتح الإيصال. حاول مرة أخرى.")
 }
 
 /**

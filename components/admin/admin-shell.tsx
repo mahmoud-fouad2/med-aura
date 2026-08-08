@@ -35,11 +35,11 @@ export function AdminShell({
     ?.label
 
   return (
-    <div className="flex min-h-svh bg-section-soft">
+    <div className="flex min-h-svh bg-[radial-gradient(circle_at_top_right,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_26%),radial-gradient(circle_at_bottom_left,color-mix(in_oklab,var(--gold)_10%,transparent),transparent_24%),var(--background)]">
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-card/92 ease-premium transition-[width] duration-200 backdrop-blur md:flex",
+          "sticky top-4 my-4 ms-4 hidden h-[calc(100svh-2rem)] shrink-0 flex-col rounded-[1.65rem] border border-white/70 bg-card/82 shadow-elegant-lg ease-premium transition-[width] duration-200 backdrop-blur-xl md:flex",
           collapsed ? "w-[72px]" : "w-[248px]",
         )}
       >
@@ -49,7 +49,7 @@ export function AdminShell({
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center justify-center gap-2 border-t border-sidebar-border py-3 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex items-center justify-center gap-2 border-t border-sidebar-border/70 py-3 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
         >
           {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -80,8 +80,8 @@ export function AdminShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
-          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-30 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6">
+          <div className="flex h-16 items-center gap-3 rounded-[1.45rem] border border-white/70 bg-background/82 px-4 shadow-elegant backdrop-blur-xl sm:px-6">
             <Button
               variant="ghost"
               size="icon"
@@ -97,7 +97,7 @@ export function AdminShell({
               {activeLabel && activeLabel !== "نظرة عامة" && (
                 <>
                   <ChevronLeft className="size-3 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180" />
-                  <span className="font-medium text-foreground">{activeLabel}</span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1 font-semibold text-foreground">{activeLabel}</span>
                 </>
               )}
             </div>
@@ -130,7 +130,7 @@ export function AdminShell({
             </div>
           </div>
         </header>
-        <main className="flex-1 px-6 py-6 xl:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-6 xl:px-8">{children}</main>
       </div>
     </div>
   )
@@ -175,13 +175,21 @@ function SidebarInner({
   }
 
   return (
-    <div className="flex h-full flex-col bg-card/92 text-sidebar-foreground">
-      <div className={cn("flex h-14 items-center border-b border-sidebar-border px-3.5", collapsed && "justify-center px-2")}>
-        <Link href="/admin" aria-label="Med Aura" onClick={onNavigate}>
+    <div className="flex h-full flex-col bg-transparent text-sidebar-foreground">
+      <div className={cn("flex h-16 items-center border-b border-sidebar-border/70 px-3.5", collapsed && "justify-center px-2")}>
+        <Link href="/admin" aria-label="Med Aura" onClick={onNavigate} className="flex items-center gap-3">
           {collapsed ? <LogoMark className="size-7 text-primary" /> : <Logo className="h-7" />}
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
+                Operations
+              </p>
+              <p className="truncate text-sm font-bold text-foreground">لوحة الإدارة</p>
+            </div>
+          )}
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-2.5">
+      <nav className="flex-1 space-y-1.5 overflow-y-auto p-3">
         {nav.map((group) => {
           // Collapsed rail or a single-item group: a plain link, no
           // accordion chrome — there's nothing meaningful to collapse.
@@ -248,11 +256,11 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-150",
+        "group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition-all duration-150",
         collapsed && "mb-0.5 justify-center px-0",
         active
-          ? "bg-primary/12 font-bold text-primary"
-          : "font-medium text-foreground/70 hover:bg-secondary hover:text-foreground",
+          ? "bg-primary/12 font-bold text-primary shadow-sm shadow-primary/10"
+          : "font-medium text-foreground/70 hover:bg-secondary/85 hover:text-foreground",
       )}
     >
       {active && <span className="absolute inset-y-1.5 -start-2.5 w-1 rounded-full bg-primary" />}

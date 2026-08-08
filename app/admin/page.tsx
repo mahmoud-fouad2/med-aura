@@ -244,29 +244,96 @@ export default async function AdminOverviewPage() {
   ]
   const WORK_QUEUE_LIMIT = 7
   const workQueue = allWork.slice(0, WORK_QUEUE_LIMIT)
+  const overviewCards = [
+    {
+      key: "attention",
+      icon: attentionItems.some((item) => item.tone === "critical") ? AlertTriangle : CheckCircle2,
+      label: "يتطلب انتباه",
+      value: attentionItems.length.toLocaleString("ar-SA-u-nu-latn"),
+      detail: attentionItems.length > 0 ? "عناصر مرتبة حسب الأولوية" : "لا توجد تنبيهات مفتوحة",
+    },
+    {
+      key: "queue",
+      icon: ClipboardList,
+      label: "في قائمة العمل",
+      value: allWork.length.toLocaleString("ar-SA-u-nu-latn"),
+      detail:
+        allWork.length > workQueue.length
+          ? `المعروض الآن ${workQueue.length.toLocaleString("ar-SA-u-nu-latn")}`
+          : "كل العناصر ظاهرة الآن",
+    },
+    canAdmin
+      ? {
+          key: "systems",
+          icon: systemFailures.length === 0 ? CheckCircle2 : Database,
+          label: "صحة الأنظمة",
+          value: systemFailures.length === 0 ? "سليم" : systemFailures.length.toLocaleString("ar-SA-u-nu-latn"),
+          detail:
+            systemFailures.length === 0
+              ? "الخدمات الأساسية تعمل كما يجب"
+              : `${systemFailures.length.toLocaleString("ar-SA-u-nu-latn")} خدمات تحتاج ضبطًا`,
+        }
+      : {
+          key: "metrics",
+          icon: TrendingUp,
+          label: "مؤشرات القيادة",
+          value: stats.length.toLocaleString("ar-SA-u-nu-latn"),
+          detail: "ملخص مباشر لحركة المنصة",
+        },
+  ]
 
   return (
     <div className="space-y-5">
-      {/* Title, context, last-update and primary action in one balanced row */}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-            مرحبًا، {user.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            حركة المنصة والمهام التي تحتاج متابعة
-            <span className="mx-2 text-border">·</span>
-            <span className="text-muted-foreground/80">آخر تحديث {nowLabel}</span>
-          </p>
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-card/88 p-6 shadow-elegant-lg">
+        <div className="absolute -end-12 top-0 size-56 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -start-12 bottom-0 size-48 rounded-full bg-gold/10 blur-3xl" />
+        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-2xl">
+            <span className="inline-flex rounded-full border border-primary/15 bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              مركز القيادة
+            </span>
+            <h1 className="mt-4 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-[2.2rem]">
+              مرحبًا، {user.name}
+            </h1>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground sm:text-base">
+              لوحة متابعة تنفيذية تعطيك أهم الحركة، الطوابير، وإشارات الخطر في واجهة واحدة.
+              <span className="mx-2 text-border">·</span>
+              <span className="text-muted-foreground/80">آخر تحديث {nowLabel}</span>
+            </p>
+          </div>
+          {canCases && (
+            <Link
+              href="/admin/cases"
+              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-colors hover:bg-primary/90"
+            >
+              <FileHeart className="size-[18px]" /> إدارة الحالات
+            </Link>
+          )}
         </div>
-        {canCases && (
-          <Link
-            href="/admin/cases"
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <FileHeart className="size-[18px]" /> إدارة الحالات
-          </Link>
-        )}
+
+        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {overviewCards.map((card) => (
+            <div
+              key={card.key}
+              className="rounded-[1.45rem] border border-white/70 bg-background/88 p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {card.label}
+                  </p>
+                  <p className="mt-3 font-heading text-3xl font-bold text-foreground">
+                    {card.value}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{card.detail}</p>
+                </div>
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary">
+                  <card.icon className="size-5" />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {stats.length > 0 && <StatStrip stats={stats} />}

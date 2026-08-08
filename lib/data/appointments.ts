@@ -8,6 +8,17 @@ import {
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
 
+const latestPaymentByAppointment = db
+  .selectDistinctOn([payment.appointmentId], {
+    appointmentId: payment.appointmentId,
+    id: payment.id,
+    status: payment.status,
+    provider: payment.provider,
+  })
+  .from(payment)
+  .orderBy(payment.appointmentId, desc(payment.createdAt))
+  .as("latest_payment_by_appointment")
+
 export type AppointmentRow = {
   id: string
   reference: string
@@ -40,13 +51,13 @@ export async function listPatientAppointments(
       currency: appointment.currency,
       counterpartName: doctorProfile.name,
       counterpartPhotoKey: doctorProfile.photoKey,
-      paymentStatus: payment.status,
-      paymentId: payment.id,
+      paymentStatus: latestPaymentByAppointment.status,
+      paymentId: latestPaymentByAppointment.id,
       caseId: appointment.caseId,
     })
     .from(appointment)
     .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
-    .leftJoin(payment, eq(payment.appointmentId, appointment.id))
+    .leftJoin(latestPaymentByAppointment, eq(latestPaymentByAppointment.appointmentId, appointment.id))
     .where(eq(appointment.patientUserId, userId))
     .orderBy(desc(appointment.startsAt))
 
@@ -139,17 +150,6 @@ export async function listAppointmentsForAdmin(
   // duplicating that appointment in the list with a different payment
   // status on each copy, and inflating totalCount/pagination to match.
   // DISTINCT ON picks exactly the latest payment per appointment first.
-  const latestPayment = db
-    .selectDistinctOn([payment.appointmentId], {
-      appointmentId: payment.appointmentId,
-      id: payment.id,
-      status: payment.status,
-      provider: payment.provider,
-    })
-    .from(payment)
-    .orderBy(payment.appointmentId, desc(payment.createdAt))
-    .as("latest_payment")
-
   const baseQuery = db
     .select({
       id: appointment.id,
@@ -162,15 +162,15 @@ export async function listAppointmentsForAdmin(
       currency: appointment.currency,
       counterpartName: doctorProfile.name,
       patientName: userT.name,
-      paymentStatus: latestPayment.status,
-      paymentId: latestPayment.id,
-      paymentProvider: latestPayment.provider,
+      paymentStatus: latestPaymentByAppointment.status,
+      paymentId: latestPaymentByAppointment.id,
+      paymentProvider: latestPaymentByAppointment.provider,
       caseId: appointment.caseId,
     })
     .from(appointment)
     .innerJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
     .innerJoin(userT, eq(appointment.patientUserId, userT.id))
-    .leftJoin(latestPayment, eq(latestPayment.appointmentId, appointment.id))
+    .leftJoin(latestPaymentByAppointment, eq(latestPaymentByAppointment.appointmentId, appointment.id))
 
   // Doesn't select or filter on any payment field itself (the paymentStatus
   // filter above already resolves to a plain appointment.id condition), so
@@ -210,13 +210,13 @@ export async function listDoctorAppointments(
       currency: appointment.currency,
       counterpartName: userT.name,
       counterpartPhotoKey: userT.image,
-      paymentStatus: payment.status,
-      paymentId: payment.id,
+      paymentStatus: latestPaymentByAppointment.status,
+      paymentId: latestPaymentByAppointment.id,
       caseId: appointment.caseId,
     })
     .from(appointment)
     .innerJoin(userT, eq(appointment.patientUserId, userT.id))
-    .leftJoin(payment, eq(payment.appointmentId, appointment.id))
+    .leftJoin(latestPaymentByAppointment, eq(latestPaymentByAppointment.appointmentId, appointment.id))
     .where(eq(appointment.doctorId, profileId))
     .orderBy(desc(appointment.startsAt))
 

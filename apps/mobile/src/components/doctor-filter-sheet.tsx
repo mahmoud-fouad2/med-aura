@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ScrollView, View } from "react-native"
+import { I18nManager, ScrollView, View } from "react-native"
 import { AppText, Button, Chip } from "./ui"
 import { BottomSheet } from "./bottom-sheet"
 import { type DoctorFilters, type FilterFacets } from "../lib/api"
@@ -196,7 +196,12 @@ export function DoctorFilterSheet({
         </View>
       </ScrollView>
 
-      <View style={{ flexDirection: "row", gap: spacing.sm }}>
+      <View
+        style={{
+          flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+          gap: spacing.sm,
+        }}
+      >
         <View style={{ flex: 1 }}>
           <Button
             label={t.filters.clearAll}
@@ -224,7 +229,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <AppText variant="sub" weight="bold">
         {title}
       </AppText>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+      <View
+        style={{
+          flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+          flexWrap: "wrap",
+          gap: spacing.sm,
+        }}
+      >
         {children}
       </View>
     </View>

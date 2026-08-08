@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import {
   AppText,
+  Button,
   Card,
   ChevronBack,
   EmptyState,
@@ -35,7 +36,7 @@ const CATEGORY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 /** Patient/doctor self-service ticket list — mirrors the web dashboard's
  *  /dashboard/support. Staff triage stays on /admin/tickets, web-only. */
 export default function SupportTickets() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const query = useTickets()
   const [search, setSearch] = useState("")
@@ -46,6 +47,7 @@ export default function SupportTickets() {
     if (!q) return allRows
     return allRows.filter((r) => r.subject.toLowerCase().includes(q))
   }, [allRows, search])
+  const unreadCount = allRows.filter((row) => row.unreadForMe).length
 
   return (
     <View
@@ -86,7 +88,26 @@ export default function SupportTickets() {
       </View>
 
       {!query.isLoading && !query.isError && allRows.length > 0 ? (
-        <View style={{ paddingHorizontal: spacing.screen, paddingBottom: spacing.md }}>
+        <View style={{ paddingHorizontal: spacing.screen, paddingBottom: spacing.md, gap: spacing.md }}>
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Card style={{ flex: 1, gap: 4, padding: spacing.md }}>
+              <AppText variant="caption" color={colors.textMuted}>
+                {t.tickets.title}
+              </AppText>
+              <AppText variant="heading" weight="heavy">
+                {allRows.length}
+              </AppText>
+            </Card>
+            <Card style={{ flex: 1, gap: 4, padding: spacing.md }}>
+              <AppText variant="caption" color={colors.textMuted}>
+                {locale === "ar" ? "غير المقروء" : "Unread"}
+              </AppText>
+              <AppText variant="heading" weight="heavy" color={colors.primary}>
+                {unreadCount}
+              </AppText>
+            </Card>
+          </View>
+
           <View
             style={{
               flexDirection: "row",
@@ -123,7 +144,14 @@ export default function SupportTickets() {
           ))}
         </View>
       ) : query.isError ? (
-        <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
+        <View style={{ padding: spacing.screen, gap: spacing.md }}>
+          <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
+          <Button
+            label={t.tickets.newTicket}
+            variant="secondary"
+            onPress={() => router.push("/support/new")}
+          />
+        </View>
       ) : (
         <FlatList
           data={rows}

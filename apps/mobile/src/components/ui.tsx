@@ -59,7 +59,8 @@ export function AppText({
           color,
           fontWeight,
           lineHeight: type[variant] * 1.5,
-          textAlign: "left",
+          textAlign: I18nManager.isRTL ? "right" : "left",
+          writingDirection: I18nManager.isRTL ? "rtl" : "ltr",
         },
         style,
       ]}
@@ -127,7 +128,7 @@ export function Button({
           borderRadius: radius.lg,
           paddingVertical: 14,
           paddingHorizontal: spacing.xl,
-          flexDirection: "row",
+          flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
           alignItems: "center",
           justifyContent: "center",
           gap: spacing.sm,
@@ -392,7 +393,13 @@ export function SectionHeading({
   tone?: "primary" | "success" | "warning" | "danger" | "info" | "gold"
 }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+    <View
+      style={{
+        flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+        alignItems: "center",
+        gap: spacing.sm,
+      }}
+    >
       <IconBadge icon={icon} size={32} tone={tone} />
       <AppText variant="heading" weight="bold">
         {title}
