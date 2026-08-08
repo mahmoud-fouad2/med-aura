@@ -136,7 +136,7 @@ export default async function ProcedureDetailPage({
             </nav>
             <Reveal>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+                <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                   {isAr ? procedure.nameAr : procedure.nameEn}
                 </h1>
                 <Badge variant={procedure.isSurgical ? "secondary" : "outline"}>

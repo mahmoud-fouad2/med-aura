@@ -15,19 +15,22 @@ import {
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/pwa/sw-registration"
 
-// IBM Plex Sans Arabic ships as discrete per-weight, per-script files (no
-// single variable file covers both scripts the way Alexandria's did), so
-// one loader per script and CSS's own per-character font-family fallback —
-// not unicode-range, which next/font/local's src array has no option for —
-// is what actually routes Arabic letters to the Arabic-subset files and
-// Latin letters to the Latin-subset files. Both share one role (body and
-// heading no longer need separate files just to preload differently).
-const ibmPlexArabic = localFont({
+// Readex Pro — a variable Arabic+Latin family drawn as one design, with a
+// continuous 160–700 weight axis. Two things it fixes over the per-weight
+// static files it replaces: 600 (font-semibold, which the UI leans on
+// everywhere) is a real master instead of a synthesised in-between, and the
+// whole range is two ~25 KB files instead of eight.
+//
+// Still one loader per script: CSS's own per-character font-family fallback —
+// not unicode-range, which next/font/local's src array has no option for — is
+// what routes Arabic letters to the Arabic-subset file and Latin letters to
+// the Latin-subset one.
+const readexArabic = localFont({
   src: [
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-400-normal.woff2", weight: "400" },
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-500-normal.woff2", weight: "500" },
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-600-normal.woff2", weight: "600" },
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-arabic-700-normal.woff2", weight: "700" },
+    {
+      path: "../public/fonts/readex-pro/readex-pro-arabic-wght-normal.woff2",
+      weight: "160 700",
+    },
   ],
   variable: "--font-arabic",
   display: "swap",
@@ -35,12 +38,12 @@ const ibmPlexArabic = localFont({
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
 })
 
-const ibmPlexLatin = localFont({
+const readexLatin = localFont({
   src: [
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-400-normal.woff2", weight: "400" },
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-500-normal.woff2", weight: "500" },
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-600-normal.woff2", weight: "600" },
-    { path: "../public/fonts/ibm-plex-sans-arabic/ibm-plex-sans-arabic-latin-700-normal.woff2", weight: "700" },
+    {
+      path: "../public/fonts/readex-pro/readex-pro-latin-wght-normal.woff2",
+      weight: "160 700",
+    },
   ],
   variable: "--font-latin",
   display: "swap",
@@ -132,7 +135,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir(locale)}
-      className={`${ibmPlexArabic.variable} ${ibmPlexLatin.variable} ${inter.variable} bg-background`}
+      className={`${readexArabic.variable} ${readexLatin.variable} ${inter.variable} bg-background`}
       suppressHydrationWarning
     >
       <head>

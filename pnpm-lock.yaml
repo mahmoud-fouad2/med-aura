@@ -29,9 +29,6 @@ importers:
       '@fontsource/alexandria':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/ibm-plex-sans-arabic':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@react-pdf/renderer':
         specifier: ^4.5.1
         version: 4.5.1(react@19.2.4)
@@ -99,6 +96,9 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3
         version: 3.3.5
+      '@fontsource-variable/readex-pro':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@playwright/test':
         specifier: ^1.61.1
         version: 1.61.1
@@ -1200,11 +1200,11 @@ packages:
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
+  '@fontsource-variable/readex-pro@5.3.0':
+    resolution: {integrity: sha512-ebrEcz8sjzQk92x6K3WtYzOgEKTIDe5D+iPqef0YYvPdqCfxzVkRgpsog5POX4sWa7e4wccCQ1IhmMuRka2hZg==}
+
   '@fontsource/alexandria@5.3.0':
     resolution: {integrity: sha512-it7vTsYG4pB0G00g49z5bwdMtf41EacTIZQFSxcDRajlV4xrCAz9+0/FMoWo3GD50Ifu5+t6ta22xsmnX5Akwg==}
-
-  '@fontsource/ibm-plex-sans-arabic@5.3.0':
-    resolution: {integrity: sha512-ZZ4g+JDgQY0NqSh4o0MNWU1sHQmtcee1g++aKAwyJvZxnT5y51JXsN1cIXnaQaMd40dcbK6QFYa+Z1LbaiNuqA==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -6281,9 +6281,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
-  '@fontsource/alexandria@5.3.0': {}
+  '@fontsource-variable/readex-pro@5.3.0': {}
 
-  '@fontsource/ibm-plex-sans-arabic@5.3.0': {}
+  '@fontsource/alexandria@5.3.0': {}
 
   '@hono/node-server@1.19.14(hono@4.12.25)':
     dependencies:

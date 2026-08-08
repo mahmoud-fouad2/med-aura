@@ -84,7 +84,7 @@ export function Hero({
             {isAr ? "اختيارك الجمالي يبدأ بخبير موثوق" : "Trusted aesthetic care, clearly guided"}
           </span>
 
-          <h1 className="text-balance font-heading text-5xl font-extrabold leading-[1.12] text-foreground sm:text-6xl lg:text-7xl">
+          <h1 className="text-balance font-heading text-5xl font-bold leading-[1.12] text-foreground sm:text-6xl lg:text-7xl">
             {t.heroTitle}
           </h1>
 

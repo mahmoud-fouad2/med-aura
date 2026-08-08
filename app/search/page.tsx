@@ -166,7 +166,7 @@ export default async function SearchPage({
               <p className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-primary">
                 أطباء موثوقون
               </p>
-              <h1 className="mt-3 text-balance font-heading text-4xl font-extrabold leading-tight text-foreground sm:text-5xl">
+              <h1 className="mt-3 text-balance font-heading text-4xl font-bold leading-tight text-foreground sm:text-5xl">
                 اختر طبيب تجميل بثقة ووضوح
               </h1>
               <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -507,7 +507,7 @@ function HeroStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
       <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="font-heading text-xl font-extrabold tabular-nums text-foreground">
+      <dd className="font-heading text-xl font-bold tabular-nums text-foreground">
         {value.toLocaleString("ar-SA-u-nu-latn")}
       </dd>
     </div>

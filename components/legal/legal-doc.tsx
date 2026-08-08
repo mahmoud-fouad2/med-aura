@@ -24,7 +24,7 @@ export function LegalDoc({
         {/* header band */}
         <div className="border-b border-border bg-background">
           <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-            <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               {title}
             </h1>
             <p className="mt-3 max-w-3xl text-lg leading-relaxed text-muted-foreground">

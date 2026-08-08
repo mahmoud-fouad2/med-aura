@@ -243,7 +243,7 @@ export default async function AdminOverviewPage() {
       {/* Title, context, last-update and primary action in one balanced row */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight text-foreground">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
             مرحبًا، {user.name}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">

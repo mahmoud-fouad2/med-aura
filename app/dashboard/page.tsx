@@ -297,7 +297,7 @@ export default async function DashboardHome() {
             <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6">
               <div className="flex items-center gap-4">
                 <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-success/10 text-success ring-1 ring-success/20">
-                  <span className="font-heading text-xl font-extrabold leading-none tabular-nums">
+                  <span className="font-heading text-xl font-bold leading-none tabular-nums">
                     {new Date(nextAppt.startsAt).toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric" })}
                   </span>
                   <span className="mt-1 text-[10px] font-medium uppercase tracking-wider">

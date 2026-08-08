@@ -9,7 +9,7 @@ export default function NotFound() {
         <Logo />
       </Link>
       <div>
-        <p className="font-heading text-6xl font-extrabold text-primary">404</p>
+        <p className="font-heading text-6xl font-bold text-primary">404</p>
         <h1 className="mt-2 font-heading text-2xl font-bold text-foreground">
           الصفحة غير موجودة
         </h1>

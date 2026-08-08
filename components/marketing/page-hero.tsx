@@ -49,7 +49,7 @@ export function PageHero({
               {eyebrow}
             </span>
           )}
-          <h1 className="mt-5 text-balance font-heading text-4xl font-extrabold leading-tight text-foreground sm:text-5xl">
+          <h1 className="mt-5 text-balance font-heading text-4xl font-bold leading-tight text-foreground sm:text-5xl">
             {title}
           </h1>
           {subtitle && (
@@ -81,7 +81,7 @@ export function PageHero({
                   <dt className="text-xs font-medium text-muted-foreground">
                     {stat.label}
                   </dt>
-                  <dd className="mt-1 font-heading text-lg font-extrabold text-foreground">
+                  <dd className="mt-1 font-heading text-lg font-bold text-foreground">
                     {stat.value}
                   </dd>
                 </div>

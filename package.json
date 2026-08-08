@@ -38,7 +38,6 @@
     "@better-auth/expo": "^1.6.23",
     "@daily-co/daily-js": "^0.91.0",
     "@fontsource/alexandria": "^5.3.0",
-    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
     "@react-pdf/renderer": "^4.5.1",
     "better-auth": "^1.6.22",
     "class-variance-authority": "^0.7.1",
@@ -63,6 +62,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@fontsource-variable/readex-pro": "^5.3.0",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^24",

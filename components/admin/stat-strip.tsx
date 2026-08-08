@@ -31,7 +31,7 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
         const content = (
           <div className="flex h-full flex-col justify-center gap-1.5 px-5 py-5">
             <p className="text-xs font-semibold text-muted-foreground">{s.label}</p>
-            <p className={cn("font-heading text-[32px] font-extrabold tabular-nums leading-none", TONE_VALUE[s.tone ?? "neutral"])}>{s.value}</p>
+            <p className={cn("font-heading text-[32px] font-bold tabular-nums leading-none", TONE_VALUE[s.tone ?? "neutral"])}>{s.value}</p>
             <p className="truncate text-xs text-muted-foreground">{s.description}</p>
           </div>
         )

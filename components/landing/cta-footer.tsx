@@ -33,7 +33,7 @@ export async function CtaFooter() {
             <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,color-mix(in_oklab,var(--primary)_90%,transparent)_0%,var(--primary)_46%,color-mix(in_oklab,var(--primary)_72%,transparent)_100%)]" />
             <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_.7fr] lg:px-8">
               <div className="flex max-w-3xl flex-col items-start gap-6 text-start">
-                <h2 className="text-balance font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">
+                <h2 className="text-balance font-heading text-3xl font-bold tracking-tight sm:text-4xl">
                   {isAr ? "هل أنت طبيب أو مركز تجميل؟" : "Are you a doctor or an aesthetic center?"}
                 </h2>
                 <p className="text-pretty text-lg leading-relaxed text-primary-foreground/90">

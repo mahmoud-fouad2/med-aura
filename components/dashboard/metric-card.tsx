@@ -125,7 +125,7 @@ export function MetricCard({
         </p>
         <p
           className={cn(
-            "font-heading font-extrabold leading-none tracking-tight tabular-nums",
+            "font-heading font-bold leading-none tracking-tight tabular-nums",
             emphasis ? "text-[32px] sm:text-[34px]" : "text-2xl sm:text-[26px]",
             t.number,
           )}

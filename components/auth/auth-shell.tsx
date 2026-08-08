@@ -27,7 +27,7 @@ export function AuthShell({
         </Link>
 
         <div className="relative max-w-md space-y-6">
-          <h2 className="font-heading text-3xl font-extrabold leading-tight">
+          <h2 className="font-heading text-3xl font-bold leading-tight">
             {home.heroTitle}
           </h2>
           <p className="text-white/80">{home.heroSubtitle}</p>

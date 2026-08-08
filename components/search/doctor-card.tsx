@@ -126,7 +126,7 @@ export function DoctorCard({
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/doctors/${doctor.slug}`}
-                  className="line-clamp-2 font-heading text-xl font-extrabold leading-tight text-foreground transition-colors hover:text-primary"
+                  className="line-clamp-2 font-heading text-xl font-bold leading-tight text-foreground transition-colors hover:text-primary"
                 >
                   {doctor.name}
                 </Link>
@@ -206,7 +206,7 @@ export function DoctorCard({
             </p>
             {doctor.consultationFee ? (
               <p className="leading-tight">
-                <span className="font-heading text-2xl font-extrabold tabular-nums text-foreground">
+                <span className="font-heading text-2xl font-bold tabular-nums text-foreground">
                   {Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")}
                 </span>
                 <span className="ms-1 text-xs font-medium text-muted-foreground">
