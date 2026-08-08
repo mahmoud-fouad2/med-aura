@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { AlertTriangle, CheckCircle2 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { AlertTriangle, CheckCircle2, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type AttentionTone = "critical" | "routine"
@@ -9,6 +8,9 @@ export type AttentionItem = {
   key: string
   icon: React.ComponentType<{ className?: string }>
   label: string
+  /** What the count actually means / what happens next. Without this the row
+   *  is a label at one edge and a number at the other with a gulf between. */
+  description: string
   count: number
   href: string
   /** "critical" (safety/system failures — genuinely urgent) vs "routine"
@@ -17,34 +19,50 @@ export type AttentionItem = {
   tone?: AttentionTone
 }
 
-const ITEM_TONE: Record<AttentionTone, { icon: string; badge: "destructive" | "secondary" }> = {
-  critical: { icon: "text-destructive", badge: "destructive" },
-  routine: { icon: "text-primary", badge: "secondary" },
+const ITEM_TONE: Record<AttentionTone, { icon: string; count: string; rail: string }> = {
+  critical: { icon: "text-destructive", count: "text-destructive", rail: "bg-destructive" },
+  routine: { icon: "text-primary", count: "text-foreground", rail: "bg-transparent" },
 }
 
 /**
- * "What needs my attention right now" — a lean, always-neutral panel, not
- * a heavy card wholesale-tinted red. Only items with a non-zero count ever
- * reach this list, so nothing here needs "view all". Red is reserved for
- * individual critical rows (safety/system), never the panel background.
+ * "What needs my attention right now" — a lean, always-neutral panel, not a
+ * heavy card wholesale-tinted red. Only items with a non-zero count reach this
+ * list, so nothing here needs "view all".
+ *
+ * Each row carries the count as a real number sitting next to its meaning,
+ * with a one-line description underneath, rather than a badge exiled to the
+ * far edge with dead space in between. Urgency is signalled by a hairline rail
+ * on the leading edge plus the icon and number colour — never by tinting the
+ * whole row or the panel red.
  */
 export function CommandCenter({ items }: { items: AttentionItem[] }) {
   const hasItems = items.length > 0
-  const hasCritical = items.some((i) => i.tone === "critical")
+  const criticalCount = items.filter((i) => i.tone === "critical").length
   return (
     <div className="overflow-hidden rounded-xl border border-border/60">
       <div className="flex items-center gap-2.5 border-b border-border/60 px-4 py-3">
-        {hasCritical ? (
+        {criticalCount > 0 ? (
           <AlertTriangle className="size-[18px] shrink-0 text-destructive" />
         ) : (
-          <CheckCircle2 className={cn("size-[18px] shrink-0", hasItems ? "text-primary" : "text-success")} />
+          <CheckCircle2
+            className={cn("size-[18px] shrink-0", hasItems ? "text-primary" : "text-success")}
+          />
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold text-foreground">يحتاج إلى انتباه</h2>
           <p className="truncate text-xs text-muted-foreground">
-            {hasItems ? "مرتّبًا حسب الأولوية" : "كل شيء تحت السيطرة"}
+            {criticalCount > 0
+              ? `${criticalCount.toLocaleString("ar-SA-u-nu-latn")} منها حرجة — مرتّبة حسب الأولوية`
+              : hasItems
+                ? "عمل تشغيلي معتاد — مرتّب حسب الأولوية"
+                : "كل شيء تحت السيطرة"}
           </p>
         </div>
+        {hasItems && (
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+            {items.length.toLocaleString("ar-SA-u-nu-latn")}
+          </span>
+        )}
       </div>
       {hasItems ? (
         <ul className="divide-y divide-border/60">
@@ -54,20 +72,39 @@ export function CommandCenter({ items }: { items: AttentionItem[] }) {
               <li key={item.key}>
                 <Link
                   href={item.href}
-                  className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-muted/40"
+                  className="group relative flex min-h-16 items-center gap-3 py-3 pe-4 ps-4 transition-colors hover:bg-muted/40"
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <item.icon className={cn("size-[18px] shrink-0", t.icon)} />
-                    <span className="truncate font-semibold text-foreground">{item.label}</span>
+                  <span
+                    aria-hidden
+                    className={cn("absolute inset-y-0 start-0 w-[3px]", t.rail)}
+                  />
+                  <item.icon className={cn("size-5 shrink-0", t.icon)} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-foreground">
+                      {item.label}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {item.description}
+                    </span>
                   </span>
-                  <Badge variant={t.badge} className="shrink-0">{item.count.toLocaleString("ar-SA-u-nu-latn")}</Badge>
+                  <span
+                    className={cn(
+                      "shrink-0 font-heading text-xl font-bold tabular-nums leading-none",
+                      t.count,
+                    )}
+                  >
+                    {item.count.toLocaleString("ar-SA-u-nu-latn")}
+                  </span>
+                  <ChevronLeft className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:-translate-x-0.5 ltr:rotate-180" />
                 </Link>
               </li>
             )
           })}
         </ul>
       ) : (
-        <p className="px-4 py-4 text-sm text-muted-foreground">لا توجد عناصر تحتاج تدخلًا الآن.</p>
+        <p className="px-4 py-5 text-sm text-muted-foreground">
+          لا توجد عناصر تحتاج تدخلًا الآن — كل الطوابير التشغيلية فارغة.
+        </p>
       )}
     </div>
   )

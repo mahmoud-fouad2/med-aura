@@ -2,7 +2,8 @@ import Link from "next/link"
 import {
   FileHeart, AlertTriangle, ClipboardCheck,
   ClipboardList, ShieldAlert, Wallet, Plug,
-  CheckCircle2, XCircle, Database, Mail, HardDrive, CreditCard, ChevronLeft,
+  CheckCircle2, XCircle, Database, Mail, HardDrive, CreditCard, ChevronLeft, Users,
+  TrendingUp, Activity, History, Zap,
 } from "lucide-react"
 import { requireAuthPage } from "@/lib/session"
 import { getUserPermissions, PERMISSIONS } from "@/lib/rbac"
@@ -72,6 +73,7 @@ function collectedStat(paidTotals: MoneyTotal[]): Stat {
   const { value, others } = headlineTotal(paidTotals)
   return {
     key: "collected",
+    icon: Wallet,
     label: "إجمالي المحصّل",
     value,
     description: others ? `مدفوعات ناجحة — و${others}` : "مدفوعات ناجحة",
@@ -121,22 +123,22 @@ export default async function AdminOverviewPage() {
   // (applications, payments, follow-ups) is routine work, not an alarm.
   const attentionItems: AttentionItem[] = [
     ...(canSafety && highPrioritySafety.length > 0
-      ? [{ key: "safety", icon: ShieldAlert, label: "تنبيهات سلامة عالية الأولوية", count: highPrioritySafety.length, href: "/admin/safety-alerts", tone: "critical" as const }]
+      ? [{ key: "safety", icon: ShieldAlert, label: "تنبيهات سلامة عالية الأولوية", description: "بلاغات مرضى تحتاج ردًا طبيًا فوريًا", count: highPrioritySafety.length, href: "/admin/safety-alerts", tone: "critical" as const }]
       : []),
     ...(canCases && interventionCases.length > 0
-      ? [{ key: "intervention", icon: AlertTriangle, label: "حالات تحتاج تدخلًا", count: interventionCases.length, href: "/admin/cases", tone: "critical" as const }]
+      ? [{ key: "intervention", icon: AlertTriangle, label: "حالات تحتاج تدخلًا", description: "متوقفة على معلومات ناقصة أو متابعة مُصعَّدة", count: interventionCases.length, href: "/admin/cases", tone: "critical" as const }]
       : []),
     ...(canAdmin && systemFailures.length > 0
-      ? [{ key: "system", icon: Database, label: "خدمات نظام غير سليمة", count: systemFailures.length, href: "/admin/system-health", tone: "critical" as const }]
+      ? [{ key: "system", icon: Database, label: "خدمات نظام غير سليمة", description: systemFailures.map((c) => c.label).join(" · "), count: systemFailures.length, href: "/admin/system-health", tone: "critical" as const }]
       : []),
     ...(canCases && kpis.overdueFollowUps > 0
-      ? [{ key: "followups", icon: ClipboardList, label: "متابعات متأخرة", count: kpis.overdueFollowUps, href: "/admin/follow-ups?status=overdue", tone: "routine" as const }]
+      ? [{ key: "followups", icon: ClipboardList, label: "متابعات متأخرة", description: "تجاوزت موعدها أو لم يُرد عليها المريض", count: kpis.overdueFollowUps, href: "/admin/follow-ups?status=overdue", tone: "routine" as const }]
       : []),
     ...(canReview && recentApplications.length > 0
-      ? [{ key: "applications", icon: ClipboardCheck, label: "طلبات انضمام بانتظار المراجعة", count: recentApplications.length, href: "/admin/applications", tone: "routine" as const }]
+      ? [{ key: "applications", icon: ClipboardCheck, label: "طلبات انضمام بانتظار المراجعة", description: "أطباء ومراكز بانتظار قرار الاعتماد", count: recentApplications.length, href: "/admin/applications", tone: "routine" as const }]
       : []),
     ...(canFinance && pendingPayments.length + openRefunds.length > 0
-      ? [{ key: "payments", icon: Wallet, label: "مدفوعات واسترجاعات معلّقة", count: pendingPayments.length + openRefunds.length, href: "/admin/finance", tone: "routine" as const }]
+      ? [{ key: "payments", icon: Wallet, label: "مدفوعات واسترجاعات معلّقة", description: `${pendingPayments.length} دفعة معلّقة · ${openRefunds.length} طلب استرجاع`, count: pendingPayments.length + openRefunds.length, href: "/admin/finance", tone: "routine" as const }]
       : []),
   ]
 
@@ -145,6 +147,7 @@ export default async function AdminOverviewPage() {
   const stats: Stat[] = [
     {
       key: "intervention",
+      icon: AlertTriangle,
       label: "حالات تحتاج تدخلًا",
       value: kpis.casesNeedingIntervention.toLocaleString("ar-SA-u-nu-latn"),
       description: kpis.casesNeedingIntervention > 0 ? "تحتاج مراجعة فورية" : "لا توجد حالات حرجة",
@@ -154,6 +157,7 @@ export default async function AdminOverviewPage() {
     ...(canReview
       ? [{
           key: "applications",
+          icon: ClipboardCheck,
           label: "طلبات معلّقة",
           value: kpis.pendingApplications.toLocaleString("ar-SA-u-nu-latn"),
           description: kpis.pendingApplications > 0 ? "بانتظار المراجعة" : "لا طلبات معلّقة",
@@ -163,6 +167,7 @@ export default async function AdminOverviewPage() {
       : []),
     {
       key: "patients",
+      icon: Users,
       label: "إجمالي المرضى",
       value: kpis.totalPatients.toLocaleString("ar-SA-u-nu-latn"),
       description: "مسجّلون على المنصة",
@@ -171,7 +176,9 @@ export default async function AdminOverviewPage() {
   ]
 
   const nowLabel = new Date().toLocaleString("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" })
-  const totalActivity = activity30d.reduce((sum, d) => sum + d.newCases + d.paidPayments, 0)
+  const newCases30d = activity30d.reduce((sum, d) => sum + d.newCases, 0)
+  const paidPayments30d = activity30d.reduce((sum, d) => sum + d.paidPayments, 0)
+  const totalActivity = newCases30d + paidPayments30d
   const chartWorthShowing = activity30d.length > 0 && totalActivity >= MIN_CHART_ACTIVITY
 
   // One merged, prioritized queue instead of four separate near-empty
@@ -306,7 +313,8 @@ export default async function AdminOverviewPage() {
             {canCases && (
               <WorkspaceSection
                 title="النشاط خلال آخر 30 يومًا"
-                description="حالات جديدة ودفعات ناجحة"
+                description={`${newCases30d.toLocaleString("ar-SA-u-nu-latn")} حالة جديدة${canFinance ? ` · ${paidPayments30d.toLocaleString("ar-SA-u-nu-latn")} دفعة ناجحة` : ""}`}
+                icon={TrendingUp}
                 viewAllHref={canAudit ? "/admin/activity" : undefined}
               >
                 {chartWorthShowing ? (
@@ -314,7 +322,7 @@ export default async function AdminOverviewPage() {
                     <ActivityChart data={activity30d} showFinance={canFinance} />
                   </div>
                 ) : (
-                  <WorkspaceEmpty text="لا يوجد نشاط كافٍ لعرض اتجاه خلال آخر 30 يومًا بعد." />
+                  <WorkspaceEmpty text="النشاط خلال هذه الفترة أقل من أن يرسم اتجاهًا — الرسم البياني يظهر تلقائيًا عند تراكم بيانات كافية." />
                 )}
               </WorkspaceSection>
             )}
@@ -322,10 +330,20 @@ export default async function AdminOverviewPage() {
         }
         side={
           <>
-            <QuickActionsGrid perms={perms} />
+            <QuickActionsList perms={perms} />
 
             {canAdmin && systemChecks.length > 0 && (
-              <WorkspaceSection title="حالة النظام" viewAllHref="/admin/system-health">
+              <WorkspaceSection
+                title="حالة النظام"
+                description={
+                  systemFailures.length === 0
+                    ? "كل الخدمات تعمل"
+                    : `${systemFailures.length.toLocaleString("ar-SA-u-nu-latn")} من ${systemChecks.length.toLocaleString("ar-SA-u-nu-latn")} خدمات غير مهيأة`
+                }
+                icon={Activity}
+                tone={systemFailures.length === 0 ? "success" : "danger"}
+                viewAllHref="/admin/system-health"
+              >
                 <div className="divide-y divide-border/60">
                   {systemChecks.map((c) => (
                     <div key={c.key} className="flex items-center gap-2.5 px-4 py-2.5 text-sm">
@@ -343,7 +361,7 @@ export default async function AdminOverviewPage() {
             )}
 
             {canAudit && (
-              <WorkspaceSection title="آخر النشاطات" viewAllHref="/admin/activity">
+              <WorkspaceSection title="آخر النشاطات" icon={History} tone="neutral" viewAllHref="/admin/activity">
                 {activitySummary.length === 0 ? (
                   <WorkspaceEmpty text="لا يوجد نشاط مسجّل بعد." />
                 ) : (
@@ -372,7 +390,7 @@ export default async function AdminOverviewPage() {
   )
 }
 
-function QuickActionsGrid({ perms }: { perms: Set<string> }) {
+function QuickActionsList({ perms }: { perms: Set<string> }) {
   const actions: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; show: boolean }[] = [
     { href: "/admin/applications", label: "طلبات الانضمام", icon: ClipboardCheck, show: perms.has(PERMISSIONS.PROVIDER_REVIEW) },
     { href: "/admin/cases", label: "إدارة الحالات", icon: FileHeart, show: perms.has(PERMISSIONS.CASE_READ_ANY) },
@@ -383,7 +401,7 @@ function QuickActionsGrid({ perms }: { perms: Set<string> }) {
 
   if (actions.length === 0) return null
   return (
-    <WorkspaceSection title="إجراءات سريعة">
+    <WorkspaceSection title="إجراءات سريعة" icon={Zap} tone="primary">
       <div className="divide-y divide-border/60">
         {actions.map((a) => (
           <Link
