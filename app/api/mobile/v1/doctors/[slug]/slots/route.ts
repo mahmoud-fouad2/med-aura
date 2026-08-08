@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { getAvailableSlots } from "@/lib/data/availability"
-import { jsonError, jsonOk } from "@/lib/mobile-api"
+import { jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +28,7 @@ export async function GET(
       currency: doctor.currency,
       slots: slots.map((s) => ({ startsAt: s.startsAt, endsAt: s.endsAt })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.doctors.slug.slots", err)
   }
 }

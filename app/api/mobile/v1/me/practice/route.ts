@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { doctorProfile } from "@/lib/db/schema"
 import { listDoctorProcedureOptions } from "@/lib/data/admin-directory"
 import { updateMyPracticeAction } from "@/lib/actions/doctor"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -50,8 +50,8 @@ export async function GET() {
       status: dp.status,
       procedures,
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.me.practice", err)
   }
 }
 

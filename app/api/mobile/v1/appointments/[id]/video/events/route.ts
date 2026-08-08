@@ -3,7 +3,7 @@ import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { videoSession } from "@/lib/db/schema"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 import {
   loadVideoContext,
   recordVideoEvent,
@@ -74,7 +74,7 @@ export async function POST(
     })
 
     return jsonOk({ recorded: true })
-  } catch {
-    return jsonError("تعذر إتمام العملية.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.appointments.id.video.events", err, "تعذر إتمام العملية.")
   }
 }

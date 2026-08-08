@@ -680,7 +680,14 @@ export async function downloadInvoicePdf(paymentId: string): Promise<string> {
     localUri,
     { headers: cookie ? { Cookie: cookie } : {} },
   )
-  if (result.status !== 200) {
+  // downloadAsync writes the body to disk whatever the status is, so a 401
+  // redirect page or a 500 error page lands at a ".pdf" path and the next
+  // share sheet hands the user that file. Check the type as well as the
+  // status, and delete anything that isn't a real PDF before throwing.
+  const contentType = result.headers["Content-Type"] ?? result.headers["content-type"] ?? ""
+  if (result.status !== 200 || !contentType.includes("application/pdf")) {
+    await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+    if (result.status === 401) throw new SessionExpiredError()
     throw new Error("تعذّر تحميل الفاتورة. حاول مرة أخرى.")
   }
   return result.uri

@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { z } from "zod"
 import { bookConsultation } from "@/lib/actions/booking"
-import { jsonError, jsonOk } from "@/lib/mobile-api"
+import { jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return jsonError(result.error, status)
     }
     return jsonOk(result.data)
-  } catch {
-    return jsonError("تعذر إتمام الحجز. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.bookings", err, "تعذر إتمام الحجز. حاول مرة أخرى.")
   }
 }

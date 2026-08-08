@@ -1,5 +1,5 @@
 import { getCaseDetailForUser } from "@/lib/data/cases"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -44,7 +44,7 @@ export async function GET(
         createdAt: d.createdAt.toISOString(),
       })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.cases.id", err)
   }
 }

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 import {
   authorizeVideoJoin,
   ensureVideoSession,
@@ -51,7 +51,7 @@ export async function POST(
       role: gate.role,
       doctorName: gate.ctx.doctorName,
     })
-  } catch {
-    return jsonError("تعذر تجهيز الاستشارة الآن. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.appointments.id.video.token", err, "تعذر تجهيز الاستشارة الآن. حاول مرة أخرى.")
   }
 }

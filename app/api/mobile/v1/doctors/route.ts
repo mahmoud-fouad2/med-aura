@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { searchDoctors, type SearchParams } from "@/lib/data/doctors"
-import { absolutize, jsonError, jsonOk } from "@/lib/mobile-api"
+import { absolutize, jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 import { isValidLatitude, isValidLongitude, MAX_RADIUS_KM } from "@/lib/distance"
 
 export const dynamic = "force-dynamic"
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       page: params.page,
       doctors: results.map((d) => ({ ...d, photoUrl: absolutize(d.photoUrl) })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.doctors", err)
   }
 }

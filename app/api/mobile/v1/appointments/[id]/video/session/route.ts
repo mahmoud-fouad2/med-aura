@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 import { authorizeVideoJoin, ensureVideoSession } from "@/lib/video/service"
 
 export const dynamic = "force-dynamic"
@@ -34,7 +34,7 @@ export async function POST(
       joinAvailableFrom: session.joinAvailableFrom.toISOString(),
       joinAvailableUntil: session.joinAvailableUntil.toISOString(),
     })
-  } catch {
-    return jsonError("تعذر تجهيز الاستشارة الآن. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.appointments.id.video.session", err, "تعذر تجهيز الاستشارة الآن. حاول مرة أخرى.")
   }
 }

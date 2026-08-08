@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { completeSignupProfile } from "@/lib/actions/onboarding"
-import { jsonError, jsonOk } from "@/lib/mobile-api"
+import { jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const result = await completeSignupProfile(body)
     if (!result.ok) return jsonError(result.error, 400)
     return jsonOk({ next: result.next })
-  } catch {
-    return jsonError("تعذر حفظ البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.signup-profile", err, "تعذر حفظ البيانات. حاول مرة أخرى.")
   }
 }

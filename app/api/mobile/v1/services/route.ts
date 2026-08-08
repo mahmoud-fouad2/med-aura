@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { listServices } from "@/lib/data/procedures"
-import { absolutize, jsonError, jsonOk } from "@/lib/mobile-api"
+import { absolutize, jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         imageUrl: imageUrl ?? absolutize(imagePath)!,
       })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.services", err)
   }
 }

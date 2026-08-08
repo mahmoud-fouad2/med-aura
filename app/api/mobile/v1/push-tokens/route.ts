@@ -2,7 +2,7 @@ import { z } from "zod"
 import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { pushToken } from "@/lib/db/schema"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
       })
     }
     return jsonOk({ registered: true })
-  } catch {
-    return jsonError("تعذّر تسجيل الجهاز.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.push-tokens", err, "تعذّر تسجيل الجهاز.")
   }
 }
 

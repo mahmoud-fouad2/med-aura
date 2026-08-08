@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { getTicketDetail } from "@/lib/data/support-tickets"
 import { markTicketRead, replyToTicket } from "@/lib/actions/support-tickets"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -34,8 +34,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         mine: m.senderUserId === auth.user.id,
       })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.tickets.id", err)
   }
 }
 

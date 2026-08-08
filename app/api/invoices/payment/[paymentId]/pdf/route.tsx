@@ -5,6 +5,7 @@ import { getPaymentReceiptData } from "@/lib/data/invoice"
 import { decideInvoiceAccess } from "@/lib/pdf/invoice-access"
 import { InvoiceDocument } from "@/lib/pdf/invoice-document"
 import { writeAudit, requestMeta } from "@/lib/audit"
+import { logger } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 
@@ -39,7 +40,26 @@ export async function GET(
     return new Response("Not found.", { status: 404 })
   }
 
-  const buffer = await renderToBuffer(<InvoiceDocument data={data} />)
+  // @react-pdf can throw during layout for reasons that have nothing to do
+  // with this request's data (see the reproduction in
+  // test/invoice-pdf-arabic-name.test.ts). Uncaught, that returned Next's HTML
+  // error page under a 500 — which the native app's FileSystem.downloadAsync
+  // happily wrote to disk as a ".pdf". Catch it, log the real cause, and
+  // answer with a body that is unambiguously not a PDF.
+  let buffer: Buffer
+  try {
+    buffer = await renderToBuffer(<InvoiceDocument data={data} />)
+  } catch (err) {
+    logger.error("invoice pdf render failed", {
+      paymentId,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    })
+    return new Response("Receipt could not be generated.", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    })
+  }
 
   const meta = await requestMeta()
   await writeAudit({

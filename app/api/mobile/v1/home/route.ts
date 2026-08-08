@@ -1,6 +1,6 @@
 import { listDoctorAppointments, listPatientAppointments } from "@/lib/data/appointments"
 import { searchDoctors } from "@/lib/data/doctors"
-import { absolutize, jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { absolutize, jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -65,7 +65,7 @@ export async function GET() {
         photoUrl: absolutize(d.photoUrl),
       })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.home", err)
   }
 }

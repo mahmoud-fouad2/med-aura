@@ -1,5 +1,5 @@
 import { getDoctorFilterFacets } from "@/lib/data/doctors"
-import { jsonError, jsonOk } from "@/lib/mobile-api"
+import { jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const facets = await getDoctorFilterFacets()
     return jsonOk(facets)
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.filters", err)
   }
 }

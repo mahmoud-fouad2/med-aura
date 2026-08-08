@@ -7,7 +7,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/actions/notification-inbox"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -32,8 +32,8 @@ export async function GET() {
         createdAt: n.createdAt.toISOString(),
       })),
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.notifications", err)
   }
 }
 

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
-import { absolutize, jsonError, jsonOk } from "@/lib/mobile-api"
+import { absolutize, jsonError, jsonOk, jsonServerError } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +14,7 @@ export async function GET(
     const doctor = await getPublicDoctorBySlug(slug)
     if (!doctor) return jsonError("الطبيب غير موجود.", 404)
     return jsonOk({ ...doctor, photoUrl: absolutize(doctor.photoUrl) })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.doctors.slug", err)
   }
 }

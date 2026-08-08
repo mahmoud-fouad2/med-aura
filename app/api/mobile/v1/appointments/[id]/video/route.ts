@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { videoSession } from "@/lib/db/schema"
 import { isVideoConfigured } from "@/lib/env"
-import { jsonError, jsonOk, requireMobileUser } from "@/lib/mobile-api"
+import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
 import { videoJoinWindow } from "@/lib/video"
 import { decideVideoAccess, loadVideoContext } from "@/lib/video/service"
 
@@ -67,7 +67,7 @@ export async function GET(
         : false,
       callStatus: session?.status ?? null,
     })
-  } catch {
-    return jsonError("تعذر تحميل البيانات. حاول مرة أخرى.", 500)
+  } catch (err) {
+    return jsonServerError("mobile.appointments.id.video", err)
   }
 }
