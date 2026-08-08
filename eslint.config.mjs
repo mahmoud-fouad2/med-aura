@@ -1,5 +1,6 @@
 import nextPlugin from "@next/eslint-plugin-next"
 import tseslint from "typescript-eslint"
+import prettierConfig from "eslint-config-prettier"
 
 // Flat config using the Next.js ESLint plugin directly. FlatCompat +
 // eslint-config-next crashes under ESLint 9, so we apply the Next plugin's
@@ -37,6 +38,8 @@ const eslintConfig = [
       ...nextPlugin.configs["core-web-vitals"].rules,
     },
   },
+  // Last, so formatting is Prettier's job alone and ESLint never fights it.
+  prettierConfig,
 ]
 
 export default eslintConfig
