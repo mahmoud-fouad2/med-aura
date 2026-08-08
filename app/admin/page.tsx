@@ -20,7 +20,8 @@ import { getMigrationStatus } from "@/lib/db/migration-status"
 import { isStripeConfigured, isR2Configured, isEmailConfigured } from "@/lib/env"
 import { actionLabelAr } from "@/lib/audit-labels"
 import { safeName } from "@/lib/format"
-import { caseStatusAr, safetyAlertSeverityAr, paymentPurposeAr, currencyAr } from "@/lib/status-labels"
+import { caseStatusAr, safetyAlertSeverityAr, paymentPurposeAr } from "@/lib/status-labels"
+import { formatMoney, headlineTotal, type MoneyTotal } from "@/lib/money"
 import { Badge } from "@/components/ui/badge"
 import { StatStrip, type Stat } from "@/components/admin/stat-strip"
 import { CommandCenter, type AttentionItem } from "@/components/admin/command-center"
@@ -60,6 +61,23 @@ function summarizeActivity(rows: ActivityRow[]) {
     }
   }
   return groups.sort((a, b) => b.latest.getTime() - a.latest.getTime()).slice(0, 4)
+}
+
+/**
+ * Collected revenue is per-currency. The headline number shows one currency
+ * (base first) and the description names the rest — summing SAR and USD into
+ * a single "ر.س" figure would report money that was never collected.
+ */
+function collectedStat(paidTotals: MoneyTotal[]): Stat {
+  const { value, others } = headlineTotal(paidTotals)
+  return {
+    key: "collected",
+    label: "إجمالي المحصّل",
+    value,
+    description: others ? `مدفوعات ناجحة — و${others}` : "مدفوعات ناجحة",
+    href: "/admin/finance",
+    tone: "success",
+  }
 }
 
 export default async function AdminOverviewPage() {
@@ -149,16 +167,7 @@ export default async function AdminOverviewPage() {
       value: kpis.totalPatients.toLocaleString("ar-SA-u-nu-latn"),
       description: "مسجّلون على المنصة",
     },
-    ...(canFinance
-      ? [{
-          key: "collected",
-          label: "إجمالي المحصّل",
-          value: `${(kpis.totalPaidAmount ?? 0).toLocaleString("ar-SA-u-nu-latn")} ر.س`,
-          description: "مدفوعات ناجحة",
-          href: "/admin/finance",
-          tone: "success" as Stat["tone"],
-        }]
-      : []),
+    ...(canFinance ? [collectedStat(kpis.paidTotals ?? [])] : []),
   ]
 
   const nowLabel = new Date().toLocaleString("ar-SA-u-nu-latn", { dateStyle: "medium", timeStyle: "short" })
@@ -210,7 +219,7 @@ export default async function AdminOverviewPage() {
             kind: "دفعة",
             href: "/admin/finance",
             title: safeName(p.payerName),
-            subtitle: `${paymentPurposeAr(p.purpose)} — ${Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(p.currency)}`,
+            subtitle: `${paymentPurposeAr(p.purpose)} — ${formatMoney(p.amount, p.currency)}`,
             badge: "معلّقة",
             badgeVariant: "secondary" as const,
           })),
@@ -219,7 +228,7 @@ export default async function AdminOverviewPage() {
             kind: "استرجاع",
             href: "/admin/finance#refunds",
             title: safeName(r.requestedByName),
-            subtitle: `استرجاع — ${Number(r.amount).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(r.currency)}`,
+            subtitle: `استرجاع — ${formatMoney(r.amount, r.currency)}`,
             badge: "بانتظار المعالجة",
             badgeVariant: "secondary" as const,
           })),

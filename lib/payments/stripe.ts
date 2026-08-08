@@ -82,7 +82,30 @@ export type ParsedWebhook =
       reason: string | null
       raw: unknown
     }
+  | {
+      kind: "dispute_opened"
+      eventId: string
+      type: string
+      providerIntentId: string | null
+      reason: string | null
+      amount: number | null
+      currency: string | null
+      raw: unknown
+    }
+  | {
+      kind: "dispute_closed"
+      eventId: string
+      type: string
+      providerIntentId: string | null
+      /** Stripe dispute outcome: "won" | "lost" | "warning_closed" | … */
+      outcome: string
+      raw: unknown
+    }
   | { kind: "ignored"; eventId: string; type: string; raw: unknown }
+
+function disputeIntentId(d: Stripe.Dispute): string | null {
+  return typeof d.payment_intent === "string" ? d.payment_intent : (d.payment_intent?.id ?? null)
+}
 
 /** Verify the signature and normalise the event. Throws if signature invalid. */
 export function constructWebhookEvent(
@@ -113,6 +136,35 @@ export function constructWebhookEvent(
       }
     }
     return { kind: "ignored", eventId: event.id, type: event.type, raw: event }
+  }
+
+  // Chargebacks. Without these the platform never learns a customer disputed
+  // a charge — the money is held/withdrawn by Stripe while the app still
+  // shows the payment as cleanly PAID.
+  if (event.type === "charge.dispute.created") {
+    const d = event.data.object as Stripe.Dispute
+    return {
+      kind: "dispute_opened",
+      eventId: event.id,
+      type: event.type,
+      providerIntentId: disputeIntentId(d),
+      reason: d.reason ?? null,
+      amount: typeof d.amount === "number" ? d.amount / 100 : null,
+      currency: d.currency ? d.currency.toUpperCase() : null,
+      raw: event,
+    }
+  }
+
+  if (event.type === "charge.dispute.closed") {
+    const d = event.data.object as Stripe.Dispute
+    return {
+      kind: "dispute_closed",
+      eventId: event.id,
+      type: event.type,
+      providerIntentId: disputeIntentId(d),
+      outcome: d.status,
+      raw: event,
+    }
   }
 
   if (event.type === "payment_intent.payment_failed") {

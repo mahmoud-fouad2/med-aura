@@ -29,9 +29,9 @@ import { WorkspaceSection } from "@/components/admin/workspace-panel"
 import {
   paymentStatusAr,
   paymentPurposeAr,
-  currencyAr,
   invoiceStatusAr,
 } from "@/lib/status-labels"
+import { formatMoney, hasMoney, headlineTotal } from "@/lib/money"
 
 export const dynamic = "force-dynamic"
 
@@ -46,7 +46,12 @@ export default async function FinanceDashboardPage() {
     listWebhookEvents(),
   ])
   const disputedPayments = payments.filter((p) => p.status === "DISPUTED")
-  const cur = currencyAr(summary.currency)
+  // Each figure keeps its own currency: one headline number plus the other
+  // currencies named beside it, never a single merged total (lib/money.ts).
+  const collected = headlineTotal(summary.collected)
+  const invoiced = headlineTotal(summary.invoiced)
+  const outstanding = headlineTotal(summary.outstanding)
+  const refunded = headlineTotal(summary.refunded)
 
   return (
     <div className="space-y-6">
@@ -72,36 +77,38 @@ export default async function FinanceDashboardPage() {
         <MetricTile
           icon={TrendingUp}
           label="إجمالي المحصّل"
-          value={`${summary.totalCollected.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
-          hint="مدفوعات ناجحة مؤكَّدة"
+          value={collected.value}
+          hint={collected.others ? `مدفوعات ناجحة — و${collected.others}` : "مدفوعات ناجحة مؤكَّدة"}
           tone="success"
           emphasis
         />
         <MetricTile
           icon={Wallet}
           label="إجمالي الفواتير"
-          value={`${summary.totalInvoiced.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
-          hint="جميع الفواتير المُصدَرة"
+          value={invoiced.value}
+          hint={invoiced.others ? `جميع الفواتير — و${invoiced.others}` : "جميع الفواتير المُصدَرة"}
           tone="primary"
           emphasis
         />
         <MetricTile
           icon={AlertCircle}
           label="متبقٍ غير محصّل"
-          value={`${summary.totalOutstanding.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
+          value={outstanding.value}
           hint={
-            summary.totalOutstanding > 0
-              ? "بحاجة للمتابعة"
-              : "كل شيء محصَّل"
+            outstanding.others
+              ? `بحاجة للمتابعة — و${outstanding.others}`
+              : hasMoney(summary.outstanding)
+                ? "بحاجة للمتابعة"
+                : "كل شيء محصَّل"
           }
-          tone={summary.totalOutstanding > 0 ? "warning" : "success"}
+          tone={hasMoney(summary.outstanding) ? "warning" : "success"}
           emphasis
         />
         <MetricTile
           icon={TrendingDown}
           label="إجمالي المسترجع"
-          value={`${summary.totalRefunded.toLocaleString("ar-SA-u-nu-latn")} ${cur}`}
-          hint="مبالغ رُدَّت للمرضى"
+          value={refunded.value}
+          hint={refunded.others ? `مبالغ رُدَّت — و${refunded.others}` : "مبالغ رُدَّت للمرضى"}
           tone="neutral"
           emphasis
         />
@@ -150,7 +157,7 @@ export default async function FinanceDashboardPage() {
                   { header: "الغرض", cell: (p) => paymentPurposeAr(p.purpose) },
                   { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span>, mobile: "title" },
                   { header: "الحالة", cell: (p) => <PaymentStatusPill status={p.status} />, mobile: "badge" },
-                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-foreground">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
+                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-foreground">{formatMoney(p.amount, p.currency)}</span> },
                   { header: "التاريخ", cell: (p) => <span className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}</span> },
                 ]}
                 actions={(p) =>
@@ -198,7 +205,7 @@ export default async function FinanceDashboardPage() {
                   { header: "الرقم", cell: (i) => <span dir="ltr" className="font-mono text-xs">{i.invoiceNumber}</span> },
                   { header: "المريض", cell: (i) => <span className="font-medium text-foreground">{i.patientName}</span>, mobile: "title" },
                   { header: "الحالة", cell: (i) => <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge>, mobile: "badge" },
-                  { header: "الإجمالي", cell: (i) => <span className="tabular-nums font-medium text-foreground">{Number(i.total).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(i.currency)}</span> },
+                  { header: "الإجمالي", cell: (i) => <span className="tabular-nums font-medium text-foreground">{formatMoney(i.total, i.currency)}</span> },
                   {
                     header: "المتبقي",
                     cell: (i) => (
@@ -210,8 +217,7 @@ export default async function FinanceDashboardPage() {
                             : "text-success")
                         }
                       >
-                        {Number(i.remainingAmount).toLocaleString("ar-SA-u-nu-latn")}{" "}
-                        {currencyAr(i.currency)}
+                        {formatMoney(i.remainingAmount, i.currency)}
                       </span>
                     ),
                   },
@@ -255,7 +261,7 @@ export default async function FinanceDashboardPage() {
                 columns={[
                   { header: "المرجع", cell: (p) => <span dir="ltr" className="font-mono text-xs">{p.reference}</span> },
                   { header: "الدافع", cell: (p) => <span className="font-medium text-foreground">{p.payerName}</span>, mobile: "title" },
-                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-destructive">{Number(p.amount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(p.currency)}</span> },
+                  { header: "المبلغ", cell: (p) => <span className="tabular-nums font-medium text-destructive">{formatMoney(p.amount, p.currency)}</span> },
                 ]}
               />
             )}

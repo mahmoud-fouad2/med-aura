@@ -14,6 +14,7 @@ import {
   procedure as procedureT,
   user as userT,
 } from "@/lib/db/schema"
+import type { MoneyTotal } from "@/lib/money"
 
 const ACTIVE_CASE_STATUSES = [
   "SUBMITTED", "MATCHING", "SHARED_WITH_PROVIDER", "UNDER_REVIEW",
@@ -39,8 +40,13 @@ export type AdminOverviewKpis = {
   overdueFollowUps: number
   openSafetyAlerts: number
   pendingPayments: number
-  /** Only populated when the caller has finance visibility (see getAdminOverviewKpis). */
-  totalPaidAmount: number | null
+  /**
+   * Collected revenue per currency — never a single summed number. Payments
+   * carry their own currency and there is no FX source, so one merged total
+   * would misreport revenue (see lib/money.ts).
+   * Only populated when the caller has finance visibility.
+   */
+  paidTotals: MoneyTotal[] | null
   openRefundRequests: number | null
 }
 
@@ -53,7 +59,7 @@ export async function getAdminOverviewKpis(includeFinance: boolean): Promise<Adm
   const empty: AdminOverviewKpis = {
     totalPatients: 0, newCasesThisWeek: 0, activeCases: 0, casesNeedingIntervention: 0,
     pendingApplications: 0, approvedDoctors: 0, approvedCenters: 0, overdueFollowUps: 0,
-    openSafetyAlerts: 0, pendingPayments: 0, totalPaidAmount: null, openRefundRequests: null,
+    openSafetyAlerts: 0, pendingPayments: 0, paidTotals: null, openRefundRequests: null,
   }
   if (!isDbConfigured) return empty
 
@@ -96,7 +102,11 @@ export async function getAdminOverviewKpis(includeFinance: boolean): Promise<Adm
     db.select({ n: count() }).from(payment).where(inArray(payment.status, PENDING_PAYMENT_STATUSES)),
     includeFinance
       ? Promise.all([
-          db.select({ sum: sql<string>`coalesce(sum(${payment.amount}), 0)` }).from(payment).where(eq(payment.status, "PAID")),
+          db
+            .select({ currency: payment.currency, sum: sql<string>`coalesce(sum(${payment.amount}), 0)` })
+            .from(payment)
+            .where(eq(payment.status, "PAID"))
+            .groupBy(payment.currency),
           db.select({ n: count() }).from(refundRequest).where(inArray(refundRequest.status, OPEN_REFUND_STATUSES)),
         ])
       : Promise.resolve(null),
@@ -129,7 +139,9 @@ export async function getAdminOverviewKpis(includeFinance: boolean): Promise<Adm
     overdueFollowUps: overdueFollowUps[0]?.n ?? 0,
     openSafetyAlerts: openSafetyAlerts[0]?.n ?? 0,
     pendingPayments: pendingPayments[0]?.n ?? 0,
-    totalPaidAmount: financeRows ? Number(financeRows[0][0]?.sum ?? 0) : null,
+    paidTotals: financeRows
+      ? financeRows[0].map((r) => ({ currency: r.currency, amount: Number(r.sum) }))
+      : null,
     openRefundRequests: financeRows ? (financeRows[1][0]?.n ?? 0) : null,
   }
 }

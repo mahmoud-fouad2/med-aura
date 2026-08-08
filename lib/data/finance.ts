@@ -9,6 +9,7 @@ import {
   procedure as procedureT,
   user as userT,
 } from "@/lib/db/schema"
+import type { MoneyTotal } from "@/lib/money"
 
 /**
  * Finance-scoped queries. Deliberately select ONLY billing fields — never
@@ -147,32 +148,53 @@ export async function listWebhookEvents(limit = 40): Promise<FinanceWebhookRow[]
     .limit(limit)
 }
 
+/**
+ * Every money figure is a per-currency breakdown, never a single number:
+ * payments and invoices each carry their own currency and the platform has no
+ * FX rates, so adding them together would report revenue that was never
+ * collected. See lib/money.ts.
+ */
 export type FinanceSummary = {
-  totalCollected: number
-  totalInvoiced: number
-  totalOutstanding: number
-  totalRefunded: number
+  collected: MoneyTotal[]
+  invoiced: MoneyTotal[]
+  outstanding: MoneyTotal[]
+  refunded: MoneyTotal[]
   disputedCount: number
-  currency: string
 }
 export async function getFinanceSummary(): Promise<FinanceSummary> {
-  const empty: FinanceSummary = { totalCollected: 0, totalInvoiced: 0, totalOutstanding: 0, totalRefunded: 0, disputedCount: 0, currency: "SAR" }
+  const empty: FinanceSummary = { collected: [], invoiced: [], outstanding: [], refunded: [], disputedCount: 0 }
   if (!isDbConfigured) return empty
 
-  const [collected, invoiced, outstanding, refunded, disputed] = await Promise.all([
-    db.select({ sum: sql<string>`coalesce(sum(${payment.amount}), 0)` }).from(payment).where(eq(payment.status, "PAID")),
-    db.select({ sum: sql<string>`coalesce(sum(${invoice.total}), 0)` }).from(invoice),
-    db.select({ sum: sql<string>`coalesce(sum(${invoice.remainingAmount}), 0)` }).from(invoice),
-    db.select({ sum: sql<string>`coalesce(sum(${refundRequest.amount}), 0)` }).from(refundRequest).where(eq(refundRequest.status, "PROCESSED")),
+  const [collected, invoiced, refunded, disputed] = await Promise.all([
+    db
+      .select({ currency: payment.currency, sum: sql<string>`coalesce(sum(${payment.amount}), 0)` })
+      .from(payment)
+      .where(eq(payment.status, "PAID"))
+      .groupBy(payment.currency),
+    db
+      .select({
+        currency: invoice.currency,
+        total: sql<string>`coalesce(sum(${invoice.total}), 0)`,
+        remaining: sql<string>`coalesce(sum(${invoice.remainingAmount}), 0)`,
+      })
+      .from(invoice)
+      .groupBy(invoice.currency),
+    // refund_request has no currency of its own — it refunds an invoice, so
+    // the invoice's currency is the authoritative one.
+    db
+      .select({ currency: invoice.currency, sum: sql<string>`coalesce(sum(${refundRequest.amount}), 0)` })
+      .from(refundRequest)
+      .innerJoin(invoice, eq(refundRequest.invoiceId, invoice.id))
+      .where(eq(refundRequest.status, "PROCESSED"))
+      .groupBy(invoice.currency),
     db.select({ n: sql<string>`count(*)` }).from(payment).where(eq(payment.status, "DISPUTED")),
   ])
 
   return {
-    totalCollected: Number(collected[0]?.sum ?? 0),
-    totalInvoiced: Number(invoiced[0]?.sum ?? 0),
-    totalOutstanding: Number(outstanding[0]?.sum ?? 0),
-    totalRefunded: Number(refunded[0]?.sum ?? 0),
+    collected: collected.map((r) => ({ currency: r.currency, amount: Number(r.sum) })),
+    invoiced: invoiced.map((r) => ({ currency: r.currency, amount: Number(r.total) })),
+    outstanding: invoiced.map((r) => ({ currency: r.currency, amount: Number(r.remaining) })),
+    refunded: refunded.map((r) => ({ currency: r.currency, amount: Number(r.sum) })),
     disputedCount: Number(disputed[0]?.n ?? 0),
-    currency: "SAR",
   }
 }

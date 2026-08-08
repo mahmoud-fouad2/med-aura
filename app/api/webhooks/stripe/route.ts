@@ -12,7 +12,10 @@ import {
   procedureBookingHistory,
   quote,
   invoice,
+  userRole,
+  role,
 } from "@/lib/db/schema"
+import { ROLES } from "@/lib/rbac"
 import { assertCaseTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
 import { constructWebhookEvent } from "@/lib/payments/stripe"
 import { writeAudit } from "@/lib/audit"
@@ -72,6 +75,10 @@ export async function POST(req: Request) {
         entityId: parsed.paymentId,
         metadata: { reason: parsed.reason },
       })
+    } else if (parsed.kind === "dispute_opened") {
+      await applyDisputeOpened(parsed.providerIntentId, parsed.reason, parsed.amount, parsed.currency)
+    } else if (parsed.kind === "dispute_closed") {
+      await applyDisputeClosed(parsed.providerIntentId, parsed.outcome)
     }
 
     await db
@@ -92,6 +99,106 @@ export async function POST(req: Request) {
     // 500 so Stripe retries; the unique constraint keeps retries idempotent.
     return NextResponse.json({ error: "processing failed" }, { status: 500 })
   }
+}
+
+/**
+ * A customer disputed a charge (chargeback). Stripe has already pulled or
+ * held the funds, so the payment must stop reading as cleanly PAID — finance
+ * needs it surfaced in the disputes queue with time to submit evidence.
+ * Resolved via providerIntentId, which carries a unique index.
+ */
+async function applyDisputeOpened(
+  providerIntentId: string | null,
+  reason: string | null,
+  amount: number | null,
+  currency: string | null,
+) {
+  if (!providerIntentId) {
+    logger.warn("webhook: dispute without payment_intent")
+    return
+  }
+  const pay = (
+    await db
+      .select({ id: payment.id, status: payment.status, payerUserId: payment.payerUserId })
+      .from(payment)
+      .where(eq(payment.providerIntentId, providerIntentId))
+      .limit(1)
+  )[0]
+  if (!pay) {
+    logger.warn("webhook: dispute for unknown payment", { providerIntentId })
+    return
+  }
+  if (pay.status === "DISPUTED") return // idempotent
+
+  await db.update(payment).set({ status: "DISPUTED" }).where(eq(payment.id, pay.id))
+  await writeAudit({
+    action: "payment.disputed",
+    entityType: "payment",
+    entityId: pay.id,
+    metadata: { reason, amount, currency, providerIntentId },
+  })
+  await notifyFinanceStaff({
+    type: "payment.disputed",
+    title: "نزاع جديد على دفعة",
+    body: "استلمنا إشعارًا بنزاع (chargeback) على إحدى الدفعات. راجع لوحة المالية للرد قبل انتهاء المهلة.",
+    href: "/admin/finance",
+  })
+}
+
+/**
+ * The dispute closed. "won" means the funds came back, so the payment
+ * returns to PAID. Any other outcome (lost / warning_closed) is left as
+ * DISPUTED on purpose — deciding whether a lost chargeback should become
+ * REFUNDED is a finance policy call, not something a webhook should assume.
+ */
+async function applyDisputeClosed(providerIntentId: string | null, outcome: string) {
+  if (!providerIntentId) return
+  const pay = (
+    await db
+      .select({ id: payment.id, status: payment.status })
+      .from(payment)
+      .where(eq(payment.providerIntentId, providerIntentId))
+      .limit(1)
+  )[0]
+  if (!pay) {
+    logger.warn("webhook: dispute close for unknown payment", { providerIntentId })
+    return
+  }
+
+  if (outcome === "won" && pay.status === "DISPUTED") {
+    await db.update(payment).set({ status: "PAID" }).where(eq(payment.id, pay.id))
+  }
+  await writeAudit({
+    action: "payment.dispute_closed",
+    entityType: "payment",
+    entityId: pay.id,
+    metadata: { outcome, providerIntentId },
+  })
+  await notifyFinanceStaff({
+    type: "payment.dispute_closed",
+    title: outcome === "won" ? "تم كسب النزاع على الدفعة" : "أُغلق النزاع على الدفعة",
+    body:
+      outcome === "won"
+        ? "عادت الأموال وتمت إعادة الدفعة إلى حالة مدفوعة."
+        : "أُغلق النزاع دون استرداد. راجع لوحة المالية لتحديد الإجراء المناسب.",
+    href: "/admin/finance",
+  })
+}
+
+/** Fan a finance-relevant alert out to every finance admin / super admin. */
+async function notifyFinanceStaff(n: { type: string; title: string; body: string; href: string }) {
+  const staff = await db
+    .select({ userId: userRole.userId, roleKey: role.key })
+    .from(userRole)
+    .innerJoin(role, eq(userRole.roleId, role.id))
+  const recipients = [
+    ...new Set(
+      staff
+        .filter((s) => s.roleKey === ROLES.FINANCE_ADMIN || s.roleKey === ROLES.SUPER_ADMIN)
+        .map((s) => s.userId),
+    ),
+  ]
+  await Promise.all(recipients.map((userId) => notify({ userId, ...n })))
 }
 
 /** Mark payment PAID and confirm the appointment + advance the case. Idempotent. */

@@ -39,6 +39,7 @@ import {
   currencyAr,
   centerRoleAr,
 } from "@/lib/status-labels"
+import { headlineTotal } from "@/lib/money"
 
 export const dynamic = "force-dynamic"
 
@@ -94,11 +95,19 @@ export default async function CenterDashboardPage() {
   const outstandingInvoices = invoices.filter(
     (i) => Number(i.remainingAmount) > 0,
   )
-  const outstandingTotal = outstandingInvoices.reduce(
-    (sum, i) => sum + Number(i.remainingAmount),
-    0,
+  // Invoices can be issued in different currencies and there is no FX source,
+  // so the outstanding balance is grouped per currency rather than summed into
+  // one number labelled with whichever currency happened to come first.
+  const outstandingByCurrency = new Map<string, number>()
+  for (const i of outstandingInvoices) {
+    outstandingByCurrency.set(
+      i.currency,
+      (outstandingByCurrency.get(i.currency) ?? 0) + Number(i.remainingAmount),
+    )
+  }
+  const outstanding = headlineTotal(
+    [...outstandingByCurrency].map(([currency, amount]) => ({ currency, amount })),
   )
-  const outstandingCurrency = invoices[0]?.currency ?? "SAR"
   const avgRating =
     reviews.length > 0
       ? (
@@ -135,11 +144,13 @@ export default async function CenterDashboardPage() {
         <MetricCard
           icon={Wallet}
           label="مستحقات معلّقة"
-          value={`${outstandingTotal.toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(outstandingCurrency)}`}
+          value={outstanding.value}
           hint={
             outstandingInvoices.length === 0
               ? "لا مستحقات"
-              : `${outstandingInvoices.length} فاتورة غير مسدَّدة`
+              : outstanding.others
+                ? `${outstandingInvoices.length} فاتورة غير مسدَّدة — و${outstanding.others}`
+                : `${outstandingInvoices.length} فاتورة غير مسدَّدة`
           }
           tone={outstandingInvoices.length > 0 ? "warning" : "success"}
           emphasis
