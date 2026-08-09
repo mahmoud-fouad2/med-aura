@@ -7,7 +7,7 @@ import {
   procedureCategory,
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
-import { serviceImageForCategory } from "@/lib/seo"
+import { serviceImageForProcedure } from "@/lib/seo"
 
 export type ProcedureListItem = {
   slug: string
@@ -108,7 +108,7 @@ export async function getProcedureBySlug(
   const { visible: _v, imageKey, galleryKeys, ...rest } = row
   return {
     ...rest,
-    imagePath: serviceImageForCategory(rest.categorySlug),
+    imagePath: serviceImageForProcedure(rest.slug, rest.categorySlug),
     imageUrl: imageKey ? getPublicUrl(imageKey) : null,
     gallery: galleryKeys.map((k) => getPublicUrl(k)).filter((u): u is string => Boolean(u)),
   }
@@ -186,7 +186,7 @@ export async function listServices(params: {
   return rows.map(({ imageKey, ...r }) => ({
     ...r,
     doctorCount: Number(r.doctorCount),
-    imagePath: serviceImageForCategory(r.categorySlug),
+    imagePath: serviceImageForProcedure(r.slug, r.categorySlug),
     imageUrl: imageKey ? getPublicUrl(imageKey) : null,
   }))
 }

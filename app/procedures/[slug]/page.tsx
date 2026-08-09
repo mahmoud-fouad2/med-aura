@@ -43,7 +43,7 @@ export async function generateMetadata({
       p.descriptionAr ??
       `تعرّف على ${p.nameAr} وقارن بين الأطباء المناسبين قبل حجز الاستشارة.`,
     path: `/procedures/${p.slug}`,
-    image: serviceImageForProcedure(p.categorySlug),
+    image: serviceImageForProcedure(p.slug, p.categorySlug),
     locale: locale === "en" ? "en" : "ar",
     type: "article",
   })
@@ -79,7 +79,8 @@ export default async function ProcedureDetailPage({
 
   const doctorsRes = await query(() => searchDoctors({ procedure: slug, pageSize: 6 }))
   const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
-  const procedureImage = procedure.imageUrl ?? serviceImageForProcedure(procedure.categorySlug)
+  const procedureImage =
+    procedure.imageUrl ?? serviceImageForProcedure(procedure.slug, procedure.categorySlug)
 
   const jsonLd = {
     "@context": "https://schema.org",

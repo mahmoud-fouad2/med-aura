@@ -44,6 +44,10 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   images: {
+    localPatterns: [
+      { pathname: "/**", search: "" },
+      { pathname: "/demo-services/**", search: "?v=20260809" },
+    ],
     // Image optimization stays ON. Remote provider images (R2 public assets)
     // are allowlisted here when a public base URL is configured.
     remotePatterns: process.env.R2_PUBLIC_BASE_URL

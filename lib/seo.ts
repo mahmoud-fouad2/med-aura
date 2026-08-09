@@ -16,13 +16,32 @@ export type GeoPoint = {
   longitude: number
 }
 
+const SERVICE_IMAGE_VERSION = "20260809"
+
+const serviceAsset = (name: string) => `/demo-services/${name}.png?v=${SERVICE_IMAGE_VERSION}`
+
 const CATEGORY_IMAGES: Record<string, string> = {
-  "face-neck": "/demo-services/service-face-neck.png",
-  breast: "/demo-services/aesthetic-treatment-room.png",
-  body: "/demo-services/service-body-contouring.png",
-  skin: "/demo-services/service-skin-nonsurgical.png",
-  hair: "/demo-services/service-hair-restoration.png",
-  dental: "/demo-services/service-dental-smile.png",
+  "face-neck": serviceAsset("service-face-neck"),
+  breast: serviceAsset("aesthetic-treatment-room"),
+  body: serviceAsset("service-body-contouring"),
+  skin: serviceAsset("service-skin-nonsurgical"),
+  hair: serviceAsset("service-hair-restoration"),
+  dental: serviceAsset("service-dental-smile"),
+}
+
+const PROCEDURE_IMAGES: Record<string, string> = {
+  facelift: serviceAsset("aesthetic-clinic-lounge"),
+  blepharoplasty: serviceAsset("service-skin-nonsurgical"),
+  "neck-lift": serviceAsset("aesthetic-clinic-lounge"),
+  "brow-lift": serviceAsset("service-skin-nonsurgical"),
+  "breast-augmentation": serviceAsset("aesthetic-treatment-room"),
+  "breast-lift": serviceAsset("aesthetic-clinic-lounge"),
+  "breast-reduction": serviceAsset("aesthetic-treatment-room"),
+  botox: serviceAsset("service-skin-nonsurgical"),
+  "dermal-fillers": serviceAsset("aesthetic-treatment-room"),
+  "chemical-peel": serviceAsset("service-skin-nonsurgical"),
+  microneedling: serviceAsset("aesthetic-treatment-room"),
+  "thread-lift": serviceAsset("service-face-neck"),
 }
 
 const COUNTRY_GEO: Record<string, GeoPoint> = {
@@ -43,11 +62,15 @@ export function absoluteUrl(path = "/"): string {
 }
 
 export function serviceImageForCategory(slug: string | null | undefined): string {
-  if (!slug) return "/demo-services/aesthetic-treatment-room.png"
-  return CATEGORY_IMAGES[slug] ?? "/demo-services/aesthetic-treatment-room.png"
+  if (!slug) return serviceAsset("aesthetic-treatment-room")
+  return CATEGORY_IMAGES[slug] ?? serviceAsset("aesthetic-treatment-room")
 }
 
-export function serviceImageForProcedure(categorySlug: string | null | undefined): string {
+export function serviceImageForProcedure(
+  procedureSlug: string | null | undefined,
+  categorySlug: string | null | undefined,
+): string {
+  if (procedureSlug && PROCEDURE_IMAGES[procedureSlug]) return PROCEDURE_IMAGES[procedureSlug]
   return serviceImageForCategory(categorySlug)
 }
 

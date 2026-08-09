@@ -11,7 +11,8 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { CategoryIconBadge } from "@/components/marketing/category-icon"
-import { serviceImageForCategory } from "@/lib/seo"
+import { getPublicUrl } from "@/lib/storage/r2"
+import { serviceImageForProcedure } from "@/lib/seo"
 
 export async function PopularProcedures() {
   const res = await query(() =>
@@ -24,6 +25,7 @@ export async function PopularProcedures() {
         categoryNameAr: procedureCategory.nameAr,
         categoryIcon: procedureCategory.icon,
         categorySlug: procedureCategory.slug,
+        imageKey: procedureT.imageKey,
       })
       .from(procedureT)
       .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
@@ -67,7 +69,10 @@ export async function PopularProcedures() {
                 >
                   <div className="relative h-32 overflow-hidden bg-muted">
                     <Image
-                      src={serviceImageForCategory(p.categorySlug)}
+                      src={
+                        (p.imageKey ? getPublicUrl(p.imageKey) : null) ??
+                        serviceImageForProcedure(p.slug, p.categorySlug)
+                      }
                       alt=""
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

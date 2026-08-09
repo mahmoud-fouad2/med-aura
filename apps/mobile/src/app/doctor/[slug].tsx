@@ -21,6 +21,14 @@ export default function DoctorProfile() {
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const doctor = useDoctor(slug)
+  const credentialGroups: { label: string; items: string[] }[] = doctor.data
+    ? [
+        { label: t.doctor.qualifications, items: doctor.data.qualifications },
+        { label: t.doctor.certifications, items: doctor.data.certifications },
+        { label: t.doctor.fellowships, items: doctor.data.fellowships },
+        { label: t.doctor.memberships, items: doctor.data.memberships },
+      ]
+    : []
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -155,20 +163,10 @@ export default function DoctorProfile() {
               </Section>
             ) : null}
 
-            {[
-              [t.doctor.qualifications, doctor.data.qualifications],
-              [t.doctor.certifications, doctor.data.certifications],
-              [t.doctor.fellowships, doctor.data.fellowships],
-              [t.doctor.memberships, doctor.data.memberships],
-            ].some(([, items]) => items.length > 0) ? (
+            {credentialGroups.some(({ items }) => items.length > 0) ? (
               <Section title={t.doctor.professionalProfile} icon="school-outline">
                 <View style={{ gap: spacing.lg }}>
-                  {[
-                    [t.doctor.qualifications, doctor.data.qualifications],
-                    [t.doctor.certifications, doctor.data.certifications],
-                    [t.doctor.fellowships, doctor.data.fellowships],
-                    [t.doctor.memberships, doctor.data.memberships],
-                  ].map(([label, items]) =>
+                  {credentialGroups.map(({ label, items }) =>
                     items.length > 0 ? (
                       <CredentialGroup key={label} label={label} items={items} />
                     ) : null,

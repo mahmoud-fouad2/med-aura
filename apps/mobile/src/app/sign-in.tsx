@@ -271,9 +271,11 @@ export default function SignIn() {
 
 export function Field({
   label,
+  hint,
   children,
 }: {
   label: string
+  hint?: string
   children: React.ReactNode
 }) {
   return (
@@ -281,6 +283,11 @@ export function Field({
       <AppText variant="sub" weight="medium">
         {label}
       </AppText>
+      {hint ? (
+        <AppText variant="caption" color={colors.textFaint}>
+          {hint}
+        </AppText>
+      ) : null}
       {children}
     </View>
   )
