@@ -30,14 +30,22 @@ import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
 
 export default function Booking() {
-  const { slug } = useLocalSearchParams<{ slug: string }>()
+  const { slug, reschedule, appointmentType } = useLocalSearchParams<{
+    slug: string
+    reschedule?: string
+    appointmentType?: ConsultationType
+  }>()
   const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const queryClient = useQueryClient()
   const intl = locale === "ar" ? "ar-SA-u-nu-latn" : "en-US"
 
   const doctor = useDoctor(slug)
-  const [type, setType] = useState<ConsultationType>("VIDEO_CONSULTATION")
+  const [type, setType] = useState<ConsultationType>(
+    appointmentType === "IN_PERSON_CONSULTATION"
+      ? "IN_PERSON_CONSULTATION"
+      : "VIDEO_CONSULTATION",
+  )
   const slots = useSlots(slug, type)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
@@ -65,11 +73,16 @@ export default function Booking() {
     setBooking(true)
     setError(null)
     try {
-      const result = await api.book({
-        doctorId: slots.data.doctorId,
-        startsAt: selectedSlot,
-        type,
-      })
+      const result = reschedule
+        ? {
+            ...(await api.rescheduleMissedAppointment(reschedule, selectedSlot)),
+            paymentConfigured: false,
+          }
+        : await api.book({
+            doctorId: slots.data.doctorId,
+            startsAt: selectedSlot,
+            type,
+          })
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       void queryClient.invalidateQueries({ queryKey: ["appointments"] })
       void queryClient.invalidateQueries({ queryKey: ["home"] })
@@ -119,14 +132,18 @@ export default function Booking() {
         />
         <View style={{ alignItems: "center", gap: spacing.xs }}>
           <AppText variant="title" weight="heavy">
-            {t.booking.successTitle}
+            {reschedule ? t.booking.rescheduleSuccessTitle : t.booking.successTitle}
           </AppText>
           <AppText
             variant="sub"
             color={colors.textMuted}
             style={{ textAlign: "center", maxWidth: 300 }}
           >
-            {done.paymentConfigured ? t.booking.successPay : t.booking.successPending}
+            {reschedule
+              ? t.booking.rescheduleSuccessBody
+              : done.paymentConfigured
+                ? t.booking.successPay
+                : t.booking.successPending}
           </AppText>
         </View>
 
@@ -206,7 +223,7 @@ export default function Booking() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="heading" weight="bold">
-            {t.booking.title}
+            {reschedule ? t.booking.rescheduleTitle : t.booking.title}
           </AppText>
           {doctor.data ? (
             <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
@@ -227,6 +244,7 @@ export default function Booking() {
         }}
       >
         {/* Consultation type */}
+        {!reschedule ? (
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
           {doctor.data?.offersVideo !== false && (
             <TypeChip
@@ -253,6 +271,7 @@ export default function Booking() {
             />
           )}
         </View>
+        ) : null}
 
         {slots.isLoading ? (
           <View style={{ gap: spacing.md }}>
@@ -408,7 +427,7 @@ export default function Booking() {
           }}
         >
           <Button
-            label={t.booking.confirm}
+            label={reschedule ? t.booking.confirmReschedule : t.booking.confirm}
             icon="checkmark"
             onPress={() => void confirm()}
             loading={booking}

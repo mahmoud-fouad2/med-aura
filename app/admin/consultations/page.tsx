@@ -13,6 +13,7 @@ import { CalendarClock } from "lucide-react"
 import { ConsultationTable } from "@/components/admin/consultation-table"
 import { appointmentStatusAr, paymentStatusAr } from "@/lib/status-labels"
 import { firstParam } from "@/lib/utils"
+import { canMarkAppointmentNoShow } from "@/lib/domain/appointment-state"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "طلبات الاستشارة" }
@@ -45,11 +46,18 @@ export default async function AdminConsultationsPage({
   }
   const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1)
 
-  const [{ rows, totalCount, totalPages }, { doctors }, canRecordManualPayment, isSuperAdmin] =
+  const [
+    { rows, totalCount, totalPages },
+    { doctors },
+    canRecordManualPayment,
+    canManageAppointments,
+    isSuperAdmin,
+  ] =
     await Promise.all([
       listAppointmentsForAdmin(filters, page),
       listCaseFilterOptions(),
       hasPermission(viewer.id, PERMISSIONS.FINANCE_ACCESS),
+      hasPermission(viewer.id, PERMISSIONS.APPOINTMENT_CONFIRM),
       hasRole(viewer.id, ROLES.SUPER_ADMIN),
     ])
 
@@ -150,7 +158,15 @@ export default async function AdminConsultationsPage({
         ) : (
           <>
             <ConsultationTable
-              rows={rows}
+              rows={rows.map((row) => ({
+                ...row,
+                canMarkNoShow:
+                  canManageAppointments &&
+                  canMarkAppointmentNoShow({
+                    status: row.status,
+                    endsAt: row.endsAt,
+                  }),
+              }))}
               canRecordManualPayment={canRecordManualPayment}
               isSuperAdmin={isSuperAdmin}
             />

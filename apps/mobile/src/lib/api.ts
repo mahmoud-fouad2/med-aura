@@ -57,6 +57,8 @@ export type Appointment = {
   currency: string
   counterpartName: string
   counterpartPhotoUrl: string | null
+  doctorSlug: string | null
+  canMarkNoShow: boolean
   paymentStatus: string | null
   paymentId: string | null
   /** The linked medical case, when there is one — a doctor's entry point
@@ -471,6 +473,16 @@ export const api = {
   home: () => request<HomeData>("/api/mobile/v1/home"),
   appointments: () =>
     request<{ appointments: Appointment[] }>("/api/mobile/v1/appointments"),
+  markAppointmentNoShow: (appointmentId: string) =>
+    request<{ updated: boolean }>(`/api/mobile/v1/appointments/${appointmentId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ action: "mark_no_show" }),
+    }),
+  rescheduleMissedAppointment: (appointmentId: string, startsAt: string) =>
+    request<{ appointmentId: string }>(`/api/mobile/v1/appointments/${appointmentId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ action: "reschedule_after_no_show", startsAt }),
+    }),
   caseSummary: (caseId: string) =>
     request<CaseSummary>(`/api/mobile/v1/cases/${caseId}`),
   myCases: () => request<{ cases: DoctorCaseItem[] }>("/api/mobile/v1/cases"),

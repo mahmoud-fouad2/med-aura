@@ -30,6 +30,7 @@ export type AppointmentRow = {
   currency: string
   counterpartName: string
   counterpartPhotoUrl?: string | null
+  doctorSlug: string | null
   paymentStatus: string | null
   /** The payment to download a receipt for — only meaningful once it's PAID. */
   paymentId: string | null
@@ -51,6 +52,7 @@ export async function listPatientAppointments(
       currency: appointment.currency,
       counterpartName: doctorProfile.name,
       counterpartPhotoKey: doctorProfile.photoKey,
+      doctorSlug: doctorProfile.slug,
       paymentStatus: latestPaymentByAppointment.status,
       paymentId: latestPaymentByAppointment.id,
       caseId: appointment.caseId,
@@ -161,6 +163,7 @@ export async function listAppointmentsForAdmin(
       priceAmount: appointment.priceAmount,
       currency: appointment.currency,
       counterpartName: doctorProfile.name,
+      doctorSlug: doctorProfile.slug,
       patientName: userT.name,
       paymentStatus: latestPaymentByAppointment.status,
       paymentId: latestPaymentByAppointment.id,
@@ -210,6 +213,7 @@ export async function listDoctorAppointments(
       currency: appointment.currency,
       counterpartName: userT.name,
       counterpartPhotoKey: userT.image,
+      doctorSlug: sql<string | null>`null`,
       paymentStatus: latestPaymentByAppointment.status,
       paymentId: latestPaymentByAppointment.id,
       caseId: appointment.caseId,

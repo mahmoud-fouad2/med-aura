@@ -18,6 +18,7 @@ const MUTED = "#6B6470"
 const BORDER = "#E4DEEC"
 const SURFACE = "#F7F3FC"
 const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/
+const INVISIBLE_DIRECTIONAL_RE = /[\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g
 
 const assetsRoot = path.join(process.cwd(), "public")
 const arabicFont = path.join(assetsRoot, "fonts", "pdf", "alexandria-arabic-400-normal.woff")
@@ -65,9 +66,21 @@ function hasArabic(value: string): boolean {
 /** PDFKit shapes every font run as LTR internally. Convert Arabic logical
  * text into joined presentation forms in visual order before drawing it. */
 export function prepareTextForPdf(value: string): string {
-  if (!hasArabic(value)) return value
-  const shaped = reshaper.ArabicShaper.convertArabic(value) as string
+  const cleanValue = value.replace(INVISIBLE_DIRECTIONAL_RE, "")
+  if (!hasArabic(cleanValue)) return cleanValue
+  const shaped = reshaper.ArabicShaper.convertArabic(cleanValue) as string
   return bidi.getReorderedString(shaped, bidi.getEmbeddingLevels(shaped, "auto"))
+}
+
+function splitFontRuns(value: string): { value: string; arabic: boolean }[] {
+  const runs: { value: string; arabic: boolean }[] = []
+  for (const char of value) {
+    const arabic = hasArabic(char)
+    const previous = runs.at(-1)
+    if (previous?.arabic === arabic) previous.value += char
+    else runs.push({ value: char, arabic })
+  }
+  return runs
 }
 
 function formatDate(value: Date | null): string {
@@ -95,14 +108,46 @@ function text(
   options: { size?: number; color?: string; bold?: boolean; align?: "left" | "right" | "center" } = {},
 ) {
   const arabic = hasArabic(value)
-  const renderedValue = arabic ? prepareTextForPdf(value) : value
+  if (arabic) {
+    const runs = splitFontRuns(prepareTextForPdf(value))
+    const fontFor = (run: { arabic: boolean }) =>
+      run.arabic ? (options.bold ? "ArabicBold" : "Arabic") : options.bold ? "Helvetica-Bold" : "Helvetica"
+    let fontSize = options.size ?? 10
+    const measure = () =>
+      runs.reduce((total, run) => {
+        doc.font(fontFor(run)).fontSize(fontSize)
+        return total + doc.widthOfString(run.value)
+      }, 0)
+    let renderedWidth = measure()
+    if (renderedWidth > width) {
+      fontSize = Math.max(7, fontSize * (width / renderedWidth))
+      renderedWidth = measure()
+    }
+    const align = options.align ?? "right"
+    let cursor =
+      align === "right"
+        ? x + width - renderedWidth
+        : align === "center"
+          ? x + (width - renderedWidth) / 2
+          : x
+    for (const run of runs) {
+      doc
+        .font(fontFor(run))
+        .fontSize(fontSize)
+        .fillColor(options.color ?? INK)
+        .text(run.value, cursor, y, { lineBreak: false })
+      cursor += doc.widthOfString(run.value)
+    }
+    return
+  }
+
   doc
-    .font(arabic ? (options.bold ? "ArabicBold" : "Arabic") : options.bold ? "Helvetica-Bold" : "Helvetica")
+    .font(options.bold ? "Helvetica-Bold" : "Helvetica")
     .fontSize(options.size ?? 10)
     .fillColor(options.color ?? INK)
-    .text(renderedValue, x, y, {
+    .text(value, x, y, {
       width,
-      align: options.align ?? (arabic ? "right" : "left"),
+      align: options.align ?? "left",
       lineGap: 2,
     })
 }
@@ -199,16 +244,16 @@ export function renderInvoiceReceipt(data: PaymentReceiptData): Promise<Buffer> 
     doc.roundedRect(MARGIN, 522, 92, 24, 12).fill(statusBackground)
     text(doc, data.status.toUpperCase(), MARGIN, 529, 92, { size: 8, bold: true, color: statusColor, align: "center" })
 
-    doc.moveTo(MARGIN, PAGE_HEIGHT - 78).lineTo(PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 78).lineWidth(1).strokeColor(BORDER).stroke()
+    doc.moveTo(MARGIN, PAGE_HEIGHT - 86).lineTo(PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 86).lineWidth(1).strokeColor(BORDER).stroke()
     text(
       doc,
       "Med Aura payment receipt. This document contains no clinical or diagnostic information.",
       MARGIN,
-      PAGE_HEIGHT - 62,
+      PAGE_HEIGHT - 70,
       CONTENT_WIDTH,
       { size: 8, color: MUTED },
     )
-    text(doc, `Reference: ${data.reference}`, MARGIN, PAGE_HEIGHT - 43, CONTENT_WIDTH, { size: 8, color: MUTED })
+    text(doc, `Reference: ${data.reference}`, MARGIN, PAGE_HEIGHT - 54, CONTENT_WIDTH, { size: 8, color: MUTED })
 
     doc.end()
   })

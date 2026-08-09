@@ -3,7 +3,7 @@
     "name": "Med Aura",
     "slug": "med-aura",
     "owner": "medaura12",
-    "version": "1.0.27",
+    "version": "1.0.28",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 28,
+      "versionCode": 29,
       "adaptiveIcon": {
         "backgroundColor": "#FCFAFB",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
@@ -36,6 +36,7 @@
       }
     },
     "plugins": [
+      "./plugins/force-rtl",
       "expo-router",
       "expo-secure-store",
       "expo-localization",

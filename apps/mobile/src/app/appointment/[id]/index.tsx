@@ -1,12 +1,14 @@
 import { useState } from "react"
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native"
+import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useQueryClient } from "@tanstack/react-query"
 import { Ionicons } from "@expo/vector-icons"
 import { VideoCard } from "../../../components/video-card"
 import {
   AppText,
   Avatar,
+  Button,
   Card,
   ChevronBack,
   ChevronForward,
@@ -16,7 +18,7 @@ import {
   StatusPill,
 } from "../../../components/ui"
 import { QueryErrorState } from "../../../components/query-error"
-import { useAppointments, useMe, downloadInvoicePdf, presentDownloadedPdf, type Appointment } from "../../../lib/api"
+import { api, useAppointments, useMe, downloadInvoicePdf, presentDownloadedPdf, type Appointment } from "../../../lib/api"
 import { useI18n } from "../../../lib/i18n"
 import { colors, radius, spacing } from "../../../theme"
 import { appointmentTone } from "../../(tabs)/index"
@@ -103,8 +105,45 @@ function Details({
   isDoctor: boolean
 }) {
   const { t } = useI18n()
+  const queryClient = useQueryClient()
   const [downloadingInvoice, setDownloadingInvoice] = useState(false)
   const [downloadError, setDownloadError] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+
+  async function markNoShow() {
+    if (updatingStatus) return
+    setUpdatingStatus(true)
+    try {
+      await api.markAppointmentNoShow(appointment.id)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+      ])
+      Alert.alert(t.appointmentDetails.noShowMarked)
+    } catch (err) {
+      Alert.alert(
+        t.appointmentDetails.actionError,
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  function confirmNoShow() {
+    Alert.alert(
+      t.appointmentDetails.markNoShowConfirmTitle,
+      t.appointmentDetails.markNoShowConfirmBody,
+      [
+        { text: t.common.cancel, style: "cancel" },
+        {
+          text: t.common.confirm,
+          style: "destructive",
+          onPress: () => void markNoShow(),
+        },
+      ],
+    )
+  }
 
   async function onDownloadInvoice() {
     if (downloadingInvoice || !appointment.paymentId) return
@@ -152,6 +191,53 @@ function Details({
           tone={appointmentTone(appointment.status)}
         />
       </Card>
+
+      {!isDoctor && appointment.status === "NO_SHOW" ? (
+        <View
+          style={{
+            gap: spacing.md,
+            padding: spacing.lg,
+            borderRadius: radius.lg,
+            backgroundColor: colors.dangerSoft,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Ionicons name="alert-circle" size={22} color={colors.danger} />
+            <AppText variant="body" weight="bold" color={colors.danger}>
+              {t.appointmentDetails.noShowTitle}
+            </AppText>
+          </View>
+          <AppText variant="sub" color={colors.textMuted}>
+            {t.appointmentDetails.noShowBody}
+          </AppText>
+          {appointment.doctorSlug ? (
+            <Button
+              label={t.appointmentDetails.rescheduleMissed}
+              icon="calendar"
+              onPress={() =>
+                router.push({
+                  pathname: "/booking/[slug]",
+                  params: {
+                    slug: appointment.doctorSlug!,
+                    reschedule: appointment.id,
+                    appointmentType: appointment.type,
+                  },
+                })
+              }
+            />
+          ) : null}
+        </View>
+      ) : null}
+
+      {isDoctor && appointment.canMarkNoShow ? (
+        <Button
+          label={t.appointmentDetails.markNoShow}
+          icon="person-remove"
+          variant="secondary"
+          loading={updatingStatus}
+          onPress={confirmNoShow}
+        />
+      ) : null}
 
       {/* Patient summary entry — doctors only, and only when this
           appointment is linked to a medical case. */}

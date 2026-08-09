@@ -36,11 +36,11 @@ export async function listMyTickets(userId: string): Promise<MyTicketRow[]> {
   if (rows.length === 0) return []
 
   const lastMessages = await db
-    .select({ conversationId: message.conversationId, lastAt: sql<Date>`max(${message.createdAt})` })
+    .select({ conversationId: message.conversationId, lastAt: sql<string>`max(${message.createdAt})` })
     .from(message)
     .where(inArray(message.conversationId, rows.map((r) => r.id)))
     .groupBy(message.conversationId)
-  const lastAtById = new Map(lastMessages.map((m) => [m.conversationId, m.lastAt]))
+  const lastAtById = new Map(lastMessages.map((m) => [m.conversationId, new Date(m.lastAt)]))
 
   return rows.map((r) => {
     const lastMessageAt = lastAtById.get(r.id) ?? r.createdAt
@@ -166,12 +166,12 @@ export async function listTicketsForAdmin(filters: TicketAdminFilters = {}): Pro
 
   const lastMessages = rows.length
     ? await db
-        .select({ conversationId: message.conversationId, lastAt: sql<Date>`max(${message.createdAt})` })
+        .select({ conversationId: message.conversationId, lastAt: sql<string>`max(${message.createdAt})` })
         .from(message)
         .where(inArray(message.conversationId, rows.map((r) => r.id)))
         .groupBy(message.conversationId)
     : []
-  const lastAtById = new Map(lastMessages.map((m) => [m.conversationId, m.lastAt]))
+  const lastAtById = new Map(lastMessages.map((m) => [m.conversationId, new Date(m.lastAt)]))
 
   return rows
     .map((r) => ({

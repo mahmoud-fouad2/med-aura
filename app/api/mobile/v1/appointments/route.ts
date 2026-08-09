@@ -1,5 +1,6 @@
 import { listDoctorAppointments, listPatientAppointments } from "@/lib/data/appointments"
 import { absolutize, jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
+import { canMarkAppointmentNoShow } from "@/lib/domain/appointment-state"
 
 export const dynamic = "force-dynamic"
 
@@ -20,6 +21,9 @@ export async function GET() {
       appointments: rows.map((a) => ({
         ...a,
         counterpartPhotoUrl: absolutize(a.counterpartPhotoUrl),
+        canMarkNoShow:
+          auth.user.role === "doctor" &&
+          canMarkAppointmentNoShow({ status: a.status, endsAt: a.endsAt }),
       })),
     })
   } catch (err) {

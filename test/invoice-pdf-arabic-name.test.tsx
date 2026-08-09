@@ -28,19 +28,24 @@ const render = (payerName: string) =>
 
 /** A real PDF starts with the %PDF- header; an HTML error page does not. */
 const isPdf = (buf: Buffer) => buf.subarray(0, 5).toString("latin1") === "%PDF-"
+const pageCount = (buf: Buffer) =>
+  buf.toString("latin1").match(/\/Type\s*\/Page\b/g)?.length ?? 0
 
 describe("invoice receipt PDF", () => {
   it("joins and reorders Arabic for PDFKit's LTR-only font layout", () => {
     expect(prepareTextForPdf("علي محمد")).toBe("ﺪﻤﺤﻣ ﻲﻠﻋ")
     expect(prepareTextForPdf("Dr. أحمد Ahmed")).toBe("Dr. ﺪﻤﺣﺃ Ahmed")
+    expect(prepareTextForPdf("د.\u200f سارة العتيبي")).not.toContain("\u200f")
     expect(prepareTextForPdf("Ali Mohamed")).toBe("Ali Mohamed")
   })
 
-  it("renders Latin then Arabic receipts in the same process", async () => {
+  it("renders Latin then Arabic receipts as single-page PDFs", async () => {
     const latin = await render("Ali Mohamed")
     const arabic = await render("علي محمد")
     expect(isPdf(latin)).toBe(true)
     expect(isPdf(arabic)).toBe(true)
+    expect(pageCount(latin)).toBe(1)
+    expect(pageCount(arabic)).toBe(1)
     expect(latin.length).toBeGreaterThan(1000)
     expect(arabic.length).toBeGreaterThan(1000)
   }, 60_000)
