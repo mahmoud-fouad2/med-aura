@@ -218,11 +218,23 @@ export default async function SearchPage({
                   </p>
                 </div>
               </div>
-              <dl className="mt-6 grid gap-3">
-                <HeroStat label="طبيب ظاهر" value={total} />
-                <HeroStat label="أنواع استشارة" value={2} />
-                <HeroStat label="تصنيفات إجراءات" value={categories.length} />
-              </dl>
+              <div className="mt-6 grid gap-3">
+                <TrustPoint
+                  icon={ShieldCheck}
+                  title="ملفات موثّقة"
+                  description="راجع الخبرة والترخيص قبل أن تحجز"
+                />
+                <TrustPoint
+                  icon={Video}
+                  title="استشارة تناسب يومك"
+                  description="اختر بين الفيديو أو الزيارة داخل العيادة"
+                />
+                <TrustPoint
+                  icon={Sparkles}
+                  title="قرار أوضح"
+                  description="قارن ما يهمك دون تفاصيل مشتتة"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -503,13 +515,24 @@ function QuickFilter({
   )
 }
 
-function HeroStat({ label, value }: { label: string; value: number }) {
+function TrustPoint({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  description: string
+}) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="font-heading text-xl font-bold tabular-nums text-foreground">
-        {value.toLocaleString("ar-SA-u-nu-latn")}
-      </dd>
+    <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5">
+      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <div>
+        <p className="text-sm font-bold text-foreground">{title}</p>
+        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{description}</p>
+      </div>
     </div>
   )
 }

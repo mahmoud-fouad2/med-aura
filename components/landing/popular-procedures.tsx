@@ -39,9 +39,9 @@ export async function PopularProcedures() {
     <section className="border-b border-border bg-section-soft">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="الإجراءات"
-          title="الإجراءات الأكثر طلبًا"
-          subtitle="إجراءات تجميل جراحية وغير جراحية، يقدّمها أطباء ومراكز معتمدون."
+          eyebrow="اختيارات شائعة"
+          title="ابدأ من احتياجك"
+          subtitle="تعرّف على الخيارات التي يبحث عنها المرضى، ثم اختر الطبيب الأنسب قبل الحجز."
         />
 
         {res.status !== "ok" ? (
@@ -94,10 +94,9 @@ export async function PopularProcedures() {
                       {p.isSurgical ? "جراحي" : "غير جراحي"}
                     </Badge>
                     <p className="mt-auto border-t border-border/40 pt-3 text-xs font-medium text-muted-foreground">
-                      مناسب للمقارنة السريعة
                       {p.recoveryDays != null && p.recoveryDays > 0
-                        ? ` · تعافٍ تقديري ${p.recoveryDays} يوم`
-                        : ""}
+                        ? `العودة للروتين غالبًا خلال ${p.recoveryDays} يوم`
+                        : "يمكن العودة للروتين سريعًا"}
                     </p>
                   </div>
                 </Link>

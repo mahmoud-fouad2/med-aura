@@ -150,7 +150,7 @@ export default async function ProcedureDetailPage({
                 {procedure.recoveryDays != null && procedure.recoveryDays > 0 && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="size-4" />
-                    {isAr ? `تعافٍ تقديري ${procedure.recoveryDays} يوم` : `Estimated recovery: ${procedure.recoveryDays} Days`}
+                    {isAr ? `العودة للروتين غالبًا خلال ${procedure.recoveryDays} يوم` : `Estimated recovery: ${procedure.recoveryDays} Days`}
                   </span>
                 )}
               </div>

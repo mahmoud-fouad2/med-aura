@@ -35,7 +35,6 @@ export default async function ProceduresPage() {
   const groups = res.status === "ok" ? res.data : []
   const hasAny = groups.some((g) => g.procedures.length > 0)
   const visibleGroups = groups.filter((g) => g.procedures.length > 0)
-  const procedureCount = visibleGroups.reduce((sum, g) => sum + g.procedures.length, 0)
   const breadcrumb = breadcrumbJsonLd([
     { name: "الرئيسية", url: absoluteUrl("/") },
     { name: "إجراءات التجميل", url: absoluteUrl("/procedures") },
@@ -60,16 +59,11 @@ export default async function ProceduresPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow="الإجراءات"
-          title="اختَر الإجراء وأنت فاهم الخطوة"
-          subtitle="استكشف الإجراءات الجراحية وغير الجراحية بصورة أوضح: ما طبيعتها، كم تحتاج للتعافي، ومن الأطباء المناسبين لها."
+          eyebrow="دليلك للعناية"
+          title="قرارك يبدأ بصورة أوضح"
+          subtitle="تعرّف على الخيارات المناسبة لك، ثم اختر طبيبًا موثّقًا واحجز استشارتك بثقة."
           imageSrc="/demo-services/service-face-neck.png"
           imageAlt="غرفة علاج تجميلي حديثة"
-          stats={[
-            { label: "تصنيفات", value: visibleGroups.length.toLocaleString("ar-SA-u-nu-latn") },
-            { label: "إجراءات", value: procedureCount.toLocaleString("ar-SA-u-nu-latn") },
-            { label: "استشارة أولى", value: "واضحة" },
-          ]}
         />
 
         <section className="bg-section-soft">
@@ -131,8 +125,8 @@ export default async function ProceduresPage() {
                               </Badge>
                               <p className="mt-auto text-sm text-muted-foreground">
                                 {p.recoveryDays != null && p.recoveryDays > 0
-                                  ? `تعافٍ تقديري ${p.recoveryDays} يوم`
-                                  : "عودة أسرع للروتين اليومي"}
+                                  ? `العودة للروتين غالبًا خلال ${p.recoveryDays} يوم`
+                                  : "العودة للروتين عادةً دون توقف طويل"}
                               </p>
                             </div>
                           </Link>

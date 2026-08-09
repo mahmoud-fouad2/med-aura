@@ -97,17 +97,6 @@ export function PageHero({
           {stats && stats.length > 0 && (
             <FadeIn delay={0.12} className="hidden lg:block">
               <div className="rounded-[2rem] border border-white/70 bg-card/74 p-4 shadow-elegant-lg backdrop-blur-xl">
-                <div className="mb-3 flex items-center justify-between gap-3 px-1">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">
-                      Snapshot
-                    </p>
-                    <p className="mt-1 font-heading text-xl font-bold text-foreground">
-                      At a glance
-                    </p>
-                  </div>
-                  <div className="size-11 rounded-2xl bg-primary/12" />
-                </div>
                 <dl className="grid gap-3">
                   {stats.map((stat) => (
                     <div
