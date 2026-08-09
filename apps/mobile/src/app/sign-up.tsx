@@ -136,7 +136,7 @@ export default function SignUp() {
     >
       <Image
         source={brandAssets.authBg}
-        style={{ position: "absolute", width: "100%", height: "100%" }}
+        style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }}
         contentFit="cover"
       />
       <ScrollView
@@ -149,8 +149,8 @@ export default function SignUp() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ alignItems: "center", gap: spacing.xs, marginBottom: spacing.xl }}>
-          <Logo height={44} style={{ marginBottom: spacing.md }} />
+        <View style={{ alignItems: "center", gap: spacing.xs, marginBottom: spacing.lg }}>
+          <Logo height={64} style={{ marginBottom: spacing.xs }} />
           <AppText variant="hero" weight="heavy">
             {t.auth.createTitle}
           </AppText>

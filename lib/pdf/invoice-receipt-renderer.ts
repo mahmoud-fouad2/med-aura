@@ -2,6 +2,10 @@ import fs from "node:fs"
 import path from "node:path"
 // @ts-expect-error @react-pdf/pdfkit is a transitive runtime dependency without declarations.
 import PDFDocument from "@react-pdf/pdfkit"
+// @ts-expect-error bidi-js does not publish TypeScript declarations.
+import bidiFactory from "bidi-js"
+// @ts-expect-error arabic-persian-reshaper does not publish TypeScript declarations.
+import reshaper from "arabic-persian-reshaper"
 import type { PaymentReceiptData } from "@/lib/data/invoice"
 
 const PAGE_WIDTH = 595.28
@@ -42,8 +46,28 @@ const PROVIDER_LABEL: Record<string, string> = {
   test: "Test payment (QA)",
 }
 
+type BidiEmbeddingLevels = {
+  levels: Uint8Array
+  paragraphs: { start: number; end: number; level: number }[]
+}
+
+type BidiApi = {
+  getEmbeddingLevels(value: string, direction: "auto"): BidiEmbeddingLevels
+  getReorderedString(value: string, levels: BidiEmbeddingLevels): string
+}
+
+const bidi = (bidiFactory as () => BidiApi)()
+
 function hasArabic(value: string): boolean {
   return ARABIC_RE.test(value)
+}
+
+/** PDFKit shapes every font run as LTR internally. Convert Arabic logical
+ * text into joined presentation forms in visual order before drawing it. */
+export function prepareTextForPdf(value: string): string {
+  if (!hasArabic(value)) return value
+  const shaped = reshaper.ArabicShaper.convertArabic(value) as string
+  return bidi.getReorderedString(shaped, bidi.getEmbeddingLevels(shaped, "auto"))
 }
 
 function formatDate(value: Date | null): string {
@@ -71,11 +95,12 @@ function text(
   options: { size?: number; color?: string; bold?: boolean; align?: "left" | "right" | "center" } = {},
 ) {
   const arabic = hasArabic(value)
+  const renderedValue = arabic ? prepareTextForPdf(value) : value
   doc
     .font(arabic ? (options.bold ? "ArabicBold" : "Arabic") : options.bold ? "Helvetica-Bold" : "Helvetica")
     .fontSize(options.size ?? 10)
     .fillColor(options.color ?? INK)
-    .text(value, x, y, {
+    .text(renderedValue, x, y, {
       width,
       align: options.align ?? (arabic ? "right" : "left"),
       lineGap: 2,

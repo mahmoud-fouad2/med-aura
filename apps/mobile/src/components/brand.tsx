@@ -16,6 +16,11 @@ export const brandAssets = {
   homeHero: require("../../assets/backgrounds/home-hero.png"),
 } as const
 
+export const sponsorAssets = {
+  ar: require("../../assets/banners/sponsors-ar.webp"),
+  en: require("../../assets/banners/sponsors-en.webp"),
+} as const
+
 export const onboardingArt = {
   trust: require("../../assets/onboarding/trust.png"),
   consult: require("../../assets/onboarding/consult.png"),

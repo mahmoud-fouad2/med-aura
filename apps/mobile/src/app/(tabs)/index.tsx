@@ -1,7 +1,8 @@
-import { Pressable, RefreshControl, ScrollView, View } from "react-native"
+import { I18nManager, Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import * as WebBrowser from "expo-web-browser"
 import { Ionicons } from "@expo/vector-icons"
 import {
   AppText,
@@ -14,7 +15,7 @@ import {
   Skeleton,
   StatusPill,
 } from "../../components/ui"
-import { brandAssets, stateArt } from "../../components/brand"
+import { brandAssets, sponsorAssets, stateArt } from "../../components/brand"
 import {
   NetworkError,
   useHome,
@@ -24,6 +25,7 @@ import {
   type Doctor,
 } from "../../lib/api"
 import { authClient } from "../../lib/auth-client"
+import { API_URL } from "../../lib/config"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
@@ -87,7 +89,7 @@ export default function Home() {
       >
         <Image
           source={brandAssets.homeHero}
-          style={{ position: "absolute", width: "100%", height: "100%" }}
+          style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }}
           contentFit="cover"
         />
         {/* Two clean corners — avatar and the bell each get their own,
@@ -297,6 +299,25 @@ export default function Home() {
           </View>
         </View>
 
+        <Pressable
+          onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/contact`)}
+          accessibilityRole="link"
+          accessibilityLabel={t.home.sponsorAccessibility}
+          style={({ pressed }) => ({ opacity: pressed ? 0.88 : 1 })}
+        >
+          <Image
+            source={locale === "ar" ? sponsorAssets.ar : sponsorAssets.en}
+            style={{
+              width: "100%",
+              aspectRatio: locale === "ar" ? 984 / 270 : 984 / 326,
+            }}
+            contentFit="contain"
+            transition={180}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
+        </Pressable>
+
         {/* Next appointment */}
         <Section title={t.home.nextAppointment} icon="calendar-outline">
           {home.isLoading ? (
@@ -396,7 +417,7 @@ function QuickAction({
       style={({ pressed }) => [
         {
           flex: 1,
-          flexDirection: "row",
+          flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
           alignItems: "center",
           justifyContent: "space-between",
           gap: spacing.sm,

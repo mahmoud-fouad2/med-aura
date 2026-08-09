@@ -29,6 +29,7 @@ function BillingSummaryCard({ payments }: { payments: Payment[] }) {
     currencies.size === 1 && paid.length > 0
       ? paid.reduce((sum, p) => sum + Number(p.amount), 0)
       : null
+  const hasTotal = total != null
 
   return (
     <View style={{ paddingHorizontal: spacing.screen, paddingBottom: spacing.md }}>
@@ -38,19 +39,27 @@ function BillingSummaryCard({ payments }: { payments: Payment[] }) {
           borderRadius: radius.xl,
           padding: spacing.xl,
           alignItems: "center",
-          gap: 4,
+          gap: spacing.xs,
         }}
       >
-        <AppText variant="sub" color="rgba(255,255,255,0.75)">
-          {payments.length} {t.billing.summaryCount}
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: "rgba(255,255,255,0.14)",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: spacing.xs,
+          }}
+        >
+          <Ionicons name="receipt-outline" size={20} color="#FFFFFF" />
+        </View>
+        <AppText variant="hero" weight="heavy" color="#FFFFFF" style={{ writingDirection: "ltr" }}>
+          {hasTotal ? `${total.toLocaleString()} ${paid[0].currency}` : payments.length}
         </AppText>
-        {total != null ? (
-          <AppText variant="hero" weight="heavy" color="#FFFFFF" style={{ writingDirection: "ltr" }}>
-            {total.toLocaleString()} {paid[0].currency}
-          </AppText>
-        ) : null}
         <AppText variant="caption" color="rgba(255,255,255,0.65)">
-          {t.billing.summaryPaidLabel}
+          {hasTotal ? t.billing.summaryPaidLabel : t.billing.summaryCount}
         </AppText>
       </View>
     </View>

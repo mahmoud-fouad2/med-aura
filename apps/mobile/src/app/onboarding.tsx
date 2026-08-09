@@ -21,6 +21,7 @@ import { colors, radius, spacing } from "../theme"
 import { ONBOARDING_KEY } from "./index"
 
 const { width: SCREEN_W } = Dimensions.get("window")
+const BRAND_LOGO_HEIGHT = Math.min(42, Math.max(38, SCREEN_W * 0.1))
 
 const SLIDE_ART = [
   onboardingArt.trust,
@@ -77,7 +78,7 @@ export default function Onboarding() {
           paddingVertical: spacing.sm,
         }}
       >
-        <Logo height={30} />
+        <Logo height={BRAND_LOGO_HEIGHT} />
         <Pressable onPress={() => void finish()} hitSlop={12}>
           <AppText variant="sub" weight="medium" color={colors.textMuted}>
             {t.common.skip}

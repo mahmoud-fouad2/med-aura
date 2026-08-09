@@ -88,7 +88,7 @@ export default function SignIn() {
           product, not a bare web form on white. */}
       <Image
         source={brandAssets.authBg}
-        style={{ position: "absolute", width: "100%", height: "100%" }}
+        style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }}
         contentFit="cover"
       />
       <ScrollView
@@ -101,8 +101,8 @@ export default function SignIn() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ alignItems: "center", gap: spacing.sm, marginBottom: spacing.xl }}>
-          <Logo height={54} style={{ marginBottom: spacing.sm }} />
+        <View style={{ alignItems: "center", gap: spacing.sm, marginBottom: spacing.lg }}>
+          <Logo height={72} />
           <AppText variant="hero" weight="heavy">
             {t.auth.welcomeTitle}
           </AppText>

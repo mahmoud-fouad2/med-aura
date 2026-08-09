@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { View } from "react-native"
+import { useWindowDimensions, View } from "react-native"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Animated, {
@@ -24,15 +24,18 @@ import { colors, spacing } from "../theme"
  * as one continuous animation.
  *
  * Sizing note: `Logo` renders the already-trimmed logo-white.png (~2.06:1,
- * see components/brand.tsx) — height=100 puts the visible mark at roughly
- * 205px wide, which is the brand mark's real footprint on this screen, not
- * a guess. This never delays boot: the boot gate (app/index.tsx) still
+ * see components/brand.tsx). Its bounded responsive height keeps the visible
+ * wordmark between roughly 214 and 264dp wide, matching the native splash
+ * without crowding compact screens. This never delays boot: the boot gate
+ * (app/index.tsx) still
  * calls SplashScreen.hideAsync() the moment session restore resolves,
  * regardless of how long this component has been visible.
  */
 export function BrandSplash() {
   const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
   const { t } = useI18n()
+  const logoHeight = Math.min(128, Math.max(104, width * 0.3))
   const opacity = useSharedValue(0)
   const scale = useSharedValue(0.94)
   const footerOpacity = useSharedValue(0)
@@ -62,7 +65,7 @@ export function BrandSplash() {
       />
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <Animated.View style={logoStyle}>
-          <Logo height={100} variant="white" />
+          <Logo height={logoHeight} variant="white" />
         </Animated.View>
       </View>
       <Animated.View

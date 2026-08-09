@@ -13,7 +13,7 @@ import {
 } from "../components/ui"
 import { ServiceThumbnail } from "../components/service-thumbnail"
 import { QueryErrorState } from "../components/query-error"
-import { useMe, useServices, type Service } from "../lib/api"
+import { useServices, type Service } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
@@ -119,14 +119,15 @@ export default function Services() {
 
 function ServiceRow({ service }: { service: Service }) {
   const { t } = useI18n()
-  const me = useMe()
-  const isPatient = (me.data?.accountType ?? "patient") === "patient"
 
   return (
-    <Card onPress={() => router.push(`/service/${service.slug}`)} style={{ gap: spacing.md }}>
-      <View style={{ flexDirection: "row", gap: spacing.md }}>
-        <ServiceThumbnail uri={service.imageUrl} size={64} />
-        <View style={{ flex: 1, gap: 4 }}>
+    <Card
+      onPress={() => router.push(`/service/${service.slug}`)}
+      style={{ padding: spacing.md }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+        <ServiceThumbnail uri={service.imageUrl} size={72} />
+        <View style={{ flex: 1, gap: 6 }}>
           <AppText variant="body" weight="bold" numberOfLines={1}>
             {service.nameAr}
           </AppText>
@@ -138,26 +139,18 @@ function ServiceRow({ service }: { service: Service }) {
             />
           </View>
           {service.descriptionAr ? (
-            <AppText variant="caption" color={colors.textMuted} numberOfLines={2}>
+            <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
               {service.descriptionAr}
             </AppText>
           ) : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+            <AppText variant="caption" color={colors.textMuted}>
+              {service.doctorCount} {t.services.doctorsAvailable}
+            </AppText>
+          </View>
         </View>
-        <ChevronForward size={18} />
-      </View>
-
-      <View style={{ height: 1, backgroundColor: colors.border }} />
-
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Ionicons name="people-outline" size={14} color={colors.textMuted} />
-          <AppText variant="caption" color={colors.textMuted}>
-            {service.doctorCount} {t.services.doctorsAvailable}
-          </AppText>
-        </View>
-        <AppText variant="caption" weight="medium" color={colors.gold}>
-          {isPatient ? t.services.viewDetails : t.services.aboutService}
-        </AppText>
+        <ChevronForward size={17} />
       </View>
     </Card>
   )

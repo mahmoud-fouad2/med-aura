@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { I18nManager, Platform } from "react-native"
-import { router, Stack } from "expo-router"
+import { router, Stack, usePathname } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import * as SplashScreen from "expo-splash-screen"
 import * as Notifications from "expo-notifications"
@@ -42,6 +42,8 @@ const queryClient = new QueryClient({
 })
 
 export default function RootLayout() {
+  const pathname = usePathname()
+
   useEffect(() => {
     // Arabic-first product. Release builds get RTL from the very first frame
     // via the native `forcesRTL` flag (app.json → expo-localization); this is
@@ -70,7 +72,7 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <I18nProvider>
-            <StatusBar style="dark" />
+            <StatusBar style={pathname === "/" ? "light" : "dark"} />
             <AppLockGate>
               <Stack
                 screenOptions={{

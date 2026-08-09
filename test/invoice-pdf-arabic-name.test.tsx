@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { renderInvoiceReceipt } from "@/lib/pdf/invoice-receipt-renderer"
+import { prepareTextForPdf, renderInvoiceReceipt } from "@/lib/pdf/invoice-receipt-renderer"
 import type { PaymentReceiptData } from "@/lib/data/invoice"
 
 const BASE = {
@@ -30,6 +30,12 @@ const render = (payerName: string) =>
 const isPdf = (buf: Buffer) => buf.subarray(0, 5).toString("latin1") === "%PDF-"
 
 describe("invoice receipt PDF", () => {
+  it("joins and reorders Arabic for PDFKit's LTR-only font layout", () => {
+    expect(prepareTextForPdf("علي محمد")).toBe("ﺪﻤﺤﻣ ﻲﻠﻋ")
+    expect(prepareTextForPdf("Dr. أحمد Ahmed")).toBe("Dr. ﺪﻤﺣﺃ Ahmed")
+    expect(prepareTextForPdf("Ali Mohamed")).toBe("Ali Mohamed")
+  })
+
   it("renders Latin then Arabic receipts in the same process", async () => {
     const latin = await render("Ali Mohamed")
     const arabic = await render("علي محمد")
