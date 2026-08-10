@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { I18nManager, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native"
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -129,7 +129,7 @@ export default function NewTicket() {
           <Field label={t.tickets.category}>
             <View
               style={{
-                flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+                flexDirection: "row",
                 flexWrap: "wrap",
                 gap: spacing.sm,
               }}
@@ -169,7 +169,7 @@ export default function NewTicket() {
           {validationHint ? (
             <View
               style={{
-                flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+                flexDirection: "row",
                 alignItems: "center",
                 gap: spacing.xs,
               }}

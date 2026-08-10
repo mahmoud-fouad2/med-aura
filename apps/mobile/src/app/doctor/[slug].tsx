@@ -1,4 +1,4 @@
-import { I18nManager, Pressable, ScrollView, View } from "react-native"
+import { Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -297,7 +297,7 @@ function Section({
 }) {
   return (
     <Card style={{ gap: spacing.sm }}>
-      <View style={{ flexDirection: I18nManager.isRTL ? "row-reverse" : "row", alignItems: "center", gap: spacing.sm }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
         <IconBadge icon={icon} size={34} />
         <AppText variant="sub" weight="bold">
           {title}
@@ -339,7 +339,7 @@ function MetaChip({
   return (
     <View
       style={{
-        flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+        flexDirection: "row",
         alignItems: "center",
         gap: 6,
         borderRadius: radius.full,
@@ -366,7 +366,7 @@ function InfoRow({
   subtitle?: string
 }) {
   return (
-    <View style={{ flexDirection: I18nManager.isRTL ? "row-reverse" : "row", alignItems: "flex-start", gap: spacing.sm }}>
+    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }}>
       <IconBadge icon={icon} size={38} />
       <View style={{ flex: 1, gap: 2 }}>
         <AppText variant="body" weight="bold">
@@ -393,7 +393,7 @@ function CredentialGroup({ label, items }: { label: string; items: string[] }) {
           <View
             key={item}
             style={{
-              flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+              flexDirection: "row",
               alignItems: "flex-start",
               gap: spacing.sm,
             }}

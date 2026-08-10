@@ -1,4 +1,4 @@
-import { I18nManager, View } from "react-native"
+import { View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button } from "./ui"
 import { BottomSheet } from "./bottom-sheet"
@@ -43,7 +43,7 @@ export function LocationPermissionSheet({
         </View>
         <View
           style={{
-            flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+            flexDirection: "row",
             gap: spacing.sm,
           }}
         >

@@ -59,8 +59,7 @@ export function AppText({
           color,
           fontWeight,
           lineHeight: type[variant] * 1.5,
-          textAlign: I18nManager.isRTL ? "right" : "left",
-          writingDirection: I18nManager.isRTL ? "rtl" : "ltr",
+          writingDirection: "auto",
         },
         style,
       ]}
@@ -128,7 +127,7 @@ export function Button({
           borderRadius: radius.lg,
           paddingVertical: 14,
           paddingHorizontal: spacing.xl,
-          flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+          flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
           gap: spacing.sm,
@@ -395,7 +394,7 @@ export function SectionHeading({
   return (
     <View
       style={{
-        flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+        flexDirection: "row",
         alignItems: "center",
         gap: spacing.sm,
       }}

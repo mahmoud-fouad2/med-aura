@@ -21,6 +21,7 @@ import {
   ChevronBack,
   ChevronForward,
 } from "../components/ui"
+import { CountryPicker } from "../components/country-picker"
 import { brandAssets, Logo } from "../components/brand"
 import { GoogleGlyph } from "../components/google-glyph"
 import { authClient } from "../lib/auth-client"
@@ -277,33 +278,7 @@ export default function SignUp() {
               />
             </Field>
             <Field label={t.auth.country}>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-                {Object.entries(t.countries).map(([code, label]) => (
-                  <Pressable
-                    key={code}
-                    onPress={() => {
-                      void Haptics.selectionAsync()
-                      setCountry(code)
-                    }}
-                    style={{
-                      paddingHorizontal: spacing.md,
-                      paddingVertical: 7,
-                      borderRadius: radius.full,
-                      borderWidth: 1,
-                      borderColor: country === code ? colors.primary : colors.border,
-                      backgroundColor: country === code ? colors.primarySoft : "#FFFFFF",
-                    }}
-                  >
-                    <AppText
-                      variant="caption"
-                      weight={country === code ? "bold" : "regular"}
-                      color={country === code ? colors.primary : colors.textMuted}
-                    >
-                      {label}
-                    </AppText>
-                  </Pressable>
-                ))}
-              </View>
+              <CountryPicker value={country} onChange={setCountry} />
             </Field>
             <Field label={t.auth.city}>
               <TextInput value={city} onChangeText={setCity} style={inputStyle} />

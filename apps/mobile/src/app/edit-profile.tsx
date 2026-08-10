@@ -19,6 +19,7 @@ import {
   SectionHeading,
   Skeleton,
 } from "../components/ui"
+import { CountryPicker } from "../components/country-picker"
 import { useMe, api, NetworkError, type Me } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
@@ -158,33 +159,7 @@ function ProfileForm({ initial }: { initial: Me }) {
         />
       </Field>
       <Field label={t.auth.country}>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
-          {Object.entries(t.countries).map(([code, label]) => (
-            <Pressable
-              key={code}
-              onPress={() => {
-                void Haptics.selectionAsync()
-                setCountry(code)
-              }}
-              style={{
-                paddingHorizontal: spacing.md,
-                paddingVertical: 7,
-                borderRadius: radius.full,
-                borderWidth: 1,
-                borderColor: country === code ? colors.primary : colors.border,
-                backgroundColor: country === code ? colors.primarySoft : "#FFFFFF",
-              }}
-            >
-              <AppText
-                variant="caption"
-                weight={country === code ? "bold" : "regular"}
-                color={country === code ? colors.primary : colors.textMuted}
-              >
-                {label}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
+        <CountryPicker value={country} onChange={setCountry} />
       </Field>
       <Field label={t.auth.city}>
         <TextInput value={city} onChangeText={setCity} style={inputStyle} />

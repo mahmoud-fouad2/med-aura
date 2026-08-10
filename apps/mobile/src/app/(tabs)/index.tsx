@@ -1,4 +1,4 @@
-import { I18nManager, Pressable, RefreshControl, ScrollView, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -174,7 +174,7 @@ export default function Home() {
               {
                 marginTop: spacing.lg,
                 backgroundColor: colors.gold,
-                alignSelf: isRTL ? "flex-end" : "flex-start",
+                alignSelf: "flex-start",
                 borderRadius: radius.full,
                 paddingVertical: 17,
                 paddingHorizontal: spacing.xxl,
@@ -417,7 +417,7 @@ function QuickAction({
       style={({ pressed }) => [
         {
           flex: 1,
-          flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
+          flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
           gap: spacing.sm,
