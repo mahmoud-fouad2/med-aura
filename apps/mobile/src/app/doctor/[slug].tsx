@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from "../../components/ui"
 import { QueryErrorState } from "../../components/query-error"
+import { FavoriteHeart } from "../../components/favorite-heart"
 import { useDoctor } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, spacing } from "../../theme"
@@ -43,22 +44,37 @@ export default function DoctorProfile() {
           borderBottomRightRadius: 34,
         }}
       >
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={t.common.back}
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            backgroundColor: "rgba(255,255,255,0.15)",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ChevronBack size={20} color="#FFFFFF" />
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t.common.back}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ChevronBack size={20} color="#FFFFFF" />
+          </Pressable>
+          {doctor.data ? (
+            <FavoriteHeart
+              doctor={{
+                id: doctor.data.id,
+                slug: doctor.data.slug,
+                name: doctor.data.name,
+                title: doctor.data.title,
+                city: doctor.data.city,
+                country: doctor.data.country,
+                photoUrl: doctor.data.photoUrl,
+              }}
+            />
+          ) : null}
+        </View>
       </View>
 
       <ScrollView

@@ -9,6 +9,38 @@ import {
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
 
+export type FavoriteKind = "doctor" | "center" | "procedure"
+
+/**
+ * Idempotent add/remove of a single favourite, shared by the web server
+ * action and the mobile REST route so both flip the exact same row via the
+ * composite unique index. Returns the resulting state.
+ */
+export async function toggleFavorite(
+  userId: string,
+  kind: FavoriteKind,
+  refId: string,
+): Promise<boolean> {
+  const existing = await db
+    .select({ id: favorite.id })
+    .from(favorite)
+    .where(
+      and(
+        eq(favorite.userId, userId),
+        eq(favorite.kind, kind),
+        eq(favorite.refId, refId),
+      ),
+    )
+    .limit(1)
+
+  if (existing[0]) {
+    await db.delete(favorite).where(eq(favorite.id, existing[0].id))
+    return false
+  }
+  await db.insert(favorite).values({ userId, kind, refId })
+  return true
+}
+
 export type FavoriteDoctor = {
   id: string
   slug: string

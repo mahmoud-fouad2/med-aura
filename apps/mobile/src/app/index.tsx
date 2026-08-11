@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Redirect } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { authClient } from "../lib/auth-client"
+import { secureStoreWarmed } from "../lib/secure-warm"
 import { isRememberMe } from "../lib/session-prefs"
 import { readPlatformStorage } from "../lib/platform-storage"
 import { registerForPushNotifications } from "../lib/push-notifications"
@@ -25,6 +26,12 @@ export default function Boot() {
   useEffect(() => {
     let cancelled = false
     async function boot() {
+      // The session cookie lives in the keychain; its async read into the
+      // sync buffer @better-auth/expo attaches from must finish before
+      // getSession() fires, or the request goes out unauthenticated and a
+      // valid session looks gone (cold-start drop to sign-in). See
+      // secure-warm.ts.
+      await secureStoreWarmed
       const [seen, remember, session] = await Promise.all([
         readPlatformStorage(ONBOARDING_KEY),
         isRememberMe(),

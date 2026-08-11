@@ -11,7 +11,7 @@ import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText } from "./ui"
 import { useI18n } from "../lib/i18n"
-import { colors, radius, spacing, shadows } from "../theme"
+import { colors, radius, spacing } from "../theme"
 
 const FLAG_OFFSET_A = 0x1f1e6 - 65
 

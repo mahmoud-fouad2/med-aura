@@ -19,16 +19,12 @@
 // them actually boot the app). Registering the root must happen
 // synchronously, at the same tick native expects it.
 //
-// Losing nothing by not awaiting: index.tsx's boot gate already calls
-// authClient.getSession() inside a useEffect (after mount, several ticks
-// after this file even runs) and holds the native/branded splash until
-// that resolves — by then the warm-up below has virtually always already
-// finished, since a local Keystore read takes single-digit milliseconds.
-import { warmSecureStore } from "./src/lib/secure-storage"
-import { AUTH_STORAGE_PREFIX } from "./src/lib/config"
-
-const KEYS = [`${AUTH_STORAGE_PREFIX}_cookie`, `${AUTH_STORAGE_PREFIX}_session_data`]
-
-void warmSecureStore(KEYS).catch(() => undefined)
+// Importing secure-warm here starts the async warm-up immediately (its
+// module body runs on import) WITHOUT awaiting it — root registration below
+// stays synchronous. The boot gate (app/index.tsx) awaits the exported
+// `secureStoreWarmed` promise before calling authClient.getSession(), so the
+// session cookie is guaranteed to be in the buffer before the first
+// authenticated request — closing the cold-start "dropped to sign-in" race.
+import "./src/lib/secure-warm"
 
 require("expo-router/entry")

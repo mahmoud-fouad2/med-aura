@@ -9,13 +9,12 @@ import {
   Avatar,
   Button,
   Card,
-  EmptyState,
   IconBadge,
   SectionHeading,
   Skeleton,
   StatusPill,
 } from "../../components/ui"
-import { brandAssets, sponsorAssets, stateArt } from "../../components/brand"
+import { brandAssets, sponsorAssets } from "../../components/brand"
 import {
   NetworkError,
   useHome,
@@ -30,7 +29,7 @@ import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
 export default function Home() {
-  const { t, locale, isRTL } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const me = useMe()
   const home = useHome()
@@ -238,12 +237,11 @@ export default function Home() {
             ) : home.data?.nextAppointment ? (
               <AppointmentCard appointment={home.data.nextAppointment} locale={locale} statusLabels={t.status} />
             ) : (
-              <Card>
-                <EmptyState
-                  icon="calendar-outline"
-                  art={stateArt.noAppointments}
-                  title={t.home.noUpcomingPatients}
-                />
+              <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+                <IconBadge icon="calendar-outline" size={44} />
+                <AppText variant="body" weight="medium" color={colors.textMuted} style={{ flex: 1 }}>
+                  {t.home.noUpcomingPatients}
+                </AppText>
               </Card>
             )}
           </Section>
@@ -337,19 +335,25 @@ export default function Home() {
           ) : home.data?.nextAppointment ? (
             <AppointmentCard appointment={home.data.nextAppointment} locale={locale} statusLabels={t.status} />
           ) : (
-            <Card>
-              <EmptyState
-                icon="calendar-outline"
-                art={stateArt.noAppointments}
-                title={t.home.noUpcoming}
-                body={t.home.bookFirst}
-                action={
-                  <Button
-                    label={t.home.heroCta}
-                    variant="secondary"
-                    onPress={() => router.push("/(tabs)/explore")}
-                  />
-                }
+            // Compact empty state — a slim icon + copy row over a single CTA,
+            // never the tall illustration block, so an empty schedule doesn't
+            // dominate the home screen.
+            <Card style={{ gap: spacing.md }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+                <IconBadge icon="calendar-outline" size={44} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText variant="body" weight="bold">
+                    {t.home.noUpcoming}
+                  </AppText>
+                  <AppText variant="caption" color={colors.textMuted}>
+                    {t.home.bookFirst}
+                  </AppText>
+                </View>
+              </View>
+              <Button
+                label={t.home.heroCta}
+                variant="secondary"
+                onPress={() => router.push("/(tabs)/explore")}
               />
             </Card>
           )}

@@ -93,6 +93,16 @@ function ProfileForm({ initial }: { initial: Me }) {
     initial.residenceCountry ?? null,
   )
   const [city, setCity] = useState(initial.city ?? "")
+  const [nationality, setNationality] = useState<string | null>(
+    initial.nationality ?? null,
+  )
+  const [dateOfBirth, setDateOfBirth] = useState(initial.dateOfBirth ?? "")
+  const [emergencyName, setEmergencyName] = useState(
+    initial.emergencyContactName ?? "",
+  )
+  const [emergencyPhone, setEmergencyPhone] = useState(
+    initial.emergencyContactPhone ?? "",
+  )
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -110,6 +120,10 @@ function ProfileForm({ initial }: { initial: Me }) {
         phone,
         residenceCountry: country,
         city: city || undefined,
+        nationality: nationality || undefined,
+        dateOfBirth: dateOfBirth || undefined,
+        emergencyContactName: emergencyName || undefined,
+        emergencyContactPhone: emergencyPhone || undefined,
       })
     } catch (err) {
       setSaving(false)
@@ -161,8 +175,47 @@ function ProfileForm({ initial }: { initial: Me }) {
       <Field label={t.auth.country}>
         <CountryPicker value={country} onChange={setCountry} />
       </Field>
+      <Field label={t.editProfile.nationality}>
+        <CountryPicker value={nationality} onChange={setNationality} />
+      </Field>
       <Field label={t.auth.city}>
         <TextInput value={city} onChangeText={setCity} style={inputStyle} />
+      </Field>
+      <Field label={t.editProfile.dateOfBirth} hint={t.editProfile.dateOfBirthHint}>
+        <TextInput
+          value={dateOfBirth}
+          onChangeText={setDateOfBirth}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor={colors.textFaint}
+          keyboardType="numbers-and-punctuation"
+          maxLength={10}
+          style={inputStyle}
+          textAlign="left"
+        />
+      </Field>
+
+      <SectionHeading
+        icon="call-outline"
+        title={t.editProfile.emergencySectionTitle}
+      />
+      <Field label={t.editProfile.emergencyContactName}>
+        <TextInput
+          value={emergencyName}
+          onChangeText={setEmergencyName}
+          style={inputStyle}
+          autoComplete="name"
+        />
+      </Field>
+      <Field label={t.editProfile.emergencyContactPhone}>
+        <TextInput
+          value={emergencyPhone}
+          onChangeText={setEmergencyPhone}
+          keyboardType="phone-pad"
+          placeholder="+9665xxxxxxxx"
+          placeholderTextColor={colors.textFaint}
+          style={inputStyle}
+          textAlign="left"
+        />
       </Field>
 
       {error ? (

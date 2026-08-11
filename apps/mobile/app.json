@@ -3,7 +3,7 @@
     "name": "Med Aura",
     "slug": "med-aura",
     "owner": "medaura12",
-    "version": "1.0.29",
+    "version": "1.0.30",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 30,
+      "versionCode": 31,
       "adaptiveIcon": {
         "backgroundColor": "#FCFAFB",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
@@ -66,9 +66,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#4A1D96",
-          "image": "./assets/brand/splash-logo.png",
-          "imageWidth": 224
+          "backgroundColor": "#FFFCF7",
+          "image": "./assets/brand/logo-transparent.png",
+          "imageWidth": 280
         }
       ],
       [

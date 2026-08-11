@@ -192,9 +192,17 @@ export default function Profile() {
           label={t.profile.changePassword}
           onPress={() => router.push("/change-password")}
         />
-        {/* Billing is patient-only — a doctor is never a payer in this app. */}
+        {/* Favourites + billing are patient-only — a doctor never browses or
+            pays for doctors in this app. */}
         {me.data?.accountType === "patient" ? (
           <>
+            <Divider />
+            <Row
+              icon="heart-outline"
+              label={t.favorites.title}
+              hint={t.favorites.subtitle}
+              onPress={() => router.push("/favorites")}
+            />
             <Divider />
             <Row
               icon="receipt-outline"

@@ -1,6 +1,5 @@
 import { useEffect } from "react"
 import { useWindowDimensions, View } from "react-native"
-import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Animated, {
   Easing,
@@ -11,31 +10,30 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated"
-import { brandAssets, Logo } from "./brand"
+import { Logo } from "./brand"
 import { AppText } from "./ui"
 import { useI18n } from "../lib/i18n"
 import { colors, spacing } from "../theme"
 
 /**
  * In-app splash that continues the native splash's look while the boot gate
- * restores the session. Without it the user sees the native splash (purple)
- * snap to a blank frame and then the app — a visible flash. This keeps the
- * same purple surface on screen and fades the logo in, so the handoff reads
- * as one continuous animation.
+ * restores the session. Without it the user sees the native splash snap to a
+ * blank frame and then the app — a visible flash. This keeps the same cream
+ * brand surface + colored wordmark on screen and fades it in, so the handoff
+ * from the native splash reads as one continuous animation.
  *
- * Sizing note: `Logo` renders the already-trimmed logo-white.png (~2.06:1,
- * see components/brand.tsx). Its bounded responsive height keeps the visible
- * wordmark between roughly 214 and 264dp wide, matching the native splash
- * without crowding compact screens. This never delays boot: the boot gate
- * (app/index.tsx) still
- * calls SplashScreen.hideAsync() the moment session restore resolves,
- * regardless of how long this component has been visible.
+ * Sizing note: `Logo` renders the trimmed colored logo (~2.06:1, see
+ * components/brand.tsx). Its bounded responsive height keeps the visible
+ * wordmark comfortably scaled without crowding compact screens. This never
+ * delays boot: the boot gate (app/index.tsx) still calls
+ * SplashScreen.hideAsync() the moment session restore resolves, regardless
+ * of how long this component has been visible.
  */
 export function BrandSplash() {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const { t } = useI18n()
-  const logoHeight = Math.min(128, Math.max(104, width * 0.3))
+  const logoHeight = Math.min(150, Math.max(120, width * 0.36))
   const opacity = useSharedValue(0)
   const scale = useSharedValue(0.94)
   const footerOpacity = useSharedValue(0)
@@ -57,15 +55,10 @@ export function BrandSplash() {
   const footerStyle = useAnimatedStyle(() => ({ opacity: footerOpacity.get() }))
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.primary }}>
-      <Image
-        source={brandAssets.splashBg}
-        style={{ position: "absolute", width: "100%", height: "100%" }}
-        contentFit="cover"
-      />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <Animated.View style={logoStyle}>
-          <Logo height={logoHeight} variant="white" />
+          <Logo height={logoHeight} variant="ink" />
         </Animated.View>
       </View>
       <Animated.View
@@ -85,7 +78,7 @@ export function BrandSplash() {
         <AppText
           variant="sub"
           weight="medium"
-          color="rgba(255,255,255,0.82)"
+          color={colors.textMuted}
           style={{ textAlign: "center" }}
         >
           {t.home.heroBody}

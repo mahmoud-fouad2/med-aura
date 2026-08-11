@@ -1,10 +1,8 @@
 "use server"
 
 import { z } from "zod"
-import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { db } from "@/lib/db"
-import { favorite } from "@/lib/db/schema"
+import { toggleFavorite } from "@/lib/data/favorites"
 import { requireUser } from "@/lib/session"
 
 const KindSchema = z.enum(["doctor", "center", "procedure"])
@@ -30,31 +28,9 @@ export async function toggleFavoriteAction(
     if (!kindParsed.success) return { ok: false, error: "نوع غير مدعوم" }
     if (!refId || refId.length > 200) return { ok: false, error: "مرجع غير صالح" }
 
-    const existing = await db
-      .select({ id: favorite.id })
-      .from(favorite)
-      .where(
-        and(
-          eq(favorite.userId, user.id),
-          eq(favorite.kind, kindParsed.data),
-          eq(favorite.refId, refId),
-        ),
-      )
-      .limit(1)
-
-    if (existing[0]) {
-      await db.delete(favorite).where(eq(favorite.id, existing[0].id))
-      revalidatePath("/dashboard/favorites")
-      return { ok: true, favorited: false }
-    }
-
-    await db.insert(favorite).values({
-      userId: user.id,
-      kind: kindParsed.data,
-      refId,
-    })
+    const favorited = await toggleFavorite(user.id, kindParsed.data, refId)
     revalidatePath("/dashboard/favorites")
-    return { ok: true, favorited: true }
+    return { ok: true, favorited }
   } catch (err) {
     return {
       ok: false,

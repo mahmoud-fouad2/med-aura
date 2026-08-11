@@ -21,8 +21,12 @@ const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\
 const INVISIBLE_DIRECTIONAL_RE = /[\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g
 
 const assetsRoot = path.join(process.cwd(), "public")
-const arabicFont = path.join(assetsRoot, "fonts", "pdf", "alexandria-arabic-400-normal.woff")
-const arabicBoldFont = path.join(assetsRoot, "fonts", "pdf", "alexandria-arabic-700-normal.woff")
+// IBM Plex Sans Arabic (the brand font) with full Arabic Presentation-Forms
+// coverage. The prior Alexandria web-subset was missing the isolated forms of
+// non-joining letters (alef, dal, reh, teh-marbuta), so names like "سارة" and
+// "نور" rendered with tofu boxes. See public/fonts/pdf.
+const arabicFont = path.join(assetsRoot, "fonts", "pdf", "ibm-plex-arabic-400-normal.woff")
+const arabicBoldFont = path.join(assetsRoot, "fonts", "pdf", "ibm-plex-arabic-700-normal.woff")
 const logo = fs.readFileSync(path.join(assetsRoot, "brand", "med-aura-logo.png"))
 
 const PURPOSE_LABEL: Record<string, string> = {

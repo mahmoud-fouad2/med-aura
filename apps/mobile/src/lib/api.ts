@@ -4,7 +4,9 @@ import * as Sharing from "expo-sharing"
 import {
   keepPreviousData,
   useInfiniteQuery,
+  useMutation,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query"
 import { API_URL } from "./config"
 import { authClient } from "./auth-client"
@@ -44,6 +46,16 @@ export type DoctorDetail = Doctor & {
   licenseAuthority: string | null
   licenseLast4: string | null
   lastVerifiedAt: string | null
+}
+
+export type FavoriteDoctor = {
+  id: string
+  slug: string
+  name: string
+  title: string | null
+  city: string | null
+  country: string
+  photoUrl: string | null
 }
 
 export type Appointment = {
@@ -139,6 +151,10 @@ export type Me = {
   phone: string | null
   residenceCountry: string | null
   city: string | null
+  dateOfBirth: string | null
+  nationality: string | null
+  emergencyContactName: string | null
+  emergencyContactPhone: string | null
   /** False right after a Google sign-up — it never collects phone/country. */
   profileCompleted: boolean
 }
@@ -375,10 +391,20 @@ export const api = {
     phone: string
     residenceCountry: string
     city?: string
+    dateOfBirth?: string
+    nationality?: string
+    emergencyContactName?: string
+    emergencyContactPhone?: string
   }) =>
     request<{ updated: boolean }>("/api/mobile/v1/me", {
       method: "PATCH",
       body: JSON.stringify(input),
+    }),
+  favorites: () => request<{ doctors: FavoriteDoctor[] }>("/api/mobile/v1/favorites"),
+  toggleFavorite: (kind: "doctor" | "center" | "procedure", refId: string) =>
+    request<{ favorited: boolean }>("/api/mobile/v1/favorites/toggle", {
+      method: "POST",
+      body: JSON.stringify({ kind, refId }),
     }),
   avatarPresign: (input: { fileName: string; contentType: string; sizeBytes: number }) =>
     request<{ uploadUrl: string; objectKey: string }>("/api/mobile/v1/me/avatar", {
@@ -683,6 +709,45 @@ export const useNotifications = () =>
     queryFn: api.notifications,
     staleTime: 30_000,
   })
+
+export const useFavorites = () =>
+  useQuery({ queryKey: ["favorites"], queryFn: api.favorites, staleTime: 30_000 })
+
+/**
+ * Toggle a doctor favourite with an optimistic heart: flips the cached
+ * favourites list immediately, reconciles on success, and rolls back on
+ * error. Every doctor card/heart across the app reads the same
+ * `["favorites"]` cache, so one toggle updates them all at once.
+ */
+export const useToggleFavorite = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (doctor: FavoriteDoctor) =>
+      api.toggleFavorite("doctor", doctor.id),
+    onMutate: async (doctor: FavoriteDoctor) => {
+      await queryClient.cancelQueries({ queryKey: ["favorites"] })
+      const previous = queryClient.getQueryData<{ doctors: FavoriteDoctor[] }>([
+        "favorites",
+      ])
+      const doctors = previous?.doctors ?? []
+      const already = doctors.some((d) => d.id === doctor.id)
+      queryClient.setQueryData<{ doctors: FavoriteDoctor[] }>(["favorites"], {
+        doctors: already
+          ? doctors.filter((d) => d.id !== doctor.id)
+          : [doctor, ...doctors],
+      })
+      return { previous }
+    },
+    onError: (_err, _doctor, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["favorites"], context.previous)
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["favorites"] })
+    },
+  })
+}
 
 export const useTickets = () =>
   useQuery({ queryKey: ["tickets"], queryFn: api.tickets, staleTime: 30_000 })

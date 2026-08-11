@@ -32,6 +32,10 @@ export async function GET() {
         phone: patientProfile.phone,
         residenceCountry: patientProfile.residenceCountry,
         city: patientProfile.city,
+        dateOfBirth: patientProfile.dateOfBirth,
+        nationality: patientProfile.nationality,
+        emergencyContactName: patientProfile.emergencyContactName,
+        emergencyContactPhone: patientProfile.emergencyContactPhone,
         onboardingCompleted: patientProfile.onboardingCompleted,
       })
       .from(patientProfile)
@@ -80,12 +84,22 @@ export async function GET() {
     phone: profile?.phone ?? null,
     residenceCountry: profile?.residenceCountry ?? null,
     city: profile?.city ?? null,
+    dateOfBirth: profile?.dateOfBirth ?? null,
+    nationality: profile?.nationality ?? null,
+    emergencyContactName: profile?.emergencyContactName ?? null,
+    emergencyContactPhone: profile?.emergencyContactPhone ?? null,
     profileCompleted: profile?.onboardingCompleted ?? false,
   })
 }
 
 /** Mirrors completeSignupProfile's field rules — one truth for what a valid
     profile looks like, whether it's set at sign-up or edited later. */
+const optionalTrimmed = (max: number) =>
+  z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(max).optional(),
+  )
+
 const UpdateMeSchema = z.object({
   name: z
     .string()
@@ -99,9 +113,33 @@ const UpdateMeSchema = z.object({
     .max(24, "رقم الهاتف طويل جدًا")
     .regex(/^[+0-9\s\-()]+$/, "رقم الهاتف غير صالح"),
   residenceCountry: z.string().trim().length(2, "اختر الدولة"),
-  city: z.preprocess(
+  city: optionalTrimmed(120),
+  // Demographic + emergency-contact fields — all optional, mirroring the
+  // patient_profile columns the admin edit form already writes.
+  dateOfBirth: z.preprocess(
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
-    z.string().trim().max(120).optional(),
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ يجب أن تكون سنة-شهر-يوم")
+      .refine((v) => {
+        const d = new Date(v)
+        return !Number.isNaN(d.getTime()) && d.getTime() <= Date.now()
+      }, "تاريخ الميلاد غير صالح")
+      .optional(),
+  ),
+  nationality: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().length(2, "اختر الجنسية").optional(),
+  ),
+  emergencyContactName: optionalTrimmed(160),
+  emergencyContactPhone: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z
+      .string()
+      .trim()
+      .max(30)
+      .regex(/^[+0-9\s\-()]{6,30}$/, "رقم غير صالح")
+      .optional(),
   ),
 })
 
@@ -119,11 +157,28 @@ export async function PATCH(request: Request) {
       400,
     )
   }
-  const { name, residenceCountry, city } = parsed.data
+  const {
+    name,
+    residenceCountry,
+    city,
+    dateOfBirth,
+    nationality,
+    emergencyContactName,
+    emergencyContactPhone,
+  } = parsed.data
 
   try {
     const phone = normalizeSignupPhone(parsed.data.phone, residenceCountry)
     const meta = await requestMeta()
+
+    const profileFields = {
+      residenceCountry,
+      city: city || null,
+      dateOfBirth: dateOfBirth ?? null,
+      nationality: nationality ?? null,
+      emergencyContactName: emergencyContactName ?? null,
+      emergencyContactPhone: emergencyContactPhone ?? null,
+    }
 
     await db.transaction(async (tx) => {
       const existing = await tx
@@ -135,19 +190,13 @@ export async function PATCH(request: Request) {
       if (existing[0]) {
         await tx
           .update(patientProfile)
-          .set({
-            phone,
-            residenceCountry,
-            city: city || null,
-            updatedAt: new Date(),
-          })
+          .set({ phone, ...profileFields, updatedAt: new Date() })
           .where(eq(patientProfile.id, existing[0].id))
       } else {
         await tx.insert(patientProfile).values({
           userId: me.id,
           phone,
-          residenceCountry,
-          city: city || null,
+          ...profileFields,
         })
       }
 
