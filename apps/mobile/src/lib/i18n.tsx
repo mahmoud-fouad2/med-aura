@@ -141,8 +141,26 @@ const ar = {
   tabs: {
     home: "الرئيسية",
     explore: "استكشاف",
+    assistant: "المساعد",
     appointments: "مواعيدي",
     profile: "حسابي",
+  },
+  assistant: {
+    title: "مستشار Med Aura",
+    subtitle: "مساعد ذكي يرشدك ويرشّح لك",
+    greeting: "أهلاً بك! أنا مستشارك الذكي. اسألني عن الإجراءات أو دعني أرشّح لك طبيباً مناسباً.",
+    disclaimer: "هذه المساعدة للإرشاد فقط وليست بديلاً عن الاستشارة الطبية.",
+    placeholder: "اكتب سؤالك…",
+    thinking: "يكتب…",
+    error: "تعذّر الرد الآن. حاول مرة أخرى.",
+    unavailable: "المساعد الذكي غير متاح حاليًا.",
+    recommendedDoctors: "أطباء مقترحون",
+    starters: [
+      "رشّح لي طبيباً مناسباً",
+      "ما الفرق بين البوتوكس والفيلر؟",
+      "كم تكلفة الاستشارة؟",
+      "ما الإجراءات المتاحة للبشرة؟",
+    ],
   },
   home: {
     morning: "صباح الخير",
@@ -752,8 +770,27 @@ const en: typeof ar = {
   tabs: {
     home: "Home",
     explore: "Explore",
+    assistant: "Assistant",
     appointments: "Appointments",
     profile: "Account",
+  },
+  assistant: {
+    title: "Med Aura Concierge",
+    subtitle: "An AI guide that recommends for you",
+    greeting:
+      "Hi! I'm your AI concierge. Ask me about procedures, or let me match you with the right doctor.",
+    disclaimer: "This is guidance only and not a substitute for a medical consultation.",
+    placeholder: "Type your question…",
+    thinking: "Typing…",
+    error: "Couldn't respond right now. Try again.",
+    unavailable: "The AI assistant isn't available right now.",
+    recommendedDoctors: "Recommended doctors",
+    starters: [
+      "Recommend a suitable doctor",
+      "What's the difference between Botox and fillers?",
+      "How much is a consultation?",
+      "What skin procedures are available?",
+    ],
   },
   home: {
     morning: "Good morning",

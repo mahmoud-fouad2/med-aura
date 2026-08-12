@@ -58,6 +58,26 @@ export type FavoriteDoctor = {
   photoUrl: string | null
 }
 
+/** A doctor the AI concierge recommended — rendered as a tappable card. */
+export type AssistantDoctor = {
+  id: string
+  slug: string
+  name: string
+  title: string | null
+  city: string | null
+  consultationFee: string | null
+  currency: string
+  photoUrl: string | null
+}
+
+export type AssistantTurn = { role: "user" | "assistant"; content: string }
+
+export type AssistantResponse = {
+  reply: string
+  followups: string[]
+  doctors: AssistantDoctor[]
+}
+
 export type Appointment = {
   id: string
   reference: string
@@ -399,6 +419,11 @@ export const api = {
     request<{ updated: boolean }>("/api/mobile/v1/me", {
       method: "PATCH",
       body: JSON.stringify(input),
+    }),
+  assistant: (messages: AssistantTurn[]) =>
+    request<AssistantResponse>("/api/mobile/v1/assistant", {
+      method: "POST",
+      body: JSON.stringify({ messages }),
     }),
   favorites: () => request<{ doctors: FavoriteDoctor[] }>("/api/mobile/v1/favorites"),
   toggleFavorite: (kind: "doctor" | "center" | "procedure", refId: string) =>

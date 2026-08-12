@@ -54,6 +54,11 @@ const schema = z.object({
   /** Minutes after the appointment end when joining closes (default 30). */
   VIDEO_JOIN_WINDOW_AFTER_MINUTES: z.coerce.number().int().min(0).max(240).optional(),
 
+  // Google Gemini — powers the in-app AI concierge (app/api/mobile/v1/
+  // assistant). Unset → the assistant returns an honest "not available yet"
+  // state instead of a broken chat.
+  GEMINI_API_KEY: z.string().optional(),
+
   // reCAPTCHA. Server-side verification is wired into the contact action; the
   // client token widget is not implemented yet, so no site key is consumed.
   RECAPTCHA_SECRET_KEY: z.string().optional(),
@@ -213,6 +218,8 @@ export const isTestPaymentEnabled = () =>
 /** QA video-session tool is gated by an explicit opt-in flag. */
 export const isVideoQaEnabled = () => read().ENABLE_VIDEO_QA_TOOLS === "true"
 export const isRecaptchaConfigured = () => Boolean(read().RECAPTCHA_SECRET_KEY)
+/** The AI concierge is only live when a Gemini key is present. */
+export const isAiConfigured = () => Boolean(read().GEMINI_API_KEY)
 export const isGoogleAuthConfigured = () =>
   Boolean(read().GOOGLE_CLIENT_ID && read().GOOGLE_CLIENT_SECRET)
 

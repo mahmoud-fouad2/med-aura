@@ -77,11 +77,11 @@ export default function Home() {
       {/* Hero — brand artwork behind the greeting, not a flat colour block. */}
       <View
         style={{
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: spacing.xxl + spacing.xl,
+          paddingTop: insets.top + spacing.sm,
+          paddingBottom: spacing.xl,
           paddingHorizontal: spacing.screen,
-          borderBottomLeftRadius: 34,
-          borderBottomRightRadius: 34,
+          borderBottomLeftRadius: 28,
+          borderBottomRightRadius: 28,
           backgroundColor: colors.primary,
           overflow: "hidden",
         }}
@@ -100,7 +100,7 @@ export default function Home() {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: spacing.lg,
+            marginBottom: spacing.md,
           }}
         >
           <Pressable
@@ -171,13 +171,13 @@ export default function Home() {
             onPress={() => router.push("/(tabs)/explore")}
             style={[
               {
-                marginTop: spacing.lg,
+                marginTop: spacing.md,
                 backgroundColor: colors.gold,
                 alignSelf: "flex-start",
                 borderRadius: radius.full,
-                paddingVertical: 17,
-                paddingHorizontal: spacing.xxl,
-                minWidth: 210,
+                paddingVertical: 14,
+                paddingHorizontal: spacing.xl,
+                minWidth: 200,
               },
               shadows.raised,
             ]}

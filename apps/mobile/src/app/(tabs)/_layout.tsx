@@ -1,8 +1,10 @@
+import { Pressable, View } from "react-native"
 import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import * as Haptics from "expo-haptics"
 import { useI18n } from "../../lib/i18n"
-import { colors, TAB_BAR_HEIGHT } from "../../theme"
+import { colors, shadows, TAB_BAR_HEIGHT } from "../../theme"
 
 export default function TabsLayout() {
   const { t } = useI18n()
@@ -47,6 +49,45 @@ export default function TabsLayout() {
           title: t.tabs.explore,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "search" : "search-outline"} size={22} color={color} />
+          ),
+        }}
+      />
+      {/* Center AI concierge — a raised, brand-gold action that stands apart
+          from the flat tabs, signalling "this is the special one." */}
+      <Tabs.Screen
+        name="assistant"
+        options={{
+          title: t.tabs.assistant,
+          tabBarLabel: () => null,
+          tabBarButton: (props) => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t.assistant.title}
+              onPress={(e) => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+                props.onPress?.(e)
+              }}
+              style={{ flex: 1, alignItems: "center", justifyContent: "flex-start" }}
+            >
+              <View
+                style={[
+                  {
+                    marginTop: -22,
+                    width: 58,
+                    height: 58,
+                    borderRadius: 29,
+                    backgroundColor: colors.gold,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 4,
+                    borderColor: colors.card,
+                  },
+                  shadows.raised,
+                ]}
+              >
+                <Ionicons name="sparkles" size={26} color={colors.ink} />
+              </View>
+            </Pressable>
           ),
         }}
       />
