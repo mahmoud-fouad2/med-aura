@@ -24,9 +24,11 @@ import { listProceduresGrouped } from "@/lib/data/procedures"
  * themselves — the assistant never books or charges.
  */
 
-// gemini-2.5-flash: fast and cost-effective, with function calling — the right
-// balance for a real-time concierge chat.
-const MODEL = "gemini-2.5-flash"
+// `gemini-flash-latest` is a stable alias that always resolves to Google's
+// current recommended Flash model — safer than pinning a versioned ID that
+// gets deprecated for new users (as `gemini-2.5-flash` was). Fast, cheap,
+// supports function calling — the right balance for a real-time chat.
+const MODEL = "gemini-flash-latest"
 const MAX_TOOL_ROUNDS = 4
 
 export type AssistantDoctor = {

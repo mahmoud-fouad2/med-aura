@@ -1,6 +1,5 @@
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,7 +11,16 @@ import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
-import { AppText, Avatar, IconBadge } from "../../components/ui"
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated"
+import { AppText, Avatar } from "../../components/ui"
 import { api, NetworkError, type AssistantDoctor, type AssistantTurn } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
@@ -75,193 +83,229 @@ export default function Assistant() {
     [messages, sending, scrollToEnd, t],
   )
 
-  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant")
+  const lastAssistant = useMemo(
+    () => [...messages].reverse().find((m) => m.role === "assistant"),
+    [messages],
+  )
   const activeFollowups = !sending ? (lastAssistant?.followups ?? []) : []
+  const showStarterChips = messages.length === 0 && !sending
+  const chips = showStarterChips ? t.assistant.starters : activeFollowups
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {/* Header */}
+      {/* Brand header — soft purple wash with the assistant identity front and
+          center so the chat feels like a room, not a settings screen. */}
       <View
         style={{
           paddingTop: insets.top + spacing.md,
-          paddingBottom: spacing.md,
+          paddingBottom: spacing.lg,
           paddingHorizontal: spacing.screen,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          backgroundColor: colors.card,
+          backgroundColor: colors.primary,
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
         }}
       >
-        <View
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
-            backgroundColor: colors.gold,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="sparkles" size={22} color={colors.ink} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="heading" weight="heavy">
-            {t.assistant.title}
-          </AppText>
-          <AppText variant="caption" color={colors.textMuted}>
-            {t.assistant.subtitle}
-          </AppText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: colors.gold,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 2,
+              borderColor: "rgba(255,255,255,0.35)",
+            }}
+          >
+            <Ionicons name="sparkles" size={22} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <AppText variant="title" weight="heavy" color="#FFFFFF">
+              {t.assistant.title}
+            </AppText>
+            <AppText variant="caption" color="rgba(255,255,255,0.78)">
+              {t.assistant.subtitle}
+            </AppText>
+          </View>
         </View>
       </View>
 
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={{
-          padding: spacing.screen,
+          paddingTop: spacing.lg,
+          paddingHorizontal: spacing.screen,
           paddingBottom: spacing.lg,
           gap: spacing.md,
         }}
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={scrollToEnd}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Greeting + disclaimer on an empty conversation. */}
         {messages.length === 0 ? (
-          <View style={{ gap: spacing.md }}>
-            <AssistantBubble text={t.assistant.greeting} />
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing.sm,
-                backgroundColor: colors.goldSoft,
-                borderRadius: radius.md,
-                padding: spacing.md,
-              }}
-            >
-              <Ionicons name="information-circle-outline" size={16} color={colors.gold} />
-              <AppText variant="caption" color={colors.textMuted} style={{ flex: 1 }}>
-                {t.assistant.disclaimer}
-              </AppText>
-            </View>
-          </View>
-        ) : null}
-
-        {messages.map((m) =>
-          m.role === "user" ? (
-            <UserBubble key={m.id} text={m.content} />
-          ) : (
-            <View key={m.id} style={{ gap: spacing.sm }}>
-              <AssistantBubble text={m.content} />
-              {(m.doctors ?? []).length > 0 ? (
-                <View style={{ gap: spacing.sm }}>
-                  <AppText variant="caption" weight="bold" color={colors.textMuted}>
-                    {t.assistant.recommendedDoctors}
-                  </AppText>
-                  {m.doctors!.map((d) => (
-                    <DoctorCard key={d.id} doctor={d} />
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ),
+          <EmptyState />
+        ) : (
+          messages.map((m) =>
+            m.role === "user" ? (
+              <UserBubble key={m.id} text={m.content} />
+            ) : (
+              <AssistantMessage
+                key={m.id}
+                text={m.content}
+                doctors={m.doctors ?? []}
+                doctorsLabel={t.assistant.recommendedDoctors}
+              />
+            ),
+          )
         )}
 
-        {sending ? (
-          <View style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <AppText variant="caption" color={colors.textMuted}>
-              {t.assistant.thinking}
-            </AppText>
-          </View>
-        ) : null}
+        {sending ? <TypingIndicator label={t.assistant.thinking} /> : null}
       </ScrollView>
 
-      {/* Starter / follow-up chips */}
-      {(messages.length === 0 || activeFollowups.length > 0) && !sending ? (
+      {/* Suggestion chips — starters when empty, follow-ups after a reply. */}
+      {chips.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: spacing.screen, gap: spacing.sm, paddingBottom: spacing.sm }}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.screen,
+            gap: spacing.sm,
+            paddingBottom: spacing.sm,
+            paddingTop: spacing.xs,
+          }}
         >
-          {(messages.length === 0 ? t.assistant.starters : activeFollowups).map((chip, i) => (
-            <Pressable
-              key={`${chip}-${i}`}
-              onPress={() => void send(chip)}
-              style={{
-                borderRadius: radius.full,
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.card,
-                paddingHorizontal: spacing.md,
-                paddingVertical: 8,
-              }}
-            >
-              <AppText variant="caption" weight="medium" color={colors.primary}>
-                {chip}
-              </AppText>
-            </Pressable>
+          {chips.map((chip, i) => (
+            <SuggestionChip key={`${chip}-${i}`} label={chip} onPress={() => void send(chip)} />
           ))}
         </ScrollView>
       ) : null}
 
-      {/* Input bar */}
+      {/* Input bar — cleaner floating shape, single circular send. */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "flex-end",
-          gap: spacing.sm,
           paddingHorizontal: spacing.screen,
           paddingTop: spacing.sm,
           paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.sm,
+          backgroundColor: colors.card,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          backgroundColor: colors.card,
         }}
       >
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder={t.assistant.placeholder}
-          placeholderTextColor={colors.textFaint}
-          multiline
+        <View
           style={{
-            flex: 1,
-            maxHeight: 120,
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: spacing.sm,
+            backgroundColor: colors.background,
+            borderRadius: radius.xl,
             borderWidth: 1,
             borderColor: colors.border,
-            borderRadius: radius.lg,
             paddingHorizontal: spacing.md,
-            paddingTop: 10,
-            paddingBottom: 10,
-            fontSize: 15,
-            color: colors.text,
-            backgroundColor: colors.background,
-            writingDirection: "auto",
-          }}
-        />
-        <Pressable
-          onPress={() => void send(input)}
-          disabled={!input.trim() || sending}
-          accessibilityRole="button"
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 23,
-            backgroundColor: input.trim() && !sending ? colors.primary : colors.border,
-            alignItems: "center",
-            justifyContent: "center",
+            paddingVertical: 6,
           }}
         >
-          <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
-        </Pressable>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder={t.assistant.placeholder}
+            placeholderTextColor={colors.textFaint}
+            multiline
+            style={{
+              flex: 1,
+              maxHeight: 120,
+              paddingTop: 10,
+              paddingBottom: 10,
+              paddingHorizontal: 4,
+              fontSize: 15,
+              color: colors.text,
+              writingDirection: "auto",
+            }}
+          />
+          <Pressable
+            onPress={() => void send(input)}
+            disabled={!input.trim() || sending}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              {
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor:
+                  input.trim() && !sending ? colors.primary : colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 2,
+                opacity: pressed ? 0.88 : 1,
+              },
+            ]}
+          >
+            <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
+  )
+}
+
+/**
+ * The empty-state hero on first open — introduces the assistant, sets the
+ * expectation ("guidance, not diagnosis"), and hands the user the starter
+ * chips below. A single balanced hero beats scattered helper text.
+ */
+function EmptyState() {
+  const { t } = useI18n()
+  return (
+    <View style={{ alignItems: "center", gap: spacing.md, paddingTop: spacing.lg }}>
+      <View
+        style={[
+          {
+            width: 84,
+            height: 84,
+            borderRadius: 42,
+            backgroundColor: colors.gold,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 6,
+            borderColor: colors.goldSoft,
+          },
+          shadows.raised,
+        ]}
+      >
+        <Ionicons name="sparkles" size={38} color="#FFFFFF" />
+      </View>
+      <AppText variant="hero" weight="heavy" style={{ textAlign: "center" }}>
+        {t.assistant.title}
+      </AppText>
+      <AppText
+        variant="body"
+        color={colors.textMuted}
+        style={{ textAlign: "center", maxWidth: 320 }}
+      >
+        {t.assistant.greeting}
+      </AppText>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.sm,
+          backgroundColor: colors.primarySoft,
+          borderRadius: radius.md,
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm,
+          marginTop: spacing.sm,
+        }}
+      >
+        <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
+        <AppText variant="caption" color={colors.primary} style={{ flex: 1 }}>
+          {t.assistant.disclaimer}
+        </AppText>
+      </View>
+    </View>
   )
 }
 
@@ -270,12 +314,12 @@ function UserBubble({ text }: { text: string }) {
     <View
       style={{
         alignSelf: "flex-end",
-        maxWidth: "85%",
+        maxWidth: "82%",
         backgroundColor: colors.primary,
         borderRadius: radius.lg,
-        borderBottomRightRadius: radius.sm,
+        borderBottomRightRadius: 6,
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
+        paddingVertical: 10,
       }}
     >
       <AppText variant="body" color="#FFFFFF">
@@ -285,29 +329,178 @@ function UserBubble({ text }: { text: string }) {
   )
 }
 
-function AssistantBubble({ text }: { text: string }) {
+/**
+ * One assistant turn: a small gold-sparkle avatar next to a cream bubble,
+ * followed (when the AI recommended doctors) by a labelled doctor stack.
+ * Grouping the reply with its recommendations avoids the previous look where
+ * doctor cards floated loose beneath the chat.
+ */
+function AssistantMessage({
+  text,
+  doctors,
+  doctorsLabel,
+}: {
+  text: string
+  doctors: AssistantDoctor[]
+  doctorsLabel: string
+}) {
   return (
-    <View
-      style={[
-        {
-          alignSelf: "flex-start",
-          maxWidth: "88%",
-          backgroundColor: colors.card,
-          borderRadius: radius.lg,
-          borderBottomLeftRadius: radius.sm,
-          borderWidth: 1,
-          borderColor: colors.border,
-          paddingHorizontal: spacing.md,
-          paddingVertical: spacing.sm,
-        },
-        shadows.card,
-      ]}
-    >
-      <AppText variant="body">{text}</AppText>
+    <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, maxWidth: "92%" }}>
+      <View
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          backgroundColor: colors.gold,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 2,
+        }}
+      >
+        <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+      </View>
+      <View style={{ flex: 1, gap: spacing.sm }}>
+        <View
+          style={[
+            {
+              backgroundColor: colors.card,
+              borderRadius: radius.lg,
+              borderBottomLeftRadius: 6,
+              borderWidth: 1,
+              borderColor: colors.border,
+              paddingHorizontal: spacing.md,
+              paddingVertical: 10,
+            },
+            shadows.card,
+          ]}
+        >
+          <AppText variant="body">{text}</AppText>
+        </View>
+        {doctors.length > 0 ? (
+          <View style={{ gap: spacing.xs }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginTop: 2 }}
+            >
+              <Ionicons name="ribbon-outline" size={14} color={colors.gold} />
+              <AppText variant="caption" weight="bold" color={colors.textMuted}>
+                {doctorsLabel}
+              </AppText>
+            </View>
+            <View style={{ gap: spacing.sm }}>
+              {doctors.map((d) => (
+                <DoctorCard key={d.id} doctor={d} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </View>
     </View>
   )
 }
 
+/**
+ * Three softly-pulsing dots so the wait between "sent" and "replied" reads as
+ * a real conversation rather than a silent app-hang.
+ */
+function TypingIndicator({ label }: { label: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing.sm }}>
+      <View
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          backgroundColor: colors.gold,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+      </View>
+      <View
+        style={[
+          {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            backgroundColor: colors.card,
+            borderRadius: radius.lg,
+            borderBottomLeftRadius: 6,
+            borderWidth: 1,
+            borderColor: colors.border,
+            paddingHorizontal: spacing.md,
+            paddingVertical: 12,
+          },
+          shadows.card,
+        ]}
+      >
+        <TypingDot delay={0} />
+        <TypingDot delay={160} />
+        <TypingDot delay={320} />
+        <AppText variant="caption" color={colors.textMuted} style={{ marginStart: 4 }}>
+          {label}
+        </AppText>
+      </View>
+    </View>
+  )
+}
+
+function TypingDot({ delay }: { delay: number }) {
+  const opacity = useSharedValue(0.3)
+  useEffect(() => {
+    opacity.set(
+      withDelay(
+        delay,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }),
+            withTiming(0.3, { duration: 420, easing: Easing.in(Easing.cubic) }),
+          ),
+          -1,
+          false,
+        ),
+      ),
+    )
+  }, [opacity, delay])
+  const style = useAnimatedStyle(() => ({ opacity: opacity.get() }))
+  return (
+    <Animated.View
+      style={[
+        { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
+        style,
+      ]}
+    />
+  )
+}
+
+function SuggestionChip({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          borderRadius: radius.full,
+          borderWidth: 1,
+          borderColor: colors.primarySoft,
+          backgroundColor: pressed ? colors.primarySoft : colors.card,
+          paddingHorizontal: spacing.md,
+          paddingVertical: 9,
+        },
+        shadows.card,
+      ]}
+    >
+      <AppText variant="caption" weight="bold" color={colors.primary}>
+        {label}
+      </AppText>
+    </Pressable>
+  )
+}
+
+/**
+ * A recommended doctor. Tap → open profile. The layout mirrors the doctor
+ * cards elsewhere in the app so a card that appears in chat feels native to
+ * the product, not an AI attachment.
+ */
 function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
   const location = [doctor.title, doctor.city].filter(Boolean).join(" · ")
   return (
@@ -316,7 +509,7 @@ function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
         void Haptics.selectionAsync()
         router.push(`/doctor/${doctor.slug}`)
       }}
-      style={[
+      style={({ pressed }) => [
         {
           flexDirection: "row",
           alignItems: "center",
@@ -326,12 +519,13 @@ function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
           borderWidth: 1,
           borderColor: colors.border,
           padding: spacing.md,
+          opacity: pressed ? 0.94 : 1,
         },
         shadows.card,
       ]}
     >
-      <Avatar name={doctor.name} photoUrl={doctor.photoUrl} size={48} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <Avatar name={doctor.name} photoUrl={doctor.photoUrl} size={52} />
+      <View style={{ flex: 1, gap: 3 }}>
         <AppText variant="body" weight="bold" numberOfLines={1}>
           {doctor.name}
         </AppText>
@@ -341,12 +535,26 @@ function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
           </AppText>
         ) : null}
         {doctor.consultationFee ? (
-          <AppText variant="caption" weight="medium" color={colors.primary}>
-            {doctor.consultationFee} {doctor.currency}
-          </AppText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+            <Ionicons name="pricetag-outline" size={12} color={colors.primary} />
+            <AppText variant="caption" weight="bold" color={colors.primary}>
+              {doctor.consultationFee} {doctor.currency}
+            </AppText>
+          </View>
         ) : null}
       </View>
-      <IconBadge icon="calendar-outline" size={36} />
+      <View
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          backgroundColor: colors.primarySoft,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+      </View>
     </Pressable>
   )
 }
