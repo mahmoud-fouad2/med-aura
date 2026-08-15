@@ -49,7 +49,13 @@ const ar = {
   },
   search: {
     title: "ابحث عن طبيب أو إجراء",
-    resultsCount: (n: number) => `${n} نتيجة`,
+    resultsCount: (n: number) => {
+      if (n === 0) return "لا توجد نتائج"
+      if (n === 1) return "نتيجة واحدة"
+      if (n === 2) return "نتيجتان"
+      if (n >= 3 && n <= 10) return `${n} نتائج`
+      return `${n} نتيجة`
+    },
     empty: "لا توجد نتائج مطابقة. جرّب تعديل عوامل التصفية.",
     filters: "عوامل التصفية",
     procedure: "الإجراء",

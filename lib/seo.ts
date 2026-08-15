@@ -16,9 +16,10 @@ export type GeoPoint = {
   longitude: number
 }
 
-const SERVICE_IMAGE_VERSION = "20260809"
+const SERVICE_IMAGE_VERSION = "20260815"
 
 const serviceAsset = (name: string) => `/demo-services/${name}.png?v=${SERVICE_IMAGE_VERSION}`
+const procedureAsset = (slug: string) => `/service-images/${slug}.jpg?v=${SERVICE_IMAGE_VERSION}`
 
 const CATEGORY_IMAGES: Record<string, string> = {
   "face-neck": serviceAsset("service-face-neck"),
@@ -29,20 +30,18 @@ const CATEGORY_IMAGES: Record<string, string> = {
   dental: serviceAsset("service-dental-smile"),
 }
 
-const PROCEDURE_IMAGES: Record<string, string> = {
-  facelift: serviceAsset("aesthetic-clinic-lounge"),
-  blepharoplasty: serviceAsset("service-skin-nonsurgical"),
-  "neck-lift": serviceAsset("aesthetic-clinic-lounge"),
-  "brow-lift": serviceAsset("service-skin-nonsurgical"),
-  "breast-augmentation": serviceAsset("aesthetic-treatment-room"),
-  "breast-lift": serviceAsset("aesthetic-clinic-lounge"),
-  "breast-reduction": serviceAsset("aesthetic-treatment-room"),
-  botox: serviceAsset("service-skin-nonsurgical"),
-  "dermal-fillers": serviceAsset("aesthetic-treatment-room"),
-  "chemical-peel": serviceAsset("service-skin-nonsurgical"),
-  microneedling: serviceAsset("aesthetic-treatment-room"),
-  "thread-lift": serviceAsset("service-face-neck"),
-}
+export const PROCEDURE_IMAGE_SLUGS = [
+  "rhinoplasty", "facelift", "blepharoplasty", "otoplasty", "chin-augmentation",
+  "neck-lift", "brow-lift", "breast-augmentation", "breast-lift", "breast-reduction",
+  "liposuction", "tummy-tuck", "brazilian-butt-lift", "arm-lift", "thigh-lift",
+  "mommy-makeover", "botox", "dermal-fillers", "chemical-peel", "laser-hair-removal",
+  "microneedling", "thread-lift", "hair-transplant", "prp-hair", "veneers",
+  "teeth-whitening", "smile-makeover",
+] as const
+
+const PROCEDURE_IMAGES: Record<string, string> = Object.fromEntries(
+  PROCEDURE_IMAGE_SLUGS.map((slug) => [slug, procedureAsset(slug)]),
+)
 
 const COUNTRY_GEO: Record<string, GeoPoint> = {
   AE: { nameAr: "الإمارات", nameEn: "United Arab Emirates", latitude: 23.4241, longitude: 53.8478 },

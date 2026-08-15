@@ -15,7 +15,7 @@ import {
   CreditCard,
   LifeBuoy,
 } from "lucide-react"
-import { getCurrentUser, currentUserRoles } from "@/lib/session"
+import { requireAuthPage, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
 import { db } from "@/lib/db"
 import { providerApplication } from "@/lib/db/schema"
@@ -80,7 +80,9 @@ function relativeDay(d: Date): string {
 }
 
 export default async function DashboardHome() {
-  const user = (await getCurrentUser())!
+  // Layouts and pages may render in parallel. Protect the page itself so an
+  // anonymous request can never reach the data queries with a null user.
+  const user = await requireAuthPage("/dashboard")
   const roles = await currentUserRoles()
   const isDoctor = roles.includes(ROLES.DOCTOR)
   const isAdmin =

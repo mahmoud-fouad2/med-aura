@@ -35,11 +35,11 @@ export function AdminShell({
     ?.label
 
   return (
-    <div className="flex min-h-svh bg-[radial-gradient(circle_at_top_right,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_26%),radial-gradient(circle_at_bottom_left,color-mix(in_oklab,var(--gold)_10%,transparent),transparent_24%),var(--background)]">
+    <div className="flex min-h-svh bg-muted/30">
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-4 my-4 ms-4 hidden h-[calc(100svh-2rem)] shrink-0 flex-col rounded-[1.65rem] border border-white/70 bg-card/82 shadow-elegant-lg ease-premium transition-[width] duration-200 backdrop-blur-xl md:flex",
+          "sticky top-4 my-4 ms-4 hidden h-[calc(100svh-2rem)] shrink-0 flex-col rounded-xl border border-border/70 bg-card shadow-sm ease-premium transition-[width] duration-200 md:flex",
           collapsed ? "w-[72px]" : "w-[248px]",
         )}
       >
@@ -81,7 +81,7 @@ export function AdminShell({
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6">
-          <div className="flex h-16 items-center gap-3 rounded-[1.45rem] border border-white/70 bg-background/82 px-4 shadow-elegant backdrop-blur-xl sm:px-6">
+          <div className="flex h-16 items-center gap-3 rounded-xl border border-border/70 bg-background px-4 shadow-sm sm:px-6">
             <Button
               variant="ghost"
               size="icon"
@@ -182,7 +182,7 @@ function SidebarInner({
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
-                Operations
+                إدارة المنصة
               </p>
               <p className="truncate text-sm font-bold text-foreground">لوحة الإدارة</p>
             </div>

@@ -56,11 +56,15 @@ const COUNTRY: Record<string, string> = {
 const COUNTRY_NAMES_AR: Record<string, string> = Object.fromEntries(
   COUNTRY_PRESETS.map((p) => [p.code, p.nameAr]),
 )
+const COUNTRY_NAMES_EN: Record<string, string> = Object.fromEntries(
+  COUNTRY_PRESETS.map((p) => [p.code, p.nameEn]),
+)
 
 /** Arabic country name for a stored ISO alpha-2 code — falls back to the stored value itself
  * (e.g. a value already spelled out in Arabic) for anything not in the map. COUNTRY_NAMES_AR is
  * a strict superset of COUNTRY (same 10 codes, identical Arabic names), so no separate fallback. */
 export const countryNameAr = (value: string): string => COUNTRY_NAMES_AR[value] ?? value
+export const countryNameEn = (value: string): string => COUNTRY_NAMES_EN[value] ?? value
 
 /** ISO codes of the countries the platform serves — signup/profile selects. */
 export const COUNTRY_CODES = Object.keys(COUNTRY)

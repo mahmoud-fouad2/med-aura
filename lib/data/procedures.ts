@@ -12,10 +12,12 @@ import { serviceImageForProcedure } from "@/lib/seo"
 export type ProcedureListItem = {
   slug: string
   nameAr: string
+  nameEn: string
   isSurgical: boolean
   recoveryDays: number | null
   categorySlug: string
   categoryNameAr: string
+  categoryNameEn: string
   /** A real uploaded photo, when the admin has set one — null falls back to the category illustration. */
   imageUrl: string | null
 }
@@ -23,7 +25,9 @@ export type ProcedureListItem = {
 export type CategoryGroup = {
   slug: string
   nameAr: string
+  nameEn: string
   descriptionAr: string | null
+  descriptionEn: string | null
   icon: string | null
   procedures: ProcedureListItem[]
 }
@@ -33,7 +37,9 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
     .select({
       slug: procedureCategory.slug,
       nameAr: procedureCategory.nameAr,
+      nameEn: procedureCategory.nameEn,
       descriptionAr: procedureCategory.descriptionAr,
+      descriptionEn: procedureCategory.descriptionEn,
       icon: procedureCategory.icon,
     })
     .from(procedureCategory)
@@ -44,10 +50,12 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
     .select({
       slug: procedureT.slug,
       nameAr: procedureT.nameAr,
+      nameEn: procedureT.nameEn,
       isSurgical: procedureT.isSurgical,
       recoveryDays: procedureT.recoveryDays,
       categorySlug: procedureCategory.slug,
       categoryNameAr: procedureCategory.nameAr,
+      categoryNameEn: procedureCategory.nameEn,
       imageKey: procedureT.imageKey,
     })
     .from(procedureT)

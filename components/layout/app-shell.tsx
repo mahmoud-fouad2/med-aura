@@ -51,8 +51,8 @@ export async function AppShell({
         </div>
         <NavLinks
           links={nav}
-          className="mx-auto mt-2 flex max-w-7xl items-center gap-1 overflow-x-auto rounded-2xl border border-border/70 bg-card/85 px-3 py-2 shadow-sm md:hidden"
-          itemClassName="whitespace-nowrap"
+          className="mx-auto mt-2 grid max-w-7xl grid-cols-2 gap-1 rounded-xl border border-border/70 bg-card px-2 py-2 shadow-sm md:hidden"
+          itemClassName="min-w-0 justify-center text-center"
         />
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">

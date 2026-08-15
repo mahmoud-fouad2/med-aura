@@ -13,16 +13,20 @@ import { Stagger, StaggerItem } from "@/components/motion"
 import { CategoryIconBadge } from "@/components/marketing/category-icon"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { serviceImageForProcedure } from "@/lib/seo"
+import type { Locale } from "@/lib/i18n"
 
-export async function PopularProcedures() {
+export async function PopularProcedures({ locale }: { locale: Locale }) {
+  const isAr = locale === "ar"
   const res = await query(() =>
     db
       .select({
         slug: procedureT.slug,
         nameAr: procedureT.nameAr,
+        nameEn: procedureT.nameEn,
         isSurgical: procedureT.isSurgical,
         recoveryDays: procedureT.recoveryDays,
         categoryNameAr: procedureCategory.nameAr,
+        categoryNameEn: procedureCategory.nameEn,
         categoryIcon: procedureCategory.icon,
         categorySlug: procedureCategory.slug,
         imageKey: procedureT.imageKey,
@@ -39,9 +43,9 @@ export async function PopularProcedures() {
     <section className="border-b border-border bg-section-soft">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="اختيارات شائعة"
-          title="ابدأ من احتياجك"
-          subtitle="تعرّف على الخيارات التي يبحث عنها المرضى، ثم اختر الطبيب الأنسب قبل الحجز."
+          eyebrow={isAr ? "اختيارات شائعة" : "Popular choices"}
+          title={isAr ? "ابدأ من احتياجك" : "Start with your needs"}
+          subtitle={isAr ? "تعرّف على الخيارات الأكثر طلبًا، ثم قارن بين الأطباء قبل الحجز." : "Explore popular options, then compare doctors before booking."}
         />
 
         {res.status !== "ok" ? (
@@ -55,8 +59,8 @@ export async function PopularProcedures() {
           <div className="mt-12">
             <EmptyState
               icon={Sparkles}
-              title="سيتم عرض الإجراءات هنا قريبًا"
-              description="نحضّر الإجراءات لتظهر لك بصورة أوضح وأسهل للمقارنة."
+              title={isAr ? "ستظهر الإجراءات هنا قريبًا" : "Procedures will appear here soon"}
+              description={isAr ? "نعمل على تجهيز معلومات واضحة تساعدك على المقارنة." : "We are preparing clear information to make comparison easier."}
             />
           </div>
         ) : (
@@ -65,7 +69,7 @@ export async function PopularProcedures() {
               <StaggerItem key={p.slug}>
                 <Link
                   href={`/search?procedure=${p.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-[1.85rem] border border-white/70 bg-card/88 shadow-elegant transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm"
+                  className="group flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-elegant"
                 >
                   <div className="relative h-32 overflow-hidden bg-muted">
                     <Image
@@ -84,19 +88,23 @@ export async function PopularProcedures() {
                   </div>
                   <div className="flex flex-1 flex-col gap-3.5 p-5">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/70">
-                      {p.categoryNameAr}
+                      {isAr ? p.categoryNameAr : p.categoryNameEn}
                     </p>
                     <h3 className="font-heading text-lg font-bold text-foreground">
-                      {p.nameAr}
+                      {isAr ? p.nameAr : p.nameEn}
                     </h3>
                     <Badge variant={p.isSurgical ? "secondary" : "outline"} className="w-fit font-medium">
                       <Syringe className="size-3" />
-                      {p.isSurgical ? "جراحي" : "غير جراحي"}
+                      {p.isSurgical
+                        ? (isAr ? "جراحي" : "Surgical")
+                        : (isAr ? "غير جراحي" : "Non-surgical")}
                     </Badge>
                     <p className="mt-auto border-t border-border/40 pt-3 text-xs font-medium text-muted-foreground">
                       {p.recoveryDays != null && p.recoveryDays > 0
-                        ? `العودة للروتين غالبًا خلال ${p.recoveryDays} يوم`
-                        : "يمكن العودة للروتين سريعًا"}
+                        ? (isAr
+                            ? `العودة للروتين غالبًا خلال ${p.recoveryDays} يوم`
+                            : `Usually back to routine within ${p.recoveryDays} days`)
+                        : (isAr ? "يمكن العودة للروتين سريعًا" : "Usually little to no downtime")}
                     </p>
                   </div>
                 </Link>

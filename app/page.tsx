@@ -2,7 +2,6 @@ import { SiteHeader } from "@/components/layout/site-header"
 import { Hero } from "@/components/landing/hero"
 import { CosmeticAreas } from "@/components/landing/cosmetic-areas"
 import { PopularProcedures } from "@/components/landing/popular-procedures"
-import { Features } from "@/components/landing/features"
 import { FeaturedDoctors } from "@/components/landing/featured-doctors"
 import { TrustBand } from "@/components/landing/trust-band"
 import { BeforeAfterShowcase } from "@/components/landing/before-after-showcase"
@@ -19,10 +18,9 @@ export default async function HomePage() {
       <main className="flex-1">
         <Hero t={t.home} tCommon={t.common} locale={locale} />
         <CosmeticAreas t={t.home} locale={locale} />
-        <PopularProcedures />
-        <Features t={t.home} locale={locale} />
+        <PopularProcedures locale={locale} />
         <FeaturedDoctors />
-        <TrustBand />
+        <TrustBand locale={locale} />
         <BeforeAfterShowcase />
         <CtaFooter />
       </main>

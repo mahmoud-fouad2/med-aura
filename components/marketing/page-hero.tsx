@@ -35,6 +35,8 @@ export function PageHero({
             alt={imageAlt}
             fill
             priority
+            loading="eager"
+            fetchPriority="high"
             className="object-cover object-center"
             sizes="100vw"
           />
@@ -43,8 +45,7 @@ export function PageHero({
       ) : (
         <div className="absolute inset-0 bg-section-soft" />
       )}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,color-mix(in_oklab,var(--gold)_10%,transparent),transparent_32%),radial-gradient(circle_at_bottom_left,color-mix(in_oklab,var(--primary)_8%,transparent),transparent_30%)]" />
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className={cn("grid items-end gap-8", stats?.length ? "lg:grid-cols-[minmax(0,1fr)_22rem]" : "") }>
           <FadeIn className="max-w-3xl">
           {eyebrow && (
@@ -52,7 +53,7 @@ export function PageHero({
               {eyebrow}
             </span>
           )}
-          <h1 className="mt-5 text-balance font-heading text-4xl font-bold leading-[1.1] text-foreground sm:text-5xl lg:text-6xl">
+          <h1 className="mt-5 text-balance font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
             {title}
           </h1>
           {subtitle && (
@@ -80,7 +81,7 @@ export function PageHero({
               {stats.map((stat) => (
                 <div
                   key={stat.label}
-                  className="rounded-[1.5rem] border border-white/70 bg-card/80 px-4 py-4 shadow-sm backdrop-blur-md"
+                  className="rounded-xl border border-border/70 bg-card/90 px-4 py-4 shadow-sm"
                 >
                   <dt className="text-xs font-medium text-muted-foreground">
                     {stat.label}
@@ -96,12 +97,12 @@ export function PageHero({
 
           {stats && stats.length > 0 && (
             <FadeIn delay={0.12} className="hidden lg:block">
-              <div className="rounded-[2rem] border border-white/70 bg-card/74 p-4 shadow-elegant-lg backdrop-blur-xl">
+              <div className="rounded-xl border border-border/70 bg-card/90 p-4 shadow-elegant">
                 <dl className="grid gap-3">
                   {stats.map((stat) => (
                     <div
                       key={stat.label}
-                      className="rounded-[1.4rem] border border-white/70 bg-background/88 px-4 py-4 shadow-sm"
+                      className="rounded-lg border border-border/70 bg-background px-4 py-4"
                     >
                       <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                         {stat.label}

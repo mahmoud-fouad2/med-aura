@@ -8,15 +8,15 @@ import {
   Star,
   Stethoscope,
   ChevronLeft,
-  CalendarDays,
   Sparkles,
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { FavoriteToggle } from "@/components/favorites/favorite-toggle"
-import { currencyAr, countryNameAr } from "@/lib/status-labels"
+import { currencyAr, countryNameAr, countryNameEn } from "@/lib/status-labels"
 import type { DoctorCard as DoctorCardData } from "@/lib/data/doctors"
+import type { Locale } from "@/lib/i18n"
 
 function hueForName(name: string): number {
   let hash = 0
@@ -29,32 +29,35 @@ export function DoctorCard({
   isSignedIn = false,
   favorited = false,
   variant = "standard",
+  locale = "ar",
 }: {
   doctor: DoctorCardData
   isSignedIn?: boolean
   favorited?: boolean
   variant?: "standard" | "featured"
+  locale?: Locale
 }) {
+  const isAr = locale === "ar"
   const initials = doctor.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
   const showRating = doctor.reviewCount > 0 && doctor.rating
   const hue = hueForName(doctor.name)
   const isFeatured = variant === "featured"
   const consultationLabel =
     doctor.offersVideo && doctor.offersInPerson
-      ? "فيديو أو حضورية"
+      ? (isAr ? "فيديو أو حضورية" : "Video or in person")
       : doctor.offersVideo
-        ? "استشارة فيديو"
+        ? (isAr ? "استشارة فيديو" : "Video consultation")
         : doctor.offersInPerson
-          ? "استشارة حضورية"
-          : "حسب التوفر"
+          ? (isAr ? "استشارة حضورية" : "In-person consultation")
+          : (isAr ? "حسب التوفر" : "Subject to availability")
   const ConsultationIcon = doctor.offersVideo ? Video : Building2
 
   return (
     <div className="@container h-full">
     <Card
-      dir="ltr"
+      dir={isAr ? "rtl" : "ltr"}
       className={
-        "group relative h-full overflow-hidden border-white/75 bg-card/95 p-0 shadow-elegant backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant-lg " +
+        "group relative h-full overflow-hidden rounded-xl border-border/70 bg-card p-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant " +
         (isFeatured ? "@lg:grid @lg:grid-cols-[43%_1fr]" : "flex flex-col")
       }
     >
@@ -62,8 +65,8 @@ export function DoctorCard({
         className={
           "relative shrink-0 overflow-hidden bg-muted " +
           (isFeatured
-            ? "min-h-72 @lg:min-h-full @lg:rounded-e-[2.35rem]"
-            : "aspect-[4/3] rounded-b-[2rem]")
+            ? "min-h-72 @lg:min-h-full"
+            : "aspect-[4/3]")
         }
       >
         {doctor.photoUrl ? (
@@ -96,9 +99,9 @@ export function DoctorCard({
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-white/10" />
 
-        {doctor.verified && <VerifiedBadge className="absolute left-3 top-3" />}
+        {doctor.verified && <VerifiedBadge className="absolute start-3 top-3" />}
 
-        <div className="absolute right-3 top-3 z-10">
+        <div className="absolute end-3 top-3 z-10">
           <FavoriteToggle
             kind="doctor"
             refId={doctor.id}
@@ -109,7 +112,7 @@ export function DoctorCard({
         </div>
 
         {showRating && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-foreground shadow-sm backdrop-blur-md">
+          <span className="absolute bottom-3 end-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-foreground shadow-sm backdrop-blur-md">
             <Star className="size-3.5 fill-current text-gold" />
             <span className="tabular-nums">{doctor.rating}</span>
             <span className="font-medium text-muted-foreground">
@@ -119,7 +122,7 @@ export function DoctorCard({
         )}
       </div>
 
-      <div dir="rtl" className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex-1 space-y-4 p-5">
           <div className="min-w-0">
             <div className="flex items-start gap-2">
@@ -139,7 +142,7 @@ export function DoctorCard({
               {doctor.verified && (
                 <span
                   className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15"
-                  aria-label="طبيب موثّق"
+                  aria-label={isAr ? "طبيب موثّق" : "Verified doctor"}
                 >
                   <BadgeCheck className="size-4" />
                 </span>
@@ -150,27 +153,22 @@ export function DoctorCard({
           <div className="grid grid-cols-2 gap-2 text-xs">
             <MiniFact
               icon={MapPin}
-              label={doctor.distanceKm != null ? "المسافة" : "الموقع"}
+              label={doctor.distanceKm != null ? (isAr ? "المسافة" : "Distance") : (isAr ? "الموقع" : "Location")}
               value={
                 doctor.distanceKm != null
-                  ? `${doctor.distanceKm.toFixed(1)} كم`
-                  : [doctor.city, countryNameAr(doctor.country)].filter(Boolean).join("، ")
+                  ? `${doctor.distanceKm.toFixed(1)} ${isAr ? "كم" : "km"}`
+                  : [doctor.city, isAr ? countryNameAr(doctor.country) : countryNameEn(doctor.country)].filter(Boolean).join(isAr ? "، " : ", ")
               }
             />
             <MiniFact
               icon={Stethoscope}
-              label="الخبرة"
-              value={`${doctor.yearsExperience} سنة`}
+              label={isAr ? "الخبرة" : "Experience"}
+              value={isAr ? `${doctor.yearsExperience} سنة` : `${doctor.yearsExperience} years`}
             />
             <MiniFact
               icon={ConsultationIcon}
-              label="الاستشارة"
+              label={isAr ? "الاستشارة" : "Consultation"}
               value={consultationLabel}
-            />
-            <MiniFact
-              icon={CalendarDays}
-              label="الحجز"
-              value="مواعيد مرنة"
             />
           </div>
 
@@ -178,10 +176,10 @@ export function DoctorCard({
             <div className="space-y-2">
               <p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <Sparkles className="size-3.5 text-gold" />
-                أبرز الإجراءات
+                {isAr ? "أبرز الإجراءات" : "Top procedures"}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {doctor.procedures.slice(0, 4).map((p) => (
+                {doctor.procedures.slice(0, 3).map((p) => (
                   <span
                     key={p}
                     className="rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-foreground/80"
@@ -189,9 +187,9 @@ export function DoctorCard({
                     {p}
                   </span>
                 ))}
-                {doctor.procedures.length > 4 && (
+                {doctor.procedures.length > 3 && (
                   <span className="rounded-full border border-border/70 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                    +{doctor.procedures.length - 4}
+                    +{doctor.procedures.length - 3}
                   </span>
                 )}
               </div>
@@ -202,7 +200,7 @@ export function DoctorCard({
         <div className="mt-auto flex flex-col gap-3 border-t border-border/60 bg-background/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 text-sm">
             <p className="text-[11px] font-medium text-muted-foreground">
-              رسوم الاستشارة
+              {isAr ? "رسوم الاستشارة" : "Consultation fee"}
             </p>
             {doctor.consultationFee ? (
               <p className="leading-tight">
@@ -210,11 +208,11 @@ export function DoctorCard({
                   {Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")}
                 </span>
                 <span className="ms-1 text-xs font-medium text-muted-foreground">
-                  {currencyAr(doctor.currency)}
+                  {isAr ? currencyAr(doctor.currency) : doctor.currency}
                 </span>
               </p>
             ) : (
-              <span className="text-xs text-muted-foreground">تظهر عند الحجز</span>
+              <span className="text-xs text-muted-foreground">{isAr ? "تظهر عند الحجز" : "Shown at booking"}</span>
             )}
           </div>
           <Button
@@ -222,7 +220,7 @@ export function DoctorCard({
             className="w-full rounded-xl px-4 sm:w-auto"
             render={
               <Link href={`/doctors/${doctor.slug}`}>
-                عرض الملف
+                {isAr ? "عرض الملف" : "View profile"}
                 <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
               </Link>
             }

@@ -2,13 +2,17 @@ import Link from "next/link"
 import { Download, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { AndroidMark } from "@/components/brand/android-mark"
+import { getI18n } from "@/lib/i18n"
 
 /** First-party download path — /download/android streams the latest build
     through our own domain (see app/download/android/route.ts). */
 const APK_DOWNLOAD_URL = "/download/android"
 
-export function SiteFooter() {
+export async function SiteFooter() {
   const year = new Date().getFullYear()
+  const { locale } = await getI18n()
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => isAr ? ar : en
 
   return (
     <footer className="relative isolate overflow-hidden border-t border-border bg-gradient-to-b from-secondary/40 via-background to-background">
@@ -41,21 +45,20 @@ export function SiteFooter() {
               <Logo />
             </Link>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-              منصة تساعدك على اختيار طبيب أو مركز تجميل بثقة، ومتابعة رحلتك
-              من أول استشارة حتى الاطمئنان بعد الإجراء.
+              {l("اختر طبيبك أو مركزك بثقة، وتابع رحلتك من الاستشارة حتى ما بعد الإجراء.", "Choose your doctor or center with confidence, from consultation through aftercare.")}
             </p>
             <div className="flex flex-col gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <ShieldCheck className="size-4 text-primary" />
-                أطباء ومراكز يتم قبولهم بعناية
+                {l("مقدمو رعاية يتم قبولهم بعناية", "Carefully selected providers")}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Sparkles className="size-4 text-gold" />
-                تجربة واضحة من البحث حتى الحجز
+                {l("خطوات واضحة من البحث حتى الحجز", "Clear steps from search to booking")}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <HeartHandshake className="size-4 text-primary" />
-                دعم إنساني عندما تحتاج المساعدة
+                {l("دعم عندما تحتاج المساعدة", "Support when you need it")}
               </span>
             </div>
             {/* Store-style badge: the Android mark makes the platform obvious
@@ -68,50 +71,50 @@ export function SiteFooter() {
               <AndroidMark className="size-7 shrink-0 text-[#3DDC84] transition-transform duration-300 group-hover:scale-110" />
               <span className="flex flex-col text-start leading-tight">
                 <span className="text-[10px] font-medium text-background/70">
-                  حمّل تطبيق Med Aura
+                  {l("حمّل تطبيق Med Aura", "Download Med Aura")}
                 </span>
-                <span className="text-sm font-bold">لأجهزة أندرويد</span>
+                <span className="text-sm font-bold">{l("لأجهزة أندرويد", "for Android")}</span>
               </span>
               <Download className="size-4 shrink-0 text-background/60 transition-transform duration-300 group-hover:translate-y-0.5" />
             </a>
           </div>
 
           <FooterCol
-            title="المنصة"
+            title={l("المنصة", "Platform")}
             links={[
-              { href: "/doctors", label: "ابحث عن طبيب" },
-              { href: "/procedures", label: "الإجراءات" },
-              { href: "/centers", label: "المراكز" },
-              { href: "/destinations", label: "الوجهات" },
-              { href: "/before-after", label: "قبل وبعد" },
-              { href: "/online-consultation", label: "الاستشارة أونلاين" },
-              { href: "/trust-and-safety", label: "الثقة والأمان" },
+              { href: "/doctors", label: l("ابحث عن طبيب", "Find a doctor") },
+              { href: "/procedures", label: l("الإجراءات", "Procedures") },
+              { href: "/centers", label: l("المراكز", "Centers") },
+              { href: "/destinations", label: l("الوجهات", "Destinations") },
+              { href: "/before-after", label: l("قبل وبعد", "Before & after") },
+              { href: "/online-consultation", label: l("الاستشارة أونلاين", "Online consultation") },
+              { href: "/trust-and-safety", label: l("الثقة والأمان", "Trust & safety") },
             ]}
           />
           <FooterCol
-            title="الشركة"
+            title={l("الشركة", "Company")}
             links={[
-              { href: "/about", label: "من نحن" },
-              { href: "/contact", label: "تواصل معنا" },
-              { href: "/faq", label: "الأسئلة الشائعة" },
-              { href: "/for-doctors", label: "انضم كطبيب" },
-              { href: "/for-centers/apply", label: "سجّل مركزك" },
+              { href: "/about", label: l("من نحن", "About us") },
+              { href: "/contact", label: l("تواصل معنا", "Contact") },
+              { href: "/faq", label: l("الأسئلة الشائعة", "FAQ") },
+              { href: "/for-doctors", label: l("انضم كطبيب", "Join as a doctor") },
+              { href: "/for-centers/apply", label: l("سجّل مركزك", "Register your center") },
             ]}
           />
           <FooterCol
-            title="قانوني"
+            title={l("قانوني", "Legal")}
             links={[
-              { href: "/privacy", label: "سياسة الخصوصية" },
-              { href: "/terms", label: "الشروط والأحكام" },
-              { href: "/refund-policy", label: "سياسة الاسترجاع" },
-              { href: "/review-policy", label: "سياسة التقييمات" },
-              { href: "/medical-disclaimer", label: "إخلاء المسؤولية الطبية" },
+              { href: "/privacy", label: l("سياسة الخصوصية", "Privacy policy") },
+              { href: "/terms", label: l("الشروط والأحكام", "Terms & conditions") },
+              { href: "/refund-policy", label: l("سياسة الاسترجاع", "Refund policy") },
+              { href: "/review-policy", label: l("سياسة التقييمات", "Review policy") },
+              { href: "/medical-disclaimer", label: l("إخلاء المسؤولية الطبية", "Medical disclaimer") },
             ]}
           />
         </div>
 
         <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground">
-          <p>© {year} Med Aura. جميع الحقوق محفوظة.</p>
+          <p>© {year} Med Aura. {l("جميع الحقوق محفوظة.", "All rights reserved.")}</p>
           {/* Quiet developer credit — never the phone number here. */}
           <a
             href="https://ma-fo.info"
