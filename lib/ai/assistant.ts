@@ -24,12 +24,61 @@ import { listProceduresGrouped } from "@/lib/data/procedures"
  * themselves — the assistant never books or charges.
  */
 
-// `gemini-flash-latest` is a stable alias that always resolves to Google's
-// current recommended Flash model — safer than pinning a versioned ID that
-// gets deprecated for new users (as `gemini-2.5-flash` was). Fast, cheap,
-// supports function calling — the right balance for a real-time chat.
-const MODEL = "gemini-flash-latest"
+/**
+ * Model chain, tried in order. `gemini-flash-latest` is a stable alias that
+ * always resolves to Google's current recommended Flash model — safer than
+ * pinning a versioned ID that gets deprecated for new users (as
+ * `gemini-2.5-flash` was). The lite alias behind it is a genuinely separate
+ * capacity pool, so when Flash returns 503 "high demand" the request still
+ * lands instead of surfacing an error to the patient.
+ */
+const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"] as const
 const MAX_TOOL_ROUNDS = 4
+/** Attempts per model before moving to the next one in the chain. */
+const ATTEMPTS_PER_MODEL = 3
+
+/**
+ * Transient failures worth retrying: Google's 503 (UNAVAILABLE, "high
+ * demand"), 429 rate limits, 500/504 blips, and undici's bare "fetch failed"
+ * — all of which we saw in production. A 400/401/403/404 is a real bug or a
+ * bad key, so those fail fast rather than burning the retry budget.
+ */
+export function isTransient(err: unknown): boolean {
+  const status = (err as { status?: number })?.status
+  if (typeof status === "number") return status === 429 || status >= 500
+  const msg = err instanceof Error ? err.message : String(err)
+  return /\b(429|500|502|503|504)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|high demand|fetch failed|ETIMEDOUT|ECONNRESET|socket hang up/i.test(
+    msg,
+  )
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * Runs `call` against each model in the chain, retrying transient failures
+ * with exponential backoff + jitter. Throws the last error only when every
+ * model and attempt is exhausted.
+ */
+export async function withModelFallback<T>(call: (model: string) => Promise<T>): Promise<T> {
+  let lastError: unknown
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt < ATTEMPTS_PER_MODEL; attempt++) {
+      try {
+        return await call(model)
+      } catch (err) {
+        lastError = err
+        if (!isTransient(err)) throw err
+        // Don't sleep after the final attempt on the final model.
+        const isLast = model === MODELS[MODELS.length - 1] && attempt === ATTEMPTS_PER_MODEL - 1
+        if (isLast) break
+        // 400ms, 800ms, 1600ms (+ up to 250ms jitter) — enough to ride out a
+        // short capacity spike without making the user wait on a dead call.
+        await sleep(400 * 2 ** attempt + Math.random() * 250)
+      }
+    }
+  }
+  throw lastError
+}
 
 export type AssistantDoctor = {
   id: string
@@ -179,14 +228,16 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
   let followups: string[] = []
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        tools: [{ functionDeclarations: TOOLS }],
-      },
-    })
+    const response = await withModelFallback((model) =>
+      ai.models.generateContent({
+        model,
+        contents,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          tools: [{ functionDeclarations: TOOLS }],
+        },
+      }),
+    )
 
     const calls = response.functionCalls ?? []
     if (calls.length === 0) {
@@ -238,10 +289,12 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
 
   // Tool-round budget exhausted — one final call with no tools so the model
   // produces a closing reply instead of looping forever.
-  const closing = await ai.models.generateContent({
-    model: MODEL,
-    contents,
-    config: { systemInstruction: SYSTEM_PROMPT },
-  })
+  const closing = await withModelFallback((model) =>
+    ai.models.generateContent({
+      model,
+      contents,
+      config: { systemInstruction: SYSTEM_PROMPT },
+    }),
+  )
   return { reply: closing.text?.trim() ?? textOf(closing.candidates?.[0]?.content?.parts), doctors, followups }
 }

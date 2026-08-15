@@ -10,6 +10,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated"
+import { AiDoctor } from "../../components/ai-doctor"
 import { useI18n } from "../../lib/i18n"
 import { colors, shadows, TAB_BAR_HEIGHT } from "../../theme"
 
@@ -152,34 +153,28 @@ function AssistantTabButton({
             backgroundColor: "rgba(201, 162, 75, 0.22)",
           }}
         />
-        {/* Main disc — with a thin cream ring separating it from the tab bar. */}
+        {/* Main disc reads as the assistant's avatar: a light surface so the
+            character stays legible, ringed in brand gold to keep the raised
+            "signature action" weight the solid gold disc used to carry. */}
         <View
           style={[
             {
               width: 60,
               height: 60,
               borderRadius: 30,
-              backgroundColor: colors.gold,
+              backgroundColor: colors.goldSoft,
               alignItems: "center",
               justifyContent: "center",
+              overflow: "hidden",
               borderWidth: 3,
-              borderColor: colors.card,
+              borderColor: colors.gold,
             },
             shadows.raised,
           ]}
         >
-          {/* Inset ring — the subtle detail line premium products always have. */}
-          <View
-            style={{
-              position: "absolute",
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.28)",
-            }}
-          />
-          <Ionicons name="sparkles" size={26} color="#FFFFFF" />
+          {/* Slight downward offset crops the coat at the disc edge, so the
+              character reads as a portrait rather than a floating sticker. */}
+          <AiDoctor size={52} style={{ marginTop: 6 }} />
         </View>
       </Animated.View>
     </Pressable>

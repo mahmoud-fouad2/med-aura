@@ -44,9 +44,17 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   images: {
+    // `search` is matched EXACTLY by Next (see match-local-pattern.js), so
+    // pinning a literal "?v=<date>" here breaks every image the moment
+    // SERVICE_IMAGE_VERSION in lib/seo.ts is bumped — which is exactly how
+    // the whole service-image set started 400-ing. Omitting `search`
+    // entirely allows any query string for these two public asset folders,
+    // so cache-busting versions can be rolled forward freely. The paths are
+    // still allowlisted, and the query never changes which file is read.
     localPatterns: [
       { pathname: "/**", search: "" },
-      { pathname: "/demo-services/**", search: "?v=20260809" },
+      { pathname: "/demo-services/**" },
+      { pathname: "/service-images/**" },
     ],
     // Image optimization stays ON. Remote provider images (R2 public assets)
     // are allowlisted here when a public base URL is configured.

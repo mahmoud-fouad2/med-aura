@@ -149,18 +149,19 @@ export default function Home() {
             <Avatar name={resolvedName || "؟"} photoUrl={me.data?.photoUrl} size={34} />
           </Pressable>
         </View>
-        <View style={{ gap: 4, maxWidth: "88%" }}>
-          <AppText variant="sub" color="rgba(255,255,255,0.75)">
-            {greeting}
-          </AppText>
+        {/* Greeting and name share one line — as two stacked blocks they ate
+            most of the hero for a phrase the user reads once. One title line
+            plus a single supporting line keeps the same warmth in ~40% less
+            vertical space, leaving the CTA above the fold on small screens. */}
+        <View style={{ gap: 2, maxWidth: "92%" }}>
           {(me.isLoading || home.isLoading) && !resolvedName ? (
-            <Skeleton style={{ width: 140, height: 26, backgroundColor: "rgba(255,255,255,0.25)" }} />
+            <Skeleton style={{ width: 180, height: 24, backgroundColor: "rgba(255,255,255,0.25)" }} />
           ) : (
-            <AppText variant="hero" weight="heavy" color="#FFFFFF">
-              {heroName}
+            <AppText variant="title" weight="heavy" color="#FFFFFF" numberOfLines={1}>
+              {`${greeting}${locale === "ar" ? "، " : ", "}${heroName}`}
             </AppText>
           )}
-          <AppText variant="sub" color="rgba(255,255,255,0.85)">
+          <AppText variant="caption" color="rgba(255,255,255,0.82)" numberOfLines={2}>
             {isPatient ? t.home.heroBody : t.home.heroBodyProvider}
           </AppText>
         </View>

@@ -21,6 +21,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 import { AppText, Avatar } from "../../components/ui"
+import { AiDoctor } from "../../components/ai-doctor"
 import { api, NetworkError, type AssistantDoctor, type AssistantTurn } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
@@ -111,17 +112,18 @@ export default function Assistant() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
           <View
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: colors.gold,
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              backgroundColor: colors.goldSoft,
               alignItems: "center",
               justifyContent: "center",
+              overflow: "hidden",
               borderWidth: 2,
-              borderColor: "rgba(255,255,255,0.35)",
+              borderColor: "rgba(255,255,255,0.45)",
             }}
           >
-            <Ionicons name="sparkles" size={22} color="#FFFFFF" />
+            <AiDoctor size={44} animated style={{ marginTop: 5 }} />
           </View>
           <View style={{ flex: 1 }}>
             <AppText variant="title" weight="heavy" color="#FFFFFF">
@@ -136,7 +138,12 @@ export default function Assistant() {
 
       <ScrollView
         ref={scrollRef}
+        style={{ flex: 1 }}
         contentContainerStyle={{
+          // flexGrow lets the empty-state hero centre itself in the full
+          // remaining height instead of clinging to the top of the screen.
+          flexGrow: 1,
+          justifyContent: messages.length === 0 ? "center" : "flex-start",
           paddingTop: spacing.lg,
           paddingHorizontal: spacing.screen,
           paddingBottom: spacing.lg,
@@ -261,22 +268,25 @@ function EmptyState() {
   const { t } = useI18n()
   return (
     <View style={{ alignItems: "center", gap: spacing.md, paddingTop: spacing.lg }}>
+      {/* The character at hero size, blinking — the moment the assistant
+          stops being an icon and becomes someone the patient is talking to. */}
       <View
         style={[
           {
-            width: 84,
-            height: 84,
-            borderRadius: 42,
-            backgroundColor: colors.gold,
+            width: 112,
+            height: 112,
+            borderRadius: 56,
+            backgroundColor: colors.goldSoft,
             alignItems: "center",
             justifyContent: "center",
-            borderWidth: 6,
-            borderColor: colors.goldSoft,
+            overflow: "hidden",
+            borderWidth: 3,
+            borderColor: colors.gold,
           },
           shadows.raised,
         ]}
       >
-        <Ionicons name="sparkles" size={38} color="#FFFFFF" />
+        <AiDoctor size={98} animated style={{ marginTop: 12 }} />
       </View>
       <AppText variant="hero" weight="heavy" style={{ textAlign: "center" }}>
         {t.assistant.title}
@@ -349,15 +359,18 @@ function AssistantMessage({
       <View
         style={{
           width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: colors.gold,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: colors.goldSoft,
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: colors.gold,
           marginBottom: 2,
         }}
       >
-        <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+        <AiDoctor size={28} style={{ marginTop: 3 }} />
       </View>
       <View style={{ flex: 1, gap: spacing.sm }}>
         <View
@@ -407,15 +420,18 @@ function TypingIndicator({ label }: { label: string }) {
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing.sm }}>
       <View
         style={{
-          width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: colors.gold,
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: colors.goldSoft,
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: colors.gold,
         }}
       >
-        <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+        <AiDoctor size={28} animated style={{ marginTop: 3 }} />
       </View>
       <View
         style={[

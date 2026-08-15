@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getCurrentUser } from "@/lib/session"
 import { getI18n } from "@/lib/i18n"
@@ -40,20 +39,9 @@ export async function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden xl:flex xl:min-w-[18rem] xl:flex-1 xl:justify-center">
-          <Link
-            href="/search"
-            className="group flex w-full max-w-md items-center gap-3 rounded-full border border-border/70 bg-background/84 px-4 py-3 text-sm text-muted-foreground transition-all hover:border-primary/30 hover:bg-card hover:text-foreground"
-          >
-            <Search className="size-4 shrink-0 text-primary/70 transition-transform group-hover:scale-105" />
-            <span className="min-w-0 flex-1 truncate">
-              {locale === "ar" ? "ابحث عن طبيب، مركز، أو إجراء" : "Search doctors, centers, or procedures"}
-            </span>
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-primary">
-              Ctrl K
-            </span>
-          </Link>
-        </div>
+        {/* The landing hero owns search — a second search field in the header
+            duplicated it on every page without adding reach, so the nav keeps
+            its links and the hero keeps the search. */}
 
         <div className="flex items-center gap-2">
           <ThemeToggle className="hidden sm:inline-flex" />

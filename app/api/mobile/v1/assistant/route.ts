@@ -48,6 +48,13 @@ export async function POST(request: Request) {
       })),
     })
   } catch (err) {
-    return jsonServerError("mobile.assistant", err, "تعذّر الرد الآن. حاول مرة أخرى.")
+    // The assistant already retries transient 503/429/network failures across
+    // a model fallback chain, so reaching here means the provider stayed
+    // unavailable — say so honestly rather than blaming the patient's input.
+    return jsonServerError(
+      "mobile.assistant",
+      err,
+      "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات.",
+    )
   }
 }
