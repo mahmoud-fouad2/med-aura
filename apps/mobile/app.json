@@ -3,7 +3,7 @@
     "name": "Med Aura",
     "slug": "med-aura",
     "owner": "medaura12",
-    "version": "1.0.33",
+    "version": "1.0.34",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -21,9 +21,9 @@
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 34,
+      "versionCode": 35,
       "adaptiveIcon": {
-        "backgroundColor": "#FCFAFB",
+        "backgroundColor": "#FFFCF7",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": true
