@@ -25,14 +25,24 @@ import { listProceduresGrouped } from "@/lib/data/procedures"
  */
 
 /**
- * Model chain, tried in order. `gemini-flash-latest` is a stable alias that
- * always resolves to Google's current recommended Flash model — safer than
- * pinning a versioned ID that gets deprecated for new users (as
- * `gemini-2.5-flash` was). The lite alias behind it is a genuinely separate
- * capacity pool, so when Flash returns 503 "high demand" the request still
- * lands instead of surfacing an error to the patient.
+ * Model chain, tried in order — all pinned to explicitly documented, GA
+ * (generally available) IDs.
+ *
+ * Do NOT use the `-latest` aliases here. `gemini-flash-latest` resolves to an
+ * *experimental* model carrying much tighter rate limits, which is why the
+ * concierge returned 503 "high demand" in production even with effectively
+ * zero traffic. Versioned GA IDs get real production capacity.
+ *
+ * - gemini-3.7-flash  — GA, most capable Flash, tuned for agentic/tool use
+ * - gemini-3.6-flash  — GA, the model Google's own function-calling docs use
+ * - gemini-3.5-flash-lite — GA, cheapest/fastest, a separate capacity pool so
+ *   a spike on the newer models still resolves instead of erroring
+ *
+ * Retirement is handled at runtime, not by hoping: a 404/NOT_FOUND on any
+ * entry advances to the next model instead of failing the request (see
+ * isModelUnavailable), so the assistant survives Google retiring one.
  */
-const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"] as const
+export const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"] as const
 const MAX_TOOL_ROUNDS = 4
 /** Attempts per model before moving to the next one in the chain. */
 const ATTEMPTS_PER_MODEL = 3
@@ -52,6 +62,20 @@ export function isTransient(err: unknown): boolean {
   )
 }
 
+/**
+ * The model itself is gone or not reachable by this key — Google retired it,
+ * or restricted it to existing users (the exact 404 that took the concierge
+ * down when it was pinned to `gemini-2.5-flash`). Retrying the same model is
+ * pointless, but the *next* model in the chain may well work, so this is a
+ * "skip ahead" signal rather than a hard failure.
+ */
+export function isModelUnavailable(err: unknown): boolean {
+  const status = (err as { status?: number })?.status
+  if (status === 404) return true
+  const msg = err instanceof Error ? err.message : String(err)
+  return /\b404\b|NOT_FOUND|is not found|no longer available|not supported for/i.test(msg)
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /**
@@ -67,6 +91,10 @@ export async function withModelFallback<T>(call: (model: string) => Promise<T>):
         return await call(model)
       } catch (err) {
         lastError = err
+        // Retired/restricted model: stop hammering it and try the next one.
+        if (isModelUnavailable(err)) break
+        // A genuine bug (400 bad request, 401 bad key) — surface it now
+        // rather than burning the whole retry budget on it.
         if (!isTransient(err)) throw err
         // Don't sleep after the final attempt on the final model.
         const isLast = model === MODELS[MODELS.length - 1] && attempt === ATTEMPTS_PER_MODEL - 1
