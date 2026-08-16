@@ -45,9 +45,13 @@ export default function Assistant() {
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
+  // Only auto-scroll once a conversation exists. Firing this on the empty
+  // state scrolled the hero off the top of the screen on first open.
+  const hasMessages = messages.length > 0
   const scrollToEnd = useCallback(() => {
+    if (!hasMessages) return
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }))
-  }, [])
+  }, [hasMessages])
 
   const send = useCallback(
     async (text: string) => {
@@ -112,18 +116,13 @@ export default function Assistant() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
           <View
             style={{
-              width: 50,
-              height: 50,
               borderRadius: 25,
-              backgroundColor: colors.goldSoft,
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
               borderWidth: 2,
               borderColor: "rgba(255,255,255,0.45)",
+              overflow: "hidden",
             }}
           >
-            <AiDoctor size={44} animated style={{ marginTop: 5 }} />
+            <AiDoctor size={46} />
           </View>
           <View style={{ flex: 1 }}>
             <AppText variant="title" weight="heavy" color="#FFFFFF">
@@ -179,7 +178,11 @@ export default function Assistant() {
           horizontal
           showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          // Without an explicit flexGrow:0 this horizontal strip stretched to
+          // fill the column, turning each pill into a full-height oval.
+          style={{ flexGrow: 0, flexShrink: 0 }}
           contentContainerStyle={{
+            alignItems: "center",
             paddingHorizontal: spacing.screen,
             gap: spacing.sm,
             paddingBottom: spacing.sm,
@@ -268,29 +271,12 @@ function EmptyState() {
   const { t } = useI18n()
   return (
     <View style={{ alignItems: "center", gap: spacing.md, paddingTop: spacing.lg }}>
-      {/* The character at hero size, blinking — the moment the assistant
-          stops being an icon and becomes someone the patient is talking to. */}
-      <View
-        style={[
-          {
-            width: 112,
-            height: 112,
-            borderRadius: 56,
-            backgroundColor: colors.goldSoft,
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            borderWidth: 3,
-            borderColor: colors.gold,
-          },
-          shadows.raised,
-        ]}
-      >
-        <AiDoctor size={98} animated style={{ marginTop: 12 }} />
+      {/* The character at hero size — the moment the assistant stops being an
+          icon and becomes someone the patient is talking to. The title is
+          deliberately NOT repeated here; the header above already carries it. */}
+      <View style={[{ borderRadius: 60, overflow: "hidden" }, shadows.raised]}>
+        <AiDoctor size={120} />
       </View>
-      <AppText variant="hero" weight="heavy" style={{ textAlign: "center" }}>
-        {t.assistant.title}
-      </AppText>
       <AppText
         variant="body"
         color={colors.textMuted}
@@ -356,22 +342,7 @@ function AssistantMessage({
 }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, maxWidth: "92%" }}>
-      <View
-        style={{
-          width: 30,
-          height: 32,
-          borderRadius: 16,
-          backgroundColor: colors.goldSoft,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: colors.gold,
-          marginBottom: 2,
-        }}
-      >
-        <AiDoctor size={28} style={{ marginTop: 3 }} />
-      </View>
+      <AiDoctor size={32} style={{ marginBottom: 2 }} />
       <View style={{ flex: 1, gap: spacing.sm }}>
         <View
           style={[
@@ -422,16 +393,9 @@ function TypingIndicator({ label }: { label: string }) {
         style={{
           width: 32,
           height: 32,
-          borderRadius: 16,
-          backgroundColor: colors.goldSoft,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: colors.gold,
         }}
       >
-        <AiDoctor size={28} animated style={{ marginTop: 3 }} />
+        <AiDoctor size={32} />
       </View>
       <View
         style={[

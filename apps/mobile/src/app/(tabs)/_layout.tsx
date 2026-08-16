@@ -153,28 +153,22 @@ function AssistantTabButton({
             backgroundColor: "rgba(201, 162, 75, 0.22)",
           }}
         />
-        {/* Main disc reads as the assistant's avatar: a light surface so the
-            character stays legible, ringed in brand gold to keep the raised
-            "signature action" weight the solid gold disc used to carry. */}
+        {/* The avatar art is already a finished circle, so it only needs a
+            thin cream ring to separate it from the tab bar behind it. */}
         <View
           style={[
             {
               width: 60,
               height: 60,
               borderRadius: 30,
-              backgroundColor: colors.goldSoft,
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
               borderWidth: 3,
-              borderColor: colors.gold,
+              borderColor: colors.card,
+              overflow: "hidden",
             },
             shadows.raised,
           ]}
         >
-          {/* Slight downward offset crops the coat at the disc edge, so the
-              character reads as a portrait rather than a floating sticker. */}
-          <AiDoctor size={52} style={{ marginTop: 6 }} />
+          <AiDoctor size={54} />
         </View>
       </Animated.View>
     </Pressable>

@@ -272,10 +272,18 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
       return { reply: response.text?.trim() ?? "", doctors, followups }
     }
 
-    // Echo the model's function-call turn back, then answer every call.
+    // Echo the model's turn back VERBATIM. Gemini 3 attaches an encrypted
+    // `thoughtSignature` to each functionCall part, and the docs are explicit:
+    // "You MUST always resend all thought blocks exactly as they were received
+    // from the model." Rebuilding the parts from `response.functionCalls`
+    // silently drops those signatures, which is what produced the 400
+    // "Function call is missing a thought_signature in functionCall parts".
+    // Passing the original parts through also preserves any text the model
+    // emitted alongside the calls.
+    const modelParts = response.candidates?.[0]?.content?.parts
     contents.push({
       role: "model",
-      parts: calls.map((c) => ({ functionCall: c })),
+      parts: modelParts?.length ? modelParts : calls.map((c) => ({ functionCall: c })),
     })
 
     const responseParts: Part[] = []

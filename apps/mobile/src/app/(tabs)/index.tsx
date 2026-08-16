@@ -170,17 +170,18 @@ export default function Home() {
           <Button
             label={t.home.heroCta}
             onPress={() => router.push("/(tabs)/explore")}
+            // Sized to its label rather than a 200pt minimum — the old block
+            // spanned most of the hero and read as a banner, not a button.
             style={[
               {
                 marginTop: spacing.md,
                 backgroundColor: colors.gold,
                 alignSelf: "flex-start",
                 borderRadius: radius.full,
-                paddingVertical: 14,
-                paddingHorizontal: spacing.xl,
-                minWidth: 200,
+                paddingVertical: 11,
+                paddingHorizontal: spacing.lg,
               },
-              shadows.raised,
+              shadows.card,
             ]}
           />
         ) : null}
