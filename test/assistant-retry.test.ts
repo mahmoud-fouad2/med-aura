@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest"
-import { MODELS, isModelUnavailable, isTransient, withModelFallback } from "@/lib/ai/assistant"
+import {
+  ATTEMPTS_PER_MODEL,
+  MODELS,
+  isModelUnavailable,
+  isTransient,
+  withModelFallback,
+} from "@/lib/ai/assistant"
 
 /**
  * The AI concierge went down in production twice: first a hard 404 (a pinned
@@ -48,8 +54,8 @@ describe("assistant model fallback", () => {
     await expect(promise).resolves.toBe("ok")
     vi.useRealTimers()
 
-    // 3 attempts on the primary, then the next model in the chain answers.
-    expect(seen.filter((m) => m === MODELS[0])).toHaveLength(3)
+    // Every attempt on the primary is used, then the next model answers.
+    expect(seen.filter((m) => m === MODELS[0])).toHaveLength(ATTEMPTS_PER_MODEL)
     expect(seen.at(-1)).toBe(MODELS[1])
   })
 

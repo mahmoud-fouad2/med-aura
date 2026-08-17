@@ -340,14 +340,33 @@ export type FilterFacets = {
 
 export class SessionExpiredError extends Error {}
 
-/** The request never reached the server (no connectivity, DNS, timeout). */
+/** The request never reached the server (no connectivity, DNS). */
 export class NetworkError extends Error {}
+
+/**
+ * The request was aborted because it outran its time budget. Subclasses
+ * NetworkError so every existing `instanceof NetworkError` offline branch
+ * keeps working, while callers that care can tell "you have no signal" apart
+ * from "the server is just taking a while" — showing the offline message for
+ * a slow-but-healthy server sends the user chasing a connection problem that
+ * doesn't exist.
+ */
+export class TimeoutError extends NetworkError {}
 
 const REQUEST_TIMEOUT_MS = 15_000
 
+/**
+ * The AI concierge is the one endpoint that legitimately takes longer than a
+ * normal API call: it runs a multi-round tool loop against Gemini, and a
+ * model round trip alone can outlast the 15s budget the CRUD routes use.
+ * Aborting at 15s surfaced as "no internet" even though the server was fine
+ * and still working, so this endpoint gets its own, longer budget.
+ */
+const AI_REQUEST_TIMEOUT_MS = 75_000
+
 async function request<T>(
   path: string,
-  init?: RequestInit & { auth?: boolean },
+  init?: RequestInit & { auth?: boolean; timeoutMs?: number },
 ): Promise<T> {
   const headers: Record<string, string> = {
     ...(init?.body != null ? { "Content-Type": "application/json" } : {}),
@@ -358,7 +377,10 @@ async function request<T>(
     if (cookie) headers.Cookie = cookie
   }
   const abortController = new AbortController()
-  const timeout = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS)
+  const timeout = setTimeout(
+    () => abortController.abort(),
+    init?.timeoutMs ?? REQUEST_TIMEOUT_MS,
+  )
   let res: Response
   try {
     res = await fetch(`${API_URL}${path}`, {
@@ -369,7 +391,11 @@ async function request<T>(
     })
   } catch (cause) {
     // fetch itself rejecting means connectivity, not the server — the UI
-    // must say "offline", never blame the data, and vice versa.
+    // must say "offline", never blame the data, and vice versa. An abort is
+    // our own deadline firing, which is a different story from no signal.
+    if ((cause as { name?: string } | null)?.name === "AbortError") {
+      throw new TimeoutError("timeout", { cause })
+    }
     throw new NetworkError("offline", { cause })
   } finally {
     clearTimeout(timeout)
@@ -424,6 +450,7 @@ export const api = {
     request<AssistantResponse>("/api/mobile/v1/assistant", {
       method: "POST",
       body: JSON.stringify({ messages }),
+      timeoutMs: AI_REQUEST_TIMEOUT_MS,
     }),
   favorites: () => request<{ doctors: FavoriteDoctor[] }>("/api/mobile/v1/favorites"),
   toggleFavorite: (kind: "doctor" | "center" | "procedure", refId: string) =>

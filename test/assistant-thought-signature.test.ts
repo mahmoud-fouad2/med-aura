@@ -29,6 +29,12 @@ vi.mock("@google/genai", () => ({
     NUMBER: "NUMBER",
     ARRAY: "ARRAY",
   },
+  ThinkingLevel: {
+    MINIMAL: "MINIMAL",
+    LOW: "LOW",
+    MEDIUM: "MEDIUM",
+    HIGH: "HIGH",
+  },
 }))
 
 vi.mock("@/lib/env", () => ({ requireEnv: () => "test-key" }))

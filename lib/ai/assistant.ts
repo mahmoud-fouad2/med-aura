@@ -1,5 +1,6 @@
 import {
   GoogleGenAI,
+  ThinkingLevel,
   Type,
   type Content,
   type FunctionDeclaration,
@@ -43,9 +44,16 @@ import { listProceduresGrouped } from "@/lib/data/procedures"
  * isModelUnavailable), so the assistant survives Google retiring one.
  */
 export const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"] as const
-const MAX_TOOL_ROUNDS = 4
+/**
+ * Latency budget. This runs behind a phone request that the user is staring
+ * at, so every knob here is tuned for "answers fast" over "answers perfectly":
+ * 3 rounds is enough for search → follow-ups → close, and 2 attempts across 3
+ * models still gives 6 shots at a transient failure without stacking backoff
+ * long enough to blow the client timeout.
+ */
+const MAX_TOOL_ROUNDS = 3
 /** Attempts per model before moving to the next one in the chain. */
-const ATTEMPTS_PER_MODEL = 3
+export const ATTEMPTS_PER_MODEL = 2
 
 /**
  * Transient failures worth retrying: Google's 503 (UNAVAILABLE, "high
@@ -263,6 +271,11 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
         config: {
           systemInstruction: SYSTEM_PROMPT,
           tools: [{ functionDeclarations: TOOLS }],
+          // Gemini 3 thinks by default, which is the single biggest latency
+          // cost here. Routing a patient to a doctor is not a reasoning-heavy
+          // task, and the user is waiting on a phone — LOW keeps replies
+          // quick while leaving enough headroom for correct tool selection.
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         },
       }),
     )
@@ -329,7 +342,10 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
     ai.models.generateContent({
       model,
       contents,
-      config: { systemInstruction: SYSTEM_PROMPT },
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      },
     }),
   )
   return { reply: closing.text?.trim() ?? textOf(closing.candidates?.[0]?.content?.parts), doctors, followups }

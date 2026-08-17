@@ -22,7 +22,13 @@ import Animated, {
 } from "react-native-reanimated"
 import { AppText, Avatar } from "../../components/ui"
 import { AiDoctor } from "../../components/ai-doctor"
-import { api, NetworkError, type AssistantDoctor, type AssistantTurn } from "../../lib/api"
+import {
+  api,
+  NetworkError,
+  TimeoutError,
+  type AssistantDoctor,
+  type AssistantTurn,
+} from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
 
@@ -78,7 +84,16 @@ export default function Assistant() {
           },
         ])
       } catch (err) {
-        const msg = err instanceof NetworkError ? t.common.offline : t.assistant.error
+        // A timeout is NOT "you're offline" — the server was reachable and
+        // simply took too long, so say that instead of sending the user to
+        // check their connection. TimeoutError extends NetworkError, so it
+        // must be tested first.
+        const msg =
+          err instanceof TimeoutError
+            ? t.assistant.slow
+            : err instanceof NetworkError
+              ? t.common.offline
+              : t.assistant.error
         setMessages((prev) => [...prev, { id: nextId(), role: "assistant", content: msg }])
       } finally {
         setSending(false)
