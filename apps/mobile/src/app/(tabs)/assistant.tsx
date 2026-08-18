@@ -30,7 +30,7 @@ import {
   type AssistantTurn,
 } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
-import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from "../../theme"
+import { colors, radius, shadows, spacing } from "../../theme"
 
 type ChatMessage = {
   id: string
@@ -215,7 +215,10 @@ export default function Assistant() {
         style={{
           paddingHorizontal: spacing.screen,
           paddingTop: spacing.sm,
-          paddingBottom: insets.bottom + TAB_BAR_HEIGHT + spacing.sm,
+          // The tab navigator already reserves its own height (the tab bar is
+          // not absolutely positioned), so adding TAB_BAR_HEIGHT + insets here
+          // double-counted it and left a dead gap under the input.
+          paddingBottom: spacing.sm,
           backgroundColor: colors.card,
           borderTopWidth: 1,
           borderTopColor: colors.border,
@@ -289,9 +292,7 @@ function EmptyState() {
       {/* The character at hero size — the moment the assistant stops being an
           icon and becomes someone the patient is talking to. The title is
           deliberately NOT repeated here; the header above already carries it. */}
-      <View style={[{ borderRadius: 60, overflow: "hidden" }, shadows.raised]}>
-        <AiDoctor size={120} />
-      </View>
+      <AiDoctor size={120} glow />
       <AppText
         variant="body"
         color={colors.textMuted}

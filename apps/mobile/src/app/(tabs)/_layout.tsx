@@ -154,7 +154,8 @@ function AssistantTabButton({
           }}
         />
         {/* The avatar art is already a finished circle, so it only needs a
-            thin cream ring to separate it from the tab bar behind it. */}
+            thin cream ring to separate it from the tab bar behind it. No
+            overflow:hidden — that would clip the breathing halo. */}
         <View
           style={[
             {
@@ -163,12 +164,13 @@ function AssistantTabButton({
               borderRadius: 30,
               borderWidth: 3,
               borderColor: colors.card,
-              overflow: "hidden",
+              alignItems: "center",
+              justifyContent: "center",
             },
             shadows.raised,
           ]}
         >
-          <AiDoctor size={54} />
+          <AiDoctor size={54} glow />
         </View>
       </Animated.View>
     </Pressable>

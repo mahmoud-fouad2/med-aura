@@ -1,4 +1,7 @@
 import { z } from "zod"
+import { eq } from "drizzle-orm"
+import { db } from "@/lib/db"
+import { patientProfile } from "@/lib/db/schema"
 import { isAiConfigured } from "@/lib/env"
 import { runAssistant } from "@/lib/ai/assistant"
 import { consumeRateLimit } from "@/lib/rate-limit"
@@ -46,7 +49,21 @@ export async function POST(request: Request) {
   if (!parsed.success) return jsonError("طلب غير صالح.", 400)
 
   try {
-    const result = await runAssistant(parsed.data.messages)
+    // Hand the assistant what the account already knows, so it stops asking
+    // the patient for their own city/name on every conversation.
+    const profile = (
+      await db
+        .select({ city: patientProfile.city, country: patientProfile.residenceCountry })
+        .from(patientProfile)
+        .where(eq(patientProfile.userId, auth.user.id))
+        .limit(1)
+    )[0]
+
+    const result = await runAssistant(parsed.data.messages, {
+      name: auth.user.name,
+      city: profile?.city ?? null,
+      country: profile?.country ?? null,
+    })
     return jsonOk({
       reply: result.reply,
       followups: result.followups,

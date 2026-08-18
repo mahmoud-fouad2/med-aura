@@ -138,16 +138,78 @@ export type AssistantResult = {
   followups: string[]
 }
 
-const SYSTEM_PROMPT = `أنت "مستشار Med Aura"، مساعد ذكي داخل تطبيق طبي للتجميل. مهمتك مساعدة المريض على فهم خياراته وترشيح الأطباء والإجراءات المناسبة له من كتالوج المنصة الحقيقي فقط.
+/** What we already know about the signed-in patient, so the assistant never
+ *  asks for details their own profile already answers. */
+export type AssistantUserContext = {
+  name?: string | null
+  city?: string | null
+  country?: string | null
+}
+
+function buildSystemPrompt(user: AssistantUserContext): string {
+  const known: string[] = []
+  if (user.name) known.push(`الاسم: ${user.name}`)
+  if (user.city) known.push(`المدينة: ${user.city}`)
+  if (user.country) known.push(`الدولة: ${user.country}`)
+
+  const profileBlock = known.length
+    ? `معلومات المريض المسجّلة في حسابه (اعتمد عليها ولا تسأل عنها مرة أخرى):
+${known.map((k) => `- ${k}`).join("\n")}
+
+استخدم هذه المعلومات مباشرة. مثلاً إن كانت مدينته معروفة فابحث فيها تلقائياً بدل أن تسأله "في أي مدينة؟". لا تسأل إلا عن المعلومة الناقصة فعلاً (نوع الإجراء أو ما يزعجه).`
+    : `لا تتوفر معلومات مسجّلة عن المريض، فاسأله عن مدينته وما يبحث عنه.`
+
+  return `أنت "مستشار Med Aura"، مساعد ذكي داخل تطبيق طبي للتجميل. مهمتك مساعدة المريض على فهم خياراته وترشيح الأطباء والإجراءات المناسبة له من كتالوج المنصة الحقيقي فقط.
+
+${profileBlock}
+
+تنسيق الرد (مهم جداً):
+- اكتب نصاً عادياً بسيطاً فقط. ممنوع تماماً استخدام أي رموز تنسيق: لا تستخدم النجمة * ولا ** ولا الشرطة السفلية _ ولا علامة # ولا الشرطة - في بداية السطر ولا الأرقام مثل "1." لعمل قوائم.
+- بدل القوائم، اكتب جملاً قصيرة متتابعة، كل فكرة في سطر مستقل.
+- اجعل الرد قصيراً: من سطرين إلى أربعة أسطر كحد أقصى. المريض يقرأ على شاشة هاتف.
+- لا تكرر التحية في كل رد، ولا تكرر التنبيه الطبي أكثر من مرة واحدة في بداية المحادثة.
+- تحدّث بالعربية بأسلوب دافئ ومهني ومباشر.
 
 قواعد أساسية:
-- تحدّث بالعربية بأسلوب دافئ ومهني وموجز. اسأل سؤالاً أو سؤالين بسيطين عند الحاجة لفهم هدف المريض (المنطقة، المدينة، الميزانية، حضوري أم عن بُعد).
 - أنت لست طبيباً ولا تقدّم تشخيصاً طبياً أو وصفة أو جرعة. إن سُئلت عن أمر طبي/تشخيصي، اشرح بشكل عام مبسّط ثم وجّه المريض لحجز استشارة مع طبيب مختص.
 - عند ترشيح أطباء، استخدم أداة search_doctors دائماً — لا تخترع أسماء أطباء أو أسعاراً أبداً. رشّح من نتائج الأداة فقط، وإن لم توجد نتائج فاقترح توسيع البحث.
+- بطاقات الأطباء تظهر للمريض تلقائياً أسفل ردك، فلا تعيد كتابة أسمائهم أو أسعارهم في النص. اكتفِ بجملة قصيرة مثل "اخترت لك هؤلاء الأطباء" ثم اتركه يضغط على البطاقة.
 - عند الحديث عن الإجراءات المتاحة، استخدم أداة list_procedures لمعرفة ما تقدّمه المنصة.
-- لا تحجز ولا تنفّذ أي دفع. بعد الترشيح، اذكر أن المريض يمكنه فتح ملف الطبيب والحجز بنفسه من البطاقة الظاهرة.
-- في نهاية كل رد، استخدم أداة set_followups لاقتراح 2-4 أسئلة قصيرة يمكن للمريض الضغط عليها لمتابعة الحوار.
-- أضف تنبيهاً قصيراً عند أول رد بأن هذه المساعدة للإرشاد وليست بديلاً عن الاستشارة الطبية.`
+- لا تحجز ولا تنفّذ أي دفع. المريض يفتح ملف الطبيب ويحجز بنفسه من البطاقة.
+- في نهاية كل رد، استخدم أداة set_followups لاقتراح 2-4 أسئلة قصيرة يمكن للمريض الضغط عليها لمتابعة الحوار.`
+}
+
+/**
+ * Strips Markdown the model emits anyway. The chat renders through a plain
+ * <Text>, so `**bold**` and `1.` list markers show up as literal clutter —
+ * exactly what the screenshots showed. Instructing the model helps but is not
+ * reliable on its own, so this is the guarantee rather than the hope.
+ */
+export function sanitizeReply(text: string): string {
+  return (
+    text
+      // Bold/italic/underline markers, keeping the words inside. `[\s\S]`
+      // rather than the `s` flag, which this tsconfig's target rejects.
+      .replace(/\*\*\*([\s\S]+?)\*\*\*/g, "$1")
+      .replace(/\*\*([\s\S]+?)\*\*/g, "$1")
+      .replace(/\*([\s\S]+?)\*/g, "$1")
+      .replace(/__([\s\S]+?)__/g, "$1")
+      .replace(/`{1,3}([^`]+)`{1,3}/g, "$1")
+      // Headings and blockquotes at the start of a line.
+      .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+      .replace(/^\s{0,3}>\s?/gm, "")
+      // Bullet and numbered list markers — the content stays, the marker goes.
+      .replace(/^\s{0,3}[-*+]\s+/gm, "")
+      .replace(/^\s{0,3}\d+[.)]\s+/gm, "")
+      // Markdown links -> just the label.
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      // Any leftover stray emphasis characters.
+      .replace(/\*+/g, "")
+      // Collapse the blank-line runs those removals leave behind.
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  )
+}
 
 const TOOLS: FunctionDeclaration[] = [
   {
@@ -252,7 +314,11 @@ function textOf(parts: Part[] | undefined): string {
  * the final reply plus the structured doctor cards and follow-up chips the app
  * renders.
  */
-export async function runAssistant(history: AssistantTurn[]): Promise<AssistantResult> {
+export async function runAssistant(
+  history: AssistantTurn[],
+  userContext: AssistantUserContext = {},
+): Promise<AssistantResult> {
+  const SYSTEM_PROMPT = buildSystemPrompt(userContext)
   const ai = new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") })
 
   const contents: Content[] = history.map((m) => ({
@@ -282,7 +348,7 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
 
     const calls = response.functionCalls ?? []
     if (calls.length === 0) {
-      return { reply: response.text?.trim() ?? "", doctors, followups }
+      return { reply: sanitizeReply(response.text ?? ""), doctors, followups }
     }
 
     // Echo the model's turn back VERBATIM. Gemini 3 attaches an encrypted
@@ -304,7 +370,13 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
       const args = (call.args ?? {}) as Record<string, unknown>
       let output: Record<string, unknown>
       if (call.name === "search_doctors") {
-        const found = await runSearchDoctors(args)
+        // Fall back to the patient's own city when the model didn't specify
+        // one, so a signed-in user gets local results without being asked
+        // for a detail their profile already holds.
+        const found = await runSearchDoctors({
+          ...args,
+          city: (args.city as string | undefined) || userContext.city || undefined,
+        })
         for (const d of found) {
           if (!doctors.some((existing) => existing.id === d.id)) doctors.push(d)
         }
@@ -348,5 +420,9 @@ export async function runAssistant(history: AssistantTurn[]): Promise<AssistantR
       },
     }),
   )
-  return { reply: closing.text?.trim() ?? textOf(closing.candidates?.[0]?.content?.parts), doctors, followups }
+  return {
+    reply: sanitizeReply(closing.text ?? textOf(closing.candidates?.[0]?.content?.parts)),
+    doctors,
+    followups,
+  }
 }
