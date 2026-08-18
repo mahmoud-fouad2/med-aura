@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { isAiConfigured } from "@/lib/env"
 import { runAssistant } from "@/lib/ai/assistant"
+import { consumeRateLimit } from "@/lib/rate-limit"
 import { absolutize, jsonError, jsonOk, jsonServerError, requireMobileUser } from "@/lib/mobile-api"
 
 export const dynamic = "force-dynamic"
@@ -26,6 +27,19 @@ export async function POST(request: Request) {
 
   if (!isAiConfigured()) {
     return jsonError("المساعد الذكي غير متاح حاليًا.", 503)
+  }
+
+  // Every turn is a multi-round Gemini call billed to our key, so a client
+  // stuck in a retry loop — or abusing a valid session — would spend real
+  // money. 20 turns per 5 minutes is far above normal conversation pace and
+  // still caps the damage. Keyed per user, not per IP, so one bad actor
+  // can't throttle everyone sharing a carrier NAT.
+  const limit = consumeRateLimit(`assistant:${auth.user.id}`, {
+    limit: 20,
+    windowMs: 5 * 60_000,
+  })
+  if (!limit.ok) {
+    return jsonError("لقد أرسلت رسائل كثيرة. انتظر قليلاً ثم حاول مجددًا.", 429)
   }
 
   const parsed = BodySchema.safeParse(await request.json().catch(() => null))

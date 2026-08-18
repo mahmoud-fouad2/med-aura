@@ -106,6 +106,29 @@ export const auth = betterAuth({
     cookiePrefix: "medaura",
     // NOTE: do NOT force secure/sameSite=none in development — that breaks
     // login on http://localhost. Better Auth's defaults are correct per-env.
+
+    /**
+     * Without this, EVERY request shares one rate-limit bucket per path.
+     *
+     * Better Auth resolves the client IP from `x-forwarded-for`, but with no
+     * `trustedProxies` configured it refuses to guess which hop is the client
+     * (`getIPFromHeader`: `if (forwardedIps.length !== 1) return null`).
+     * Behind Render the header is a chain, never a single value, so it always
+     * returned null and every user fell into the shared `NO_TRUSTED_IP` bucket
+     * — which is what logged "Rate limiting could not determine a client IP"
+     * on every boot. That is both a security hole (brute-force protection
+     * keyed globally instead of per attacker) and an availability bug (all
+     * users combined get max 30 requests/60s per path).
+     *
+     * Listing the private ranges lets it walk the chain from the right,
+     * skip our own infrastructure hops, and stop at the first public address
+     * — the real client. Spoofed values a client injects land to the LEFT of
+     * the address the proxy itself observed, so they are ignored rather than
+     * trusted.
+     */
+    ipAddress: {
+      trustedProxies: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8"],
+    },
   },
 
   // The native app authenticates over the same endpoints; its custom scheme
