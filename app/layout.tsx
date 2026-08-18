@@ -99,8 +99,12 @@ export const metadata: Metadata = {
     images: [absoluteUrl("/hero-medaura-consultation.png")],
   },
   icons: {
+    // All derived from the same brand mark as the mobile app icon (the
+    // face-silhouette + stylized M), not the old mismatched navy "M" swoosh
+    // medaura-mark.svg used to serve. /favicon.ico (public/favicon.ico) is
+    // picked up automatically by browsers that fetch it directly, no entry
+    // needed here.
     icon: [
-      { url: "/medaura-mark.svg", type: "image/svg+xml" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
