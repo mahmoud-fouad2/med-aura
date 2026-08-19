@@ -23,10 +23,11 @@ import Animated, {
 import { AppText, Avatar } from "../../components/ui"
 import { AiDoctor } from "../../components/ai-doctor"
 import {
-  api,
   NetworkError,
+  streamAssistant,
   TimeoutError,
   type AssistantDoctor,
+  type AssistantStage,
   type AssistantTurn,
 } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
@@ -49,6 +50,7 @@ export default function Assistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
+  const [stage, setStage] = useState<AssistantStage | null>(null)
   const scrollRef = useRef<ScrollView>(null)
 
   // Only auto-scroll once a conversation exists. Firing this on the empty
@@ -69,10 +71,11 @@ export default function Assistant() {
       setMessages(history)
       setInput("")
       setSending(true)
+      setStage("understanding")
       scrollToEnd()
       try {
         const turns: AssistantTurn[] = history.map((m) => ({ role: m.role, content: m.content }))
-        const res = await api.assistant(turns)
+        const res = await streamAssistant(turns, setStage)
         setMessages((prev) => [
           ...prev,
           {
@@ -97,6 +100,7 @@ export default function Assistant() {
         setMessages((prev) => [...prev, { id: nextId(), role: "assistant", content: msg }])
       } finally {
         setSending(false)
+        setStage(null)
         scrollToEnd()
       }
     },
@@ -184,7 +188,9 @@ export default function Assistant() {
           )
         )}
 
-        {sending ? <TypingIndicator label={t.assistant.thinking} /> : null}
+        {sending ? (
+          <TypingIndicator label={stage ? t.assistant.stages[stage] : t.assistant.thinking} />
+        ) : null}
       </ScrollView>
 
       {/* Suggestion chips — starters when empty, follow-ups after a reply. */}

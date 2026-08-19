@@ -3,9 +3,10 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { patientProfile } from "@/lib/db/schema"
 import { isAiConfigured } from "@/lib/env"
-import { runAssistant } from "@/lib/ai/assistant"
+import { runAssistant, type AssistantStage } from "@/lib/ai/assistant"
 import { consumeRateLimit } from "@/lib/rate-limit"
-import { absolutize, jsonError, jsonOk, jsonServerError, requireMobileUser } from "@/lib/mobile-api"
+import { absolutize, jsonError, requireMobileUser } from "@/lib/mobile-api"
+import { logger } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 
@@ -48,44 +49,78 @@ export async function POST(request: Request) {
   const parsed = BodySchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return jsonError("طلب غير صالح.", 400)
 
-  try {
-    // Hand the assistant what the account already knows, so it stops asking
-    // the patient for their own city/name on every conversation.
-    const profile = (
-      await db
-        .select({ city: patientProfile.city, country: patientProfile.residenceCountry })
-        .from(patientProfile)
-        .where(eq(patientProfile.userId, auth.user.id))
-        .limit(1)
-    )[0]
+  // Hand the assistant what the account already knows, so it stops asking
+  // the patient for their own city/name on every conversation.
+  const profile = (
+    await db
+      .select({ city: patientProfile.city, country: patientProfile.residenceCountry })
+      .from(patientProfile)
+      .where(eq(patientProfile.userId, auth.user.id))
+      .limit(1)
+  )[0]
 
-    const result = await runAssistant(parsed.data.messages, {
-      name: auth.user.name,
-      city: profile?.city ?? null,
-      country: profile?.country ?? null,
-    })
-    return jsonOk({
-      reply: result.reply,
-      followups: result.followups,
-      doctors: result.doctors.map((d) => ({
-        id: d.id,
-        slug: d.slug,
-        name: d.name,
-        title: d.title,
-        city: d.city,
-        consultationFee: d.consultationFee,
-        currency: d.currency,
-        photoUrl: absolutize(d.photoUrl),
-      })),
-    })
-  } catch (err) {
-    // The assistant already retries transient 503/429/network failures across
-    // a model fallback chain, so reaching here means the provider stayed
-    // unavailable — say so honestly rather than blaming the patient's input.
-    return jsonServerError(
-      "mobile.assistant",
-      err,
-      "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات.",
-    )
+  // A single Gemini turn can legitimately run through several rounds of tool
+  // calls, and the wall-clock total is genuinely unpredictable — a fixed
+  // request timeout on the client can't tell "still working" apart from
+  // "dead". Streaming NDJSON lets the client reset its timeout on every line
+  // it receives instead of racing one deadline against the whole turn, and
+  // lets it show real progress (see AssistantStage) instead of a static
+  // spinner.
+  const encoder = new TextEncoder()
+  const send = (controller: ReadableStreamDefaultController<Uint8Array>, line: object) => {
+    controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`))
   }
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      // Keeps the connection visibly alive for any idle-timeout proxy in the
+      // path, independent of stage transitions — a single stage's real Gemini
+      // latency can easily run longer than the heartbeat interval.
+      const heartbeat = setInterval(() => send(controller, { type: "heartbeat" }), 7_000)
+
+      try {
+        const result = await runAssistant(
+          parsed.data.messages,
+          { name: auth.user.name, city: profile?.city ?? null, country: profile?.country ?? null },
+          (stage) => send(controller, { type: "stage", stage }),
+        )
+        send(controller, {
+          type: "result",
+          reply: result.reply,
+          followups: result.followups,
+          doctors: result.doctors.map((d) => ({
+            id: d.id,
+            slug: d.slug,
+            name: d.name,
+            title: d.title,
+            city: d.city,
+            consultationFee: d.consultationFee,
+            currency: d.currency,
+            photoUrl: absolutize(d.photoUrl),
+          })),
+        })
+      } catch (err) {
+        // The assistant already retries transient 503/429/network failures
+        // across a model fallback chain, so reaching here means the provider
+        // stayed unavailable — say so honestly rather than blaming the
+        // patient's input.
+        logger.error("mobile.assistant failed", {
+          error: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+        })
+        send(controller, { type: "error", message: "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات." })
+      } finally {
+        clearInterval(heartbeat)
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  })
 }

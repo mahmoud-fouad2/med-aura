@@ -78,6 +78,15 @@ export type AssistantResponse = {
   doctors: AssistantDoctor[]
 }
 
+/** Mirrors AssistantStage in lib/ai/assistant.ts — real checkpoints the
+ *  server reaches inside the tool-calling loop, streamed down as NDJSON so
+ *  the chat screen can show genuine progress instead of a static spinner. */
+export type AssistantStage =
+  | "understanding"
+  | "searching_doctors"
+  | "reviewing_procedures"
+  | "finalizing"
+
 export type Appointment = {
   id: string
   reference: string
@@ -355,15 +364,6 @@ export class TimeoutError extends NetworkError {}
 
 const REQUEST_TIMEOUT_MS = 15_000
 
-/**
- * The AI concierge is the one endpoint that legitimately takes longer than a
- * normal API call: it runs a multi-round tool loop against Gemini, and a
- * model round trip alone can outlast the 15s budget the CRUD routes use.
- * Aborting at 15s surfaced as "no internet" even though the server was fine
- * and still working, so this endpoint gets its own, longer budget.
- */
-const AI_REQUEST_TIMEOUT_MS = 75_000
-
 async function request<T>(
   path: string,
   init?: RequestInit & { auth?: boolean; timeoutMs?: number },
@@ -415,6 +415,131 @@ async function request<T>(
   return body.data
 }
 
+/**
+ * Reset on every line received (including heartbeats) rather than the whole
+ * request — a multi-round Gemini turn can legitimately run long, so what
+ * actually indicates a dead connection is silence, not total duration.
+ */
+const AI_INACTIVITY_TIMEOUT_MS = 20_000
+/** Absolute safety net in case something loops without ever going silent. */
+const AI_HARD_TIMEOUT_MS = 180_000
+
+/**
+ * Streams the AI concierge's NDJSON response (see app/api/mobile/v1/assistant
+ * on the server). `fetch()` + `ReadableStream.getReader()` isn't reliably
+ * available across RN/Hermes, so this uses XMLHttpRequest's `onprogress` +
+ * incremental `responseText`, which is the established safe pattern for
+ * streaming reads in React Native. `onStage` fires as the server reaches each
+ * real checkpoint, letting the UI show genuine progress instead of a static
+ * spinner racing a fixed timeout.
+ */
+export function streamAssistant(
+  messages: AssistantTurn[],
+  onStage: (stage: AssistantStage) => void,
+): Promise<AssistantResponse> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    let settled = false
+    let cursor = 0
+    let inactivityTimer: ReturnType<typeof setTimeout> | null = null
+
+    const finish = (fn: () => void) => {
+      if (settled) return
+      settled = true
+      if (inactivityTimer) clearTimeout(inactivityTimer)
+      clearTimeout(hardTimer)
+      fn()
+    }
+
+    const resetInactivity = () => {
+      if (inactivityTimer) clearTimeout(inactivityTimer)
+      inactivityTimer = setTimeout(() => {
+        finish(() => {
+          xhr.abort()
+          reject(new TimeoutError("timeout"))
+        })
+      }, AI_INACTIVITY_TIMEOUT_MS)
+    }
+
+    const hardTimer = setTimeout(() => {
+      finish(() => {
+        xhr.abort()
+        reject(new TimeoutError("timeout"))
+      })
+    }, AI_HARD_TIMEOUT_MS)
+
+    xhr.open("POST", `${API_URL}/api/mobile/v1/assistant`)
+    xhr.setRequestHeader("Content-Type", "application/json")
+    if (Platform.OS === "web") {
+      xhr.withCredentials = true
+    } else {
+      const cookie = authClient.getCookie()
+      if (cookie) xhr.setRequestHeader("Cookie", cookie)
+    }
+
+    xhr.onprogress = () => {
+      resetInactivity()
+      const text = xhr.responseText
+      const chunk = text.slice(cursor)
+      cursor = text.length
+      for (const line of chunk.split("\n")) {
+        if (!line.trim()) continue
+        let event: Record<string, unknown>
+        try {
+          event = JSON.parse(line)
+        } catch {
+          continue
+        }
+        if (event.type === "stage") {
+          onStage(event.stage as AssistantStage)
+        } else if (event.type === "result") {
+          finish(() =>
+            resolve({
+              reply: event.reply as string,
+              followups: event.followups as string[],
+              doctors: event.doctors as AssistantDoctor[],
+            }),
+          )
+        } else if (event.type === "error") {
+          finish(() => reject(new Error(event.message as string)))
+        }
+      }
+    }
+
+    xhr.onerror = () => {
+      finish(() => reject(new NetworkError("offline")))
+    }
+
+    xhr.onabort = () => {
+      finish(() => reject(new TimeoutError("timeout")))
+    }
+
+    xhr.onload = () => {
+      if (xhr.status === 401) {
+        finish(() => reject(new SessionExpiredError()))
+        return
+      }
+      if (xhr.status !== 200) {
+        let message = "تعذر تحميل البيانات. حاول مرة أخرى."
+        try {
+          const body = JSON.parse(xhr.responseText) as { error?: string }
+          if (body?.error) message = body.error
+        } catch {
+          // Not JSON — keep the generic message.
+        }
+        finish(() => reject(new Error(message)))
+        return
+      }
+      // Status 200 but no "result"/"error" line ever resolved this promise —
+      // the stream ended without a terminal event.
+      finish(() => reject(new Error("تعذر تحميل البيانات. حاول مرة أخرى.")))
+    }
+
+    resetInactivity()
+    xhr.send(JSON.stringify({ messages }))
+  })
+}
+
 export type ConsultationType = "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
 
 export type SlotsResponse = {
@@ -445,12 +570,6 @@ export const api = {
     request<{ updated: boolean }>("/api/mobile/v1/me", {
       method: "PATCH",
       body: JSON.stringify(input),
-    }),
-  assistant: (messages: AssistantTurn[]) =>
-    request<AssistantResponse>("/api/mobile/v1/assistant", {
-      method: "POST",
-      body: JSON.stringify({ messages }),
-      timeoutMs: AI_REQUEST_TIMEOUT_MS,
     }),
   favorites: () => request<{ doctors: FavoriteDoctor[] }>("/api/mobile/v1/favorites"),
   toggleFavorite: (kind: "doctor" | "center" | "procedure", refId: string) =>

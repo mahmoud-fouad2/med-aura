@@ -138,6 +138,16 @@ export type AssistantResult = {
   followups: string[]
 }
 
+/**
+ * Real checkpoints inside the tool-calling loop — not cosmetic timers. Fired
+ * from the exact points where the corresponding work actually starts, so the
+ * client's "thinking stage" UI reflects what's genuinely happening instead of
+ * faking progress while one fixed request silently sits and waits.
+ */
+export type AssistantStage = "understanding" | "searching_doctors" | "reviewing_procedures" | "finalizing"
+
+export type OnStage = (stage: AssistantStage) => void
+
 /** What we already know about the signed-in patient, so the assistant never
  *  asks for details their own profile already answers. */
 export type AssistantUserContext = {
@@ -317,6 +327,7 @@ function textOf(parts: Part[] | undefined): string {
 export async function runAssistant(
   history: AssistantTurn[],
   userContext: AssistantUserContext = {},
+  onStage?: OnStage,
 ): Promise<AssistantResult> {
   const SYSTEM_PROMPT = buildSystemPrompt(userContext)
   const ai = new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") })
@@ -328,6 +339,8 @@ export async function runAssistant(
 
   const doctors: AssistantDoctor[] = []
   let followups: string[] = []
+
+  onStage?.("understanding")
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const response = await withModelFallback((model) =>
@@ -348,6 +361,7 @@ export async function runAssistant(
 
     const calls = response.functionCalls ?? []
     if (calls.length === 0) {
+      onStage?.("finalizing")
       return { reply: sanitizeReply(response.text ?? ""), doctors, followups }
     }
 
@@ -364,6 +378,9 @@ export async function runAssistant(
       role: "model",
       parts: modelParts?.length ? modelParts : calls.map((c) => ({ functionCall: c })),
     })
+
+    if (calls.some((c) => c.name === "search_doctors")) onStage?.("searching_doctors")
+    else if (calls.some((c) => c.name === "list_procedures")) onStage?.("reviewing_procedures")
 
     const responseParts: Part[] = []
     for (const call of calls) {
@@ -410,6 +427,7 @@ export async function runAssistant(
 
   // Tool-round budget exhausted — one final call with no tools so the model
   // produces a closing reply instead of looping forever.
+  onStage?.("finalizing")
   const closing = await withModelFallback((model) =>
     ai.models.generateContent({
       model,

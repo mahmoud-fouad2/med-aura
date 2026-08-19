@@ -156,6 +156,12 @@ const ar = {
     slow: "استغرق الرد وقتًا أطول من المعتاد. حاول مرة أخرى.",
     unavailable: "المساعد الذكي غير متاح حاليًا.",
     recommendedDoctors: "أطباء مقترحون",
+    stages: {
+      understanding: "جاري فهم ملفك الشخصي…",
+      searching_doctors: "جاري البحث في الأطباء…",
+      reviewing_procedures: "جاري مراجعة الإجراءات المتاحة…",
+      finalizing: "جاري إعداد الرد…",
+    },
     starters: [
       "رشّح لي طبيباً مناسباً",
       "ما الفرق بين البوتوكس والفيلر؟",
@@ -787,6 +793,12 @@ const en: typeof ar = {
     slow: "That took longer than usual. Please try again.",
     unavailable: "The AI assistant isn't available right now.",
     recommendedDoctors: "Recommended doctors",
+    stages: {
+      understanding: "Understanding your profile…",
+      searching_doctors: "Searching doctors…",
+      reviewing_procedures: "Reviewing available procedures…",
+      finalizing: "Preparing your reply…",
+    },
     starters: [
       "Recommend a suitable doctor",
       "What's the difference between Botox and fillers?",
