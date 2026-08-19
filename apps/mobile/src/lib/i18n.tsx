@@ -154,6 +154,7 @@ const ar = {
     thinking: "يكتب…",
     error: "تعذّر الرد الآن. حاول مرة أخرى.",
     slow: "استغرق الرد وقتًا أطول من المعتاد. حاول مرة أخرى.",
+    rateLimited: "المساعد وصل لحد الطلبات المسموح به حاليًا. انتظر دقيقة وحاول مرة أخرى.",
     unavailable: "المساعد الذكي غير متاح حاليًا.",
     recommendedDoctors: "أطباء مقترحون",
     stages: {
@@ -791,6 +792,7 @@ const en: typeof ar = {
     thinking: "Typing…",
     error: "Couldn't respond right now. Try again.",
     slow: "That took longer than usual. Please try again.",
+    rateLimited: "The assistant hit its current request limit. Wait a minute and try again.",
     unavailable: "The AI assistant isn't available right now.",
     recommendedDoctors: "Recommended doctors",
     stages: {

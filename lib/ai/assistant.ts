@@ -47,25 +47,30 @@ export const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash
 /**
  * Latency budget. This runs behind a phone request that the user is staring
  * at, so every knob here is tuned for "answers fast" over "answers perfectly":
- * 3 rounds is enough for search → follow-ups → close, and 2 attempts across 3
- * models still gives 6 shots at a transient failure without stacking backoff
- * long enough to blow the client timeout.
+ * 2 rounds is enough for search/list → close (Gemini can request multiple
+ * tools in one round, so most turns finish in 1-2 real calls anyway), and the
+ * project currently runs on the Gemini API *free tier*, whose per-model RPM
+ * quota is tight enough that a 3rd speculative round routinely tips a turn
+ * over budget for no benefit.
  */
-const MAX_TOOL_ROUNDS = 3
+const MAX_TOOL_ROUNDS = 2
 /** Attempts per model before moving to the next one in the chain. */
 export const ATTEMPTS_PER_MODEL = 2
 
 /**
- * Transient failures worth retrying: Google's 503 (UNAVAILABLE, "high
- * demand"), 429 rate limits, 500/504 blips, and undici's bare "fetch failed"
- * — all of which we saw in production. A 400/401/403/404 is a real bug or a
- * bad key, so those fail fast rather than burning the retry budget.
+ * Real transient failures worth a short same-model retry: 500/502/504 blips
+ * and undici's bare "fetch failed" — momentary and usually gone within a
+ * second. 429/RESOURCE_EXHAUSTED is deliberately NOT here — see
+ * isRateLimited — because on the free tier it is a per-minute quota, not a
+ * blip, and a short backoff on the same model just burns the request's time
+ * budget for a retry that cannot possibly succeed yet.
  */
 export function isTransient(err: unknown): boolean {
+  if (isRateLimited(err)) return true
   const status = (err as { status?: number })?.status
-  if (typeof status === "number") return status === 429 || status >= 500
+  if (typeof status === "number") return status >= 500
   const msg = err instanceof Error ? err.message : String(err)
-  return /\b(429|500|502|503|504)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|high demand|fetch failed|ETIMEDOUT|ECONNRESET|socket hang up/i.test(
+  return /\b(500|502|503|504)\b|UNAVAILABLE|overloaded|high demand|fetch failed|ETIMEDOUT|ECONNRESET|socket hang up/i.test(
     msg,
   )
 }
@@ -84,12 +89,28 @@ export function isModelUnavailable(err: unknown): boolean {
   return /\b404\b|NOT_FOUND|is not found|no longer available|not supported for/i.test(msg)
 }
 
+/**
+ * A 429/RESOURCE_EXHAUSTED — the free-tier per-model RPM quota, not a
+ * capacity blip. The quota window resets on the order of a minute; our
+ * whole request budget is seconds, so retrying the *same* model can never
+ * succeed in time. Each model has its own separate quota pool though, so
+ * skipping straight to the next model (no backoff sleep wasted) is the only
+ * retry that can actually help within this request.
+ */
+export function isRateLimited(err: unknown): boolean {
+  const status = (err as { status?: number })?.status
+  if (status === 429) return true
+  const msg = err instanceof Error ? err.message : String(err)
+  return /\b429\b|RESOURCE_EXHAUSTED|quota/i.test(msg)
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /**
- * Runs `call` against each model in the chain, retrying transient failures
- * with exponential backoff + jitter. Throws the last error only when every
- * model and attempt is exhausted.
+ * Runs `call` against each model in the chain, retrying real transient
+ * failures with exponential backoff + jitter, but skipping straight to the
+ * next model (no wasted backoff) on a retired model or a rate-limit quota
+ * hit. Throws the last error only when every model and attempt is exhausted.
  */
 export async function withModelFallback<T>(call: (model: string) => Promise<T>): Promise<T> {
   let lastError: unknown
@@ -99,8 +120,10 @@ export async function withModelFallback<T>(call: (model: string) => Promise<T>):
         return await call(model)
       } catch (err) {
         lastError = err
-        // Retired/restricted model: stop hammering it and try the next one.
-        if (isModelUnavailable(err)) break
+        // Retired/restricted model, or this model's own quota is exhausted
+        // for the current window — either way, stop hammering it and try the
+        // next one immediately.
+        if (isModelUnavailable(err) || isRateLimited(err)) break
         // A genuine bug (400 bad request, 401 bad key) — surface it now
         // rather than burning the whole retry budget on it.
         if (!isTransient(err)) throw err
@@ -108,7 +131,7 @@ export async function withModelFallback<T>(call: (model: string) => Promise<T>):
         const isLast = model === MODELS[MODELS.length - 1] && attempt === ATTEMPTS_PER_MODEL - 1
         if (isLast) break
         // 400ms, 800ms, 1600ms (+ up to 250ms jitter) — enough to ride out a
-        // short capacity spike without making the user wait on a dead call.
+        // short capacity blip without making the user wait on a dead call.
         await sleep(400 * 2 ** attempt + Math.random() * 250)
       }
     }

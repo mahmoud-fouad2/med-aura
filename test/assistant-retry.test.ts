@@ -3,6 +3,7 @@ import {
   ATTEMPTS_PER_MODEL,
   MODELS,
   isModelUnavailable,
+  isRateLimited,
   isTransient,
   withModelFallback,
 } from "@/lib/ai/assistant"
@@ -93,6 +94,33 @@ describe("assistant model fallback", () => {
     expect(seen.filter((m) => m === MODELS[0])).toHaveLength(1)
     expect(seen[1]).toBe(MODELS[1])
   })
+
+  it("skips a rate-limited model immediately, without any backoff sleep", async () => {
+    // Free-tier RPM quota, not a capacity blip — the window resets on the
+    // order of a minute, so a same-model retry inside one request can never
+    // succeed. Each model has its own quota pool, so move on right away.
+    vi.useFakeTimers()
+    const seen: string[] = []
+    const call = vi.fn(async (model: string) => {
+      seen.push(model)
+      if (model === MODELS[0]) {
+        throw Object.assign(new Error("Resource has been exhausted"), {
+          status: 429,
+          message: "RESOURCE_EXHAUSTED: quota exceeded",
+        })
+      }
+      return "ok"
+    })
+
+    const promise = withModelFallback(call)
+    // No timers should even be scheduled — resolves without needing to
+    // advance fake time at all.
+    await expect(promise).resolves.toBe("ok")
+    vi.useRealTimers()
+
+    expect(seen.filter((m) => m === MODELS[0])).toHaveLength(1)
+    expect(seen[1]).toBe(MODELS[1])
+  })
 })
 
 describe("configured assistant models", () => {
@@ -116,5 +144,15 @@ describe("configured assistant models", () => {
     const overloaded = Object.assign(new Error("high demand"), { status: 503 })
     expect(isTransient(overloaded)).toBe(true)
     expect(isModelUnavailable(overloaded)).toBe(false)
+  })
+
+  it("classifies a quota hit separately from a capacity blip", () => {
+    const quota = Object.assign(new Error("RESOURCE_EXHAUSTED: quota exceeded"), { status: 429 })
+    expect(isRateLimited(quota)).toBe(true)
+    // Still transient (worth trying the NEXT model), just not the same one.
+    expect(isTransient(quota)).toBe(true)
+
+    const overloaded = Object.assign(new Error("high demand"), { status: 503 })
+    expect(isRateLimited(overloaded)).toBe(false)
   })
 })

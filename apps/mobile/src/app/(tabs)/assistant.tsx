@@ -24,6 +24,7 @@ import { AppText, Avatar } from "../../components/ui"
 import { AiDoctor } from "../../components/ai-doctor"
 import {
   NetworkError,
+  RateLimitedError,
   streamAssistant,
   TimeoutError,
   type AssistantDoctor,
@@ -37,15 +38,23 @@ type ChatMessage = {
   id: string
   role: "user" | "assistant"
   content: string
+  sentAt: number
   doctors?: AssistantDoctor[]
   followups?: string[]
+}
+
+function formatTime(ms: number, locale: "ar" | "en"): string {
+  return new Date(ms).toLocaleTimeString(locale === "ar" ? "ar" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
 let idCounter = 0
 const nextId = () => `m${++idCounter}`
 
 export default function Assistant() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
@@ -66,7 +75,7 @@ export default function Assistant() {
       const trimmed = text.trim()
       if (!trimmed || sending) return
       void Haptics.selectionAsync()
-      const userMsg: ChatMessage = { id: nextId(), role: "user", content: trimmed }
+      const userMsg: ChatMessage = { id: nextId(), role: "user", content: trimmed, sentAt: Date.now() }
       const history = [...messages, userMsg]
       setMessages(history)
       setInput("")
@@ -82,6 +91,7 @@ export default function Assistant() {
             id: nextId(),
             role: "assistant",
             content: res.reply || t.assistant.error,
+            sentAt: Date.now(),
             doctors: res.doctors,
             followups: res.followups,
           },
@@ -90,14 +100,20 @@ export default function Assistant() {
         // A timeout is NOT "you're offline" — the server was reachable and
         // simply took too long, so say that instead of sending the user to
         // check their connection. TimeoutError extends NetworkError, so it
-        // must be tested first.
+        // must be tested first. A rate limit isn't a failure at all — it's
+        // the provider's own quota, so it gets its own honest message.
         const msg =
-          err instanceof TimeoutError
-            ? t.assistant.slow
-            : err instanceof NetworkError
-              ? t.common.offline
-              : t.assistant.error
-        setMessages((prev) => [...prev, { id: nextId(), role: "assistant", content: msg }])
+          err instanceof RateLimitedError
+            ? t.assistant.rateLimited
+            : err instanceof TimeoutError
+              ? t.assistant.slow
+              : err instanceof NetworkError
+                ? t.common.offline
+                : t.assistant.error
+        setMessages((prev) => [
+          ...prev,
+          { id: nextId(), role: "assistant", content: msg, sentAt: Date.now() },
+        ])
       } finally {
         setSending(false)
         setStage(null)
@@ -130,16 +146,35 @@ export default function Assistant() {
           backgroundColor: colors.primary,
           borderBottomLeftRadius: 24,
           borderBottomRightRadius: 24,
+          overflow: "hidden",
         }}
       >
+        {/* A soft off-center glow, not a flat fill — gives the header some
+            depth without pulling in a gradient dependency. */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: -60,
+            insetInlineEnd: -40,
+            width: 180,
+            height: 180,
+            borderRadius: 90,
+            backgroundColor: "rgba(255,255,255,0.08)",
+          }}
+        />
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
           <View
-            style={{
-              borderRadius: 25,
-              borderWidth: 2,
-              borderColor: "rgba(255,255,255,0.45)",
-              overflow: "hidden",
-            }}
+            style={[
+              {
+                borderRadius: 27,
+                borderWidth: 2,
+                borderColor: "rgba(255,255,255,0.5)",
+                backgroundColor: "rgba(255,255,255,0.08)",
+                overflow: "hidden",
+              },
+              shadows.raised,
+            ]}
           >
             <AiDoctor size={46} />
           </View>
@@ -176,11 +211,12 @@ export default function Assistant() {
         ) : (
           messages.map((m) =>
             m.role === "user" ? (
-              <UserBubble key={m.id} text={m.content} />
+              <UserBubble key={m.id} text={m.content} time={formatTime(m.sentAt, locale)} />
             ) : (
               <AssistantMessage
                 key={m.id}
                 text={m.content}
+                time={formatTime(m.sentAt, locale)}
                 doctors={m.doctors ?? []}
                 doctorsLabel={t.assistant.recommendedDoctors}
               />
@@ -327,22 +363,36 @@ function EmptyState() {
   )
 }
 
-function UserBubble({ text }: { text: string }) {
+function UserBubble({ text, time }: { text: string; time: string }) {
   return (
-    <View
-      style={{
-        alignSelf: "flex-end",
-        maxWidth: "82%",
-        backgroundColor: colors.primary,
-        borderRadius: radius.lg,
-        borderBottomRightRadius: 6,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 10,
-      }}
-    >
-      <AppText variant="body" color="#FFFFFF">
-        {text}
-      </AppText>
+    <View style={{ alignSelf: "flex-end", maxWidth: "82%", gap: 4 }}>
+      <View
+        style={{
+          backgroundColor: colors.primary,
+          borderRadius: radius.lg,
+          borderBottomRightRadius: 6,
+          paddingHorizontal: spacing.md,
+          paddingVertical: 10,
+        }}
+      >
+        <AppText variant="body" color="#FFFFFF">
+          {text}
+        </AppText>
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 3,
+          alignSelf: "flex-end",
+          paddingHorizontal: 4,
+        }}
+      >
+        <AppText variant="caption" color={colors.textFaint}>
+          {time}
+        </AppText>
+        <Ionicons name="checkmark-done" size={13} color={colors.textFaint} />
+      </View>
     </View>
   )
 }
@@ -355,10 +405,12 @@ function UserBubble({ text }: { text: string }) {
  */
 function AssistantMessage({
   text,
+  time,
   doctors,
   doctorsLabel,
 }: {
   text: string
+  time: string
   doctors: AssistantDoctor[]
   doctorsLabel: string
 }) {
@@ -382,6 +434,13 @@ function AssistantMessage({
         >
           <AppText variant="body">{text}</AppText>
         </View>
+        <AppText
+          variant="caption"
+          color={colors.textFaint}
+          style={{ alignSelf: "flex-start", paddingHorizontal: 4, marginTop: -6 }}
+        >
+          {time}
+        </AppText>
         {doctors.length > 0 ? (
           <View style={{ gap: spacing.xs }}>
             <View
@@ -481,6 +540,9 @@ function SuggestionChip({ label, onPress }: { label: string; onPress: () => void
       onPress={onPress}
       style={({ pressed }) => [
         {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
           borderRadius: radius.full,
           borderWidth: 1,
           borderColor: colors.primarySoft,
@@ -491,6 +553,7 @@ function SuggestionChip({ label, onPress }: { label: string; onPress: () => void
         shadows.card,
       ]}
     >
+      <Ionicons name="sparkles" size={13} color={colors.gold} />
       <AppText variant="caption" weight="bold" color={colors.primary}>
         {label}
       </AppText>

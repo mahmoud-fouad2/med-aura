@@ -362,6 +362,14 @@ export class NetworkError extends Error {}
  */
 export class TimeoutError extends NetworkError {}
 
+/**
+ * The AI provider's own rate limit was hit (the project currently runs on
+ * the Gemini API free tier, whose per-model RPM quota is easy to exceed
+ * while testing). Distinct from a generic failure so the UI can say "wait a
+ * bit" instead of implying something is actually broken.
+ */
+export class RateLimitedError extends Error {}
+
 const REQUEST_TIMEOUT_MS = 15_000
 
 async function request<T>(
@@ -501,7 +509,13 @@ export function streamAssistant(
             }),
           )
         } else if (event.type === "error") {
-          finish(() => reject(new Error(event.message as string)))
+          finish(() =>
+            reject(
+              event.reason === "rate_limited"
+                ? new RateLimitedError(event.message as string)
+                : new Error(event.message as string),
+            ),
+          )
         }
       }
     }

@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { patientProfile } from "@/lib/db/schema"
 import { isAiConfigured } from "@/lib/env"
-import { runAssistant, type AssistantStage } from "@/lib/ai/assistant"
+import { isRateLimited, runAssistant, type AssistantStage } from "@/lib/ai/assistant"
 import { consumeRateLimit } from "@/lib/rate-limit"
 import { absolutize, jsonError, requireMobileUser } from "@/lib/mobile-api"
 import { logger } from "@/lib/logger"
@@ -100,15 +100,24 @@ export async function POST(request: Request) {
           })),
         })
       } catch (err) {
-        // The assistant already retries transient 503/429/network failures
-        // across a model fallback chain, so reaching here means the provider
-        // stayed unavailable — say so honestly rather than blaming the
-        // patient's input.
+        // The assistant already retries transient 503/network failures and
+        // skips a rate-limited model to the next one in the chain, so
+        // reaching here means every model was unavailable. Distinguish a
+        // free-tier quota hit — the honest fix is "wait a bit", not "try
+        // again right now" — from a genuine provider outage.
         logger.error("mobile.assistant failed", {
           error: err instanceof Error ? err.message : String(err),
           stack: err instanceof Error ? err.stack : undefined,
         })
-        send(controller, { type: "error", message: "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات." })
+        if (isRateLimited(err)) {
+          send(controller, {
+            type: "error",
+            reason: "rate_limited",
+            message: "المساعد وصل لحد الطلبات المسموح به حاليًا. انتظر دقيقة وحاول مرة أخرى.",
+          })
+        } else {
+          send(controller, { type: "error", message: "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات." })
+        }
       } finally {
         clearInterval(heartbeat)
         controller.close()
