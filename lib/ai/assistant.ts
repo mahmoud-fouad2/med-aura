@@ -342,6 +342,28 @@ function textOf(parts: Part[] | undefined): string {
 }
 
 /**
+ * Turns a model turn into the reply text the app shows. Two defenses in one
+ * place:
+ *
+ * 1. The SDK's `.text` convenience getter can come back empty even when the
+ *    candidate's raw parts hold real text (seen in production: a turn that
+ *    genuinely found doctors — `doctors` non-empty — still rendered as
+ *    "couldn't respond" because only the early-return branch inside the
+ *    round loop skipped this fallback; the closing-call branch already had
+ *    it). Always fall back to reading the parts directly.
+ * 2. If the model still returns no text at all after a round that DID
+ *    produce real results, the honest thing is a short line pointing at
+ *    those results — not the generic "couldn't respond" the client shows
+ *    for a genuinely empty reply, which would be actively misleading right
+ *    above a list of doctor cards that worked fine.
+ */
+function finalizeReply(text: string | undefined, parts: Part[] | undefined, doctors: AssistantDoctor[]): string {
+  const sanitized = sanitizeReply(text || textOf(parts))
+  if (sanitized) return sanitized
+  return doctors.length > 0 ? "تفضّلي، اخترت لك هؤلاء الأطباء بناءً على طلبك." : ""
+}
+
+/**
  * Runs one assistant turn: feeds the conversation to Gemini, executes any
  * function calls (doctor search / procedure list / follow-ups), and returns
  * the final reply plus the structured doctor cards and follow-up chips the app
@@ -385,7 +407,8 @@ export async function runAssistant(
     const calls = response.functionCalls ?? []
     if (calls.length === 0) {
       onStage?.("finalizing")
-      return { reply: sanitizeReply(response.text ?? ""), doctors, followups }
+      const parts = response.candidates?.[0]?.content?.parts
+      return { reply: finalizeReply(response.text, parts, doctors), doctors, followups }
     }
 
     // Echo the model's turn back VERBATIM. Gemini 3 attaches an encrypted
@@ -462,7 +485,7 @@ export async function runAssistant(
     }),
   )
   return {
-    reply: sanitizeReply(closing.text ?? textOf(closing.candidates?.[0]?.content?.parts)),
+    reply: finalizeReply(closing.text, closing.candidates?.[0]?.content?.parts, doctors),
     doctors,
     followups,
   }
