@@ -18,16 +18,16 @@ test("procedure catalog supports search and category navigation", async ({ page 
   await expect(page.getByRole("heading", { name: "شد البطن" })).toHaveCount(0)
 })
 
-test("key public pages fit a mobile viewport and images do not fail", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  const failedImages: string[] = []
-  page.on("response", (response) => {
-    if (response.status() >= 400 && response.url().includes("/_next/image")) {
-      failedImages.push(`${response.status()} ${response.url()}`)
-    }
-  })
+for (const path of ["/ar", "/ar/search", "/ar/procedures", "/ar/centers", "/ar/destinations"]) {
+  test(`${path} fits a mobile viewport and its images load`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const failedImages: string[] = []
+    page.on("response", (response) => {
+      if (response.status() >= 400 && response.url().includes("/_next/image")) {
+        failedImages.push(`${response.status()} ${response.url()}`)
+      }
+    })
 
-  for (const path of ["/ar", "/ar/search", "/ar/procedures", "/ar/centers", "/ar/destinations"]) {
     const response = await page.goto(path, { waitUntil: "domcontentloaded" })
     expect(response?.ok(), `${path} did not return a successful document`).toBe(true)
     await expect(page.locator("main")).toBeVisible()
@@ -52,9 +52,9 @@ test("key public pages fit a mobile viewport and images do not fail", async ({ p
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     )
     expect(overflow, `${path} has horizontal overflow`).toBeLessThanOrEqual(1)
-  }
-  expect(failedImages).toEqual([])
-})
+    expect(failedImages).toEqual([])
+  })
+}
 
 test("protected workspaces redirect anonymous visitors without looping", async ({ page }) => {
   for (const path of ["/dashboard", "/admin"]) {
