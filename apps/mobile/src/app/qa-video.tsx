@@ -11,7 +11,7 @@ import Daily, {
 } from "@daily-co/react-native-daily-js"
 import { AppText, Button } from "../components/ui"
 import { VideoControl as RoundControl } from "../components/video-control"
-import { api } from "../lib/api"
+import { api, type QaVideoGrant } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
@@ -19,26 +19,23 @@ import { colors, radius, spacing } from "../theme"
  * QA-ONLY join screen for the admin "جلسة فيديو تجريبية" tool — opened via
  * the `medaura://qa-video?...` deep link the admin panel hands to each test
  * device. Mirrors appointment/[id]/video.tsx's in-call UI (same controls,
- * same Daily plumbing) but the room/token come straight from the link
- * instead of an appointment lookup; there is no prejoin gate to check
- * because the server already scoped this to a 30-minute isTest-only room.
+ * same Daily plumbing), but the link contains only a single-use ticket. The
+ * signed-in test account exchanges it for a short-lived Daily grant, keeping
+ * room URLs and provider tokens out of deep-link and browser history.
  */
 
 type Phase = "joining" | "call" | "ended" | "error"
 
 export default function QaVideo() {
   const { t } = useI18n()
-  const { room, url, token, role } = useLocalSearchParams<{
-    room: string
-    url: string
-    token: string
-    role: "patient" | "doctor"
-  }>()
+  const { ticket } = useLocalSearchParams<{ ticket: string }>()
   const insets = useSafeAreaInsets()
-  const missingParams = !room || !url || !token || !role
+  const missingParams = !ticket
 
   const [phase, setPhase] = useState<Phase>(missingParams ? "error" : "joining")
   const callRef = useRef<DailyCall | null>(null)
+  const grantRef = useRef<QaVideoGrant | null>(null)
+  const [joinRole, setJoinRole] = useState<"patient" | "doctor" | null>(null)
   const [remote, setRemote] = useState<DailyParticipant | null>(null)
   const [local, setLocal] = useState<DailyParticipant | null>(null)
   const [micOn, setMicOn] = useState(true)
@@ -71,6 +68,11 @@ export default function QaVideo() {
     let cancelled = false
     async function join() {
       try {
+        const grant = await api.qaVideoExchange(ticket)
+        if (cancelled) return
+        grantRef.current = grant
+        setJoinRole(grant.role)
+
         const call = Daily.createCallObject()
         callRef.current = call
 
@@ -92,12 +94,15 @@ export default function QaVideo() {
           void teardown()
         })
 
-        await call.join({ url, token })
+        await call.join({ url: grant.roomUrl, token: grant.token })
         if (cancelled) return
         refresh()
         setPhase("call")
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-        void api.qaVideoEvent(room, role === "doctor" ? "doctor_joined" : "patient_joined")
+        void api.qaVideoEvent(
+          grant.roomName,
+          grant.role === "doctor" ? "doctor_joined" : "patient_joined",
+        )
       } catch {
         if (!cancelled) setPhase("error")
       }
@@ -135,10 +140,16 @@ export default function QaVideo() {
   }, [])
 
   const leave = useCallback(async () => {
-    void api.qaVideoEvent(room, role === "doctor" ? "doctor_left" : "patient_left")
+    const grant = grantRef.current
+    if (grant) {
+      void api.qaVideoEvent(
+        grant.roomName,
+        grant.role === "doctor" ? "doctor_left" : "patient_left",
+      )
+    }
     await teardown()
     setPhase("ended")
-  }, [room, role, teardown])
+  }, [teardown])
 
   if (phase === "error") {
     return (
@@ -247,7 +258,7 @@ export default function QaVideo() {
         }}
       >
         <AppText variant="sub" weight="bold" color="#FFFFFF">
-          {t.video.testSession} · {role === "doctor" ? t.video.testDoctor : t.video.testPatient}
+          {t.video.testSession} · {joinRole === "doctor" ? t.video.testDoctor : t.video.testPatient}
         </AppText>
       </View>
 

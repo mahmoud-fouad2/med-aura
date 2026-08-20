@@ -88,3 +88,40 @@ export const videoSessionEvent = pgTable(
   },
   (t) => [index("video_event_session_idx").on(t.videoSessionId)],
 )
+
+/**
+ * Single-use launch tickets for the isolated QA video tool. Only a SHA-256
+ * digest is stored; the opaque ticket appears once in the admin-generated
+ * deep link. Daily participant tokens are minted after an authenticated test
+ * account consumes its matching ticket, so provider credentials never enter
+ * URL history or the database.
+ */
+export const qaVideoJoinTicket = pgTable(
+  "qa_video_join_ticket",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    ticketHash: text("ticketHash").notNull(),
+    roomName: text("roomName").notNull(),
+    roomUrl: text("roomUrl").notNull(),
+    userId: text("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumedAt", { withTimezone: true }),
+    createdById: text("createdById").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("qa_video_ticket_hash_uq").on(t.ticketHash),
+    index("qa_video_ticket_room_idx").on(t.roomName),
+    index("qa_video_ticket_user_idx").on(t.userId),
+    index("qa_video_ticket_expiry_idx").on(t.expiresAt),
+  ],
+)

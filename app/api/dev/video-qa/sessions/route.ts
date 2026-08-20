@@ -42,13 +42,8 @@ export async function POST(request: Request) {
       doctorUserId: parsed.data.doctorUserId,
       actorUserId: user.id,
     })
-    const linkFor = (role: "patient" | "doctor", token: string) => {
-      const sp = new URLSearchParams({
-        room: session.roomName,
-        url: session.roomUrl,
-        token,
-        role,
-      })
+    const linkFor = (ticket: string) => {
+      const sp = new URLSearchParams({ ticket })
       return `medaura://qa-video?${sp.toString()}`
     }
     return jsonOk({
@@ -56,15 +51,15 @@ export async function POST(request: Request) {
       expiresAt: session.expiresAt.toISOString(),
       patient: {
         name: session.patient.name,
-        deepLink: linkFor("patient", session.patient.token),
+        deepLink: linkFor(session.patient.ticket),
       },
       doctor: {
         name: session.doctor.name,
-        deepLink: linkFor("doctor", session.doctor.token),
+        deepLink: linkFor(session.doctor.ticket),
       },
     })
   } catch (err) {
-    if (err instanceof QaVideoError) return jsonError(err.message, err.status)
+    if (err instanceof QaVideoError) return jsonError(err.message, err.status, err.code)
     return jsonError("تعذّر إنشاء جلسة الاختبار.", 500)
   }
 }

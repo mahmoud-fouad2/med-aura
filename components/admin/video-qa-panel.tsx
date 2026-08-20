@@ -164,6 +164,9 @@ export function VideoQaPanel({
                 minute: "2-digit",
               })}
             </div>
+            <p className="text-sm text-muted-foreground">
+              افتح كل رابط على جهاز الحساب المحدد بعد تسجيل الدخول إليه. كل رابط صالح لاستخدام واحد فقط.
+            </p>
             <JoinLinkRow label={`رابط دخول المريض (${session.patient.name})`} link={session.patient.deepLink} />
             <JoinLinkRow label={`رابط دخول الطبيب (${session.doctor.name})`} link={session.doctor.deepLink} />
             <Button

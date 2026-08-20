@@ -1,5 +1,4 @@
 import { Linking, Platform } from "react-native"
-import * as FileSystem from "expo-file-system/legacy"
 import * as Sharing from "expo-sharing"
 import {
   keepPreviousData,
@@ -10,6 +9,7 @@ import {
 } from "@tanstack/react-query"
 import { API_URL } from "./config"
 import { authClient } from "./auth-client"
+import { downloadToCache } from "./file-transfer"
 import { consumeNdjsonChunk } from "./ndjson"
 import { queryKeys } from "./query-keys"
 import {
@@ -312,6 +312,14 @@ export type VideoJoin = {
   roomUrl: string | null
   role: "patient" | "doctor" | "staff"
   doctorName: string
+}
+
+export type QaVideoGrant = {
+  token: string
+  expiresAt: string
+  roomUrl: string
+  roomName: string
+  role: "patient" | "doctor"
 }
 
 export type Service = {
@@ -730,6 +738,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ roomName, event }),
     }).catch(() => ({ ok: false })),
+  qaVideoExchange: (ticket: string) =>
+    request<QaVideoGrant>("/api/mobile/v1/video-qa/exchange", {
+      method: "POST",
+      body: JSON.stringify({ ticket }),
+    }),
   doctors: (params: { q?: string; page?: number; filters?: DoctorFilters }) => {
     const sp = new URLSearchParams()
     if (params.q) sp.set("q", params.q)
@@ -961,23 +974,12 @@ export const useVideoState = (appointmentId: string, opts?: { poll?: boolean; en
  */
 export async function downloadInvoicePdf(paymentId: string): Promise<string> {
   const cookie = authClient.getCookie()
-  const localUri = `${FileSystem.cacheDirectory}med-aura-receipt-${paymentId}.pdf`
-  const result = await FileSystem.downloadAsync(
-    `${API_URL}/api/invoices/payment/${paymentId}/pdf`,
-    localUri,
-    { headers: cookie ? { Cookie: cookie } : {} },
-  )
-  // downloadAsync writes the body to disk whatever the status is, so a 401
-  // redirect page or a 500 error page lands at a ".pdf" path and the next
-  // share sheet hands the user that file. Check the type as well as the
-  // status, and delete anything that isn't a real PDF before throwing.
-  const contentType = result.headers["Content-Type"] ?? result.headers["content-type"] ?? ""
-  if (result.status !== 200 || !contentType.includes("application/pdf")) {
-    await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
-    if (result.status === 401) throw new SessionExpiredError()
-    throw new Error("تعذّر تحميل الفاتورة. حاول مرة أخرى.")
-  }
-  return result.uri
+  return downloadToCache({
+    url: `${API_URL}/api/invoices/payment/${paymentId}/pdf`,
+    fileName: `med-aura-receipt-${paymentId}.pdf`,
+    cookie,
+    expectedContentType: "application/pdf",
+  })
 }
 
 function isShareSheetDismissal(error: unknown): boolean {
@@ -1029,14 +1031,9 @@ export async function downloadDocument(
 ): Promise<string> {
   const cookie = authClient.getCookie()
   const safeName = fileName.replace(/[^\w.\-]+/g, "_")
-  const localUri = `${FileSystem.cacheDirectory}med-aura-doc-${documentId}-${safeName}`
-  const result = await FileSystem.downloadAsync(
-    `${API_URL}/api/documents/${documentId}`,
-    localUri,
-    { headers: cookie ? { Cookie: cookie } : {} },
-  )
-  if (result.status !== 200) {
-    throw new Error("تعذّر تحميل الملف. حاول مرة أخرى.")
-  }
-  return result.uri
+  return downloadToCache({
+    url: `${API_URL}/api/documents/${documentId}`,
+    fileName: `med-aura-doc-${documentId}-${safeName}`,
+    cookie,
+  })
 }

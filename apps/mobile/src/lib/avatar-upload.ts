@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
-import * as FileSystem from "expo-file-system/legacy"
+import { File, UploadType } from "expo-file-system"
 import { api } from "./api"
 
 export type PickedImage = { uri: string; mimeType: string; sizeBytes: number }
@@ -19,8 +19,8 @@ async function processAsset(uri: string): Promise<PickedImage> {
     [{ resize: { width: 800, height: 800 } }],
     { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
   )
-  const info = await FileSystem.getInfoAsync(result.uri)
-  const sizeBytes = info.exists && !info.isDirectory ? info.size : 0
+  const file = new File(result.uri)
+  const sizeBytes = file.exists ? file.size : 0
   return { uri: result.uri, mimeType: "image/jpeg", sizeBytes }
 }
 
@@ -72,9 +72,9 @@ export async function uploadAvatar(image: PickedImage): Promise<UploadResult> {
       sizeBytes: image.sizeBytes,
     })
 
-    const uploadResult = await FileSystem.uploadAsync(uploadUrl, image.uri, {
+    const uploadResult = await new File(image.uri).upload(uploadUrl, {
       httpMethod: "PUT",
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      uploadType: UploadType.BINARY_CONTENT,
       headers: { "Content-Type": image.mimeType },
     })
     if (uploadResult.status < 200 || uploadResult.status >= 300) {
