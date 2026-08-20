@@ -34,6 +34,8 @@ export const faq = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     questionAr: text("questionAr").notNull(),
     answerAr: text("answerAr").notNull(),
+    questionEn: text("questionEn"),
+    answerEn: text("answerEn"),
     category: text("category").notNull().default("general"),
     sortOrder: integer("sortOrder").notNull().default(0),
     visible: boolean("visible").notNull().default(true),

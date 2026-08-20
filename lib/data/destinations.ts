@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm"
+import { unstable_cache } from "next/cache"
 import { db, isDbConfigured } from "@/lib/db"
 import {
   country,
@@ -7,6 +8,11 @@ import {
   doctorProfile,
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { demoDoctorPhoto } from "@/lib/public-media"
+import {
+  publicCenterConditions,
+  publicDoctorConditions,
+} from "@/lib/data/public-visibility"
 
 export type DestinationCard = {
   code: string
@@ -23,7 +29,7 @@ export type DestinationCard = {
  * doctors and centers. Zero-count destinations are still returned so admins
  * can see the geography catalog, but callers can filter them out.
  */
-export async function listDestinations(): Promise<DestinationCard[]> {
+async function listDestinationsUncached(): Promise<DestinationCard[]> {
   if (!isDbConfigured) return []
   const countries = await db
     .select({
@@ -38,24 +44,34 @@ export async function listDestinations(): Promise<DestinationCard[]> {
   if (countries.length === 0) return []
   const codes = countries.map((c) => c.code)
 
-  const cityRows = await db
-    .select({ countryId: country.id, code: country.code })
-    .from(city)
-    .innerJoin(country, eq(city.countryId, country.id))
-    .where(and(eq(city.active, true), inArray(country.code, codes)))
+  const [cityRows, centerRows, doctorRows] = await Promise.all([
+    db
+      .select({ countryId: country.id, code: country.code })
+      .from(city)
+      .innerJoin(country, eq(city.countryId, country.id))
+      .where(and(eq(city.active, true), inArray(country.code, codes))),
+    db
+      .select({ country: center.country, languages: center.languages })
+      .from(center)
+      .where(
+        and(
+          ...publicCenterConditions(),
+          inArray(center.country, codes),
+        ),
+      ),
+    db
+      .select({ country: doctorProfile.country })
+      .from(doctorProfile)
+      .where(
+        and(
+          ...publicDoctorConditions(),
+          inArray(doctorProfile.country, codes),
+        ),
+      ),
+  ])
   const cityByCode = new Map<string, number>()
   for (const r of cityRows) cityByCode.set(r.code, (cityByCode.get(r.code) ?? 0) + 1)
 
-  const centerRows = await db
-    .select({ country: center.country, languages: center.languages })
-    .from(center)
-    .where(
-      and(
-        eq(center.published, true),
-        eq(center.status, "approved"),
-        inArray(center.country, codes),
-      ),
-    )
   const centersByCode = new Map<string, number>()
   const langByCode = new Map<string, Map<string, number>>()
   for (const r of centerRows) {
@@ -65,16 +81,6 @@ export async function listDestinations(): Promise<DestinationCard[]> {
     langByCode.set(r.country, bucket)
   }
 
-  const doctorRows = await db
-    .select({ country: doctorProfile.country })
-    .from(doctorProfile)
-    .where(
-      and(
-        eq(doctorProfile.published, true),
-        eq(doctorProfile.status, "approved"),
-        inArray(doctorProfile.country, codes),
-      ),
-    )
   const doctorsByCode = new Map<string, number>()
   for (const r of doctorRows)
     doctorsByCode.set(r.country, (doctorsByCode.get(r.country) ?? 0) + 1)
@@ -99,6 +105,12 @@ export async function listDestinations(): Promise<DestinationCard[]> {
   })
 }
 
+export const listDestinations = unstable_cache(
+  listDestinationsUncached,
+  ["public-destinations"],
+  { revalidate: 60 },
+)
+
 export type DestinationDetail = {
   code: string
   nameAr: string
@@ -111,6 +123,7 @@ export type DestinationDetail = {
     city: string | null
     description: string | null
     verified: boolean
+    coverUrl: string | null
   }[]
   doctors: {
     id: string
@@ -121,12 +134,6 @@ export type DestinationDetail = {
     yearsExperience: number
     photoUrl: string | null
   }[]
-}
-
-const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
-  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi.jpg",
-  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alqahtani.jpg",
-  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmet-yilmaz.jpg",
 }
 
 export async function getDestinationBySlug(
@@ -159,13 +166,13 @@ export async function getDestinationBySlug(
         city: center.city,
         description: center.description,
         verified: center.verified,
+        coverKey: center.coverKey,
       })
       .from(center)
       .where(
         and(
           eq(center.country, c.code),
-          eq(center.status, "approved"),
-          eq(center.published, true),
+          ...publicCenterConditions(),
         ),
       )
       .orderBy(asc(center.name))
@@ -184,8 +191,7 @@ export async function getDestinationBySlug(
       .where(
         and(
           eq(doctorProfile.country, c.code),
-          eq(doctorProfile.status, "approved"),
-          eq(doctorProfile.published, true),
+          ...publicDoctorConditions(),
         ),
       )
       .orderBy(sql`${doctorProfile.yearsExperience} desc nulls last`)
@@ -197,10 +203,13 @@ export async function getDestinationBySlug(
     nameAr: c.nameAr,
     nameEn: c.nameEn,
     cities,
-    centers,
+    centers: centers.map(({ coverKey, ...item }) => ({
+      ...item,
+      coverUrl: coverKey ? getPublicUrl(coverKey) : null,
+    })),
     doctors: doctors.map(({ photoKey, ...d }) => ({
       ...d,
-      photoUrl: (photoKey ? getPublicUrl(photoKey) : null) ?? DEMO_DOCTOR_PHOTOS[d.slug] ?? null,
+      photoUrl: (photoKey ? getPublicUrl(photoKey) : null) ?? demoDoctorPhoto(d.slug),
     })),
   }
 }

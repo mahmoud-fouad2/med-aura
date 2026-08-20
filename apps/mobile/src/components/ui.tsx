@@ -1,7 +1,6 @@
 import { useCallback, useEffect, type ReactNode } from "react"
 import {
   ActivityIndicator,
-  I18nManager,
   Pressable,
   StyleSheet,
   Text,
@@ -21,6 +20,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 import { colors, radius, shadows, spacing, type } from "../theme"
+import { useI18n } from "../lib/i18n"
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -112,11 +112,12 @@ export function Button({
       : variant === "secondary"
         ? colors.primarySoft
         : "transparent"
-  const fg = variant === "primary" ? "#FFFFFF" : colors.primary
+  const fg = variant === "primary" ? colors.onPrimary : colors.primary
 
   return (
     <AnimatedPressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: Boolean(disabled), busy: Boolean(loading) }}
       disabled={disabled || loading}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -199,9 +200,10 @@ export function ChevronBack({
   size?: number
   color?: string
 }) {
+  const { isRTL } = useI18n()
   return (
     <Ionicons
-      name={I18nManager.isRTL ? "chevron-forward" : "chevron-back"}
+      name={isRTL ? "chevron-forward" : "chevron-back"}
       size={size}
       color={color}
     />
@@ -216,9 +218,10 @@ export function ChevronForward({
   size?: number
   color?: string
 }) {
+  const { isRTL } = useI18n()
   return (
     <Ionicons
-      name={I18nManager.isRTL ? "chevron-back" : "chevron-forward"}
+      name={isRTL ? "chevron-back" : "chevron-forward"}
       size={size}
       color={color}
     />

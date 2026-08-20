@@ -7,37 +7,42 @@ import { FeatureGrid } from "@/components/marketing/feature-grid"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { SITE_NAME, absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
+import { getI18n } from "@/lib/i18n"
+import { localizedPath } from "@/lib/i18n/config"
+import { PUBLIC_MEDIA } from "@/lib/public-media"
 
-export const metadata = buildPageMetadata({
-  title: "الاستشارة أونلاين",
-  description:
-    "احجز استشارة تجميلية عبر الفيديو مع أطباء معتمدين، وشارك حالتك بخصوصية قبل اتخاذ قرارك.",
-  path: "/online-consultation",
-  image: "/demo-services/service-online-consultation.png",
-})
-
-const features = [
-  { icon: Video, title: "لقاء مريح من مكانك", desc: "تحدّث مع الطبيب في موعد يناسبك قبل السفر أو زيارة المركز." },
-  { icon: FileLock2, title: "مشاركة مطمئنة", desc: "أرسل الصور والتقارير المطلوبة، واختر من يستطيع الاطلاع عليها." },
-  { icon: ClipboardList, title: "خطة مفهومة", desc: "بعد الاستشارة تعرف الخيارات المناسبة والتكلفة المتوقعة بوضوح." },
-  { icon: ShieldCheck, title: "أطباء مختارون بعناية", desc: "لا يظهر الطبيب إلا بعد مراجعة بياناته المهنية وترخيصه." },
-]
-
-const steps = [
-  "اختر طبيبًا معتمدًا من نتائج البحث.",
-  "أنشئ حالتك وارفع الصور والتقارير المطلوبة.",
-  "امنح الطبيب إذن الاطلاع على حالتك.",
-  "احجز موعدًا متاحًا وادفع رسوم الاستشارة بأمان.",
-  "أجرِ الاستشارة عبر الفيديو، واستلم الخطة وعرض السعر.",
-]
+export async function generateMetadata() {
+  const { locale } = await getI18n()
+  return buildPageMetadata({
+    title: locale === "ar" ? "الاستشارة أونلاين" : "Online aesthetic consultation",
+    description: locale === "ar"
+      ? "احجز استشارة فيديو وشارك حالتك بخصوصية قبل اتخاذ قرارك."
+      : "Book a video consultation and share your case privately before making a decision.",
+    path: "/online-consultation",
+    image: PUBLIC_MEDIA.onlineConsultation,
+    locale,
+  })
+}
 
 export const dynamic = "force-dynamic"
 
-export default function OnlineConsultationPage() {
+export default async function OnlineConsultationPage() {
+  const { locale } = await getI18n()
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => (isAr ? ar : en)
+  const features = [
+    { icon: Video, title: l("لقاء مريح من مكانك", "Meet from wherever you are"), desc: l("تحدّث مع الطبيب في موعد يناسبك قبل السفر أو زيارة المركز.", "Speak with your doctor before travelling or visiting a center.") },
+    { icon: FileLock2, title: l("مشاركة مطمئنة", "Private sharing"), desc: l("أرسل الصور والتقارير المطلوبة، واختر من يستطيع الاطلاع عليها.", "Share the requested photos and reports and control who can view them.") },
+    { icon: ClipboardList, title: l("خطة مفهومة", "A clear plan"), desc: l("بعد الاستشارة تعرف الخيارات المناسبة والتكلفة المتوقعة بوضوح.", "Understand suitable options and expected costs after your consultation.") },
+    { icon: ShieldCheck, title: l("أطباء مختارون بعناية", "Carefully selected doctors"), desc: l("لا يظهر الطبيب إلا بعد مراجعة بياناته المهنية وترخيصه.", "Doctors appear only after their credentials and license are reviewed.") },
+  ]
+  const steps = isAr
+    ? ["اختر طبيبًا معتمدًا من نتائج البحث.", "أنشئ حالتك وارفع الصور والتقارير المطلوبة.", "امنح الطبيب إذن الاطلاع على حالتك.", "احجز موعدًا متاحًا وادفع رسوم الاستشارة بأمان.", "أجرِ الاستشارة عبر الفيديو، واستلم الخطة وعرض السعر."]
+    : ["Choose a licensed doctor from search results.", "Create your case and upload the requested files.", "Grant the doctor access to your case.", "Choose an available time and pay securely.", "Join the video consultation and receive your plan and quote."]
   const structuredData = [
     breadcrumbJsonLd([
-      { name: "الرئيسية", url: absoluteUrl("/") },
-      { name: "الاستشارة أونلاين", url: absoluteUrl("/online-consultation") },
+      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
+      { name: l("الاستشارة أونلاين", "Online consultation"), url: absoluteUrl("/online-consultation") },
     ]),
     {
       "@context": "https://schema.org",
@@ -46,7 +51,7 @@ export default function OnlineConsultationPage() {
       alternateName: "Online aesthetic consultation",
       description:
         "استشارة فيديو مع طبيب تجميل معتمد، مع مشاركة آمنة للصور والتقارير وخطة واضحة قبل القرار.",
-      image: absoluteUrl("/demo-services/service-online-consultation.png"),
+      image: absoluteUrl(PUBLIC_MEDIA.onlineConsultation),
       url: absoluteUrl("/online-consultation"),
       provider: {
         "@type": "Organization",
@@ -72,23 +77,23 @@ export default function OnlineConsultationPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow="الاستشارة أونلاين"
-          title="استشارتك التجميلية تبدأ من مكانك"
-          subtitle="احجز استشارة فيديو مع طبيب معتمد، وشارك حالتك بخصوصية تامة، واحصل على خطة وسعر واضح قبل أي خطوة."
-          primary={{ href: "/search?consultation=VIDEO_CONSULTATION", label: "ابحث عن طبيب للاستشارة" }}
-          secondary={{ href: "/how-it-works", label: "كيف تعمل المنصة" }}
-          imageSrc="/demo-services/service-online-consultation.png"
-          imageAlt="استشارة تجميلية في عيادة حديثة"
+          eyebrow={l("الاستشارة أونلاين", "Online consultation")}
+          title={l("استشارتك التجميلية تبدأ من مكانك", "Start your consultation from home")}
+          subtitle={l("احجز استشارة فيديو مع طبيب معتمد، وشارك حالتك بخصوصية، واحصل على خطة واضحة قبل أي خطوة.", "Book a video consultation with a licensed doctor, share your case privately, and understand the plan before taking the next step.")}
+          primary={{ href: `${localizedPath("/search", locale)}?consultation=VIDEO_CONSULTATION`, label: l("ابحث عن طبيب للاستشارة", "Find a doctor") }}
+          secondary={{ href: localizedPath("/how-it-works", locale), label: l("كيف تعمل المنصة", "How it works") }}
+          imageSrc={PUBLIC_MEDIA.onlineConsultation}
+          imageAlt={l("استشارة تجميلية عبر الفيديو", "Online aesthetic consultation")}
           stats={[
-            { label: "الاختيار", value: "طبيب مناسب" },
-            { label: "المشاركة", value: "بإذنك" },
-            { label: "القرار", value: "أوضح" },
+            { label: l("الاختيار", "Choice"), value: l("طبيب مناسب", "Right doctor") },
+            { label: l("المشاركة", "Sharing"), value: l("بإذنك", "With consent") },
+            { label: l("القرار", "Decision"), value: l("أوضح", "More clarity") },
           ]}
         />
 
         <section className="border-b border-border bg-background">
           <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-            <SectionHeading eyebrow="لماذا الاستشارة أونلاين" title="مزايا مصممة لراحتك" />
+            <SectionHeading eyebrow={l("لماذا الاستشارة أونلاين", "Why consult online") } title={l("مزايا مصممة لراحتك", "Designed around your comfort")} />
             <div className="mt-12">
               <FeatureGrid items={features} className="lg:grid-cols-4" />
             </div>
@@ -98,11 +103,11 @@ export default function OnlineConsultationPage() {
         <section className="bg-secondary/30">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
             <div>
-              <SectionHeading eyebrow="الخطوات" title="كيف تحجز استشارتك" align="start" />
+              <SectionHeading eyebrow={l("الخطوات", "Steps")} title={l("كيف تحجز استشارتك", "How to book your consultation")} align="start" />
               <Stagger className="mt-10 space-y-4">
                 {steps.map((s, i) => (
                   <StaggerItem key={i}>
-                    <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5">
+                    <div className="flex items-start gap-4 rounded-lg border border-border bg-card p-5">
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                         {i + 1}
                       </span>
@@ -112,10 +117,10 @@ export default function OnlineConsultationPage() {
                 ))}
               </Stagger>
             </div>
-            <div className="relative order-first mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-[2rem] border border-border shadow-elegant-lg lg:order-last">
+            <div className="relative order-first mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-lg border border-border lg:order-last">
               <Image
-                src="/demo-services/service-online-consultation.png"
-                alt="استشارة تجميلية عبر الفيديو مع طبيب معتمد"
+                src={PUBLIC_MEDIA.onlineConsultation}
+                alt={l("استشارة تجميلية عبر الفيديو مع طبيب معتمد", "Video consultation with a licensed doctor")}
                 fill
                 className="object-cover"
                 sizes="(min-width: 1024px) 28rem, 90vw"
@@ -124,7 +129,7 @@ export default function OnlineConsultationPage() {
 
               <div className="absolute top-4 start-4 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
                 <Lock className="size-3.5" />
-                اتصال آمن ومشفّر
+                {l("اتصال آمن ومشفّر", "Secure encrypted call")}
               </div>
 
               <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">

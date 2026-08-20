@@ -29,11 +29,12 @@ test("procedures page lists seeded cosmetic categories from the DB", async ({ pa
   await expect(page.getByText("تجميل الأنف").first()).toBeVisible()
 })
 
-test("search shows only the approved, valid-license doctor", async ({ page }) => {
+test("search never exposes test or pending provider accounts", async ({ page }) => {
   await page.goto("/search")
-  // seeded approved doctor (approved + published + valid license)
-  await expect(page.getByText("د. سارة العتيبي").first()).toBeVisible()
-  // pending applicant must NOT appear (no published profile)
+  // Demo accounts remain available for authenticated QA but never become
+  // public recommendations, even when their seeded profile is approved.
+  await expect(page.getByText("د. سارة العتيبي")).toHaveCount(0)
+  await expect(page.getByText("د. نورة القحطاني")).toHaveCount(0)
   await expect(page.getByText("ليان الحربي")).toHaveCount(0)
 })
 

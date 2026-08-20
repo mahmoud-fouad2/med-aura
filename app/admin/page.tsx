@@ -16,7 +16,7 @@ import {
 } from "@/lib/data/admin-overview"
 import { ActivityChart } from "@/components/admin/activity-chart"
 import { listRecentActivity } from "@/lib/data/admin-activity"
-import { listRefundRequestsFinance, listPayments } from "@/lib/data/finance"
+import { listPendingPayments, listRefundRequestsFinance } from "@/lib/data/finance"
 import { getMigrationStatus } from "@/lib/db/migration-status"
 import { isStripeConfigured, isR2Configured, isEmailConfigured } from "@/lib/env"
 import { actionLabelAr } from "@/lib/audit-labels"
@@ -101,10 +101,10 @@ export default async function AdminOverviewPage() {
       canSafety ? listHighPrioritySafetyAlerts() : Promise.resolve([]),
       canAudit ? listRecentActivity(8) : Promise.resolve([]),
       canFinance ? listRefundRequestsFinance(6) : Promise.resolve([]),
-      canFinance ? listPayments(200) : Promise.resolve([]),
+      canFinance ? listPendingPayments(20) : Promise.resolve([]),
       canAdmin ? getMigrationStatus() : Promise.resolve(null),
     ])
-  const pendingPayments = pendingPaymentsList.filter((p) => ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(p.status))
+  const pendingPayments = pendingPaymentsList
   const openRefunds = refunds.filter((r) => ["REQUESTED", "UNDER_REVIEW", "APPROVED", "PROVIDER_CONFIRMED"].includes(r.status))
   const activitySummary = summarizeActivity(recentActivity)
 

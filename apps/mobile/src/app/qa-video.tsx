@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ActivityIndicator, Pressable, View } from "react-native"
+import { ActivityIndicator, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
@@ -10,7 +10,9 @@ import Daily, {
   type DailyParticipant,
 } from "@daily-co/react-native-daily-js"
 import { AppText, Button } from "../components/ui"
+import { VideoControl as RoundControl } from "../components/video-control"
 import { api } from "../lib/api"
+import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
 /**
@@ -25,6 +27,7 @@ import { colors, radius, spacing } from "../theme"
 type Phase = "joining" | "call" | "ended" | "error"
 
 export default function QaVideo() {
+  const { t } = useI18n()
   const { room, url, token, role } = useLocalSearchParams<{
     room: string
     url: string
@@ -150,9 +153,9 @@ export default function QaVideo() {
         }}
       >
         <AppText variant="body" color={colors.danger}>
-          تعذّر الدخول إلى جلسة الاختبار. تأكد من أن الرابط لم تنتهِ صلاحيته.
+          {t.video.testFailed}
         </AppText>
-        <Button label="رجوع" onPress={() => router.back()} />
+        <Button label={t.common.back} onPress={() => router.back()} />
       </View>
     )
   }
@@ -171,9 +174,9 @@ export default function QaVideo() {
       >
         <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />
         <AppText variant="body" weight="bold">
-          انتهت جلسة الاختبار
+          {t.video.testEnded}
         </AppText>
-        <Button label="رجوع" onPress={() => router.back()} />
+        <Button label={t.common.back} onPress={() => router.back()} />
       </View>
     )
   }
@@ -206,7 +209,7 @@ export default function QaVideo() {
         >
           <ActivityIndicator color="#FFFFFF" />
           <AppText variant="sub" color="rgba(255,255,255,0.8)">
-            {phase === "joining" ? "جارٍ الاتصال…" : "بانتظار الطرف الآخر…"}
+            {phase === "joining" ? t.video.connecting : t.video.waitingOther}
           </AppText>
         </View>
       )}
@@ -244,7 +247,7 @@ export default function QaVideo() {
         }}
       >
         <AppText variant="sub" weight="bold" color="#FFFFFF">
-          اختبار فيديو — {role === "doctor" ? "طبيب" : "مريض"}
+          {t.video.testSession} · {role === "doctor" ? t.video.testDoctor : t.video.testPatient}
         </AppText>
       </View>
 
@@ -263,51 +266,19 @@ export default function QaVideo() {
           <RoundControl
             icon={micOn ? "mic" : "mic-off"}
             active={micOn}
+            label={micOn ? t.video.micOn : t.video.micOff}
             onPress={toggleMic}
           />
           <RoundControl
             icon={camOn ? "videocam" : "videocam-off"}
             active={camOn}
+            label={camOn ? t.video.camOn : t.video.camOff}
             onPress={toggleCam}
           />
-          <RoundControl icon="camera-reverse" active onPress={flipCamera} />
-          <RoundControl icon="call" danger onPress={() => void leave()} />
+          <RoundControl icon="camera-reverse" active label={t.video.flipCamera} onPress={flipCamera} />
+          <RoundControl icon="call" danger label={t.video.endCall} onPress={() => void leave()} />
         </View>
       ) : null}
     </View>
-  )
-}
-
-function RoundControl({
-  icon,
-  onPress,
-  active = false,
-  danger = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  onPress: () => void
-  active?: boolean
-  danger?: boolean
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => ({
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: danger
-          ? colors.danger
-          : active
-            ? "rgba(255,255,255,0.22)"
-            : "rgba(255,255,255,0.10)",
-        transform: [{ scale: pressed ? 0.93 : 1 }],
-      })}
-    >
-      <Ionicons name={icon} size={22} color="#FFFFFF" />
-    </Pressable>
   )
 }

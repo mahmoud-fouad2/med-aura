@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Bell } from "lucide-react"
+import { Bell, Menu } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
@@ -23,8 +23,8 @@ export async function AppShell({
   const locale = await getLocale()
   return (
     <div className="flex min-h-svh flex-col bg-section-soft">
-      <header className="sticky top-0 z-40 bg-background/72 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-xl">
-        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between gap-4 rounded-[1.45rem] border border-border/70 bg-card/92 px-4 shadow-elegant sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-1 sm:px-3 lg:px-5">
           <div className="flex items-center gap-6">
             <Link href="/dashboard" aria-label="Med Aura">
               <Logo className="h-9" />
@@ -49,13 +49,20 @@ export async function AppShell({
             <UserMenu name={user.name} email={user.email} />
           </div>
         </div>
-        <NavLinks
-          links={nav}
-          className="mx-auto mt-2 grid max-w-7xl grid-cols-2 gap-1 rounded-xl border border-border/70 bg-card px-2 py-2 shadow-sm md:hidden"
-          itemClassName="min-w-0 justify-center text-center"
-        />
+        <details className="group mx-auto max-w-7xl border-t border-border/60 md:hidden">
+          <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm font-semibold text-foreground">
+            <Menu className="size-4 text-primary" />
+            {locale === "ar" ? "أقسام لوحة التحكم" : "Dashboard sections"}
+            <span className="ms-auto text-xs text-muted-foreground">{nav.length}</span>
+          </summary>
+          <NavLinks
+            links={nav}
+            className="grid grid-cols-2 gap-1 pb-3"
+            itemClassName="min-w-0 justify-center text-center"
+          />
+        </details>
       </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

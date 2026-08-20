@@ -24,6 +24,9 @@ import {
   itemListJsonLd,
   jsonLdScript,
 } from "@/lib/seo"
+import { destinationImage, PUBLIC_MEDIA } from "@/lib/public-media"
+import { getI18n } from "@/lib/i18n"
+import { formatDoctorCount, formatExperience } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -32,14 +35,15 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, { locale }] = await Promise.all([params, getI18n()])
   const d = await getDestinationBySlug(slug)
-  if (!d) return { title: "الوجهة غير موجودة" }
+  if (!d) return { title: locale === "ar" ? "الوجهة غير موجودة" : "Destination not found" }
+  const name = locale === "ar" ? d.nameAr : d.nameEn
   return buildPageMetadata({
-    title: `${d.nameAr} — وجهة تجميلية`,
-    description: `الأطباء والمراكز التجميلية المعتمدون في ${d.nameAr} على Med Aura.`,
+    title: locale === "ar" ? `${name} — وجهة تجميلية` : `${name} — Aesthetic destination`,
+    description: locale === "ar" ? `قارن الأطباء والمراكز المتاحة في ${name} على Med Aura.` : `Compare available doctors and centers in ${name} on Med Aura.`,
     path: `/destinations/${d.code.toLowerCase()}`,
-    image: "/demo-services/aesthetic-clinic-lounge.png",
+    image: destinationImage(d.code),
   })
 }
 
@@ -48,16 +52,19 @@ export default async function DestinationDetailPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, { locale }] = await Promise.all([params, getI18n()])
   const d = await getDestinationBySlug(slug)
   if (!d) notFound()
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => (isAr ? ar : en)
+  const destinationName = isAr ? d.nameAr : d.nameEn
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Place",
-    name: d.nameAr,
-    alternateName: d.nameEn,
-    image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+    name: destinationName,
+    alternateName: isAr ? d.nameEn : d.nameAr,
+    image: absoluteUrl(destinationImage(d.code)),
     address: { "@type": "PostalAddress", addressCountry: d.code },
     ...(geoCoordinatesJsonLd(d.code) ? { geo: geoCoordinatesJsonLd(d.code) } : {}),
     url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`),
@@ -70,20 +77,20 @@ export default async function DestinationDetailPage({
   const structuredData = [
     jsonLd,
     breadcrumbJsonLd([
-      { name: "الرئيسية", url: absoluteUrl("/") },
-      { name: "الوجهات", url: absoluteUrl("/destinations") },
-      { name: d.nameAr, url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`) },
+      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
+      { name: l("الوجهات", "Destinations"), url: absoluteUrl("/destinations") },
+      { name: destinationName, url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`) },
     ]),
     itemListJsonLd({
-      name: `المراكز المعتمدة في ${d.nameAr}`,
+      name: l(`المراكز المتاحة في ${d.nameAr}`, `Available centers in ${d.nameEn}`),
       items: d.centers.map((c) => ({
         name: c.name,
         url: absoluteUrl(`/centers/${c.slug}`),
-        image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+        image: absoluteUrl(c.coverUrl ?? PUBLIC_MEDIA.centers),
       })),
     }),
     itemListJsonLd({
-      name: `الأطباء المعتمدون في ${d.nameAr}`,
+      name: l(`الأطباء المتاحون في ${d.nameAr}`, `Available doctors in ${d.nameEn}`),
       items: d.doctors.map((doctor) => ({
         name: doctor.name,
         url: absoluteUrl(`/doctors/${doctor.slug}`),
@@ -103,8 +110,8 @@ export default async function DestinationDetailPage({
         <section className="relative overflow-hidden border-b border-border bg-background">
           <div className="absolute inset-0">
             <Image
-              src="/demo-services/aesthetic-clinic-lounge.png"
-              alt=""
+              src={destinationImage(d.code)}
+              alt={l(`وجهة ${d.nameAr}`, `${d.nameEn} destination`)}
               fill
               priority
               className="object-cover object-center"
@@ -115,17 +122,17 @@ export default async function DestinationDetailPage({
           <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
             <nav
               className="mb-4 flex items-center gap-1.5 text-xs text-muted-foreground"
-              aria-label="مسار التنقل"
+              aria-label={l("مسار التنقل", "Breadcrumb")}
             >
               <Link href="/" className="hover:text-foreground">
-                الرئيسية
+                {l("الرئيسية", "Home")}
               </Link>
               <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
               <Link href="/destinations" className="hover:text-foreground">
-                الوجهات
+                {l("الوجهات", "Destinations")}
               </Link>
               <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
-              <span className="font-medium text-foreground">{d.nameAr}</span>
+              <span className="font-medium text-foreground">{destinationName}</span>
             </nav>
             <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
               <div>
@@ -134,19 +141,21 @@ export default async function DestinationDetailPage({
                   {d.code}
                 </span>
                 <h1 className="mt-3 font-heading text-3xl font-bold text-foreground sm:text-4xl">
-                  {d.nameAr}
+                  {destinationName}
                 </h1>
                 <p dir="ltr" className="mt-1 text-right text-sm text-muted-foreground">
-                  {d.nameEn}
+                  {isAr ? d.nameEn : d.code}
                 </p>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-                  الأطباء والمراكز التجميلية المعتمدون على Med Aura في{" "}
-                  {d.nameAr}. جميع الملفات مراجعة ومتحققة قبل النشر.
+                  {l(
+                    `قارن الأطباء والمراكز المتاحة على Med Aura في ${d.nameAr}.`,
+                    `Compare doctors and centers available on Med Aura in ${d.nameEn}.`,
+                  )}
                 </p>
               </div>
               <Button render={<Link href={`/search?country=${d.code}`}>
                 <Search className="size-4" />
-                ابحث في {d.nameAr}
+                {l(`ابحث في ${d.nameAr}`, `Search in ${d.nameEn}`)}
               </Link>} />
             </div>
           </div>
@@ -157,17 +166,17 @@ export default async function DestinationDetailPage({
             <div>
               <div className="mb-4 flex items-baseline justify-between">
                 <h2 className="font-heading text-2xl font-bold text-foreground">
-                  المراكز المعتمدة
+                  {l("المراكز المتاحة", "Available centers")}
                 </h2>
                 <span className="text-sm text-muted-foreground">
-                  {d.centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز
+                  {isAr ? `${d.centers.length.toLocaleString("ar-SA-u-nu-latn")} مركز` : `${d.centers.length.toLocaleString("en-US")} centers`}
                 </span>
               </div>
               {d.centers.length === 0 ? (
                 <EmptyState
                   icon={Building2}
-                  title="لا توجد مراكز معتمدة بعد في هذه الوجهة"
-                  description="نعمل على استقطاب مراكز موثقة. تحقق لاحقًا أو تصفّح باقي الوجهات."
+                  title={l("لا توجد مراكز متاحة بعد في هذه الوجهة", "No centers are available in this destination yet")}
+                  description={l("تصفّح باقي الوجهات أو تحقق لاحقًا.", "Browse other destinations or check again later.")}
                 />
               ) : (
                 <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -177,8 +186,8 @@ export default async function DestinationDetailPage({
                         <Card className="h-full overflow-hidden p-0 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant">
                           <div className="relative h-28 bg-muted">
                             <Image
-                              src="/demo-services/aesthetic-clinic-lounge.png"
-                              alt=""
+                              src={c.coverUrl ?? PUBLIC_MEDIA.centers}
+                              alt={l(`واجهة ${c.name}`, `${c.name} center`)}
                               fill
                               className="object-cover"
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -213,17 +222,17 @@ export default async function DestinationDetailPage({
             <div>
               <div className="mb-4 flex items-baseline justify-between">
                 <h2 className="font-heading text-2xl font-bold text-foreground">
-                  الأطباء المعتمدون
+                  {l("الأطباء المتاحون", "Available doctors")}
                 </h2>
                 <span className="text-sm text-muted-foreground">
-                  {d.doctors.length.toLocaleString("ar-SA-u-nu-latn")} طبيب
+                  {formatDoctorCount(d.doctors.length, locale)}
                 </span>
               </div>
               {d.doctors.length === 0 ? (
                 <EmptyState
                   icon={Stethoscope}
-                  title="لا يوجد أطباء معتمدون بعد في هذه الوجهة"
-                  description="تصفّح أطباء الوجهات الأخرى أو ابدأ من صفحة الإجراءات."
+                  title={l("لا يوجد أطباء متاحون بعد في هذه الوجهة", "No doctors are available in this destination yet")}
+                  description={l("تصفّح أطباء الوجهات الأخرى أو ابدأ من صفحة الإجراءات.", "Browse other destinations or start from the procedure catalog.")}
                 />
               ) : (
                 <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -251,7 +260,7 @@ export default async function DestinationDetailPage({
                               {[doc.city, d.nameAr].filter(Boolean).join("، ")}
                             </p>
                             <p className="mt-2 text-xs text-muted-foreground">
-                              خبرة {doc.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة
+                              {formatExperience(doc.yearsExperience, locale)}
                             </p>
                           </div>
                         </Card>
@@ -265,7 +274,7 @@ export default async function DestinationDetailPage({
             {d.cities.length > 0 && (
               <div>
                 <h2 className="mb-4 font-heading text-2xl font-bold text-foreground">
-                  المدن
+                  {l("المدن", "Cities")}
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {d.cities.map((c) => (

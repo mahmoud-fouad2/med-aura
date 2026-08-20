@@ -17,11 +17,17 @@ describe.skipIf(!HAS_DB)("search visibility rules", () => {
   async function makeDoctor(opts: {
     status: "approved" | "pending"
     published: boolean
+    isTest?: boolean
     license?: { status: "VALID" | "EXPIRED"; expiry: string }
   }): Promise<string> {
     const uid = rid()
     created.users.push(uid)
-    await db.insert(user).values({ id: uid, name: "D", email: `d-${uid}@t.local` })
+    await db.insert(user).values({
+      id: uid,
+      name: "D",
+      email: `d-${uid}@t.local`,
+      isTest: opts.isTest ?? false,
+    })
     const doc = await db
       .insert(doctorProfile)
       .values({
@@ -79,6 +85,17 @@ describe.skipIf(!HAS_DB)("search visibility rules", () => {
     const id = await makeDoctor({
       status: "pending",
       published: false,
+      license: { status: "VALID", expiry: "2999-12-31" },
+    })
+    const { results } = await searchDoctors({ pageSize: 50 })
+    expect(results.some((r) => r.id === id)).toBe(false)
+  })
+
+  it("excludes test accounts even when the doctor is approved and licensed", async () => {
+    const id = await makeDoctor({
+      status: "approved",
+      published: true,
+      isTest: true,
       license: { status: "VALID", expiry: "2999-12-31" },
     })
     const { results } = await searchDoctors({ pageSize: 50 })

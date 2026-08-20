@@ -12,16 +12,23 @@ import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
+import { PUBLIC_MEDIA } from "@/lib/public-media"
+import { getI18n } from "@/lib/i18n"
 
-export const metadata = buildPageMetadata({
-  title: "كيف تعمل المنصة",
-  description:
-    "تعرّف على رحلتك في Med Aura خطوة بخطوة: من اختيار الطبيب أو المركز حتى الاستشارة والمتابعة.",
-  path: "/how-it-works",
-  image: "/demo-services/aesthetic-clinic-lounge.png",
-})
+export async function generateMetadata() {
+  const { locale } = await getI18n()
+  return buildPageMetadata({
+    title: locale === "ar" ? "كيف تعمل المنصة" : "How Med Aura works",
+    description: locale === "ar"
+      ? "تعرّف على الرحلة من اختيار الطبيب حتى الاستشارة والمتابعة."
+      : "See how Med Aura takes you from provider comparison to consultation and aftercare.",
+    path: "/how-it-works",
+    image: PUBLIC_MEDIA.howItWorks,
+    locale,
+  })
+}
 
-const steps: { icon: LucideIcon; title: string; desc: string }[] = [
+const stepsAr: { icon: LucideIcon; title: string; desc: string }[] = [
   { icon: Search, title: "اختيار واعي", desc: "ابدأ بالإجراء الذي يهمك، ثم قارن بين الأطباء والمراكز حسب الخبرة والموقع ونوع الاستشارة." },
   { icon: FileLock2, title: "مشاركة منظّمة", desc: "أضف تفاصيل حالتك والصور المطلوبة في ملف واحد واضح يسهّل على الطبيب فهم احتياجك." },
   { icon: ShieldCheck, title: "تحكم بخصوصيتك", desc: "أنت تختار الطبيب الذي يرى ملفك، وتستطيع إيقاف المشاركة عندما تحتاج." },
@@ -30,19 +37,32 @@ const steps: { icon: LucideIcon; title: string; desc: string }[] = [
   { icon: HeartHandshake, title: "متابعة بعد الإجراء", desc: "بعد الحجز والتنفيذ، تبقى خطوات المتابعة والتنبيهات في مكان واحد." },
 ]
 
-export default function HowItWorksPage() {
+const stepsEn: typeof stepsAr = [
+  { icon: Search, title: "Compare your options", desc: "Start with the procedure you need, then compare doctors and centers by experience, location, and consultation type." },
+  { icon: FileLock2, title: "Share an organized case", desc: "Add your details and requested photos in one private file that helps the doctor understand your needs." },
+  { icon: ShieldCheck, title: "Control your privacy", desc: "You choose which doctor can access your case and can withdraw access when needed." },
+  { icon: CalendarCheck, title: "Book the right consultation", desc: "Choose a suitable time and understand your options before making a commitment." },
+  { icon: ClipboardList, title: "Review the plan and price", desc: "Receive a clearer view of the next steps and expected cost before deciding." },
+  { icon: HeartHandshake, title: "Continue with aftercare", desc: "Keep follow-up steps, recovery updates, and reminders together after your procedure." },
+]
+
+export default async function HowItWorksPage() {
+  const { locale } = await getI18n()
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => (isAr ? ar : en)
+  const steps = isAr ? stepsAr : stepsEn
   const structuredData = [
     breadcrumbJsonLd([
-      { name: "الرئيسية", url: absoluteUrl("/") },
-      { name: "كيف تعمل المنصة", url: absoluteUrl("/how-it-works") },
+      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
+      { name: l("كيف تعمل المنصة", "How it works"), url: absoluteUrl("/how-it-works") },
     ]),
     {
       "@context": "https://schema.org",
       "@type": "HowTo",
-      name: "كيف تعمل Med Aura",
+      name: l("كيف تعمل Med Aura", "How Med Aura works"),
       description:
-        "خطوات اختيار طبيب أو مركز تجميل، مشاركة الحالة، حجز الاستشارة، ومتابعة الرحلة.",
-      image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+        l("خطوات اختيار طبيب أو مركز تجميل، مشاركة الحالة، حجز الاستشارة، ومتابعة الرحلة.", "Steps for choosing a doctor or center, sharing your case, booking a consultation, and managing follow-up."),
+      image: absoluteUrl(PUBLIC_MEDIA.howItWorks),
       step: steps.map((step, index) => ({
         "@type": "HowToStep",
         position: index + 1,
@@ -61,15 +81,15 @@ export default function HowItWorksPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow="رحلة واضحة"
-          title="كيف تعمل Med Aura"
-          subtitle="نرافقك في كل خطوة من رحلتك التجميلية، مع وضوح في المعلومات وحماية لبياناتك."
-          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
-          imageAlt="مساحة استقبال عيادة تجميلية"
+          eyebrow={l("رحلة واضحة", "A clear journey")}
+          title={l("كيف تعمل Med Aura", "How Med Aura works")}
+          subtitle={l("نرافقك في كل خطوة من رحلتك التجميلية، مع وضوح في المعلومات وحماية لبياناتك.", "Move from comparison to consultation and aftercare with clear information and control over your data.")}
+          imageSrc={PUBLIC_MEDIA.howItWorks}
+          imageAlt={l("استشارة مرئية مع طبيب تجميل", "Video consultation with an aesthetic doctor")}
           stats={[
-            { label: "الاختيار", value: "أسهل" },
-            { label: "الملف", value: "منظّم" },
-            { label: "المتابعة", value: "مستمرة" },
+            { label: l("الاختيار", "Choice"), value: l("أسهل", "Simpler") },
+            { label: l("الملف", "Case"), value: l("منظّم", "Organized") },
+            { label: l("المتابعة", "Aftercare"), value: l("مستمرة", "Connected") },
           ]}
         />
 
@@ -78,13 +98,13 @@ export default function HowItWorksPage() {
             <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {steps.map((step, i) => (
                 <StaggerItem key={step.title}>
-                  <div className="group/feature relative flex h-full flex-col gap-4.5 rounded-2xl border border-white/60 bg-card/85 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gold-gradient text-white shadow-elegant ring-1 ring-gold/30 transition-transform duration-300 group-hover/feature:scale-105">
+                  <div className="group/feature relative flex h-full flex-col gap-4.5 rounded-lg border border-border/70 bg-card p-6 transition-colors hover:border-primary/45">
+                    <span className="flex size-12 items-center justify-center rounded-lg bg-gold-gradient text-white ring-1 ring-gold/30">
                       <step.icon className="size-6" />
                     </span>
                     <div>
                       <span className="font-heading text-sm font-bold" style={{ color: "oklch(0.52 0.1 85)" }}>
-                        {`٠${i + 1}`}
+                        {String(i + 1).padStart(2, "0")}
                       </span>
                       <h2 className="mt-1 font-heading text-lg font-bold text-foreground">
                         {step.title}

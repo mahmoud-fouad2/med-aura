@@ -6,7 +6,6 @@ import {
   SearchX,
   SlidersHorizontal,
   ChevronLeft,
-  ShieldCheck,
   Star,
   Video,
   Sparkles,
@@ -20,26 +19,37 @@ import { DoctorCard } from "@/components/search/doctor-card"
 import { UseMyLocationButton } from "@/components/search/use-my-location-button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Stagger, StaggerItem } from "@/components/motion"
-import { searchDoctors, type SearchParams } from "@/lib/data/doctors"
+import { getDoctorFilterFacets, searchDoctors, type SearchParams } from "@/lib/data/doctors"
 import { db } from "@/lib/db"
 import { query } from "@/lib/db/query"
 import { DataState } from "@/components/ui/data-state"
-import { procedureCategory, country as countryT } from "@/lib/db/schema"
+import { country as countryT } from "@/lib/db/schema"
 import { getI18n } from "@/lib/i18n"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
 import { firstParam } from "@/lib/utils"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  itemListJsonLd,
+  jsonLdScript,
+} from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = buildPageMetadata({
-  title: "ابحث عن طبيب تجميل",
-  description: "قارن بين أطباء تجميل معتمدين حسب الإجراء والمدينة ونوع الاستشارة والتقييمات المتاحة.",
-  path: "/search",
-  image: "/hero-medaura-consultation.png",
-})
-
+export async function generateMetadata() {
+  const { locale } = await getI18n()
+  return buildPageMetadata({
+    title: locale === "ar" ? "ابحث عن طبيب تجميل" : "Find an aesthetic doctor",
+    description: locale === "ar"
+      ? "قارن أطباء التجميل حسب الإجراء والمدينة ونوع الاستشارة والتقييمات المتاحة."
+      : "Compare aesthetic doctors by procedure, location, consultation type, and available reviews.",
+    path: "/search",
+    image: "/hero-medaura-consultation.png",
+    locale,
+  })
+}
 
 export default async function SearchPage({
   searchParams,
@@ -51,11 +61,15 @@ export default async function SearchPage({
   const isAr = locale === "ar"
 
   const params: SearchParams = {
+    locale,
     q: firstParam(sp.q),
     procedure: firstParam(sp.procedure),
     category: firstParam(sp.category),
     country: firstParam(sp.country),
     city: firstParam(sp.city),
+    language: firstParam(sp.language),
+    priceMin: firstParam(sp.priceMin) ? Number(firstParam(sp.priceMin)) : undefined,
+    priceMax: firstParam(sp.priceMax) ? Number(firstParam(sp.priceMax)) : undefined,
     consultation: firstParam(sp.consultation) as SearchParams["consultation"],
     surgical: firstParam(sp.surgical) as SearchParams["surgical"],
     page: Number(firstParam(sp.page) ?? "1") || 1,
@@ -67,15 +81,9 @@ export default async function SearchPage({
 
   const user = await getCurrentUser()
 
-  const [doctorsRes, categoriesRes, countriesRes, favs] = await Promise.all([
+  const [doctorsRes, facetsRes, countriesRes, favs] = await Promise.all([
     query(() => searchDoctors(params)),
-    query(() =>
-      db
-        .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr, nameEn: procedureCategory.nameEn })
-        .from(procedureCategory)
-        .where(eq(procedureCategory.visible, true))
-        .orderBy(asc(procedureCategory.sortOrder)),
-    ),
+    query(() => getDoctorFilterFacets()),
     query(() =>
       db
         .select({ code: countryT.code, nameAr: countryT.nameAr, nameEn: countryT.nameEn })
@@ -92,7 +100,11 @@ export default async function SearchPage({
         }),
   ])
 
-  const categories = categoriesRes.status === "ok" ? categoriesRes.data : []
+  const facets =
+    facetsRes.status === "ok"
+      ? facetsRes.data
+      : { categories: [], cities: [], languages: [], hasNearestSupport: false }
+  const categories = facets.categories
   const countries = countriesRes.status === "ok" ? countriesRes.data : []
   const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
   const total = doctorsRes.status === "ok" ? doctorsRes.data.total : 0
@@ -122,6 +134,9 @@ export default async function SearchPage({
     params.category,
     params.country,
     params.city,
+    params.language,
+    params.priceMin,
+    params.priceMax,
     params.consultation,
     params.surgical,
     params.q,
@@ -148,8 +163,8 @@ export default async function SearchPage({
         dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }}
       />
       <SiteHeader />
-      <main className="flex-1 bg-section-soft">
-        <section className="relative overflow-hidden border-b border-border bg-background">
+      <main className="bg-section-soft flex-1">
+        <section className="border-border bg-background relative overflow-hidden border-b">
           <div className="absolute inset-0">
             <Image
               src="/hero-medaura-consultation.png"
@@ -159,31 +174,37 @@ export default async function SearchPage({
               className="object-cover object-center"
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-background via-background/95 to-background/70 ltr:bg-gradient-to-r" />
+            <div className="from-background via-background/95 to-background/70 absolute inset-0 bg-gradient-to-l ltr:bg-gradient-to-r" />
           </div>
 
           <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
             <div className="max-w-3xl">
-              <p className="font-heading text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              <p className="font-heading text-primary text-xs font-bold tracking-[0.18em] uppercase">
                 {isAr ? "أطباء موثوقون" : "Verified doctors"}
               </p>
-              <h1 className="mt-3 text-balance font-heading text-4xl font-bold leading-tight text-foreground sm:text-5xl">
-                {isAr ? "اختر طبيب تجميل بثقة ووضوح" : "Choose your aesthetic doctor with confidence"}
+              <h1 className="font-heading text-foreground mt-3 text-4xl leading-tight font-bold text-balance sm:text-5xl">
+                {isAr
+                  ? "اختر طبيب تجميل بثقة ووضوح"
+                  : "Choose your aesthetic doctor with confidence"}
               </h1>
-              <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {isAr ? "ابحث حسب الإجراء أو المدينة، وقارن بين الخبرة ونوع الاستشارة قبل أن تبدأ." : "Search by procedure or city, then compare experience and consultation options."}
+              <p className="text-muted-foreground mt-4 max-w-2xl text-base leading-relaxed text-pretty sm:text-lg">
+                {isAr
+                  ? "ابحث حسب الإجراء أو المدينة، وقارن بين الخبرة ونوع الاستشارة قبل أن تبدأ."
+                  : "Search by procedure or city, then compare experience and consultation options."}
               </p>
 
               <form
                 method="get"
-                className="mt-7 flex flex-col gap-3 rounded-2xl border border-white/70 bg-card/90 p-2 shadow-elegant backdrop-blur-md sm:flex-row"
+                className="bg-card/90 shadow-elegant mt-7 flex flex-col gap-3 rounded-2xl border border-white/70 p-2 backdrop-blur-md sm:flex-row"
               >
                 <div className="relative min-w-0 flex-1">
-                  <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-primary/70" />
+                  <Search className="text-primary/70 pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2" />
                   <Input
                     name="q"
                     defaultValue={params.q ?? ""}
-                    placeholder={isAr ? "اسم الطبيب، الإجراء، أو المدينة..." : "Doctor, procedure, or city..."}
+                    placeholder={
+                      isAr ? "اسم الطبيب، الإجراء، أو المدينة..." : "Doctor, procedure, or city..."
+                    }
                     className="h-12 rounded-xl border-0 bg-transparent ps-11 text-base shadow-none focus-visible:ring-0"
                   />
                 </div>
@@ -204,17 +225,14 @@ export default async function SearchPage({
                 </QuickFilter>
               </div>
             </div>
-
           </div>
         </section>
 
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-primary">
-                {t.search.resultsCount(total)}
-              </p>
-              <h2 className="mt-1 font-heading text-2xl font-bold text-foreground">
+              <p className="text-primary text-sm font-medium">{t.search.resultsCount(total)}</p>
+              <h2 className="font-heading text-foreground mt-1 text-2xl font-bold">
                 {isAr ? "نتائج تناسب بحثك" : "Doctors matching your search"}
               </h2>
             </div>
@@ -224,18 +242,22 @@ export default async function SearchPage({
                 <Button
                   variant="outline"
                   size="sm"
-                  render={<Link href="/search">{isAr ? "مسح الفلاتر" : "Clear filters"} ({activeFilters})</Link>}
+                  render={
+                    <Link href="/search">
+                      {isAr ? "مسح الفلاتر" : "Clear filters"} ({activeFilters})
+                    </Link>
+                  }
                 />
               )}
             </div>
           </div>
 
-          <details className="mb-5 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:hidden">
-            <summary className="flex cursor-pointer list-none items-center gap-2 font-heading text-sm font-bold text-foreground">
-              <SlidersHorizontal className="size-4 text-primary" />
+          <details className="border-border/70 bg-card mb-5 rounded-2xl border p-4 shadow-sm lg:hidden">
+            <summary className="font-heading text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-bold">
+              <SlidersHorizontal className="text-primary size-4" />
               {isAr ? "عوامل التصفية" : "Filters"}
               {activeFilters > 0 && (
-                <span className="ms-auto rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                <span className="bg-primary/10 text-primary ms-auto rounded-full px-2 py-0.5 text-[11px]">
                   {activeFilters}
                 </span>
               )}
@@ -245,6 +267,8 @@ export default async function SearchPage({
                 params={params}
                 categories={categories}
                 countries={countries}
+                cities={facets.cities}
+                languages={facets.languages}
                 activeFilters={activeFilters}
                 locale={locale}
                 compact
@@ -258,6 +282,8 @@ export default async function SearchPage({
                 params={params}
                 categories={categories}
                 countries={countries}
+                cities={facets.cities}
+                languages={facets.languages}
                 activeFilters={activeFilters}
                 locale={locale}
               />
@@ -267,9 +293,7 @@ export default async function SearchPage({
               {doctorsRes.status !== "ok" ? (
                 <DataState
                   status={doctorsRes.status}
-                  requestId={
-                    doctorsRes.status === "error" ? doctorsRes.requestId : undefined
-                  }
+                  requestId={doctorsRes.status === "error" ? doctorsRes.requestId : undefined}
                 />
               ) : results.length === 0 ? (
                 <Card className="p-10">
@@ -281,7 +305,11 @@ export default async function SearchPage({
                       activeFilters > 0 ? (
                         <Button
                           variant="outline"
-                          render={<Link href="/search">{isAr ? "مسح كل الفلاتر" : "Clear all filters"}</Link>}
+                          render={
+                            <Link href="/search">
+                              {isAr ? "مسح كل الفلاتر" : "Clear all filters"}
+                            </Link>
+                          }
                         />
                       ) : undefined
                     }
@@ -310,13 +338,13 @@ export default async function SearchPage({
                           size="sm"
                           render={
                             <Link href={buildPageHref(page - 1)}>
-                              <ChevronLeft className="size-3.5 rtl:rotate-180 ltr:rotate-0" />
+                              <ChevronLeft className="size-3.5 ltr:rotate-0 rtl:rotate-180" />
                               {isAr ? "السابق" : "Previous"}
                             </Link>
                           }
                         />
                       )}
-                      <span className="rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium tabular-nums text-muted-foreground">
+                      <span className="border-border/70 bg-background text-muted-foreground rounded-full border px-3 py-1.5 text-xs font-medium tabular-nums">
                         {isAr ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
                       </span>
                       {page < totalPages && (
@@ -326,7 +354,7 @@ export default async function SearchPage({
                           render={
                             <Link href={buildPageHref(page + 1)}>
                               {isAr ? "التالي" : "Next"}
-                              <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
+                              <ChevronLeft className="size-3.5 ltr:rotate-180 rtl:rotate-0" />
                             </Link>
                           }
                         />
@@ -343,18 +371,21 @@ export default async function SearchPage({
     </div>
   )
 }
-
 function FiltersPanel({
   params,
   categories,
   countries,
+  cities,
+  languages,
   activeFilters,
   locale,
   compact = false,
 }: {
   params: SearchParams
-  categories: { slug: string; nameAr: string; nameEn: string }[]
+  categories: { slug: string; nameAr: string; nameEn: string; count: number }[]
   countries: { code: string; nameAr: string; nameEn: string }[]
+  cities: string[]
+  languages: string[]
   activeFilters: number
   locale: "ar" | "en"
   compact?: boolean
@@ -363,13 +394,13 @@ function FiltersPanel({
   return (
     <Card className={(compact ? "border-0 p-0 shadow-none" : "sticky top-24 p-5") + " bg-card/90"}>
       {!compact && (
-        <div className="mb-4 flex items-center gap-2 border-b border-border/60 pb-3">
-          <SlidersHorizontal className="size-4 text-primary" />
-          <h2 className="font-heading text-sm font-bold text-foreground">
+        <div className="border-border/60 mb-4 flex items-center gap-2 border-b pb-3">
+          <SlidersHorizontal className="text-primary size-4" />
+          <h2 className="font-heading text-foreground text-sm font-bold">
             {isAr ? "عوامل التصفية" : "Filters"}
           </h2>
           {activeFilters > 0 && (
-            <span className="ms-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+            <span className="bg-primary/10 text-primary ms-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold">
               {activeFilters}
             </span>
           )}
@@ -377,26 +408,40 @@ function FiltersPanel({
       )}
       <form method="get" className="flex flex-col gap-4">
         <FilterField label={isAr ? "الإجراء" : "Procedure"}>
-          <select
-            name="category"
-            defaultValue={params.category ?? ""}
-            className={fieldClassName}
-          >
+          <select name="category" defaultValue={params.category ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "كل الإجراءات" : "All procedures"}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
-                {isAr ? c.nameAr : c.nameEn}
+                {isAr ? c.nameAr : c.nameEn} ({c.count})
+              </option>
+            ))}
+          </select>
+        </FilterField>
+
+        <FilterField label={isAr ? "المدينة" : "City"}>
+          <select name="city" defaultValue={params.city ?? ""} className={fieldClassName}>
+            <option value="">{isAr ? "كل المدن" : "All cities"}</option>
+            {cities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+
+        <FilterField label={isAr ? "اللغة" : "Language"}>
+          <select name="language" defaultValue={params.language ?? ""} className={fieldClassName}>
+            <option value="">{isAr ? "كل اللغات" : "All languages"}</option>
+            {languages.map((language) => (
+              <option key={language} value={language}>
+                {language}
               </option>
             ))}
           </select>
         </FilterField>
 
         <FilterField label={isAr ? "الدولة" : "Country"}>
-          <select
-            name="country"
-            defaultValue={params.country ?? ""}
-            className={fieldClassName}
-          >
+          <select name="country" defaultValue={params.country ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "كل الدول" : "All countries"}</option>
             {countries.map((c) => (
               <option key={c.code} value={c.code}>
@@ -419,11 +464,7 @@ function FiltersPanel({
         </FilterField>
 
         <FilterField label={isAr ? "نوع الإجراء" : "Procedure type"}>
-          <select
-            name="surgical"
-            defaultValue={params.surgical ?? ""}
-            className={fieldClassName}
-          >
+          <select name="surgical" defaultValue={params.surgical ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "الكل" : "All"}</option>
             <option value="true">{isAr ? "جراحي" : "Surgical"}</option>
             <option value="false">{isAr ? "غير جراحي" : "Non-surgical"}</option>
@@ -438,6 +479,27 @@ function FiltersPanel({
           />
         </FilterField>
 
+        <div className="grid grid-cols-2 gap-2">
+          <FilterField label={isAr ? "السعر من" : "Price from"}>
+            <Input
+              name="priceMin"
+              type="number"
+              min="0"
+              inputMode="decimal"
+              defaultValue={params.priceMin ?? ""}
+            />
+          </FilterField>
+          <FilterField label={isAr ? "السعر إلى" : "Price to"}>
+            <Input
+              name="priceMax"
+              type="number"
+              min="0"
+              inputMode="decimal"
+              defaultValue={params.priceMax ?? ""}
+            />
+          </FilterField>
+        </div>
+
         <Button type="submit" className="w-full">
           {isAr ? "تطبيق الفلاتر" : "Apply filters"}
         </Button>
@@ -451,25 +513,17 @@ function FiltersPanel({
     </Card>
   )
 }
-
 const fieldClassName =
   "h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
 
-function FilterField({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-foreground">{label}</label>
+      <label className="text-foreground text-sm font-medium">{label}</label>
       {children}
     </div>
   )
 }
-
 function QuickFilter({
   href,
   icon: Icon,
@@ -482,32 +536,10 @@ function QuickFilter({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-card/85 px-3 py-1.5 font-medium text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
+      className="bg-card/85 text-foreground hover:border-primary/30 hover:text-primary inline-flex items-center gap-1.5 rounded-full border border-white/70 px-3 py-1.5 font-medium shadow-sm transition-colors"
     >
-      <Icon className="size-3.5 text-primary" />
+      <Icon className="text-primary size-3.5" />
       {children}
     </Link>
-  )
-}
-
-function TrustPoint({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5">
-      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="size-4" />
-      </span>
-      <div>
-        <p className="text-sm font-bold text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{description}</p>
-      </div>
-    </div>
   )
 }

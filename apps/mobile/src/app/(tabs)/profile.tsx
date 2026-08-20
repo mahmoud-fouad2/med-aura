@@ -28,17 +28,11 @@ import { setRememberMe } from "../../lib/session-prefs"
 import { unregisterThisDevice } from "../../lib/push-notifications"
 import { authClient } from "../../lib/auth-client"
 import { API_URL } from "../../lib/config"
-import { readPlatformStorage, removePlatformStorage, writePlatformStorage } from "../../lib/platform-storage"
+import { removePlatformStorage } from "../../lib/platform-storage"
+import { queryKeys } from "../../lib/query-keys"
 import { useI18n, type Locale } from "../../lib/i18n"
 import { colors, radius, spacing, TAB_BAR_HEIGHT } from "../../theme"
 import { ONBOARDING_KEY } from "../index"
-
-/** Notification switches persist on-device until the push backend exists. */
-const NOTIFY_KEYS = {
-  appointments: "medaura.notify.appointments",
-  payments: "medaura.notify.payments",
-  files: "medaura.notify.files",
-} as const
 
 export default function Profile() {
   const { t, locale, setLocale } = useI18n()
@@ -59,7 +53,7 @@ export default function Profile() {
   // Every screen reading useMe() (header, greeting, doctor list row) sees the
   // new photo immediately — no waiting on a refetch, no logout/login needed.
   const setPhotoUrl = (photoUrl: string | null) => {
-    queryClient.setQueryData<Me>(["me"], (old) => (old ? { ...old, photoUrl } : old))
+    queryClient.setQueryData<Me>(queryKeys.me, (old) => (old ? { ...old, photoUrl } : old))
   }
 
   const signOut = async () => {
@@ -243,35 +237,7 @@ export default function Profile() {
         />
       </Section>
 
-      {/* Notifications. Appointments/payments/files stay on-device only —
-          deliberately: enforcing per-event-type suppression server-side
-          risks silently dropping an operationally important notification if
-          the type-to-category mapping is ever wrong, so this is scoped down
-          rather than faked. Offers/marketing is the one real, server-backed
-          toggle — it's the lowest-stakes category and it gates
-          lib/actions/broadcast.ts's recipient list for real (opt-in). */}
       <Section title={t.profile.sectionNotifications}>
-        <ToggleRow
-          storageKey={NOTIFY_KEYS.appointments}
-          label={t.profile.notifyAppointments}
-          hint={t.profile.notifyAppointmentsHint}
-          defaultValue
-        />
-        <Divider />
-        <ToggleRow
-          storageKey={NOTIFY_KEYS.payments}
-          label={t.profile.notifyPayments}
-          hint={t.profile.notifyPaymentsHint}
-          defaultValue
-        />
-        <Divider />
-        <ToggleRow
-          storageKey={NOTIFY_KEYS.files}
-          label={t.profile.notifyFiles}
-          hint={t.profile.notifyFilesHint}
-          defaultValue
-        />
-        <Divider />
         <OffersToggleRow />
       </Section>
 
@@ -523,72 +489,6 @@ function Row({
   )
 }
 
-function ToggleRow({
-  storageKey,
-  label,
-  hint,
-  defaultValue = false,
-}: {
-  storageKey: string
-  label: string
-  hint?: string
-  defaultValue?: boolean
-}) {
-  const [enabled, setEnabled] = useState(defaultValue)
-
-  // Preference reads are best-effort: a storage hiccup should never block the
-  // settings screen from rendering.
-  useEffect(() => {
-    let alive = true
-    readPlatformStorage(storageKey)
-      .then((saved) => {
-        if (alive && saved != null) setEnabled(saved === "1")
-      })
-      .catch(() => undefined)
-    return () => {
-      alive = false
-    }
-  }, [storageKey])
-
-  const toggle = (next: boolean) => {
-    setEnabled(next)
-    void Haptics.selectionAsync()
-    void writePlatformStorage(storageKey, next ? "1" : "0").catch(() => undefined)
-  }
-
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing.md,
-        padding: spacing.lg,
-      }}
-    >
-      <View style={{ flex: 1, gap: 2 }}>
-        <AppText variant="body">{label}</AppText>
-        {hint ? (
-          <AppText variant="caption" color={colors.textFaint}>
-            {hint}
-          </AppText>
-        ) : null}
-      </View>
-      <Switch
-        value={enabled}
-        onValueChange={toggle}
-        trackColor={{ true: colors.primary, false: colors.border }}
-        thumbColor="#FFFFFF"
-        accessibilityLabel={label}
-      />
-    </View>
-  )
-}
-
-/** Same look as ToggleRow, but backed by the real server-side preference
- *  (lib/actions/notification-preferences.ts) instead of SecureStore — this
- *  is the one notification toggle that actually gates something today
- *  (lib/actions/broadcast.ts's recipient list), so it needs a real
- *  loading/saving round trip rather than an optimistic local flip. */
 function OffersToggleRow() {
   const { t } = useI18n()
   const query = useNotificationPreferences()
@@ -599,16 +499,16 @@ function OffersToggleRow() {
     mutationFn: (next: boolean) => api.updateOffersPreference(next),
     onMutate: async (next) => {
       setError(false)
-      await queryClient.cancelQueries({ queryKey: ["notification-preferences"] })
-      const previous = queryClient.getQueryData<{ offersEnabled: boolean }>([
-        "notification-preferences",
-      ])
-      queryClient.setQueryData(["notification-preferences"], { offersEnabled: next })
+      await queryClient.cancelQueries({ queryKey: queryKeys.notificationPreferences })
+      const previous = queryClient.getQueryData<{ offersEnabled: boolean }>(
+        queryKeys.notificationPreferences,
+      )
+      queryClient.setQueryData(queryKeys.notificationPreferences, { offersEnabled: next })
       return { previous }
     },
     onError: (_err, _next, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["notification-preferences"], context.previous)
+        queryClient.setQueryData(queryKeys.notificationPreferences, context.previous)
       }
       setError(true)
     },
@@ -637,7 +537,7 @@ function OffersToggleRow() {
           save.mutate(next)
         }}
         trackColor={{ true: colors.primary, false: colors.border }}
-        thumbColor="#FFFFFF"
+        thumbColor={colors.onPrimary}
         accessibilityLabel={t.profile.notifyOffers}
       />
     </View>

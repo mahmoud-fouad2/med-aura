@@ -11,6 +11,7 @@
  * breakdown and rendered one currency at a time.
  */
 import { currencyAr } from "@/lib/status-labels"
+import type { DisplayLocale } from "@/lib/format"
 
 /** The currency the platform prices in (the schema default on every money column). */
 export const BASE_CURRENCY = "SAR"
@@ -18,10 +19,26 @@ export const BASE_CURRENCY = "SAR"
 export type MoneyTotal = { currency: string; amount: number }
 
 const NUM = new Intl.NumberFormat("ar-SA-u-nu-latn", { maximumFractionDigits: 2 })
+const NUM_EN = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 })
+
+const CURRENCY_EN: Record<string, string> = {
+  SAR: "SAR",
+  USD: "USD",
+  EUR: "EUR",
+  AED: "AED",
+  TRY: "TRY",
+}
 
 /** "50 ر.س" — Latin digits, matching the rest of the product's number rendering. */
-export function formatMoney(amount: number | string, currency: string): string {
-  return `${NUM.format(Number(amount) || 0)} ${currencyAr(currency)}`
+export function formatMoney(
+  amount: number | string,
+  currency: string,
+  locale: DisplayLocale = "ar",
+): string {
+  const value = Number(amount) || 0
+  return locale === "ar"
+    ? `${NUM.format(value)} ${currencyAr(currency)}`
+    : `${NUM_EN.format(value)} ${CURRENCY_EN[currency] ?? currency}`
 }
 
 /** Base currency first, then descending by amount, dropping zero rows. */
@@ -58,7 +75,9 @@ export function hasMoney(totals: MoneyTotal[]): boolean {
 export function headlineTotal(totals: MoneyTotal[]): { value: string; others: string | null } {
   const sorted = sortTotals(totals)
   if (sorted.length === 0) return { value: formatMoney(0, BASE_CURRENCY), others: null }
-  const [primary, ...rest] = sorted
+  const primary = sorted[0]
+  if (!primary) return { value: formatMoney(0, BASE_CURRENCY), others: null }
+  const rest = sorted.slice(1)
   return {
     value: formatMoney(primary.amount, primary.currency),
     others: rest.length ? rest.map((t) => formatMoney(t.amount, t.currency)).join(" · ") : null,

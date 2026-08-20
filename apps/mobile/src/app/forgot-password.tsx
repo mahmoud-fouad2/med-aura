@@ -7,7 +7,7 @@ import { AppText, Button, Card } from "../components/ui"
 import { authClient } from "../lib/auth-client"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
-import { Field, inputStyle } from "./sign-in"
+import { Field, inputStyle } from "../components/form"
 
 /**
  * Requesting a reset link needs no web-only capability (just an email

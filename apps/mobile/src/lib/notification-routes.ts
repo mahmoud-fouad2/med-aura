@@ -15,3 +15,14 @@ export function resolveNativeNotificationRoute(href: string | null | undefined):
   if (ticketMatch) return `/support/${ticketMatch[1]}`
   return null
 }
+
+export function notificationHref(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null
+  const record = data as Record<string, unknown>
+  const value = typeof record.href === "string" ? record.href : record.url
+  return typeof value === "string" && value.trim() ? value.trim() : null
+}
+
+export function resolveNotificationDestination(data: unknown): string {
+  return resolveNativeNotificationRoute(notificationHref(data)) ?? "/notifications"
+}

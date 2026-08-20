@@ -16,6 +16,7 @@ import {
 import { QueryErrorState } from "../../components/query-error"
 import { api, useMyAvailability, type AvailabilityRule } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { queryKeys } from "../../lib/query-keys"
 import { colors, radius, spacing } from "../../theme"
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6]
@@ -123,7 +124,7 @@ function AvailabilityRow({ rule }: { rule: AvailabilityRule }) {
     try {
       await api.deleteAvailabilityRule(rule.id)
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      await queryClient.invalidateQueries({ queryKey: ["my-availability"] })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.availability })
     } catch {
       setBusy(false)
       setConfirming(false)

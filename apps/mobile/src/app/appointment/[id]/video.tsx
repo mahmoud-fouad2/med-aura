@@ -12,8 +12,10 @@ import Daily, {
 } from "@daily-co/react-native-daily-js"
 import { AppText, Avatar, Button, Card, ChevronBack, Skeleton } from "../../../components/ui"
 import { BottomSheet } from "../../../components/bottom-sheet"
+import { VideoControl as RoundControl } from "../../../components/video-control"
 import { api, useVideoState } from "../../../lib/api"
 import { useI18n } from "../../../lib/i18n"
+import { localizedApiError } from "../../../lib/request-errors"
 import { colors, radius, spacing } from "../../../theme"
 
 /**
@@ -140,11 +142,16 @@ export default function VideoConsultation() {
     } catch (err) {
       await teardown()
       setPhase("prejoin")
-      setJoinError(
-        err instanceof Error && err.message ? err.message : t.common.loadFailed,
-      )
+      setJoinError(localizedApiError(err, locale, {
+        fallback: t.common.loadFailed,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.common.loadFailed,
+        conflict: t.common.loadFailed,
+        rateLimited: t.common.rateLimited,
+      }))
     }
-  }, [id, t, teardown])
+  }, [id, locale, t, teardown])
 
   const endCall = useCallback(async () => {
     setConfirmEnd(false)
@@ -611,43 +618,6 @@ export default function VideoConsultation() {
         )}
       </View>
     </View>
-  )
-}
-
-function RoundControl({
-  icon,
-  label,
-  onPress,
-  active = false,
-  danger = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  onPress: () => void
-  active?: boolean
-  danger?: boolean
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => ({
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: danger
-          ? colors.danger
-          : active
-            ? "rgba(255,255,255,0.22)"
-            : "rgba(255,255,255,0.10)",
-        transform: [{ scale: pressed ? 0.93 : 1 }, { rotate: danger ? "135deg" : "0deg" }],
-      })}
-    >
-      <Ionicons name={icon} size={22} color="#FFFFFF" />
-    </Pressable>
   )
 }
 

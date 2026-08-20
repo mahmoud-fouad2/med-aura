@@ -20,10 +20,12 @@ import {
   Skeleton,
 } from "../components/ui"
 import { CountryPicker } from "../components/country-picker"
-import { useMe, api, NetworkError, type Me } from "../lib/api"
+import { Field, inputStyle } from "../components/form"
+import { useMe, api, type Me } from "../lib/api"
 import { useI18n } from "../lib/i18n"
+import { queryKeys } from "../lib/query-keys"
+import { localizedApiError } from "../lib/request-errors"
 import { colors, radius, spacing } from "../theme"
-import { Field, inputStyle } from "./sign-in"
 
 /** Own-profile editing, fully in-app — no browser hand-off. */
 export default function EditProfile() {
@@ -84,7 +86,7 @@ export default function EditProfile() {
 }
 
 function ProfileForm({ initial }: { initial: Me }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const queryClient = useQueryClient()
 
   const [name, setName] = useState(initial.name ?? "")
@@ -127,22 +129,20 @@ function ProfileForm({ initial }: { initial: Me }) {
       })
     } catch (err) {
       setSaving(false)
-      // A NetworkError's message is the literal English word "offline" (see
-      // lib/api.ts) — never render it as-is. Any other thrown Error already
-      // carries the server's own (Arabic) validation message.
-      setError(
-        err instanceof NetworkError
-          ? t.common.offline
-          : err instanceof Error && err.message
-            ? err.message
-            : t.auth.genericError,
-      )
+      setError(localizedApiError(err, locale, {
+        fallback: t.auth.genericError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.auth.profileValidationError,
+        conflict: t.auth.profileConflictError,
+        rateLimited: t.common.rateLimited,
+      }))
       return
     }
     // The name/phone shown on home + profile come from these queries.
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["me"] }),
-      queryClient.invalidateQueries({ queryKey: ["home"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.me }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.home }),
     ])
     setSaving(false)
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)

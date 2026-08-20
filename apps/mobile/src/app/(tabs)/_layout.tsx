@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import type { GestureResponderEvent } from "react-native"
+import type { AccessibilityState, GestureResponderEvent } from "react-native"
 import { Pressable, View } from "react-native"
 import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
@@ -67,7 +67,12 @@ export default function TabsLayout() {
         options={{
           title: t.tabs.assistant,
           tabBarLabel: () => null,
-          tabBarButton: (props) => <AssistantTabButton onPress={props.onPress} />,
+          tabBarButton: (props) => (
+            <AssistantTabButton
+              onPress={props.onPress}
+              accessibilityState={props.accessibilityState}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -100,8 +105,10 @@ export default function TabsLayout() {
  */
 function AssistantTabButton({
   onPress,
+  accessibilityState,
 }: {
   onPress?: (e: GestureResponderEvent) => void
+  accessibilityState?: AccessibilityState
 }) {
   const { t } = useI18n()
   const scale = useSharedValue(1)
@@ -126,6 +133,7 @@ function AssistantTabButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t.assistant.title}
+      accessibilityState={accessibilityState}
       onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -141,7 +149,7 @@ function AssistantTabButton({
             width: 80,
             height: 80,
             borderRadius: 40,
-            backgroundColor: "rgba(201, 162, 75, 0.14)",
+            backgroundColor: colors.goldHalo,
           }}
         />
         <View
@@ -150,7 +158,7 @@ function AssistantTabButton({
             width: 68,
             height: 68,
             borderRadius: 34,
-            backgroundColor: "rgba(201, 162, 75, 0.22)",
+            backgroundColor: colors.goldHaloStrong,
           }}
         />
         {/* The avatar art is already a finished circle, so it only needs a

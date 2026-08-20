@@ -22,9 +22,13 @@ describe("faqPageJsonLd", () => {
 })
 
 describe("buildPageMetadata", () => {
-  it("only claims x-default — no false ar/en distinct-URL signal", () => {
+  it("publishes real Arabic and English route alternates", () => {
     const meta = buildPageMetadata({ title: "t", description: "d", path: "/faq" })
-    expect(meta.alternates?.languages).toEqual({ "x-default": expect.stringContaining("/faq") })
+    expect(meta.alternates?.languages).toEqual({
+      ar: expect.stringContaining("/ar/faq"),
+      en: expect.stringContaining("/en/faq"),
+      "x-default": expect.stringContaining("/faq"),
+    })
   })
 })
 

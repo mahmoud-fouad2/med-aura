@@ -3,6 +3,7 @@ import { Download, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { AndroidMark } from "@/components/brand/android-mark"
 import { getI18n } from "@/lib/i18n"
+import { localizedPath, type Locale } from "@/lib/i18n/config"
 
 /** First-party download path — /download/android streams the latest build
     through our own domain (see app/download/android/route.ts). */
@@ -41,7 +42,7 @@ export async function SiteFooter() {
       <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="flex flex-col gap-4">
-            <Link href="/" aria-label="Med Aura" className="w-fit">
+            <Link href={localizedPath("/", locale)} aria-label="Med Aura" className="w-fit">
               <Logo />
             </Link>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -80,6 +81,7 @@ export async function SiteFooter() {
           </div>
 
           <FooterCol
+            locale={locale}
             title={l("المنصة", "Platform")}
             links={[
               { href: "/doctors", label: l("ابحث عن طبيب", "Find a doctor") },
@@ -92,6 +94,7 @@ export async function SiteFooter() {
             ]}
           />
           <FooterCol
+            locale={locale}
             title={l("الشركة", "Company")}
             links={[
               { href: "/about", label: l("من نحن", "About us") },
@@ -102,6 +105,7 @@ export async function SiteFooter() {
             ]}
           />
           <FooterCol
+            locale={locale}
             title={l("قانوني", "Legal")}
             links={[
               { href: "/privacy", label: l("سياسة الخصوصية", "Privacy policy") },
@@ -113,23 +117,8 @@ export async function SiteFooter() {
           />
         </div>
 
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground">
+        <div className="mt-12 border-t border-border/60 pt-6 text-xs text-muted-foreground">
           <p>© {year} Med Aura. {l("جميع الحقوق محفوظة.", "All rights reserved.")}</p>
-          {/* Quiet developer credit — never the phone number here. */}
-          <a
-            href="https://ma-fo.info"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-muted-foreground/70 transition-colors hover:text-primary"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- tiny external badge, not worth a next/image remote-pattern config */}
-            <img
-              src="https://ma-fo.info/logo2.png"
-              alt=""
-              className="size-3 shrink-0 rounded-sm object-contain"
-            />
-            Ma-Fo
-          </a>
         </div>
       </div>
     </footer>
@@ -139,9 +128,11 @@ export async function SiteFooter() {
 function FooterCol({
   title,
   links,
+  locale,
 }: {
   title: string
   links: { href: string; label: string }[]
+  locale: Locale
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -152,7 +143,7 @@ function FooterCol({
         {links.map((link) => (
           <li key={link.label}>
             <Link
-              href={link.href}
+              href={localizedPath(link.href, locale)}
               className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
             >
               <span className="h-px w-0 bg-primary transition-all duration-200 group-hover:w-3" />

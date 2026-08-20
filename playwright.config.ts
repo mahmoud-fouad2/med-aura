@@ -20,10 +20,10 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    // `npx next start` instead of `pnpm start`: Playwright spawns this command
-    // with a bare shell that doesn't always resolve the `pnpm` shim (seen on
-    // Windows), while `npx` reliably resolves the local next binary everywhere.
-    command: "npx next start -p 3000",
+    // Match production's standalone runtime and load local env files without
+    // replacing environment variables supplied by CI or the hosting platform.
+    command:
+      "node --env-file-if-exists=.env --env-file-if-exists=.env.local --max-old-space-size=320 .next/standalone/server.js",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

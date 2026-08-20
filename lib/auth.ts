@@ -169,17 +169,20 @@ export const auth = betterAuth({
                 .values({ userId: createdUser.id, roleId: patientRole[0].id })
                 .onConflictDoNothing()
 
-              await writeAudit({
-                action: "auth.signup",
-                actorUserId: createdUser.id,
-                entityType: "user",
-                entityId: createdUser.id,
-              }, tx)
+              await writeAudit(
+                {
+                  action: "auth.signup",
+                  actorUserId: createdUser.id,
+                  entityType: "user",
+                  entityId: createdUser.id,
+                },
+                tx,
+              )
             })
           } catch (err) {
             logger.error("post-signup provisioning failed", {
               userId: createdUser.id,
-              error: err instanceof Error ? err.message : String(err),
+              errorName: err instanceof Error ? err.name : "UnknownError",
             })
             try {
               await db
@@ -189,7 +192,7 @@ export const auth = betterAuth({
             } catch (repairErr) {
               logger.error("post-signup profile repair failed", {
                 userId: createdUser.id,
-                error: repairErr instanceof Error ? repairErr.message : String(repairErr),
+                errorName: repairErr instanceof Error ? repairErr.name : "UnknownError",
               })
             }
           }

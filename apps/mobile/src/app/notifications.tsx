@@ -17,6 +17,7 @@ import { api, useNotifications, type AppNotification } from "../lib/api"
 import { resolveNativeNotificationRoute } from "../lib/notification-routes"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
+import { queryKeys } from "../lib/query-keys"
 import { colors, radius, spacing } from "../theme"
 
 /** The user's inbox — same notifications the web dashboard shows. */
@@ -28,8 +29,7 @@ export default function Notifications() {
 
   const markRead = useMutation({
     mutationFn: api.markNotificationsRead,
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications }),
   })
 
   const open = (n: AppNotification) => {

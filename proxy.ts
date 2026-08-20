@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { LOCALE_COOKIE, isLocale } from "@/lib/i18n/config"
 
 const MOBILE_WEB_DEV_ORIGIN = "http://localhost:8081"
 
@@ -24,11 +25,36 @@ function applyCors(response: NextResponse): NextResponse {
  * mutation routes such as ticket creation and profile updates.
  */
 export function proxy(request: NextRequest) {
-  if (!isLocalMobileWebRequest(request)) return NextResponse.next()
-  if (request.method === "OPTIONS") return applyCors(new NextResponse(null, { status: 204 }))
-  return applyCors(NextResponse.next())
+  if (isLocalMobileWebRequest(request)) {
+    if (request.method === "OPTIONS") {
+      return applyCors(new NextResponse(null, { status: 204 }))
+    }
+    return applyCors(NextResponse.next())
+  }
+
+  const [, locale, rest = ""] = request.nextUrl.pathname.match(
+    /^\/(ar|en)(\/.*)?$/,
+  ) ?? []
+  if (!isLocale(locale)) return NextResponse.next()
+
+  const url = request.nextUrl.clone()
+  url.pathname = rest || "/"
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-medaura-locale", locale)
+  const response = NextResponse.rewrite(url, {
+    request: { headers: requestHeaders },
+  })
+  response.cookies.set(LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  })
+  return response
 }
 
 export const config = {
-  matcher: ["/api/mobile/:path*"],
+  matcher: [
+    "/api/mobile/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\..*).*)",
+  ],
 }

@@ -169,8 +169,11 @@ export default async function DoctorProfilePage({
                           {initials}
                         </AvatarFallback>
                       </Avatar>
-                      {doctor.verified && doctor.photoUrl && (
-                        <VerifiedBadge className="absolute top-1 start-1" />
+                        {doctor.verified && doctor.photoUrl && (
+                        <VerifiedBadge
+                          className="absolute top-1 start-1"
+                          label={isAr ? "ترخيص متحقق منه" : "License verified"}
+                        />
                       )}
                     </div>
                     <div className="pb-1">

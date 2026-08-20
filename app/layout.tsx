@@ -5,6 +5,7 @@ import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
 import {
   DEFAULT_DESCRIPTION_AR,
+  DEFAULT_DESCRIPTION_EN,
   DEFAULT_TITLE,
   SITE_NAME,
   absoluteUrl,
@@ -60,42 +61,49 @@ const inter = localFont({
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
 })
 
-export const metadata: Metadata = {
-  metadataBase: new URL(appUrl()),
-  title: {
-    default: DEFAULT_TITLE,
-    template: "%s | Med Aura",
-  },
-  description: DEFAULT_DESCRIPTION_AR,
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  const isAr = locale === "ar"
+  const title = isAr ? DEFAULT_TITLE : "Med Aura | Aesthetic care with clarity"
+  const description = isAr ? DEFAULT_DESCRIPTION_AR : DEFAULT_DESCRIPTION_EN
+  return {
+    metadataBase: new URL(appUrl()),
+    title: {
+      default: title,
+      template: "%s | Med Aura",
+    },
+    description,
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
   alternates: {
     canonical: absoluteUrl("/"),
-    // Same URL serves both languages via a cookie, not a path — only
-    // x-default is a real signal (see the identical note in lib/seo.ts).
-    languages: { "x-default": absoluteUrl("/") },
+    languages: {
+      ar: absoluteUrl("/ar"),
+      en: absoluteUrl("/en"),
+      "x-default": absoluteUrl("/"),
+    },
   },
   openGraph: {
-    title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION_AR,
+    title,
+    description,
     url: absoluteUrl("/"),
     siteName: SITE_NAME,
-    locale: "ar_SA",
-    alternateLocale: ["en_US"],
+    locale: isAr ? "ar_SA" : "en_US",
+    alternateLocale: [isAr ? "en_US" : "ar_SA"],
     type: "website",
     images: [
       {
         url: absoluteUrl("/hero-medaura-consultation.png"),
         width: 1600,
         height: 900,
-        alt: DEFAULT_TITLE,
+        alt: title,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION_AR,
+    title,
+    description,
     images: [absoluteUrl("/hero-medaura-consultation.png")],
   },
   icons: {
@@ -115,6 +123,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Med Aura",
   },
+  }
 }
 
 export const viewport: Viewport = {

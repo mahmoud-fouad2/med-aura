@@ -21,21 +21,31 @@ import { listPublishedCenters } from "@/lib/data/centers"
 import { query } from "@/lib/db/query"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
-import { countryNameAr } from "@/lib/status-labels"
+import { countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
+import { PUBLIC_MEDIA } from "@/lib/public-media"
+import { formatDoctorCount } from "@/lib/format"
+import { getI18n } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = buildPageMetadata({
-  title: "مراكز التجميل",
-  description:
-    "تصفّح مراكز التجميل المعتمدة على Med Aura، وقارن الأطباء والخدمات والتقييمات قبل الحجز.",
-  path: "/centers",
-  image: "/demo-services/aesthetic-clinic-lounge.png",
-})
+export async function generateMetadata() {
+  const { locale } = await getI18n()
+  return buildPageMetadata({
+    title: locale === "ar" ? "مراكز التجميل" : "Aesthetic centers",
+    description: locale === "ar"
+      ? "تصفّح مراكز التجميل وقارن الأطباء والخدمات والتقييمات المتاحة قبل الحجز."
+      : "Browse aesthetic centers and compare available doctors, services, and reviews before booking.",
+    path: "/centers",
+    image: PUBLIC_MEDIA.centers,
+    locale,
+  })
+}
 
 export default async function CentersPage() {
-  const user = await getCurrentUser()
+  const [user, { locale }] = await Promise.all([getCurrentUser(), getI18n()])
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => (isAr ? ar : en)
   const [res, favs] = await Promise.all([
     query(() => listPublishedCenters()),
     user
@@ -50,15 +60,15 @@ export default async function CentersPage() {
   const doctorsTotal = centers.reduce((sum, c) => sum + c.doctorCount, 0)
   const structuredData = [
     breadcrumbJsonLd([
-      { name: "الرئيسية", url: absoluteUrl("/") },
-      { name: "المراكز", url: absoluteUrl("/centers") },
+      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
+      { name: l("المراكز", "Centers"), url: absoluteUrl("/centers") },
     ]),
     itemListJsonLd({
-      name: "مراكز التجميل على Med Aura",
+      name: l("مراكز التجميل على Med Aura", "Aesthetic centers on Med Aura"),
       items: centers.map((c) => ({
         name: c.name,
         url: absoluteUrl(`/centers/${c.slug}`),
-        image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+        image: absoluteUrl(c.coverUrl ?? PUBLIC_MEDIA.centers),
       })),
     }),
   ]
@@ -72,15 +82,15 @@ export default async function CentersPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow="المراكز"
-          title="مراكز مختارة لرحلة أكثر اطمئنانًا"
-          subtitle="تعرّف على المراكز التي تجمع بين أطباء معتمدين، بيئة عناية واضحة، وخدمات مناسبة لكل مرحلة من رحلتك."
-          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
-          imageAlt="استقبال مركز تجميل حديث"
+          eyebrow={l("المراكز", "Centers")}
+          title={l("مراكز مختارة لرحلة أكثر اطمئنانًا", "Compare carefully selected centers")}
+          subtitle={l("تعرّف على المراكز التي تجمع بين أطباء معتمدين وبيئة عناية واضحة.", "Explore centers with licensed doctors, clear profiles, and suitable care options.")}
+          imageSrc={PUBLIC_MEDIA.centers}
+          imageAlt={l("استقبال مركز تجميل حديث", "Modern aesthetic center reception")}
           stats={[
-            { label: "مراكز", value: centers.length.toLocaleString("ar-SA-u-nu-latn") },
-            { label: "أطباء", value: doctorsTotal.toLocaleString("ar-SA-u-nu-latn") },
-            { label: "الحجز", value: "مباشر" },
+            { label: l("مراكز", "Centers"), value: centers.length.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("أطباء", "Doctors"), value: doctorsTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("الحجز", "Booking"), value: l("مباشر", "Direct") },
           ]}
         />
 
@@ -97,13 +107,13 @@ export default async function CentersPage() {
               <Card className="p-12">
                 <EmptyState
                   icon={Building2}
-                  title="لا توجد مراكز منشورة بعد"
-                  description="ستظهر المراكز هنا بعد التحقق من تراخيصها. هل تمثّل مركزًا؟ سجّل مركزك معنا."
+                  title={l("لا توجد مراكز منشورة بعد", "No centers are published yet")}
+                  description={l("ستظهر المراكز هنا بعد التحقق من تراخيصها.", "Centers will appear here after their licenses are reviewed.")}
                   action={
                     <Button
                       render={
                         <Link href="/for-centers/apply">
-                          سجّل مركزك
+                          {l("سجّل مركزك", "Register your center")}
                           <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
                         </Link>
                       }
@@ -130,8 +140,8 @@ export default async function CentersPage() {
 
                       <div className="relative flex h-36 items-end overflow-hidden bg-muted px-5 pb-3 pt-5">
                         <Image
-                          src="/demo-services/aesthetic-clinic-lounge.png"
-                          alt=""
+                          src={c.coverUrl ?? PUBLIC_MEDIA.centers}
+                          alt={l(`واجهة ${c.name}`, `${c.name} center`)}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -153,13 +163,13 @@ export default async function CentersPage() {
                           {c.verified && (
                             <BadgeCheck
                               className="mt-0.5 size-4 shrink-0 text-primary"
-                              aria-label="مركز موثّق"
+                              aria-label={l("مركز موثّق", "Verified center")}
                             />
                           )}
                         </div>
                         <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <MapPin className="size-3" />
-                          {[c.city, countryNameAr(c.country)]
+                          {[c.city, isAr ? countryNameAr(c.country) : countryNameEn(c.country)]
                             .filter(Boolean)
                             .join("، ")}
                         </p>
@@ -173,7 +183,7 @@ export default async function CentersPage() {
                           <span className="inline-flex items-center gap-1 text-primary">
                             <Users className="size-3.5" />
                             <span className="font-medium">
-                              {c.doctorCount} طبيب
+                              {formatDoctorCount(c.doctorCount, locale)}
                             </span>
                           </span>
                           {c.reviewCount > 0 && c.rating ? (
@@ -186,7 +196,7 @@ export default async function CentersPage() {
                             </span>
                           ) : (
                             <span className="text-muted-foreground/60">
-                              لا تقييمات بعد
+                              {l("لا تقييمات بعد", "No reviews yet")}
                             </span>
                           )}
                         </div>
@@ -197,7 +207,7 @@ export default async function CentersPage() {
                           href={`/centers/${c.slug}`}
                           className="group/link inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                         >
-                          استكشف المركز
+                          {l("استكشف المركز", "View center")}
                           <ChevronLeft className="size-3.5 transition-transform group-hover/link:-translate-x-0.5 rtl:rotate-0 ltr:rotate-180" />
                         </Link>
                       </div>

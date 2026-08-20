@@ -1,4 +1,5 @@
 import { cookies } from "next/headers"
+import { headers } from "next/headers"
 import { LOCALE_COOKIE, defaultLocale, isLocale, type Locale } from "./config"
 import { getDictionary } from "./dictionaries"
 
@@ -8,6 +9,8 @@ export type { Dictionary } from "./dictionaries"
 
 /** Resolve the active locale from the cookie (server components/actions). */
 export async function getLocale(): Promise<Locale> {
+  const requestLocale = (await headers()).get("x-medaura-locale")
+  if (isLocale(requestLocale)) return requestLocale
   const store = await cookies()
   const value = store.get(LOCALE_COOKIE)?.value
   return isLocale(value) ? value : defaultLocale

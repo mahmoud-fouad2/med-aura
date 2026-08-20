@@ -1,4 +1,5 @@
-import { and, eq, asc, ilike, or, sql } from "drizzle-orm"
+import { and, eq, asc, countDistinct, ilike, or } from "drizzle-orm"
+import { unstable_cache } from "next/cache"
 import { db, isDbConfigured } from "@/lib/db"
 import {
   doctorProcedure,
@@ -8,11 +9,15 @@ import {
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { serviceImageForProcedure } from "@/lib/seo"
+import { publicDoctorConditions } from "@/lib/data/public-visibility"
+import { demoDoctorPhoto } from "@/lib/public-media"
 
 export type ProcedureListItem = {
   slug: string
   nameAr: string
   nameEn: string
+  descriptionAr: string | null
+  descriptionEn: string | null
   isSurgical: boolean
   recoveryDays: number | null
   categorySlug: string
@@ -32,7 +37,7 @@ export type CategoryGroup = {
   procedures: ProcedureListItem[]
 }
 
-export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
+async function listProceduresGroupedUncached(): Promise<CategoryGroup[]> {
   const cats = await db
     .select({
       slug: procedureCategory.slug,
@@ -51,6 +56,8 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
       slug: procedureT.slug,
       nameAr: procedureT.nameAr,
       nameEn: procedureT.nameEn,
+      descriptionAr: procedureT.descriptionAr,
+      descriptionEn: procedureT.descriptionEn,
       isSurgical: procedureT.isSurgical,
       recoveryDays: procedureT.recoveryDays,
       categorySlug: procedureCategory.slug,
@@ -71,6 +78,12 @@ export async function listProceduresGrouped(): Promise<CategoryGroup[]> {
   }))
 }
 
+export const listProceduresGrouped = unstable_cache(
+  listProceduresGroupedUncached,
+  ["public-procedure-groups"],
+  { revalidate: 300 },
+)
+
 export type ProcedureDetail = {
   slug: string
   nameAr: string
@@ -81,6 +94,8 @@ export type ProcedureDetail = {
   recoveryDays: number | null
   categorySlug: string
   categoryNameAr: string
+  categoryNameEn: string
+  requiredConsultation: string | null
   /** Same category illustration the web uses — relative path, absolutized by API routes. */
   imagePath: string
   /** A real uploaded photo, when set — prefer this over imagePath. */
@@ -103,6 +118,8 @@ export async function getProcedureBySlug(
         recoveryDays: procedureT.recoveryDays,
         categorySlug: procedureCategory.slug,
         categoryNameAr: procedureCategory.nameAr,
+        categoryNameEn: procedureCategory.nameEn,
+        requiredConsultation: procedureT.requiredConsultation,
         visible: procedureT.visible,
         imageKey: procedureT.imageKey,
         galleryKeys: procedureT.galleryKeys,
@@ -170,12 +187,19 @@ export async function listServices(params: {
       recoveryDays: procedureT.recoveryDays,
       categorySlug: procedureCategory.slug,
       categoryNameAr: procedureCategory.nameAr,
-      doctorCount: sql<number>`count(distinct ${doctorProcedure.doctorId})`,
+      doctorCount: countDistinct(doctorProfile.id),
       imageKey: procedureT.imageKey,
     })
     .from(procedureT)
     .innerJoin(procedureCategory, eq(procedureT.categoryId, procedureCategory.id))
     .leftJoin(doctorProcedure, eq(doctorProcedure.procedureId, procedureT.id))
+    .leftJoin(
+      doctorProfile,
+      and(
+        eq(doctorProcedure.doctorId, doctorProfile.id),
+        ...publicDoctorConditions(),
+      ),
+    )
     .where(and(...filters))
     .groupBy(
       procedureT.slug,
@@ -229,14 +253,14 @@ export async function getServiceDetail(
     .from(doctorProcedure)
     .innerJoin(procedureT, eq(doctorProcedure.procedureId, procedureT.id))
     .innerJoin(doctorProfile, eq(doctorProcedure.doctorId, doctorProfile.id))
-    .where(and(eq(procedureT.slug, slug), eq(doctorProfile.published, true)))
+    .where(and(eq(procedureT.slug, slug), ...publicDoctorConditions()))
     .limit(20)
 
   const doctors: ServiceDoctor[] = rows.map((r) => ({
     slug: r.slug,
     name: r.name,
     title: r.title,
-    photoUrl: r.photoKey ? getPublicUrl(r.photoKey) : null,
+    photoUrl: (r.photoKey ? getPublicUrl(r.photoKey) : null) ?? demoDoctorPhoto(r.slug),
     verified: r.verified,
   }))
   return { ...detail, doctors }

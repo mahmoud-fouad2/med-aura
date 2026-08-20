@@ -1,7 +1,13 @@
-import { and, eq, desc, isNull, count, inArray } from "drizzle-orm"
+import { and, eq, desc, count, inArray } from "drizzle-orm"
+import { unstable_cache } from "next/cache"
 import { db } from "@/lib/db"
 import { center, doctorProfile } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { demoDoctorPhoto } from "@/lib/public-media"
+import {
+  publicCenterConditions,
+  publicDoctorConditions,
+} from "@/lib/data/public-visibility"
 
 export type CenterCard = {
   id: string
@@ -14,17 +20,14 @@ export type CenterCard = {
   doctorCount: number
   rating: string | null
   reviewCount: number
+  coverUrl: string | null
 }
 
 function visibleCenter() {
-  return and(
-    eq(center.status, "approved"),
-    eq(center.published, true),
-    isNull(center.deletedAt),
-  )
+  return and(...publicCenterConditions())
 }
 
-export async function listPublishedCenters(): Promise<CenterCard[]> {
+async function listPublishedCentersUncached(): Promise<CenterCard[]> {
   const rows = await db
     .select({
       id: center.id,
@@ -36,6 +39,7 @@ export async function listPublishedCenters(): Promise<CenterCard[]> {
       verified: center.verified,
       rating: center.rating,
       reviewCount: center.reviewCount,
+      coverKey: center.coverKey,
     })
     .from(center)
     .where(visibleCenter())
@@ -49,26 +53,29 @@ export async function listPublishedCenters(): Promise<CenterCard[]> {
     .where(
       and(
         inArray(doctorProfile.centerId, rows.map((c) => c.id)),
-        eq(doctorProfile.published, true),
-        eq(doctorProfile.status, "approved"),
+        ...publicDoctorConditions(),
       ),
     )
     .groupBy(doctorProfile.centerId)
   const doctorCountById = new Map(doctorCounts.map((d) => [d.centerId, d.n]))
 
-  return rows.map((c) => ({ ...c, doctorCount: doctorCountById.get(c.id) ?? 0 }))
+  return rows.map(({ coverKey, ...c }) => ({
+    ...c,
+    coverUrl: coverKey ? getPublicUrl(coverKey) : null,
+    doctorCount: doctorCountById.get(c.id) ?? 0,
+  }))
 }
+
+export const listPublishedCenters = unstable_cache(
+  listPublishedCentersUncached,
+  ["public-centers"],
+  { revalidate: 60 },
+)
 
 export type CenterDetail = CenterCard & {
   address: string | null
   languages: string[]
   doctors: { slug: string; name: string; title: string | null; photoUrl: string | null }[]
-}
-
-const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
-  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi.jpg",
-  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alqahtani.jpg",
-  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmet-yilmaz.jpg",
 }
 
 export async function getCenterBySlug(slug: string): Promise<CenterDetail | null> {
@@ -86,6 +93,7 @@ export async function getCenterBySlug(slug: string): Promise<CenterDetail | null
         verified: center.verified,
         rating: center.rating,
         reviewCount: center.reviewCount,
+        coverKey: center.coverKey,
       })
       .from(center)
       .where(and(eq(center.slug, slug), visibleCenter()))
@@ -104,17 +112,18 @@ export async function getCenterBySlug(slug: string): Promise<CenterDetail | null
     .where(
       and(
         eq(doctorProfile.centerId, c.id),
-        eq(doctorProfile.published, true),
-        eq(doctorProfile.status, "approved"),
+        ...publicDoctorConditions(),
       ),
     )
 
+  const { coverKey, ...centerData } = c
   return {
-    ...c,
+    ...centerData,
+    coverUrl: coverKey ? getPublicUrl(coverKey) : null,
     doctorCount: docs.length,
     doctors: docs.map(({ photoKey, ...d }) => ({
       ...d,
-      photoUrl: (photoKey ? getPublicUrl(photoKey) : null) ?? DEMO_DOCTOR_PHOTOS[d.slug] ?? null,
+      photoUrl: (photoKey ? getPublicUrl(photoKey) : null) ?? demoDoctorPhoto(d.slug),
     })),
   }
 }

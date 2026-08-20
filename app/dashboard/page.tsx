@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import {
   Search,
   FileText,
@@ -88,6 +89,10 @@ export default async function DashboardHome() {
   const isAdmin =
     roles.includes(ROLES.SUPER_ADMIN) ||
     roles.includes(ROLES.COMPLIANCE_REVIEWER)
+  const isPatient = roles.includes(ROLES.PATIENT)
+
+  if (!isPatient && isDoctor) redirect("/dashboard/doctor")
+  if (!isPatient && isAdmin) redirect("/admin")
 
   const [cases, appointments, unread, favs, lastApp] = await Promise.all([
     listCasesForPatient(user.id),

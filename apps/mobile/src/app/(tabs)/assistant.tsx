@@ -32,6 +32,11 @@ import {
   type AssistantTurn,
 } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import {
+  ASSISTANT_CONTEXT_LIMIT,
+  ASSISTANT_VISIBLE_LIMIT,
+  keepRecentItems,
+} from "../../lib/assistant-context"
 import { colors, radius, shadows, spacing } from "../../theme"
 
 type ChatMessage = {
@@ -76,18 +81,20 @@ export default function Assistant() {
       if (!trimmed || sending) return
       void Haptics.selectionAsync()
       const userMsg: ChatMessage = { id: nextId(), role: "user", content: trimmed, sentAt: Date.now() }
-      const history = [...messages, userMsg]
+      const history = keepRecentItems([...messages, userMsg], ASSISTANT_VISIBLE_LIMIT)
       setMessages(history)
       setInput("")
       setSending(true)
       setStage("understanding")
       scrollToEnd()
       try {
-        const turns: AssistantTurn[] = history.map((m) => ({ role: m.role, content: m.content }))
+        const turns = keepRecentItems<AssistantTurn>(
+          history.map((m) => ({ role: m.role, content: m.content })),
+          ASSISTANT_CONTEXT_LIMIT,
+        )
         const res = await streamAssistant(turns, setStage)
-        setMessages((prev) => [
-          ...prev,
-          {
+        setMessages((prev) => keepRecentItems([
+          ...prev, {
             id: nextId(),
             role: "assistant",
             content: res.reply || t.assistant.error,
@@ -95,7 +102,7 @@ export default function Assistant() {
             doctors: res.doctors,
             followups: res.followups,
           },
-        ])
+        ], ASSISTANT_VISIBLE_LIMIT))
       } catch (err) {
         // A timeout is NOT "you're offline" — the server was reachable and
         // simply took too long, so say that instead of sending the user to
@@ -110,10 +117,10 @@ export default function Assistant() {
               : err instanceof NetworkError
                 ? t.common.offline
                 : t.assistant.error
-        setMessages((prev) => [
+        setMessages((prev) => keepRecentItems([
           ...prev,
           { id: nextId(), role: "assistant", content: msg, sentAt: Date.now() },
-        ])
+        ], ASSISTANT_VISIBLE_LIMIT))
       } finally {
         setSending(false)
         setStage(null)
@@ -149,20 +156,6 @@ export default function Assistant() {
           overflow: "hidden",
         }}
       >
-        {/* A soft off-center glow, not a flat fill — gives the header some
-            depth without pulling in a gradient dependency. */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: -60,
-            insetInlineEnd: -40,
-            width: 180,
-            height: 180,
-            borderRadius: 90,
-            backgroundColor: "rgba(255,255,255,0.08)",
-          }}
-        />
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
           <View
             style={[
@@ -179,7 +172,7 @@ export default function Assistant() {
             <AiDoctor size={46} />
           </View>
           <View style={{ flex: 1 }}>
-            <AppText variant="title" weight="heavy" color="#FFFFFF">
+            <AppText variant="title" weight="heavy" color={colors.onPrimary}>
               {t.assistant.title}
             </AppText>
             <AppText variant="caption" color="rgba(255,255,255,0.78)">
@@ -300,6 +293,7 @@ export default function Assistant() {
             onPress={() => void send(input)}
             disabled={!input.trim() || sending}
             accessibilityRole="button"
+            accessibilityLabel={t.assistant.send}
             style={({ pressed }) => [
               {
                 width: 40,
@@ -314,7 +308,7 @@ export default function Assistant() {
               },
             ]}
           >
-            <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+            <Ionicons name="arrow-up" size={20} color={colors.onPrimary} />
           </Pressable>
         </View>
       </View>
@@ -375,7 +369,7 @@ function UserBubble({ text, time }: { text: string; time: string }) {
           paddingVertical: 10,
         }}
       >
-        <AppText variant="body" color="#FFFFFF">
+        <AppText variant="body" color={colors.onPrimary}>
           {text}
         </AppText>
       </View>
@@ -567,6 +561,7 @@ function SuggestionChip({ label, onPress }: { label: string; onPress: () => void
  * the product, not an AI attachment.
  */
 function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
+  const { t, isRTL } = useI18n()
   const location = [doctor.title, doctor.city].filter(Boolean).join(" · ")
   return (
     <Pressable
@@ -574,6 +569,8 @@ function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
         void Haptics.selectionAsync()
         router.push(`/doctor/${doctor.slug}`)
       }}
+      accessibilityRole="button"
+      accessibilityLabel={`${t.assistant.viewDoctor}: ${doctor.name}`}
       style={({ pressed }) => [
         {
           flexDirection: "row",
@@ -618,7 +615,7 @@ function DoctorCard({ doctor }: { doctor: AssistantDoctor }) {
           justifyContent: "center",
         }}
       >
-        <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+        <Ionicons name={isRTL ? "arrow-back" : "arrow-forward"} size={16} color={colors.primary} />
       </View>
     </Pressable>
   )

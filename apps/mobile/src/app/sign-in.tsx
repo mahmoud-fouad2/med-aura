@@ -12,6 +12,7 @@ import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card } from "../components/ui"
+import { Field, FormError, inputStyle } from "../components/form"
 import { brandAssets, Logo } from "../components/brand"
 import { GoogleGlyph } from "../components/google-glyph"
 import { authClient } from "../lib/auth-client"
@@ -36,9 +37,6 @@ export default function SignIn() {
     if (loading) return
     setError(null)
     setLoading(true)
-    // Record the choice before the session lands, so the boot gate honours it
-    // on the next cold start.
-    await setRememberMe(remember).catch(() => undefined)
     const { error } = await authClient.signIn.email({ email, password })
     setLoading(false)
     if (error) {
@@ -50,6 +48,7 @@ export default function SignIn() {
       )
       return
     }
+    await setRememberMe(remember).catch(() => undefined)
     void registerForPushNotifications()
     router.replace("/(tabs)")
   }
@@ -58,7 +57,6 @@ export default function SignIn() {
     if (googleLoading) return
     setError(null)
     setGoogleLoading(true)
-    await setRememberMe(remember).catch(() => undefined)
     // The Expo plugin opens an in-app browser tab for the OAuth round trip —
     // but only auto-closes and hands control back to the app once it sees a
     // navigation to `callbackURL`. Without it, the browser has nothing to
@@ -70,6 +68,7 @@ export default function SignIn() {
       setError(t.auth.genericError)
       return
     }
+    await setRememberMe(remember).catch(() => undefined)
     // Google never collects a phone/country — a first-time sign-up detours
     // through the same completion screen the email flow fills right after
     // signUp.email(), just triggered here instead.
@@ -136,6 +135,8 @@ export default function SignIn() {
               />
               <Pressable
                 onPress={() => setShowPassword((v) => !v)}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? t.password.hide : t.password.show}
                 hitSlop={10}
                 style={{ position: "absolute", end: 12, top: 12 }}
               >
@@ -148,19 +149,7 @@ export default function SignIn() {
             </View>
           </Field>
 
-          {error ? (
-            <View
-              style={{
-                backgroundColor: colors.dangerSoft,
-                borderRadius: radius.md,
-                padding: spacing.md,
-              }}
-            >
-              <AppText variant="sub" color={colors.danger}>
-                {error}
-              </AppText>
-            </View>
-          ) : null}
+          {error ? <FormError message={error} /> : null}
 
           {/* Remember-me sits opposite the forgot link, both above the CTA. */}
           <View
@@ -190,7 +179,7 @@ export default function SignIn() {
                 }}
               >
                 {remember ? (
-                  <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={15} color={colors.onPrimary} />
                 ) : null}
               </View>
               <AppText variant="sub" color={colors.textMuted}>
@@ -236,7 +225,7 @@ export default function SignIn() {
             borderRadius: radius.md,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: colors.card,
             opacity: googleLoading ? 0.6 : 1,
             ...shadows.card,
           }}
@@ -268,38 +257,3 @@ export default function SignIn() {
     </KeyboardAvoidingView>
   )
 }
-
-export function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string
-  hint?: string
-  children: React.ReactNode
-}) {
-  return (
-    <View style={{ gap: 6 }}>
-      <AppText variant="sub" weight="medium">
-        {label}
-      </AppText>
-      {hint ? (
-        <AppText variant="caption" color={colors.textFaint}>
-          {hint}
-        </AppText>
-      ) : null}
-      {children}
-    </View>
-  )
-}
-
-export const inputStyle = {
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: radius.md,
-  paddingHorizontal: 14,
-  paddingVertical: 12,
-  fontSize: 15,
-  color: colors.text,
-  backgroundColor: "#FFFFFF",
-} as const

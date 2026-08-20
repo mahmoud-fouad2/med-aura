@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm"
+import { desc, eq, inArray, sql } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import {
   payment,
@@ -53,6 +53,32 @@ export async function listPayments(limit = 60): Promise<FinancePaymentRow[]> {
     .innerJoin(userT, eq(payment.payerUserId, userT.id))
     .leftJoin(aestheticCase, eq(payment.caseId, aestheticCase.id))
     .leftJoin(procedureT, eq(aestheticCase.procedureId, procedureT.id))
+    .orderBy(desc(payment.createdAt))
+    .limit(limit)
+}
+
+export async function listPendingPayments(limit = 20): Promise<FinancePaymentRow[]> {
+  if (!isDbConfigured) return []
+  return db
+    .select({
+      id: payment.id,
+      reference: payment.reference,
+      purpose: payment.purpose,
+      status: payment.status,
+      amount: payment.amount,
+      currency: payment.currency,
+      provider: payment.provider,
+      payerName: userT.name,
+      caseReference: aestheticCase.reference,
+      procedureName: procedureT.nameAr,
+      createdAt: payment.createdAt,
+      paidAt: payment.paidAt,
+    })
+    .from(payment)
+    .innerJoin(userT, eq(payment.payerUserId, userT.id))
+    .leftJoin(aestheticCase, eq(payment.caseId, aestheticCase.id))
+    .leftJoin(procedureT, eq(aestheticCase.procedureId, procedureT.id))
+    .where(inArray(payment.status, ["CREATED", "PENDING", "REQUIRES_ACTION"]))
     .orderBy(desc(payment.createdAt))
     .limit(limit)
 }

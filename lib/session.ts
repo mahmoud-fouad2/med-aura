@@ -1,5 +1,6 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { cache } from "react"
 import { auth } from "@/lib/auth"
 import { unauthorized, forbidden } from "@/lib/errors"
 import {
@@ -20,7 +21,7 @@ export type SessionUser = {
   locale?: string
 }
 
-export async function getSession() {
+export const getSession = cache(async function getSession() {
   try {
     return await auth.api.getSession({ headers: await headers() })
   } catch (err) {
@@ -34,23 +35,23 @@ export async function getSession() {
     }
     return null
   }
-}
+})
 
-async function getRawSessionUser(): Promise<SessionUser | null> {
+const getRawSessionUser = cache(async function getRawSessionUser(): Promise<SessionUser | null> {
   const session = await getSession()
   return (session?.user as SessionUser | undefined) ?? null
-}
+})
 
 /**
  * A disabled/suspended account keeps a valid Better Auth session (we don't
  * force-expire it here) but must be treated as signed-out everywhere —
  * every protected page and server action funnels through this function.
  */
-export async function getCurrentUser(): Promise<SessionUser | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<SessionUser | null> {
   const user = await getRawSessionUser()
   if (user && user.status && user.status !== "active") return null
   return user
-}
+})
 
 /** For server actions / route handlers: throw if not signed in. */
 export async function requireUser(): Promise<SessionUser> {
@@ -100,8 +101,8 @@ export async function requirePermissionPage(
   return user
 }
 
-export async function currentUserRoles(): Promise<RoleKey[]> {
+export const currentUserRoles = cache(async function currentUserRoles(): Promise<RoleKey[]> {
   const user = await getCurrentUser()
   if (!user) return []
   return getUserRoles(user.id)
-}
+})

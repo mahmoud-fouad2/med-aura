@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card, ChevronBack } from "../../components/ui"
+import { Field, inputStyle } from "../../components/form"
 import { api, type TicketCategory } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { queryKeys } from "../../lib/query-keys"
 import { colors, radius, spacing } from "../../theme"
-import { Field, inputStyle } from "../sign-in"
 
 const CATEGORIES: TicketCategory[] = ["ACCOUNT", "BOOKING", "BILLING", "MEDICAL", "TECHNICAL", "OTHER"]
 
@@ -28,7 +29,7 @@ export default function NewTicket() {
   const create = useMutation({
     mutationFn: () => api.createTicket({ subject: subject.trim(), category, body: body.trim() }),
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["tickets"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tickets })
       router.replace(`/support/${data.ticketId}`)
     },
     onError: () => setError(t.tickets.createError),

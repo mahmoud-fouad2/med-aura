@@ -15,12 +15,12 @@ export default async function SignUpPage({
   const user = await getCurrentUser()
   const { next, type } = await searchParams
   if (user) redirect(next || "/dashboard")
-  const { t } = await getI18n()
-  const initialType =
-    type === "doctor" || type === "patient" ? type : undefined
+  const { locale, t } = await getI18n()
+  const initialType = type === "doctor" || type === "patient" ? type : undefined
   return (
     <AuthForm
       mode="sign-up"
+      locale={locale}
       dict={t.auth}
       home={t.home}
       authShell={t.authShell}

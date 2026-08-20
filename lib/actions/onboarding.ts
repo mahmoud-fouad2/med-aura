@@ -31,7 +31,7 @@ export type SignupProfileInput = z.infer<typeof SignupProfileSchema>
 
 export type SignupProfileResult =
   | { ok: true; next: string }
-  | { ok: false; error: string }
+  | { ok: false; error: string; code: string }
 
 /**
  * Completes a fresh sign-up with the profile details collected on the form
@@ -48,6 +48,7 @@ export async function completeSignupProfile(
       return {
         ok: false,
         error: parsed.error.issues[0]?.message ?? "بيانات غير مكتملة",
+        code: "VALIDATION",
       }
     }
     const { accountType, residenceCountry, city } = parsed.data
@@ -85,14 +86,17 @@ export async function completeSignupProfile(
 
       await tx.update(user).set({ phone, country: residenceCountry }).where(eq(user.id, me.id))
 
-      await writeAudit({
-        action: "signup.profile_completed",
-        actorUserId: me.id,
-        entityType: "patient_profile",
-        entityId: me.id,
-        metadata: { accountType, residenceCountry },
-        ...meta,
-      }, tx)
+      await writeAudit(
+        {
+          action: "signup.profile_completed",
+          actorUserId: me.id,
+          entityType: "patient_profile",
+          entityId: me.id,
+          metadata: { accountType, residenceCountry },
+          ...meta,
+        },
+        tx,
+      )
     })
 
     return {
@@ -103,11 +107,12 @@ export async function completeSignupProfile(
     const safe = toSafeError(err)
     logger.error("signup profile completion failed", {
       code: safe.code,
-      error: err instanceof Error ? err.message : String(err),
+      errorName: err instanceof Error ? err.name : "UnknownError",
     })
     return {
       ok: false,
       error: safe.userMessage,
+      code: safe.code,
     }
   }
 }

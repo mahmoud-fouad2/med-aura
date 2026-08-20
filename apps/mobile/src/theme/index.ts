@@ -10,11 +10,16 @@ export const colors = {
   ink: "#1A1740",
   gold: "#C9A24B",
   goldSoft: "#F7EFDC",
+  goldHalo: "rgba(201, 162, 75, 0.14)",
+  goldHaloStrong: "rgba(201, 162, 75, 0.22)",
+  onPrimary: "#FFFFFF",
 
   background: "#FFFCF7",
   card: "#FFFFFF",
   border: "#EAE6F2",
   overlay: "rgba(26, 23, 64, 0.45)",
+  videoControlActive: "rgba(255,255,255,0.22)",
+  videoControlIdle: "rgba(255,255,255,0.10)",
 
   text: "#241F49",
   textMuted: "#6B6884",
@@ -41,10 +46,10 @@ export const spacing = {
 } as const
 
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 22,
+  sm: 6,
+  md: 8,
+  lg: 10,
+  xl: 12,
   full: 999,
 } as const
 
@@ -61,17 +66,17 @@ export const type = {
 export const shadows = {
   card: {
     shadowColor: "#31206B",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   raised: {
     shadowColor: "#31206B",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.14,
-    shadowRadius: 22,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.11,
+    shadowRadius: 14,
+    elevation: 4,
   },
 } as const
 

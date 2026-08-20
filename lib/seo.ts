@@ -1,5 +1,11 @@
 import type { Metadata } from "next"
 import { appUrl } from "@/lib/env"
+import {
+  categoryImage,
+  procedureImage,
+} from "@/lib/public-media"
+
+export { PROCEDURE_IMAGE_SLUGS } from "@/lib/public-media"
 
 export const SITE_NAME = "Med Aura"
 export const SITE_NAME_AR = "مد أورا"
@@ -15,33 +21,6 @@ export type GeoPoint = {
   latitude: number
   longitude: number
 }
-
-const SERVICE_IMAGE_VERSION = "20260815"
-
-const serviceAsset = (name: string) => `/demo-services/${name}.png?v=${SERVICE_IMAGE_VERSION}`
-const procedureAsset = (slug: string) => `/service-images/${slug}.jpg?v=${SERVICE_IMAGE_VERSION}`
-
-const CATEGORY_IMAGES: Record<string, string> = {
-  "face-neck": serviceAsset("service-face-neck"),
-  breast: serviceAsset("aesthetic-treatment-room"),
-  body: serviceAsset("service-body-contouring"),
-  skin: serviceAsset("service-skin-nonsurgical"),
-  hair: serviceAsset("service-hair-restoration"),
-  dental: serviceAsset("service-dental-smile"),
-}
-
-export const PROCEDURE_IMAGE_SLUGS = [
-  "rhinoplasty", "facelift", "blepharoplasty", "otoplasty", "chin-augmentation",
-  "neck-lift", "brow-lift", "breast-augmentation", "breast-lift", "breast-reduction",
-  "liposuction", "tummy-tuck", "brazilian-butt-lift", "arm-lift", "thigh-lift",
-  "mommy-makeover", "botox", "dermal-fillers", "chemical-peel", "laser-hair-removal",
-  "microneedling", "thread-lift", "hair-transplant", "prp-hair", "veneers",
-  "teeth-whitening", "smile-makeover",
-] as const
-
-const PROCEDURE_IMAGES: Record<string, string> = Object.fromEntries(
-  PROCEDURE_IMAGE_SLUGS.map((slug) => [slug, procedureAsset(slug)]),
-)
 
 const COUNTRY_GEO: Record<string, GeoPoint> = {
   AE: { nameAr: "الإمارات", nameEn: "United Arab Emirates", latitude: 23.4241, longitude: 53.8478 },
@@ -61,16 +40,14 @@ export function absoluteUrl(path = "/"): string {
 }
 
 export function serviceImageForCategory(slug: string | null | undefined): string {
-  if (!slug) return serviceAsset("aesthetic-treatment-room")
-  return CATEGORY_IMAGES[slug] ?? serviceAsset("aesthetic-treatment-room")
+  return categoryImage(slug)
 }
 
 export function serviceImageForProcedure(
   procedureSlug: string | null | undefined,
   categorySlug: string | null | undefined,
 ): string {
-  if (procedureSlug && PROCEDURE_IMAGES[procedureSlug]) return PROCEDURE_IMAGES[procedureSlug]
-  return serviceImageForCategory(categorySlug)
+  return procedureImage(procedureSlug, categorySlug)
 }
 
 export function geoForCountry(code: string | null | undefined): GeoPoint | undefined {
@@ -110,11 +87,11 @@ export function buildPageMetadata({
     description,
     alternates: {
       canonical: url,
-      // Content is served from one URL regardless of language (cookie-based
-      // switching, not path-based) — only x-default is a true signal here.
-      // Claiming ar/en both live at this same URL would tell crawlers two
-      // distinct localized versions exist when they don't.
-      languages: { "x-default": url },
+      languages: {
+        ar: absoluteUrl(`/ar${path === "/" ? "" : path}`),
+        en: absoluteUrl(`/en${path === "/" ? "" : path}`),
+        "x-default": url,
+      },
     },
     openGraph: {
       title,

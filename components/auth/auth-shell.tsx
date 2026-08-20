@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { ShieldCheck, FileLock2, Star, ArrowRight } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import type { Dictionary } from "@/lib/i18n"
@@ -18,18 +19,23 @@ export function AuthShell({
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       {/* brand panel */}
-      <aside className="relative hidden overflow-hidden bg-gradient-to-br from-[oklch(0.24_0.05_280)] via-[oklch(0.3_0.1_290)] to-[oklch(0.42_0.16_300)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="pointer-events-none absolute -top-24 -left-20 size-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -right-16 size-96 rounded-full bg-white/10 blur-3xl" />
+      <aside className="bg-foreground relative hidden overflow-hidden p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <Image
+          src="/hero-medaura-consultation.png"
+          alt=""
+          fill
+          priority
+          className="object-cover object-center opacity-35"
+          sizes="50vw"
+        />
+        <div className="bg-foreground/60 absolute inset-0" />
 
         <Link href="/" className="relative flex items-center gap-2.5">
           <Logo className="h-10 brightness-0 invert" />
         </Link>
 
         <div className="relative max-w-md space-y-6">
-          <h2 className="font-heading text-3xl font-bold leading-tight">
-            {home.heroTitle}
-          </h2>
+          <h2 className="font-heading text-3xl leading-tight font-bold">{home.heroTitle}</h2>
           <p className="text-white/80">{home.heroSubtitle}</p>
           <ul className="space-y-3 text-sm">
             <Bullet icon={ShieldCheck} text={authShell.licenseCheck} />
@@ -48,7 +54,7 @@ export function AuthShell({
       </aside>
 
       {/* form panel */}
-      <main className="flex items-center justify-center bg-background px-4 py-12">
+      <main className="bg-background flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
           <Link href="/" className="mb-8 flex items-center justify-center lg:hidden">
             <Logo />

@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from "react"
 import {
   Dimensions,
   FlatList,
-  I18nManager,
   Pressable,
   View,
   type ViewToken,
@@ -31,7 +30,7 @@ const SLIDE_ART = [
 ] as const
 
 export default function Onboarding() {
-  const { t } = useI18n()
+  const { t, isRTL } = useI18n()
   const insets = useSafeAreaInsets()
   const listRef = useRef<FlatList>(null)
   const [index, setIndex] = useState(0)
@@ -165,7 +164,7 @@ export default function Onboarding() {
               {/* "Back" points at the previous slide, which sits to the right
                   in Arabic and to the left in English. */}
               <Ionicons
-                name={I18nManager.isRTL ? "arrow-forward" : "arrow-back"}
+                name={isRTL ? "arrow-forward" : "arrow-back"}
                 size={20}
                 color={colors.textMuted}
               />

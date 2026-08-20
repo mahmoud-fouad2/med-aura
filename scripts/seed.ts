@@ -65,17 +65,11 @@ async function seedRolesAndPermissions() {
 
   for (const roleKey of Object.values(ROLES) as RoleKey[]) {
     const roleId = roleByKey.get(roleKey)!
-    const perms =
-      roleKey === ROLES.SUPER_ADMIN
-        ? permKeys
-        : ROLE_PERMISSIONS[roleKey] ?? []
+    const perms = roleKey === ROLES.SUPER_ADMIN ? permKeys : (ROLE_PERMISSIONS[roleKey] ?? [])
     for (const pk of perms) {
       const permId = permByKey.get(pk)
       if (!permId) continue
-      await db
-        .insert(rolePermission)
-        .values({ roleId, permissionId: permId })
-        .onConflictDoNothing()
+      await db.insert(rolePermission).values({ roleId, permissionId: permId }).onConflictDoNothing()
     }
   }
   console.log(`✓ roles (${allRoles.length}) + permissions (${allPerms.length})`)
@@ -130,12 +124,54 @@ async function seedGeography() {
 
 async function seedCatalog() {
   const categories = [
-    { slug: "face-neck", nameAr: "الوجه والرقبة", nameEn: "Face & Neck", descriptionAr: "إجراءات تجميل الوجه والرقبة بمختلف أنواعها.", icon: "Smile", sortOrder: 1 },
-    { slug: "breast", nameAr: "الثدي", nameEn: "Breast", descriptionAr: "تكبير وشد وتصغير الثدي بإشراف طبي معتمد.", icon: "Gem", sortOrder: 2 },
-    { slug: "body", nameAr: "الجسم", nameEn: "Body", descriptionAr: "نحت وشد الجسم وإجراءات تحسين القوام.", icon: "Activity", sortOrder: 3 },
-    { slug: "skin", nameAr: "البشرة والإجراءات غير الجراحية", nameEn: "Skin & Non-surgical", descriptionAr: "بوتوكس وفيلر وعناية بالبشرة دون جراحة.", icon: "Sparkles", sortOrder: 4 },
-    { slug: "hair", nameAr: "الشعر", nameEn: "Hair", descriptionAr: "زراعة الشعر وعلاجات تساقطه.", icon: "Scissors", sortOrder: 5 },
-    { slug: "dental", nameAr: "الأسنان وابتسامة هوليوود", nameEn: "Dental & Smile Design", descriptionAr: "تجميل الأسنان وتصميم الابتسامة.", icon: "SmilePlus", sortOrder: 6 },
+    {
+      slug: "face-neck",
+      nameAr: "الوجه والرقبة",
+      nameEn: "Face & Neck",
+      descriptionAr: "إجراءات تجميل الوجه والرقبة بمختلف أنواعها.",
+      icon: "Smile",
+      sortOrder: 1,
+    },
+    {
+      slug: "breast",
+      nameAr: "الثدي",
+      nameEn: "Breast",
+      descriptionAr: "تكبير وشد وتصغير الثدي بإشراف طبي معتمد.",
+      icon: "Gem",
+      sortOrder: 2,
+    },
+    {
+      slug: "body",
+      nameAr: "الجسم",
+      nameEn: "Body",
+      descriptionAr: "نحت وشد الجسم وإجراءات تحسين القوام.",
+      icon: "Activity",
+      sortOrder: 3,
+    },
+    {
+      slug: "skin",
+      nameAr: "البشرة والإجراءات غير الجراحية",
+      nameEn: "Skin & Non-surgical",
+      descriptionAr: "بوتوكس وفيلر وعناية بالبشرة دون جراحة.",
+      icon: "Sparkles",
+      sortOrder: 4,
+    },
+    {
+      slug: "hair",
+      nameAr: "الشعر",
+      nameEn: "Hair",
+      descriptionAr: "زراعة الشعر وعلاجات تساقطه.",
+      icon: "Scissors",
+      sortOrder: 5,
+    },
+    {
+      slug: "dental",
+      nameAr: "الأسنان وابتسامة هوليوود",
+      nameEn: "Dental & Smile Design",
+      descriptionAr: "تجميل الأسنان وتصميم الابتسامة.",
+      icon: "SmilePlus",
+      sortOrder: 6,
+    },
   ]
   for (const c of categories) {
     await db.insert(procedureCategory).values(c).onConflictDoNothing()
@@ -145,38 +181,227 @@ async function seedCatalog() {
 
   const procedures = [
     // الوجه والرقبة
-    { slug: "rhinoplasty", cat: "face-neck", nameAr: "تجميل الأنف", nameEn: "Rhinoplasty", isSurgical: true, recoveryDays: 14 },
-    { slug: "facelift", cat: "face-neck", nameAr: "شد الوجه", nameEn: "Facelift", isSurgical: true, recoveryDays: 21 },
-    { slug: "blepharoplasty", cat: "face-neck", nameAr: "شد الجفون", nameEn: "Eyelid surgery", isSurgical: true, recoveryDays: 10 },
-    { slug: "otoplasty", cat: "face-neck", nameAr: "تجميل الأذن", nameEn: "Otoplasty", isSurgical: true, recoveryDays: 7 },
-    { slug: "chin-augmentation", cat: "face-neck", nameAr: "تجميل الذقن", nameEn: "Chin augmentation", isSurgical: true, recoveryDays: 10 },
-    { slug: "neck-lift", cat: "face-neck", nameAr: "شد الرقبة", nameEn: "Neck lift", isSurgical: true, recoveryDays: 14 },
-    { slug: "brow-lift", cat: "face-neck", nameAr: "شد الحاجب", nameEn: "Brow lift", isSurgical: true, recoveryDays: 10 },
+    {
+      slug: "rhinoplasty",
+      cat: "face-neck",
+      nameAr: "تجميل الأنف",
+      nameEn: "Rhinoplasty",
+      isSurgical: true,
+      recoveryDays: 14,
+    },
+    {
+      slug: "facelift",
+      cat: "face-neck",
+      nameAr: "شد الوجه",
+      nameEn: "Facelift",
+      isSurgical: true,
+      recoveryDays: 21,
+    },
+    {
+      slug: "blepharoplasty",
+      cat: "face-neck",
+      nameAr: "شد الجفون",
+      nameEn: "Eyelid surgery",
+      isSurgical: true,
+      recoveryDays: 10,
+    },
+    {
+      slug: "otoplasty",
+      cat: "face-neck",
+      nameAr: "تجميل الأذن",
+      nameEn: "Otoplasty",
+      isSurgical: true,
+      recoveryDays: 7,
+    },
+    {
+      slug: "chin-augmentation",
+      cat: "face-neck",
+      nameAr: "تجميل الذقن",
+      nameEn: "Chin augmentation",
+      isSurgical: true,
+      recoveryDays: 10,
+    },
+    {
+      slug: "neck-lift",
+      cat: "face-neck",
+      nameAr: "شد الرقبة",
+      nameEn: "Neck lift",
+      isSurgical: true,
+      recoveryDays: 14,
+    },
+    {
+      slug: "brow-lift",
+      cat: "face-neck",
+      nameAr: "شد الحاجب",
+      nameEn: "Brow lift",
+      isSurgical: true,
+      recoveryDays: 10,
+    },
     // الثدي
-    { slug: "breast-augmentation", cat: "breast", nameAr: "تكبير الثدي", nameEn: "Breast augmentation", isSurgical: true, recoveryDays: 21 },
-    { slug: "breast-lift", cat: "breast", nameAr: "شد الثدي", nameEn: "Breast lift", isSurgical: true, recoveryDays: 21 },
-    { slug: "breast-reduction", cat: "breast", nameAr: "تصغير الثدي", nameEn: "Breast reduction", isSurgical: true, recoveryDays: 21 },
+    {
+      slug: "breast-augmentation",
+      cat: "breast",
+      nameAr: "تكبير الثدي",
+      nameEn: "Breast augmentation",
+      isSurgical: true,
+      recoveryDays: 21,
+    },
+    {
+      slug: "breast-lift",
+      cat: "breast",
+      nameAr: "شد الثدي",
+      nameEn: "Breast lift",
+      isSurgical: true,
+      recoveryDays: 21,
+    },
+    {
+      slug: "breast-reduction",
+      cat: "breast",
+      nameAr: "تصغير الثدي",
+      nameEn: "Breast reduction",
+      isSurgical: true,
+      recoveryDays: 21,
+    },
     // الجسم
-    { slug: "liposuction", cat: "body", nameAr: "شفط الدهون", nameEn: "Liposuction", isSurgical: true, recoveryDays: 14 },
-    { slug: "tummy-tuck", cat: "body", nameAr: "شد البطن", nameEn: "Tummy tuck", isSurgical: true, recoveryDays: 28 },
-    { slug: "brazilian-butt-lift", cat: "body", nameAr: "شد وتكبير الأرداف", nameEn: "Brazilian butt lift", isSurgical: true, recoveryDays: 21 },
-    { slug: "arm-lift", cat: "body", nameAr: "شد الذراعين", nameEn: "Arm lift", isSurgical: true, recoveryDays: 14 },
-    { slug: "thigh-lift", cat: "body", nameAr: "شد الفخذين", nameEn: "Thigh lift", isSurgical: true, recoveryDays: 21 },
-    { slug: "mommy-makeover", cat: "body", nameAr: "إجراء الأمومة الشامل", nameEn: "Mommy makeover", isSurgical: true, recoveryDays: 28 },
+    {
+      slug: "liposuction",
+      cat: "body",
+      nameAr: "شفط الدهون",
+      nameEn: "Liposuction",
+      isSurgical: true,
+      recoveryDays: 14,
+    },
+    {
+      slug: "tummy-tuck",
+      cat: "body",
+      nameAr: "شد البطن",
+      nameEn: "Tummy tuck",
+      isSurgical: true,
+      recoveryDays: 28,
+    },
+    {
+      slug: "brazilian-butt-lift",
+      cat: "body",
+      nameAr: "شد وتكبير الأرداف",
+      nameEn: "Brazilian butt lift",
+      isSurgical: true,
+      recoveryDays: 21,
+    },
+    {
+      slug: "arm-lift",
+      cat: "body",
+      nameAr: "شد الذراعين",
+      nameEn: "Arm lift",
+      isSurgical: true,
+      recoveryDays: 14,
+    },
+    {
+      slug: "thigh-lift",
+      cat: "body",
+      nameAr: "شد الفخذين",
+      nameEn: "Thigh lift",
+      isSurgical: true,
+      recoveryDays: 21,
+    },
+    {
+      slug: "mommy-makeover",
+      cat: "body",
+      nameAr: "إجراء الأمومة الشامل",
+      nameEn: "Mommy makeover",
+      isSurgical: true,
+      recoveryDays: 28,
+    },
     // البشرة وغير الجراحي
-    { slug: "botox", cat: "skin", nameAr: "البوتوكس", nameEn: "Botox", isSurgical: false, recoveryDays: 0 },
-    { slug: "dermal-fillers", cat: "skin", nameAr: "الفيلر", nameEn: "Dermal fillers", isSurgical: false, recoveryDays: 0 },
-    { slug: "chemical-peel", cat: "skin", nameAr: "التقشير الكيميائي", nameEn: "Chemical peel", isSurgical: false, recoveryDays: 3 },
-    { slug: "laser-hair-removal", cat: "skin", nameAr: "إزالة الشعر بالليزر", nameEn: "Laser hair removal", isSurgical: false, recoveryDays: 0 },
-    { slug: "microneedling", cat: "skin", nameAr: "الإبر الدقيقة", nameEn: "Microneedling", isSurgical: false, recoveryDays: 2 },
-    { slug: "thread-lift", cat: "skin", nameAr: "شد الخيوط", nameEn: "Thread lift", isSurgical: false, recoveryDays: 5 },
+    {
+      slug: "botox",
+      cat: "skin",
+      nameAr: "البوتوكس",
+      nameEn: "Botox",
+      isSurgical: false,
+      recoveryDays: 0,
+    },
+    {
+      slug: "dermal-fillers",
+      cat: "skin",
+      nameAr: "الفيلر",
+      nameEn: "Dermal fillers",
+      isSurgical: false,
+      recoveryDays: 0,
+    },
+    {
+      slug: "chemical-peel",
+      cat: "skin",
+      nameAr: "التقشير الكيميائي",
+      nameEn: "Chemical peel",
+      isSurgical: false,
+      recoveryDays: 3,
+    },
+    {
+      slug: "laser-hair-removal",
+      cat: "skin",
+      nameAr: "إزالة الشعر بالليزر",
+      nameEn: "Laser hair removal",
+      isSurgical: false,
+      recoveryDays: 0,
+    },
+    {
+      slug: "microneedling",
+      cat: "skin",
+      nameAr: "الإبر الدقيقة",
+      nameEn: "Microneedling",
+      isSurgical: false,
+      recoveryDays: 2,
+    },
+    {
+      slug: "thread-lift",
+      cat: "skin",
+      nameAr: "شد الخيوط",
+      nameEn: "Thread lift",
+      isSurgical: false,
+      recoveryDays: 5,
+    },
     // الشعر
-    { slug: "hair-transplant", cat: "hair", nameAr: "زراعة الشعر", nameEn: "Hair transplant", isSurgical: true, recoveryDays: 10 },
-    { slug: "prp-hair", cat: "hair", nameAr: "حقن البلازما للشعر", nameEn: "PRP hair treatment", isSurgical: false, recoveryDays: 1 },
+    {
+      slug: "hair-transplant",
+      cat: "hair",
+      nameAr: "زراعة الشعر",
+      nameEn: "Hair transplant",
+      isSurgical: true,
+      recoveryDays: 10,
+    },
+    {
+      slug: "prp-hair",
+      cat: "hair",
+      nameAr: "حقن البلازما للشعر",
+      nameEn: "PRP hair treatment",
+      isSurgical: false,
+      recoveryDays: 1,
+    },
     // الأسنان وابتسامة هوليوود
-    { slug: "veneers", cat: "dental", nameAr: "فينير الأسنان", nameEn: "Dental veneers", isSurgical: false, recoveryDays: 3 },
-    { slug: "teeth-whitening", cat: "dental", nameAr: "تبييض الأسنان", nameEn: "Teeth whitening", isSurgical: false, recoveryDays: 0 },
-    { slug: "smile-makeover", cat: "dental", nameAr: "تصميم الابتسامة", nameEn: "Smile makeover", isSurgical: false, recoveryDays: 5 },
+    {
+      slug: "veneers",
+      cat: "dental",
+      nameAr: "فينير الأسنان",
+      nameEn: "Dental veneers",
+      isSurgical: false,
+      recoveryDays: 3,
+    },
+    {
+      slug: "teeth-whitening",
+      cat: "dental",
+      nameAr: "تبييض الأسنان",
+      nameEn: "Teeth whitening",
+      isSurgical: false,
+      recoveryDays: 0,
+    },
+    {
+      slug: "smile-makeover",
+      cat: "dental",
+      nameAr: "تصميم الابتسامة",
+      nameEn: "Smile makeover",
+      isSurgical: false,
+      recoveryDays: 5,
+    },
   ]
   for (const [i, p] of procedures.entries()) {
     await db
@@ -203,9 +428,7 @@ async function ensureUser(
   roleKey: RoleKey,
   isTest = false,
 ): Promise<string> {
-  let row = (
-    await db.select().from(userT).where(eq(userT.email, email)).limit(1)
-  )[0]
+  let row = (await db.select().from(userT).where(eq(userT.email, email)).limit(1))[0]
 
   if (!row) {
     try {
@@ -215,9 +438,7 @@ async function ensureUser(
     } catch (err) {
       console.warn(`  signup for ${email} threw (continuing):`, (err as Error).message)
     }
-    row = (
-      await db.select().from(userT).where(eq(userT.email, email)).limit(1)
-    )[0]
+    row = (await db.select().from(userT).where(eq(userT.email, email)).limit(1))[0]
   }
   if (!row) throw new Error(`failed to create user ${email}`)
 
@@ -238,10 +459,7 @@ async function ensureUser(
       .delete(userRole)
       .where(and(eq(userRole.userId, row.id), eq(userRole.roleId, patientRoleId)))
   }
-  await db
-    .insert(userRole)
-    .values({ userId: row.id, roleId: targetRoleId })
-    .onConflictDoNothing()
+  await db.insert(userRole).values({ userId: row.id, roleId: targetRoleId }).onConflictDoNothing()
 
   return row.id
 }
@@ -250,13 +468,11 @@ const TEST_EMAIL_MIGRATIONS = [
   { oldEmail: "admin@medaura.local", newEmail: "admin@medauraworld.com", isTest: false },
   { oldEmail: "patient@medaura.local", newEmail: "patient@medauraworld.com", isTest: true },
   { oldEmail: "doctor@medaura.local", newEmail: "doctor@medauraworld.com", isTest: true },
-  { oldEmail: "doctor2@medaura.local", newEmail: "doctor2@medauraworld.com", isTest: true },
-  { oldEmail: "doctor3@medaura.local", newEmail: "doctor3@medauraworld.com", isTest: true },
 ]
 
 /**
  * Renames the seed/demo accounts' emails in place (same user id, same
- * password, same role) and marks them isTest — never creates a row, never
+ * password, same role) and applies the expected isTest flag. It never creates a row or
  * merges two different accounts. Exported so it can run standalone against
  * an existing database without also running the rest of seedDemo() (which
  * would touch centers/licenses/availability — more surface than a pure
@@ -310,6 +526,7 @@ type DemoDoctorInput = {
   consultationFee: string
   currency: string
   licenseNumber: string
+  licenseAuthority: string
   centerSlug: string
   centerLegalName: string
   centerName: string
@@ -331,9 +548,7 @@ async function seedDemoDoctorPhoto(fileName: string): Promise<string | null> {
   try {
     const filePath = path.join(process.cwd(), "public", "demo-doctors", fileName)
     const buffer = await readFile(filePath)
-    const contentType = fileName.toLowerCase().endsWith(".png")
-      ? "image/png"
-      : "image/jpeg"
+    const contentType = fileName.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg"
     await putObjectBuffer(key, buffer, contentType)
     return key
   } catch (err) {
@@ -350,14 +565,17 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
     await db.select({ id: roleT.id }).from(roleT).where(eq(roleT.key, ROLES.CENTER_OWNER)).limit(1)
   )[0]
   if (centerOwnerRole) {
-    await db.insert(userRole).values({ userId: doctorUserId, roleId: centerOwnerRole.id }).onConflictDoNothing()
+    await db
+      .insert(userRole)
+      .values({ userId: doctorUserId, roleId: centerOwnerRole.id })
+      .onConflictDoNothing()
   }
 
   let centerRow = (
     await db.select().from(center).where(eq(center.slug, input.centerSlug)).limit(1)
   )[0]
   if (!centerRow) {
-    centerRow = (
+    const createdCenter = (
       await db
         .insert(center)
         .values({
@@ -375,7 +593,21 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
         })
         .returning()
     )[0]
+    if (!createdCenter) throw new Error("Demo center creation did not return a row")
+    centerRow = createdCenter
   }
+  await db
+    .update(center)
+    .set({
+      ownerId: doctorUserId,
+      legalName: input.centerLegalName,
+      name: input.centerName,
+      description: input.centerDescription,
+      country: input.country,
+      city: input.city,
+      languages: ["ar", "en"],
+    })
+    .where(eq(center.id, centerRow.id))
   await db
     .insert(centerStaff)
     .values({ centerId: centerRow.id, userId: doctorUserId, role: "owner" })
@@ -385,7 +617,7 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
     await db.select().from(doctorProfile).where(eq(doctorProfile.slug, input.doctorSlug)).limit(1)
   )[0]
   if (!doc) {
-    doc = (
+    const createdDoctor = (
       await db
         .insert(doctorProfile)
         .values({
@@ -409,12 +641,14 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
         })
         .returning()
     )[0]
+    if (!createdDoctor) throw new Error("Demo doctor creation did not return a row")
+    doc = createdDoctor
 
     await db.insert(doctorLicense).values({
       doctorId: doc.id,
       numberEncrypted: encryptString(input.licenseNumber),
       numberLast4: last4(input.licenseNumber),
-      issuingAuthority: "الهيئة السعودية للتخصصات الصحية",
+      issuingAuthority: input.licenseAuthority,
       issueDate: "2019-01-01",
       expiryDate: "2030-12-31", // valid (future)
       status: "VALID",
@@ -428,7 +662,12 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
       if (pid)
         await db
           .insert(doctorProcedure)
-          .values({ doctorId: doc.id, procedureId: pid, priceFrom: "12000.00", currency: input.currency })
+          .values({
+            doctorId: doc.id,
+            procedureId: pid,
+            priceFrom: "12000.00",
+            currency: input.currency,
+          })
           .onConflictDoNothing()
     }
 
@@ -445,6 +684,27 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
       })
     }
   }
+
+  await db
+    .update(doctorProfile)
+    .set({
+      userId: doctorUserId,
+      centerId: centerRow.id,
+      name: input.name,
+      title: input.title,
+      bio: input.bio,
+      languages: ["ar", "en"],
+      country: input.country,
+      city: input.city,
+      yearsExperience: input.yearsExperience,
+      consultationFee: input.consultationFee,
+      currency: input.currency,
+    })
+    .where(eq(doctorProfile.id, doc.id))
+  await db
+    .update(doctorLicense)
+    .set({ issuingAuthority: input.licenseAuthority })
+    .where(eq(doctorLicense.doctorId, doc.id))
 
   // Placeholder photo — never overwrites a real upload (own or reseed).
   if (input.photoFileName && !doc.photoKey) {
@@ -480,10 +740,12 @@ async function seedUsersAndProviders() {
     consultationFee: "300.00",
     currency: "SAR",
     licenseNumber: "SA-PLS-44821",
+    licenseAuthority: "الهيئة السعودية للتخصصات الصحية",
     centerSlug: "noor-aesthetic-center",
     centerLegalName: "مركز نور للطب التجميلي",
     centerName: "مركز نور للتجميل",
-    centerDescription: "مركز عناية تجميلية حديث يجمع بين الاستشارة الدقيقة، تجهيزات آمنة، ومتابعة واضحة بعد الإجراء.",
+    centerDescription:
+      "مركز عناية تجميلية حديث يجمع بين الاستشارة الدقيقة، تجهيزات آمنة، ومتابعة واضحة بعد الإجراء.",
     procedureSlugs: ["rhinoplasty", "facelift", "botox", "dermal-fillers"],
     photoFileName: "dr-sara-alotaibi.jpg",
   })
@@ -500,6 +762,7 @@ async function seedUsersAndProviders() {
     consultationFee: "350.00",
     currency: "SAR",
     licenseNumber: "SA-PLS-51239",
+    licenseAuthority: "الهيئة السعودية للتخصصات الصحية",
     centerSlug: "amal-cosmetic-center",
     centerLegalName: "مركز الأمل للطب التجميلي",
     centerName: "مركز الأمل للتجميل",
@@ -520,10 +783,12 @@ async function seedUsersAndProviders() {
     consultationFee: "50.00",
     currency: "USD",
     licenseNumber: "TR-HT-88210",
+    licenseAuthority: "Turkish Ministry of Health",
     centerSlug: "istanbul-aesthetic-center",
     centerLegalName: "Istanbul Aesthetic Medical Center",
     centerName: "مركز إسطنبول للتجميل",
-    centerDescription: "مركز دولي معتمد لزراعة الشعر وجراحات التجميل، مناسب للمرضى الباحثين عن رحلة علاج واضحة.",
+    centerDescription:
+      "مركز دولي معتمد لزراعة الشعر وجراحات التجميل، مناسب للمرضى الباحثين عن رحلة علاج واضحة.",
     procedureSlugs: ["hair-transplant", "prp-hair", "rhinoplasty"],
     photoFileName: "dr-ahmet-yilmaz.jpg",
   })
@@ -568,16 +833,14 @@ async function seedUsersAndProviders() {
 }
 
 async function seedFaqs() {
-  const existing = await db.select({ id: faq.id }).from(faq).limit(1)
-  if (existing.length > 0) {
-    console.log("✓ faqs (already seeded)")
-    return
-  }
   const items = [
     {
       questionAr: "ما هي منصة Med Aura؟",
       answerAr:
         "منصة متخصصة حصريًا في التجميل الطبي، تربطك بأطباء ومراكز معتمدين وتدير رحلتك من البحث والاستشارة حتى المتابعة بعد الإجراء بأمان وموثوقية.",
+      questionEn: "What is Med Aura?",
+      answerEn:
+        "Med Aura is an aesthetic-care platform that connects patients with licensed doctors and centers and keeps consultation, planning, booking, and aftercare in one place.",
       category: "general",
       sortOrder: 1,
     },
@@ -585,6 +848,9 @@ async function seedFaqs() {
       questionAr: "كيف أضمن أن الطبيب معتمد؟",
       answerAr:
         "لا يظهر أي طبيب في نتائج البحث إلا بعد مراجعة فريق الاعتماد والتحقق من ترخيصه. وعند انتهاء صلاحية الترخيص يُخفى الطبيب تلقائيًا وتُمنع الحجوزات الجديدة معه.",
+      questionEn: "How do I know a doctor is licensed?",
+      answerEn:
+        "A doctor appears in public search only after credential review and verification of a valid, unexpired license. Profiles are removed from public results when that license is no longer valid.",
       category: "trust",
       sortOrder: 2,
     },
@@ -592,6 +858,9 @@ async function seedFaqs() {
       questionAr: "هل ملفاتي الطبية وصوري آمنة؟",
       answerAr:
         "نعم. تُخزَّن ملفاتك بشكل خاص وتُعرض عبر روابط مؤقتة فقط، ولا يطّلع عليها أي طبيب إلا بعد منحك إذنًا صريحًا لحالة محددة، ويمكنك سحب الإذن في أي وقت. ويُسجَّل كل اطّلاع على ملف طبي.",
+      questionEn: "Are my medical files and photos private?",
+      answerEn:
+        "Yes. Files are private and shared through temporary links. A doctor can access a case only after you grant permission, and access can be withdrawn and is recorded.",
       category: "privacy",
       sortOrder: 3,
     },
@@ -599,6 +868,9 @@ async function seedFaqs() {
       questionAr: "كيف تتم الاستشارة؟",
       answerAr:
         "تختار طبيبًا وموعدًا متاحًا، تنشئ حالتك وترفع صورك، تمنح الطبيب إذن الاطلاع، ثم تدفع رسوم الاستشارة. بعد تأكيد الدفع يظهر الموعد لدى الطرفين وتتم الاستشارة (فيديو أو حضوريًا).",
+      questionEn: "How does a consultation work?",
+      answerEn:
+        "Choose a doctor and an available time, create your case, upload the requested files, grant access, and complete payment. The confirmed appointment then appears for both you and the doctor.",
       category: "consultation",
       sortOrder: 4,
     },
@@ -606,6 +878,9 @@ async function seedFaqs() {
       questionAr: "متى يتم تأكيد العملية نهائيًا؟",
       answerAr:
         "لا يُعتمد الإجراء نهائيًا إلا بعد إجراء الاستشارة ومراجعة الطبيب واعتماده الطبي، وقبولك للخطة وعرض السعر، وسداد المبلغ المطلوب، وتأكيد الموعد من المركز.",
+      questionEn: "When is a procedure finally confirmed?",
+      answerEn:
+        "A procedure is confirmed only after consultation and medical approval, your acceptance of the plan and quote, the required payment, and final confirmation from the center.",
       category: "consultation",
       sortOrder: 5,
     },
@@ -613,6 +888,9 @@ async function seedFaqs() {
       questionAr: "كيف تتم المدفوعات وهل هي آمنة؟",
       answerAr:
         "تتم عبر بوابة دفع آمنة، ولا نخزّن بيانات بطاقتك إطلاقًا. ولا يُعدّ الدفع مؤكدًا إلا بعد تحقق موثوق من مزوّد الدفع.",
+      questionEn: "How are payments handled?",
+      answerEn:
+        "Payments use a secure payment provider. Med Aura does not store card details, and payment is marked complete only after provider verification.",
       category: "payments",
       sortOrder: 6,
     },
@@ -620,6 +898,9 @@ async function seedFaqs() {
       questionAr: "هل يمكنني استرجاع رسوم الاستشارة؟",
       answerAr:
         "نعم وفق سياسة الاسترجاع: الإلغاء قبل 24 ساعة يتيح استردادًا كاملًا، وتُطبَّق سياسة مقدّم الخدمة في الحالات الأخرى. راجع صفحة سياسة الاسترجاع للتفاصيل.",
+      questionEn: "Can I receive a consultation refund?",
+      answerEn:
+        "Refund eligibility follows the published refund policy and the provider terms that apply to your booking. Review the refund policy for the current details.",
       category: "payments",
       sortOrder: 7,
     },
@@ -627,12 +908,26 @@ async function seedFaqs() {
       questionAr: "أنا طبيب أو مركز تجميل، كيف أنضم؟",
       answerAr:
         "أنشئ حسابًا ثم قدّم طلب انضمام من لوحة التحكم مرفقًا بترخيصك. يراجع فريق الاعتماد الطلب، وبعد الموافقة يُنشر ملفك ويظهر للمرضى.",
+      questionEn: "How can a doctor or center join?",
+      answerEn:
+        "Create an account and submit a provider application with the required license documents. The profile can be published after the review is approved.",
       category: "providers",
       sortOrder: 8,
     },
   ]
-  await db.insert(faq).values(items)
-  console.log(`✓ faqs (${items.length})`)
+  for (const item of items) {
+    const existing = await db
+      .select({ id: faq.id })
+      .from(faq)
+      .where(eq(faq.questionAr, item.questionAr))
+      .limit(1)
+    if (existing[0]) {
+      await db.update(faq).set(item).where(eq(faq.id, existing[0].id))
+    } else {
+      await db.insert(faq).values(item)
+    }
+  }
+  console.log(`✓ faqs (${items.length}, synchronized)`)
 }
 
 /** Reference/catalog data: roles, permissions, geography, procedures, FAQs.
@@ -674,7 +969,9 @@ export async function runSeed({ demo }: { demo: boolean }): Promise<void> {
     console.log("   • admin@medauraworld.com            (Super Admin)")
     console.log("   • compliance@medauraworld.com       (Compliance Reviewer)")
     console.log("   • patient@medauraworld.com          (Patient, isTest)")
-    console.log("   • doctor@medauraworld.com           (د. سارة العتيبي — الرياض، أنف/وجه, isTest)")
+    console.log(
+      "   • doctor@medauraworld.com           (د. سارة العتيبي — الرياض، أنف/وجه, isTest)",
+    )
     console.log("   • doctor2@medauraworld.com          (د. نورة القحطاني — جدة، جسم/ثدي, isTest)")
     console.log("   • doctor3@medauraworld.com          (د. أحمد يلماز — إسطنبول، شعر, isTest)")
     console.log("   • pending-doctor@medauraworld.com   (Pending application, isTest)")

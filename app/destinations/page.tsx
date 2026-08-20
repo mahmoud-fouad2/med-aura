@@ -11,33 +11,45 @@ import { Stagger, StaggerItem } from "@/components/motion"
 import { listDestinations } from "@/lib/data/destinations"
 import { query } from "@/lib/db/query"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
+import { destinationImage, PUBLIC_MEDIA } from "@/lib/public-media"
+import { getI18n } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
-export const metadata = buildPageMetadata({
-  title: "الوجهات التجميلية",
-  description:
-    "استكشف الدول التي تضم أطباء ومراكز تجميل معتمدة على Med Aura، وقارن الوجهات حسب المدن والخدمات المتاحة.",
-  path: "/destinations",
-  image: "/demo-services/aesthetic-clinic-lounge.png",
-})
+export async function generateMetadata() {
+  const { locale } = await getI18n()
+  return buildPageMetadata({
+    title: locale === "ar" ? "الوجهات التجميلية" : "Aesthetic destinations",
+    description: locale === "ar"
+      ? "قارن الوجهات حسب الأطباء والمراكز والمدن واللغات المتاحة."
+      : "Compare destinations by available doctors, centers, cities, and languages.",
+    path: "/destinations",
+    image: PUBLIC_MEDIA.destinations,
+    locale,
+  })
+}
 
 export default async function DestinationsPage() {
-  const res = await query(() => listDestinations())
+  const [res, { locale }] = await Promise.all([
+    query(() => listDestinations()),
+    getI18n(),
+  ])
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => (isAr ? ar : en)
   const destinations = res.status === "ok" ? res.data : []
   const doctorsTotal = destinations.reduce((sum, d) => sum + d.approvedDoctors, 0)
   const centersTotal = destinations.reduce((sum, d) => sum + d.approvedCenters, 0)
   const structuredData = [
     breadcrumbJsonLd([
-      { name: "الرئيسية", url: absoluteUrl("/") },
-      { name: "الوجهات", url: absoluteUrl("/destinations") },
+      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
+      { name: l("الوجهات", "Destinations"), url: absoluteUrl("/destinations") },
     ]),
     itemListJsonLd({
-      name: "الوجهات التجميلية على Med Aura",
+      name: l("الوجهات التجميلية على Med Aura", "Aesthetic destinations on Med Aura"),
       items: destinations.map((d) => ({
-        name: d.nameAr,
+        name: isAr ? d.nameAr : d.nameEn,
         url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`),
-        image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+        image: absoluteUrl(destinationImage(d.code)),
       })),
     }),
   ]
@@ -51,15 +63,15 @@ export default async function DestinationsPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow="الوجهات"
-          title="اختر وجهتك التجميلية بوضوح"
-          subtitle="قارن بين الدول المتاحة حسب الأطباء والمراكز واللغات، ثم ابدأ من الوجهة التي تناسب خطتك وميزانيتك."
-          imageSrc="/demo-services/aesthetic-clinic-lounge.png"
-          imageAlt="عيادة تجميل حديثة"
+          eyebrow={l("الوجهات", "Destinations")}
+          title={l("اختر وجهتك التجميلية بوضوح", "Compare aesthetic destinations clearly")}
+          subtitle={l("قارن بين الدول حسب الأطباء والمراكز واللغات، ثم اختر الوجهة التي تناسب خطتك.", "Compare destinations by available doctors, centers, and languages before choosing your next step.")}
+          imageSrc={PUBLIC_MEDIA.destinations}
+          imageAlt={l("عيادة تجميل حديثة", "Modern aesthetic clinic")}
           stats={[
-            { label: "وجهات", value: destinations.length.toLocaleString("ar-SA-u-nu-latn") },
-            { label: "أطباء", value: doctorsTotal.toLocaleString("ar-SA-u-nu-latn") },
-            { label: "مراكز", value: centersTotal.toLocaleString("ar-SA-u-nu-latn") },
+            { label: l("وجهات", "Destinations"), value: destinations.length.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("أطباء", "Doctors"), value: doctorsTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("مراكز", "Centers"), value: centersTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
           ]}
         />
 
@@ -73,8 +85,8 @@ export default async function DestinationsPage() {
             ) : destinations.length === 0 ? (
               <EmptyState
                 icon={Globe2}
-                title="لا توجد وجهات منشورة بعد"
-                description="ستظهر الوجهات هنا فور اعتماد أطباء ومراكز فيها."
+                title={l("لا توجد وجهات منشورة بعد", "No destinations are available yet")}
+                description={l("ستظهر الوجهات هنا فور اعتماد أطباء ومراكز فيها.", "Destinations appear after doctors and centers are approved there.")}
               />
             ) : (
               <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -97,8 +109,8 @@ export default async function DestinationsPage() {
                         >
                           <div className="relative h-32 bg-muted">
                             <Image
-                              src="/demo-services/aesthetic-clinic-lounge.png"
-                              alt=""
+                              src={destinationImage(d.code)}
+                              alt={l(`وجهة ${d.nameAr}`, `${d.nameEn} destination`)}
                               fill
                               className="object-cover"
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -116,19 +128,19 @@ export default async function DestinationsPage() {
                           </div>
                           <div className="p-6">
                             <h3 className="font-heading text-lg font-bold text-foreground">
-                              {d.nameAr}
+                              {isAr ? d.nameAr : d.nameEn}
                             </h3>
                             <p dir="ltr" className="text-right text-xs text-muted-foreground">
-                              {d.nameEn}
+                              {isAr ? d.nameEn : d.code}
                             </p>
                             <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
-                              <Stat icon={Users} value={d.approvedDoctors} label="طبيب" />
-                              <Stat icon={Building2} value={d.approvedCenters} label="مركز" />
-                              <Stat icon={Globe2} value={d.citiesCount} label="مدينة" />
+                              <Stat icon={Users} value={d.approvedDoctors} label={l("طبيب", "Doctors")} />
+                              <Stat icon={Building2} value={d.approvedCenters} label={l("مركز", "Centers")} />
+                              <Stat icon={Globe2} value={d.citiesCount} label={l("مدينة", "Cities")} />
                             </dl>
                             {d.languagesTop.length > 0 && (
                               <p className="mt-4 flex flex-wrap gap-1 text-xs text-muted-foreground">
-                                اللغات:
+                                {l("اللغات:", "Languages:")}
                                 {d.languagesTop.map((l) => (
                                   <span
                                     key={l}
@@ -141,7 +153,7 @@ export default async function DestinationsPage() {
                             )}
                             {inactive && (
                               <p className="mt-4 text-xs text-muted-foreground">
-                                لا يوجد مقدّم خدمة معتمد بعد
+                                {l("لا يوجد مقدّم خدمة معتمد بعد", "No approved provider yet")}
                               </p>
                             )}
                           </div>

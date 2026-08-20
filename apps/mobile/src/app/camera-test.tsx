@@ -12,6 +12,7 @@ import Daily, {
   type MediaStreamTrack,
 } from "@daily-co/react-native-daily-js"
 import { AppText, Button, ChevronBack } from "../components/ui"
+import { VideoControl as RoundControl } from "../components/video-control"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
@@ -343,36 +344,5 @@ export default function CameraTest() {
         />
       </View>
     </View>
-  )
-}
-
-function RoundControl({
-  icon,
-  label,
-  onPress,
-  active = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  onPress: () => void
-  active?: boolean
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => ({
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)",
-        transform: [{ scale: pressed ? 0.93 : 1 }],
-      })}
-    >
-      <Ionicons name={icon} size={22} color="#FFFFFF" />
-    </Pressable>
   )
 }

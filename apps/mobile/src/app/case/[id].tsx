@@ -19,6 +19,7 @@ import {
   type CaseSummary,
 } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { isApiErrorStatus } from "../../lib/request-errors"
 import { colors, radius, spacing } from "../../theme"
 
 const DOCUMENT_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -49,10 +50,7 @@ export default function CaseSummaryScreen() {
   // literal string /api/mobile/v1/cases/[id] actually returns for "not
   // found or not authorized," not a translated copy that would never equal
   // it in English mode.
-  const isNotFound =
-    query.isError &&
-    query.error instanceof Error &&
-    query.error.message === "الحالة غير موجودة."
+  const isNotFound = query.isError && isApiErrorStatus(query.error, 404)
 
   return (
     <View

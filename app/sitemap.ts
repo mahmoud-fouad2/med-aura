@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next"
 import { eq, and } from "drizzle-orm"
 import { appUrl } from "@/lib/env"
 import { db, isDbConfigured } from "@/lib/db"
-import { doctorProfile, center, procedure } from "@/lib/db/schema"
+import { center, doctorProfile, procedure } from "@/lib/db/schema"
+import { publicCenterConditions, publicDoctorConditions } from "@/lib/data/public-visibility"
 
 /** Public, published entity URLs — never listed for anything unpublished/unapproved/hidden. */
 async function entityRoutes(): Promise<{ path: string; lastModified: Date }[]> {
@@ -11,11 +12,11 @@ async function entityRoutes(): Promise<{ path: string; lastModified: Date }[]> {
     db
       .select({ slug: doctorProfile.slug, updatedAt: doctorProfile.updatedAt })
       .from(doctorProfile)
-      .where(and(eq(doctorProfile.published, true), eq(doctorProfile.status, "approved"))),
+      .where(and(...publicDoctorConditions())),
     db
       .select({ slug: center.slug, updatedAt: center.updatedAt })
       .from(center)
-      .where(and(eq(center.published, true), eq(center.status, "approved"))),
+      .where(and(...publicCenterConditions())),
     db
       .select({ slug: procedure.slug, updatedAt: procedure.updatedAt })
       .from(procedure)
@@ -59,20 +60,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/sign-up",
   ]
   const now = new Date()
-  const staticEntries: MetadataRoute.Sitemap = routes.map((path) => ({
-    url: `${base}${path}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: path === "" ? 1 : 0.7,
-  }))
+  const staticEntries: MetadataRoute.Sitemap = routes.flatMap((path) =>
+    (["ar", "en"] as const).map((locale) => ({
+      url: `${base}/${locale}${path}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: path === "" ? 1 : 0.7,
+      alternates: {
+        languages: {
+          ar: `${base}/ar${path}`,
+          en: `${base}/en${path}`,
+        },
+      },
+    })),
+  )
 
   const dynamic = await entityRoutes().catch(() => [])
-  const dynamicEntries: MetadataRoute.Sitemap = dynamic.map(({ path, lastModified }) => ({
-    url: `${base}${path}`,
-    lastModified,
-    changeFrequency: "weekly",
-    priority: 0.6,
-  }))
+  const dynamicEntries: MetadataRoute.Sitemap = dynamic.flatMap(({ path, lastModified }) =>
+    (["ar", "en"] as const).map((locale) => ({
+      url: `${base}/${locale}${path}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+      alternates: {
+        languages: {
+          ar: `${base}/ar${path}`,
+          en: `${base}/en${path}`,
+        },
+      },
+    })),
+  )
 
   return [...staticEntries, ...dynamicEntries]
 }

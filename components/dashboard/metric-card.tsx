@@ -7,42 +7,37 @@ export type MetricTone = "primary" | "success" | "warning" | "danger" | "neutral
 
 const TONE: Record<
   MetricTone,
-  { bg: string; text: string; ring: string; number: string; shadow: string }
+  { bg: string; text: string; ring: string; number: string }
 > = {
   primary: {
     bg: "bg-primary/10",
     text: "text-primary",
     ring: "ring-primary/20",
     number: "text-foreground",
-    shadow: "hover:shadow-[0_4px_20px_-4px_rgba(74,29,150,0.15)]",
   },
   success: {
     bg: "bg-success/12",
     text: "text-success",
     ring: "ring-success/20",
     number: "text-foreground",
-    shadow: "hover:shadow-[0_4px_20px_-4px_rgba(16,185,129,0.15)]",
   },
   warning: {
     bg: "bg-warning/15",
     text: "text-warning-foreground",
     ring: "ring-warning/22",
     number: "text-warning-foreground",
-    shadow: "hover:shadow-[0_4px_20px_-4px_rgba(245,158,11,0.15)]",
   },
   danger: {
     bg: "bg-destructive/10",
     text: "text-destructive",
     ring: "ring-destructive/20",
     number: "text-destructive",
-    shadow: "hover:shadow-[0_4px_20px_-4px_rgba(239,68,68,0.15)]",
   },
   neutral: {
     bg: "bg-muted",
     text: "text-muted-foreground",
     ring: "ring-border",
     number: "text-foreground",
-    shadow: "hover:shadow-[0_4px_20px_-4px_rgba(100,116,139,0.12)]",
   },
 }
 
@@ -77,10 +72,10 @@ export function MetricCard({
   const body = (
     <div
       className={cn(
-        "group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-white/70 bg-card/88 p-5 shadow-sm backdrop-blur-md transition-all duration-300",
+        "group relative flex flex-col justify-between gap-4 overflow-hidden rounded-lg border border-border/70 bg-card p-5 transition-colors duration-200",
         href
-          ? cn("hover:-translate-y-1 hover:border-primary/30", t.shadow)
-          : "shadow-[0_1px_2px_rgba(20,20,60,0.02),0_4px_16px_-8px_rgba(20,20,60,0.06)]",
+          ? "hover:border-primary/30"
+          : "",
         emphasis && "sm:p-6",
         emphasis && tone === "danger" && "alert-glow-danger",
         emphasis && tone === "warning" && "alert-glow-warning",

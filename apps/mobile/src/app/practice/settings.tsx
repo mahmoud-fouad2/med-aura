@@ -23,16 +23,17 @@ import {
   StatusPill,
 } from "../../components/ui"
 import { QueryErrorState } from "../../components/query-error"
+import { Field, inputStyle } from "../../components/form"
 import {
   api,
   useMyPractice,
-  NetworkError,
   type MyPractice,
   type PracticeProcedure,
 } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { queryKeys } from "../../lib/query-keys"
+import { localizedApiError } from "../../lib/request-errors"
 import { colors, radius, spacing } from "../../theme"
-import { Field, inputStyle } from "../sign-in"
 
 const STATUS_TONE: Record<string, "warning" | "success" | "danger"> = {
   pending: "warning",
@@ -123,7 +124,7 @@ function lines(value: string): string[] {
 }
 
 function ProfessionalProfileForm({ initial }: { initial: MyPractice }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const queryClient = useQueryClient()
   const [bio, setBio] = useState(initial.bio ?? "")
   const [qualifications, setQualifications] = useState(initial.qualifications.join("\n"))
@@ -150,11 +151,18 @@ function ProfessionalProfileForm({ initial }: { initial: MyPractice }) {
       setError(null)
       setSaved(true)
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      void queryClient.invalidateQueries({ queryKey: ["my-practice"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.practice })
     },
     onError: (err) => {
       setSaved(false)
-      setError(err instanceof Error && err.message ? err.message : t.practice.saveError)
+      setError(localizedApiError(err, locale, {
+        fallback: t.practice.saveError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.practice.saveError,
+        conflict: t.practice.saveError,
+        rateLimited: t.common.rateLimited,
+      }))
     },
   })
 
@@ -215,7 +223,7 @@ function StatusCard({ practice }: { practice: MyPractice }) {
 }
 
 function PracticeForm({ initial }: { initial: MyPractice }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const queryClient = useQueryClient()
   const [fee, setFee] = useState(initial.consultationFee ?? "")
   const [currency, setCurrency] = useState(initial.currency)
@@ -236,17 +244,18 @@ function PracticeForm({ initial }: { initial: MyPractice }) {
       setError(null)
       setSaved(true)
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      void queryClient.invalidateQueries({ queryKey: ["my-practice"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.practice })
     },
     onError: (err) => {
       setSaved(false)
-      setError(
-        err instanceof NetworkError
-          ? t.common.offline
-          : err instanceof Error && err.message
-            ? err.message
-            : t.practice.saveError,
-      )
+      setError(localizedApiError(err, locale, {
+        fallback: t.practice.saveError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.practice.saveError,
+        conflict: t.practice.saveError,
+        rateLimited: t.common.rateLimited,
+      }))
     },
   })
 
@@ -366,7 +375,7 @@ function ProceduresSection({ procedures }: { procedures: PracticeProcedure[] }) 
     onMutate: (input) => setPendingId(input.procedureId),
     onSuccess: () => {
       setError(null)
-      void queryClient.invalidateQueries({ queryKey: ["my-practice"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.practice })
     },
     onError: () => setError(t.practice.procedureError),
     onSettled: () => setPendingId(null),

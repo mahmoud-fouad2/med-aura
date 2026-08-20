@@ -17,6 +17,7 @@ import {
 import { brandAssets, sponsorAssets } from "../../components/brand"
 import {
   NetworkError,
+  TimeoutError,
   useHome,
   useMe,
   useNotifications,
@@ -38,7 +39,7 @@ export default function Home() {
   // a doctor it must be their provider name with the "د." title, never a bare
   // title. `displayName`/`doctorName` come resolved from /me.
   const session = authClient.useSession()
-  const accountType = me.data?.accountType ?? "patient"
+  const accountType = me.data?.accountType ?? null
   const isPatient = accountType === "patient"
   const todaysAppointments = home.data?.todaysAppointments ?? []
 
@@ -161,12 +162,16 @@ export default function Home() {
               {`${greeting}${locale === "ar" ? "، " : ", "}${heroName}`}
             </AppText>
           )}
-          <AppText variant="caption" color="rgba(255,255,255,0.82)" numberOfLines={2}>
-            {isPatient ? t.home.heroBody : t.home.heroBodyProvider}
-          </AppText>
+          {accountType ? (
+            <AppText variant="caption" color="rgba(255,255,255,0.82)" numberOfLines={2}>
+              {isPatient ? t.home.heroBody : t.home.heroBodyProvider}
+            </AppText>
+          ) : (
+            <Skeleton style={{ width: 240, height: 12, backgroundColor: "rgba(255,255,255,0.20)" }} />
+          )}
         </View>
         {/* Only patients book — never show a booking CTA to a doctor/staff. */}
-        {isPatient ? (
+        {accountType && isPatient ? (
           <Button
             label={t.home.heroCta}
             onPress={() => router.push("/(tabs)/explore")}
@@ -189,7 +194,12 @@ export default function Home() {
 
       {/* Provider (doctor/staff): today's-schedule, next patient, shared
           cases, and (doctors only) availability are all native now. */}
-      {!isPatient ? (
+      {!accountType ? (
+        <View style={{ paddingHorizontal: spacing.screen, gap: spacing.md, marginTop: spacing.lg }}>
+          <Skeleton style={{ height: 92, borderRadius: radius.xl }} />
+          <Skeleton style={{ height: 180, borderRadius: radius.xl }} />
+        </View>
+      ) : !isPatient ? (
         <View style={{ paddingHorizontal: spacing.screen, gap: spacing.xl, marginTop: -spacing.lg }}>
           {/* Stats */}
           <View style={{ flexDirection: "row", gap: spacing.md }}>
@@ -230,8 +240,10 @@ export default function Home() {
             ) : home.isError ? (
               <ErrorCard
                 message={
-                  home.error instanceof NetworkError
-                    ? t.common.offline
+                  home.error instanceof TimeoutError
+                    ? t.common.timeout
+                    : home.error instanceof NetworkError
+                      ? t.common.offline
                     : t.common.loadFailed
                 }
                 onRetry={() => void home.refetch()}
@@ -328,8 +340,10 @@ export default function Home() {
           ) : home.isError ? (
             <ErrorCard
               message={
-                home.error instanceof NetworkError
-                  ? t.common.offline
+                home.error instanceof TimeoutError
+                  ? t.common.timeout
+                  : home.error instanceof NetworkError
+                    ? t.common.offline
                   : t.common.loadFailed
               }
               onRetry={() => void home.refetch()}

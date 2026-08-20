@@ -31,13 +31,13 @@ export function SectionCard({
   children: React.ReactNode
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/60 bg-card/85 shadow-elegant-lg backdrop-blur-md transition-all duration-300">
-      <header className="flex items-start justify-between gap-3 border-b border-border/40 px-5 py-4.5 bg-gradient-to-l from-muted/5 to-transparent">
+    <section className="overflow-hidden rounded-lg border border-border/70 bg-card">
+      <header className="flex items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
         <div className="flex items-start gap-3">
           {Icon && (
             <span
               className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-105 ring-1",
+                "flex size-9 shrink-0 items-center justify-center rounded-lg ring-1",
                 tone === "primary" && "bg-primary/10 text-primary ring-primary/10",
                 tone === "success" && "bg-success/12 text-success ring-success/10",
                 tone === "warning" && "bg-warning/15 text-warning-foreground ring-warning/10",
@@ -62,7 +62,7 @@ export function SectionCard({
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="group inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/12"
+              className="group inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
             >
               {viewAllLabel}
               <ArrowLeft className="size-3.5 transition-transform duration-300 group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0 ltr:rotate-180 ltr:group-hover:translate-x-0.5" />

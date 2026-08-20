@@ -10,6 +10,23 @@ import {
 } from "@tanstack/react-query"
 import { API_URL } from "./config"
 import { authClient } from "./auth-client"
+import { consumeNdjsonChunk } from "./ndjson"
+import { queryKeys } from "./query-keys"
+import {
+  ApiError,
+  NetworkError,
+  RateLimitedError,
+  SessionExpiredError,
+  TimeoutError,
+} from "./request-errors"
+
+export {
+  ApiError,
+  NetworkError,
+  RateLimitedError,
+  SessionExpiredError,
+  TimeoutError,
+} from "./request-errors"
 
 /** DTOs mirroring app/api/mobile/v1 responses on the backend. */
 export type Doctor = {
@@ -347,29 +364,6 @@ export type FilterFacets = {
   hasNearestSupport: boolean
 }
 
-export class SessionExpiredError extends Error {}
-
-/** The request never reached the server (no connectivity, DNS). */
-export class NetworkError extends Error {}
-
-/**
- * The request was aborted because it outran its time budget. Subclasses
- * NetworkError so every existing `instanceof NetworkError` offline branch
- * keeps working, while callers that care can tell "you have no signal" apart
- * from "the server is just taking a while" — showing the offline message for
- * a slow-but-healthy server sends the user chasing a connection problem that
- * doesn't exist.
- */
-export class TimeoutError extends NetworkError {}
-
-/**
- * The AI provider's own rate limit was hit (the project currently runs on
- * the Gemini API free tier, whose per-model RPM quota is easy to exceed
- * while testing). Distinct from a generic failure so the UI can say "wait a
- * bit" instead of implying something is actually broken.
- */
-export class RateLimitedError extends Error {}
-
 const REQUEST_TIMEOUT_MS = 15_000
 
 async function request<T>(
@@ -411,13 +405,13 @@ async function request<T>(
   if (res.status === 401) throw new SessionExpiredError()
   const body = (await res.json().catch(() => null)) as
     | { ok: true; data: T }
-    | { ok: false; error: string }
+    | { ok: false; error: string; code?: string }
     | null
   if (!res.ok || !body || !body.ok) {
-    throw new Error(
-      body && "error" in body && body.error
-        ? body.error
-        : "تعذر تحميل البيانات. حاول مرة أخرى.",
+    throw new ApiError(
+      body && "error" in body && body.error ? body.error : "Request failed",
+      res.status,
+      body && "code" in body ? body.code : undefined,
     )
   }
   return body.data
@@ -449,6 +443,7 @@ export function streamAssistant(
     const xhr = new XMLHttpRequest()
     let settled = false
     let cursor = 0
+    let remainder = ""
     let inactivityTimer: ReturnType<typeof setTimeout> | null = null
 
     const finish = (fn: () => void) => {
@@ -485,19 +480,13 @@ export function streamAssistant(
       if (cookie) xhr.setRequestHeader("Cookie", cookie)
     }
 
-    xhr.onprogress = () => {
-      resetInactivity()
+    const processResponse = (flush = false) => {
       const text = xhr.responseText
       const chunk = text.slice(cursor)
       cursor = text.length
-      for (const line of chunk.split("\n")) {
-        if (!line.trim()) continue
-        let event: Record<string, unknown>
-        try {
-          event = JSON.parse(line)
-        } catch {
-          continue
-        }
+      const parsed = consumeNdjsonChunk(remainder, chunk, flush)
+      remainder = parsed.remainder
+      for (const event of parsed.events) {
         if (event.type === "stage") {
           onStage(event.stage as AssistantStage)
         } else if (event.type === "result") {
@@ -520,6 +509,11 @@ export function streamAssistant(
       }
     }
 
+    xhr.onprogress = () => {
+      resetInactivity()
+      processResponse()
+    }
+
     xhr.onerror = () => {
       finish(() => reject(new NetworkError("offline")))
     }
@@ -529,6 +523,8 @@ export function streamAssistant(
     }
 
     xhr.onload = () => {
+      processResponse(true)
+      if (settled) return
       if (xhr.status === 401) {
         finish(() => reject(new SessionExpiredError()))
         return
@@ -792,36 +788,36 @@ export const api = {
 }
 
 export const useHome = () =>
-  useQuery({ queryKey: ["home"], queryFn: api.home, staleTime: 30_000 })
+  useQuery({ queryKey: queryKeys.home, queryFn: api.home, staleTime: 30_000 })
 
 export const useAppointments = () =>
   useQuery({
-    queryKey: ["appointments"],
+    queryKey: queryKeys.appointments,
     queryFn: api.appointments,
     staleTime: 30_000,
   })
 
 export const useCaseSummary = (caseId: string | null) =>
   useQuery({
-    queryKey: ["case", caseId],
+    queryKey: queryKeys.case(caseId),
     queryFn: () => api.caseSummary(caseId as string),
     enabled: caseId != null,
     staleTime: 30_000,
   })
 
 export const useMyCases = () =>
-  useQuery({ queryKey: ["my-cases"], queryFn: api.myCases, staleTime: 30_000 })
+  useQuery({ queryKey: queryKeys.cases, queryFn: api.myCases, staleTime: 30_000 })
 
 export const usePayments = () =>
   useQuery({
-    queryKey: ["payments"],
+    queryKey: queryKeys.payments,
     queryFn: api.payments,
     staleTime: 30_000,
   })
 
 export const useDoctors = (q: string, filters?: DoctorFilters) =>
   useInfiniteQuery({
-    queryKey: ["doctors", q, filters ?? {}],
+    queryKey: queryKeys.doctors(q, filters),
     queryFn: ({ pageParam }) =>
       api.doctors({ q: q || undefined, page: pageParam, filters }),
     initialPageParam: 1,
@@ -837,21 +833,21 @@ export const useDoctors = (q: string, filters?: DoctorFilters) =>
 
 export const useFilterFacets = () =>
   useQuery({
-    queryKey: ["filter-facets"],
+    queryKey: queryKeys.filterFacets,
     queryFn: api.filterFacets,
     staleTime: 5 * 60_000,
   })
 
 export const useDoctor = (slug: string) =>
   useQuery({
-    queryKey: ["doctor", slug],
+    queryKey: queryKeys.doctor(slug),
     queryFn: () => api.doctor(slug),
     staleTime: 60_000,
   })
 
 export const useServices = (q: string) =>
   useQuery({
-    queryKey: ["services", q],
+    queryKey: queryKeys.services(q),
     queryFn: () => api.services({ q: q || undefined }),
     placeholderData: keepPreviousData,
     staleTime: 60_000,
@@ -859,44 +855,44 @@ export const useServices = (q: string) =>
 
 export const useService = (slug: string) =>
   useQuery({
-    queryKey: ["service", slug],
+    queryKey: queryKeys.service(slug),
     queryFn: () => api.service(slug),
     staleTime: 60_000,
   })
 
 export const useSlots = (slug: string, type: ConsultationType) =>
   useQuery({
-    queryKey: ["slots", slug, type],
+    queryKey: queryKeys.slots(slug, type),
     queryFn: () => api.slots(slug, type),
     // Availability is time-sensitive; keep it fresh.
     staleTime: 15_000,
   })
 
 export const useMe = () =>
-  useQuery({ queryKey: ["me"], queryFn: api.me, staleTime: 60_000 })
+  useQuery({ queryKey: queryKeys.me, queryFn: api.me, staleTime: 60_000 })
 
 export const useMyPractice = () =>
-  useQuery({ queryKey: ["my-practice"], queryFn: api.myPractice, staleTime: 30_000 })
+  useQuery({ queryKey: queryKeys.practice, queryFn: api.myPractice, staleTime: 30_000 })
 
 export const useMyAvailability = () =>
-  useQuery({ queryKey: ["my-availability"], queryFn: api.myAvailability, staleTime: 30_000 })
+  useQuery({ queryKey: queryKeys.availability, queryFn: api.myAvailability, staleTime: 30_000 })
 
 export const useNotificationPreferences = () =>
   useQuery({
-    queryKey: ["notification-preferences"],
+    queryKey: queryKeys.notificationPreferences,
     queryFn: api.notificationPreferences,
     staleTime: 60_000,
   })
 
 export const useNotifications = () =>
   useQuery({
-    queryKey: ["notifications"],
+    queryKey: queryKeys.notifications,
     queryFn: api.notifications,
     staleTime: 30_000,
   })
 
 export const useFavorites = () =>
-  useQuery({ queryKey: ["favorites"], queryFn: api.favorites, staleTime: 30_000 })
+  useQuery({ queryKey: queryKeys.favorites, queryFn: api.favorites, staleTime: 30_000 })
 
 /**
  * Toggle a doctor favourite with an optimistic heart: flips the cached
@@ -910,13 +906,13 @@ export const useToggleFavorite = () => {
     mutationFn: (doctor: FavoriteDoctor) =>
       api.toggleFavorite("doctor", doctor.id),
     onMutate: async (doctor: FavoriteDoctor) => {
-      await queryClient.cancelQueries({ queryKey: ["favorites"] })
-      const previous = queryClient.getQueryData<{ doctors: FavoriteDoctor[] }>([
-        "favorites",
-      ])
+      await queryClient.cancelQueries({ queryKey: queryKeys.favorites })
+      const previous = queryClient.getQueryData<{ doctors: FavoriteDoctor[] }>(
+        queryKeys.favorites,
+      )
       const doctors = previous?.doctors ?? []
       const already = doctors.some((d) => d.id === doctor.id)
-      queryClient.setQueryData<{ doctors: FavoriteDoctor[] }>(["favorites"], {
+      queryClient.setQueryData<{ doctors: FavoriteDoctor[] }>(queryKeys.favorites, {
         doctors: already
           ? doctors.filter((d) => d.id !== doctor.id)
           : [doctor, ...doctors],
@@ -925,28 +921,28 @@ export const useToggleFavorite = () => {
     },
     onError: (_err, _doctor, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["favorites"], context.previous)
+        queryClient.setQueryData(queryKeys.favorites, context.previous)
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["favorites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.favorites })
     },
   })
 }
 
 export const useTickets = () =>
-  useQuery({ queryKey: ["tickets"], queryFn: api.tickets, staleTime: 30_000 })
+  useQuery({ queryKey: queryKeys.tickets, queryFn: api.tickets, staleTime: 30_000 })
 
 export const useTicket = (id: string) =>
   useQuery({
-    queryKey: ["ticket", id],
+    queryKey: queryKeys.ticket(id),
     queryFn: () => api.ticket(id),
     staleTime: 15_000,
   })
 
 export const useVideoState = (appointmentId: string, opts?: { poll?: boolean; enabled?: boolean }) =>
   useQuery({
-    queryKey: ["video", appointmentId],
+    queryKey: queryKeys.video(appointmentId),
     queryFn: () => api.videoState(appointmentId),
     staleTime: 15_000,
     // The pre-join screen polls so the join button appears the moment the

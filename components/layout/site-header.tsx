@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { MobileNav } from "@/components/layout/mobile-nav"
+import { localizedPath } from "@/lib/i18n/config"
 
 export async function SiteHeader() {
   const [user, { locale, t }] = await Promise.all([getCurrentUser(), getI18n()])
@@ -15,15 +16,15 @@ export async function SiteHeader() {
     { href: "/doctors", label: t.nav.doctors },
     { href: "/procedures", label: t.nav.procedures },
     { href: "/centers", label: t.nav.centers },
-    { href: "/destinations", label: "الوجهات" },
-    { href: "/online-consultation", label: "الاستشارة أونلاين" },
+    { href: "/destinations", label: t.nav.destinations },
+    { href: "/online-consultation", label: t.nav.onlineConsultation },
     { href: "/how-it-works", label: t.nav.howItWorks },
-  ]
+  ].map((link) => ({ ...link, href: localizedPath(link.href, locale) }))
 
   return (
-    <header className="sticky top-0 z-50 bg-background/55 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-2xl">
-      <div className="mx-auto flex h-20 max-w-[96rem] items-center justify-between gap-4 rounded-[1.75rem] border border-white/70 bg-card/82 px-4 shadow-elegant-lg sm:px-6 lg:px-8">
-        <Link href="/" aria-label="Med Aura">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/92 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-[96rem] items-center justify-between gap-4 px-1 sm:px-3 lg:px-5">
+        <Link href={localizedPath("/", locale)} aria-label="Med Aura">
           <Logo className="h-10 sm:h-12" />
         </Link>
 
@@ -32,7 +33,7 @@ export async function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-3.5 py-2 text-sm font-semibold text-foreground/74 transition-all hover:-translate-y-0.5 hover:bg-secondary hover:text-primary"
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground/74 transition-colors hover:bg-secondary hover:text-primary"
             >
               {link.label}
             </Link>
@@ -54,14 +55,14 @@ export async function SiteHeader() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="rounded-full px-4"
-                  render={<Link href="/sign-in">{t.nav.signIn}</Link>}
+                  className="rounded-lg px-4"
+                  render={<Link href={localizedPath("/sign-in", locale)}>{t.nav.signIn}</Link>}
                 />
                 <Button
                   size="sm"
-                  className="rounded-full px-5 shadow-sm shadow-primary/20"
+                  className="rounded-lg px-5"
                   render={
-                    <Link href="/sign-up">{t.nav.startConsultation}</Link>
+                    <Link href={localizedPath("/sign-up", locale)}>{t.nav.startConsultation}</Link>
                   }
                 />
               </>

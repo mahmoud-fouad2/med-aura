@@ -14,7 +14,9 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { FavoriteToggle } from "@/components/favorites/favorite-toggle"
-import { currencyAr, countryNameAr, countryNameEn } from "@/lib/status-labels"
+import { countryNameAr, countryNameEn } from "@/lib/status-labels"
+import { formatExperience } from "@/lib/format"
+import { formatMoney } from "@/lib/money"
 import type { DoctorCard as DoctorCardData } from "@/lib/data/doctors"
 import type { Locale } from "@/lib/i18n"
 
@@ -99,7 +101,12 @@ export function DoctorCard({
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-white/10" />
 
-        {doctor.verified && <VerifiedBadge className="absolute start-3 top-3" />}
+        {doctor.verified && (
+          <VerifiedBadge
+            className="absolute start-3 top-3"
+            label={isAr ? "ترخيص متحقق منه" : "License verified"}
+          />
+        )}
 
         <div className="absolute end-3 top-3 z-10">
           <FavoriteToggle
@@ -163,7 +170,7 @@ export function DoctorCard({
             <MiniFact
               icon={Stethoscope}
               label={isAr ? "الخبرة" : "Experience"}
-              value={isAr ? `${doctor.yearsExperience} سنة` : `${doctor.yearsExperience} years`}
+              value={formatExperience(doctor.yearsExperience, locale)}
             />
             <MiniFact
               icon={ConsultationIcon}
@@ -204,11 +211,8 @@ export function DoctorCard({
             </p>
             {doctor.consultationFee ? (
               <p className="leading-tight">
-                <span className="font-heading text-2xl font-bold tabular-nums text-foreground">
-                  {Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")}
-                </span>
-                <span className="ms-1 text-xs font-medium text-muted-foreground">
-                  {isAr ? currencyAr(doctor.currency) : doctor.currency}
+                <span className="font-heading text-xl font-bold tabular-nums text-foreground">
+                  {formatMoney(doctor.consultationFee, doctor.currency, locale)}
                 </span>
               </p>
             ) : (

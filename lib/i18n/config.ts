@@ -10,3 +10,9 @@ export function dir(locale: Locale): "rtl" | "ltr" {
 export function isLocale(value: string | undefined | null): value is Locale {
   return value === "ar" || value === "en"
 }
+
+export function localizedPath(path: string, locale: Locale): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`
+  const withoutLocale = normalized.replace(/^\/(ar|en)(?=\/|$)/, "") || "/"
+  return `/${locale}${withoutLocale === "/" ? "" : withoutLocale}`
+}

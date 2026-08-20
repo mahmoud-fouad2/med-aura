@@ -20,6 +20,8 @@ import {
 import { QueryErrorState } from "../../../components/query-error"
 import { api, useAppointments, useMe, downloadInvoicePdf, presentDownloadedPdf, type Appointment } from "../../../lib/api"
 import { useI18n } from "../../../lib/i18n"
+import { queryKeys } from "../../../lib/query-keys"
+import { localizedApiError } from "../../../lib/request-errors"
 import { colors, radius, spacing } from "../../../theme"
 import { appointmentTone } from "../../(tabs)/index"
 
@@ -101,7 +103,7 @@ function Details({
   isDoctor,
 }: {
   appointment: Appointment
-  locale: string
+  locale: "ar" | "en"
   isDoctor: boolean
 }) {
   const { t } = useI18n()
@@ -116,14 +118,21 @@ function Details({
     try {
       await api.markAppointmentNoShow(appointment.id)
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["appointments"] }),
-        queryClient.invalidateQueries({ queryKey: ["home"] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.appointments }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.home }),
       ])
       Alert.alert(t.appointmentDetails.noShowMarked)
     } catch (err) {
       Alert.alert(
         t.appointmentDetails.actionError,
-        err instanceof Error ? err.message : undefined,
+        localizedApiError(err, locale, {
+          fallback: t.appointmentDetails.actionError,
+          offline: t.common.offline,
+          timeout: t.common.timeout,
+          validation: t.appointmentDetails.actionError,
+          conflict: t.appointmentDetails.actionError,
+          rateLimited: t.common.rateLimited,
+        }),
       )
     } finally {
       setUpdatingStatus(false)

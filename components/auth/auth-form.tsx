@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { HeartPulse, ShieldAlert, Stethoscope, ChevronLeft } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { completeSignupProfile } from "@/lib/actions/onboarding"
-import { COUNTRY_CODES, countryNameAr } from "@/lib/status-labels"
+import { COUNTRY_CODES, countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,13 +16,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { FadeIn } from "@/components/motion"
 import { cn } from "@/lib/utils"
-import type { Dictionary } from "@/lib/i18n"
+import type { Dictionary, Locale } from "@/lib/i18n"
 
 type AuthDict = Dictionary["auth"]
 type AccountType = "patient" | "doctor"
 
 export function AuthForm({
   mode,
+  locale,
   dict,
   home,
   authShell,
@@ -33,6 +34,7 @@ export function AuthForm({
   googleError,
 }: {
   mode: "sign-in" | "sign-up"
+  locale: Locale
   dict: AuthDict
   home: Dictionary["home"]
   authShell: Dictionary["authShell"]
@@ -47,9 +49,8 @@ export function AuthForm({
   googleError?: boolean
 }) {
   const router = useRouter()
-  const [accountType, setAccountType] = useState<AccountType | null>(
-    initialType ?? null,
-  )
+  const copy = AUTH_COPY[locale]
+  const [accountType, setAccountType] = useState<AccountType | null>(initialType ?? null)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -58,9 +59,7 @@ export function AuthForm({
   const [city, setCity] = useState("")
   const [agree, setAgree] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [error, setError] = useState<string | null>(
-    googleError ? "تعذّر تسجيل الدخول عبر Google. حاول مرة أخرى." : null,
-  )
+  const [error, setError] = useState<string | null>(googleError ? copy.googleError : null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   // Survives a failed profile save so retrying doesn't hit "email exists".
@@ -83,7 +82,7 @@ export function AuthForm({
     })
     if (error) {
       setGoogleLoading(false)
-      setError(translateAuthError(error.message))
+      setError(translateAuthError(error.message, locale))
     }
     // On success the browser navigates away to Google — no further state change here.
   }
@@ -93,7 +92,7 @@ export function AuthForm({
     setError(null)
 
     if (isSignUp && !agree) {
-      setError("يلزم الموافقة على الشروط وسياسة الخصوصية للمتابعة.")
+      setError(copy.termsRequired)
       return
     }
     setLoading(true)
@@ -106,7 +105,7 @@ export function AuthForm({
       })
       setLoading(false)
       if (error) {
-        setError(translateAuthError(error.message))
+        setError(translateAuthError(error.message, locale))
         return
       }
       router.push(destination)
@@ -120,7 +119,7 @@ export function AuthForm({
       const { error } = await authClient.signUp.email({ email, password, name })
       if (error) {
         setLoading(false)
-        setError(translateAuthError(error.message))
+        setError(translateAuthError(error.message, locale))
         return
       }
       setAccountCreated(true)
@@ -136,8 +135,8 @@ export function AuthForm({
       setLoading(false)
       setError(
         accountCreated && profile.error.includes("تسجيل الدخول")
-          ? "تم إنشاء الحساب. سجّل الدخول لإكمال بياناتك."
-          : profile.error,
+          ? copy.accountCreatedSignIn
+          : translateProfileError(profile.error, locale),
       )
       return
     }
@@ -155,14 +154,14 @@ export function AuthForm({
   return (
     <AuthShell home={home} authShell={authShell}>
       <FadeIn>
-        <Card className="p-6 shadow-elegant sm:p-8">
+        <Card className="shadow-elegant p-6 sm:p-8">
           <div className="mb-6 text-center">
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight">
               {isSignUp ? dict.signUpTitle : dict.signInTitle}
             </h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
               {showTypeChoice
-                ? "اختر نوع الحساب لنجهّز لك التجربة المناسبة"
+                ? copy.chooseAccountType
                 : isSignUp
                   ? dict.signUpSubtitle
                   : dict.signInSubtitle}
@@ -172,13 +171,10 @@ export function AuthForm({
           {accountDisabled && (
             <div
               role="alert"
-              className="mb-5 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-3 text-sm text-destructive"
+              className="border-destructive/30 bg-destructive/10 text-destructive mb-5 flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-sm"
             >
               <ShieldAlert className="mt-0.5 size-4.5 shrink-0" />
-              <span>
-                تم تعطيل هذا الحساب. إذا كنت تعتقد أن هذا خطأ، تواصل مع فريق
-                الدعم لمراجعة حالة حسابك.
-              </span>
+              <span>{copy.accountDisabled}</span>
             </div>
           )}
 
@@ -188,19 +184,15 @@ export function AuthForm({
                 type="button"
                 onClick={() => void handleGoogle()}
                 disabled={googleLoading}
-                className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-card text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elegant disabled:pointer-events-none disabled:opacity-60"
+                className="border-border bg-card text-foreground hover:shadow-elegant flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border text-sm font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-60"
               >
                 <GoogleGlyph className="size-4.5" />
-                {googleLoading
-                  ? "يرجى الانتظار…"
-                  : isSignUp
-                    ? "إنشاء حساب عبر Google"
-                    : "الدخول عبر Google"}
+                {googleLoading ? copy.loading : isSignUp ? copy.googleSignUp : copy.googleSignIn}
               </button>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                أو
-                <span className="h-px flex-1 bg-border" />
+              <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                <span className="bg-border h-px flex-1" />
+                {copy.or}
+                <span className="bg-border h-px flex-1" />
               </div>
             </div>
           )}
@@ -209,19 +201,18 @@ export function AuthForm({
             <div className="flex flex-col gap-3">
               <TypeChoiceCard
                 icon={HeartPulse}
-                title="أنا مريض"
-                description="أبحث عن إجراء تجميلي وأريد استشارة ومتابعة موثوقة من مكان واحد."
+                title={copy.patientTitle}
+                description={copy.patientDescription}
                 onClick={() => setAccountType("patient")}
               />
               <TypeChoiceCard
                 icon={Stethoscope}
-                title="أنا طبيب"
-                description="أقدّم خدمات تجميلية وأرغب بالانضمام للمنصة بعد التحقق من الترخيص."
+                title={copy.doctorTitle}
+                description={copy.doctorDescription}
                 onClick={() => setAccountType("doctor")}
               />
-              <p className="mt-1 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
-                حسابات الأطباء والمراكز تمر بمراجعة واعتماد قبل الظهور على
-                المنصة — حفاظًا على ثقة المرضى.
+              <p className="bg-muted/60 text-muted-foreground mt-1 rounded-lg p-3 text-xs leading-relaxed">
+                {copy.providerReviewNote}
               </p>
             </div>
           ) : (
@@ -231,18 +222,18 @@ export function AuthForm({
                   <button
                     type="button"
                     onClick={() => setAccountType(null)}
-                    className="group -mt-2 inline-flex w-fit items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    className="group text-primary -mt-2 inline-flex w-fit items-center gap-1 text-xs font-medium hover:underline"
                   >
                     <ChevronLeft className="size-3.5 rtl:rotate-180" />
-                    {accountType === "doctor" ? "حساب طبيب" : "حساب مريض"} —
-                    تغيير النوع
+                    {accountType === "doctor" ? copy.doctorAccount : copy.patientAccount}{" "}
+                    {copy.changeType}
                   </button>
 
                   {accountType === "doctor" && (
-                    <p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed text-foreground">
-                      بعد إنشاء الحساب ستنتقل مباشرة لاستكمال{" "}
-                      <span className="font-bold">طلب اعتماد الطبيب</span>{" "}
-                      (الترخيص، التخصص، وسنوات الخبرة) ليراجعه فريق الامتثال.
+                    <p className="border-primary/20 bg-primary/5 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
+                      {copy.doctorNextPrefix}{" "}
+                      <span className="font-bold">{copy.doctorApplication}</span>{" "}
+                      {copy.doctorNextSuffix}
                     </p>
                   )}
 
@@ -279,9 +270,9 @@ export function AuthForm({
                   {!isSignUp && (
                     <Link
                       href="/forgot-password"
-                      className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                      className="text-primary text-xs font-medium underline-offset-4 hover:underline"
                     >
-                      نسيت كلمة المرور؟
+                      {copy.forgotPassword}
                     </Link>
                   )}
                 </div>
@@ -301,7 +292,7 @@ export function AuthForm({
               {isSignUp && (
                 <>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="phone">رقم الجوال</Label>
+                    <Label htmlFor="phone">{copy.phone}</Label>
                     <Input
                       id="phone"
                       type="tel"
@@ -318,30 +309,28 @@ export function AuthForm({
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="country">دولة الإقامة</Label>
+                      <Label htmlFor="country">{copy.country}</Label>
                       <select
                         id="country"
                         required
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
-                        className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                        className="border-input focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 h-8 w-full rounded-lg border bg-transparent px-2.5 text-base transition-colors outline-none focus-visible:ring-3 md:text-sm"
                       >
                         <option value="" disabled>
-                          اختر الدولة
+                          {copy.chooseCountry}
                         </option>
                         {COUNTRY_CODES.map((code) => (
                           <option key={code} value={code}>
-                            {countryNameAr(code)}
+                            {locale === "ar" ? countryNameAr(code) : countryNameEn(code)}
                           </option>
                         ))}
                       </select>
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="city">
-                        المدينة{" "}
-                        <span className="font-normal text-muted-foreground">
-                          (اختياري)
-                        </span>
+                        {copy.city}{" "}
+                        <span className="text-muted-foreground font-normal">{copy.optional}</span>
                       </Label>
                       <Input
                         id="city"
@@ -352,69 +341,68 @@ export function AuthForm({
                     </div>
                   </div>
 
-                  <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-foreground">
+                  <label className="text-foreground flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
                     <Checkbox
                       checked={agree}
                       onCheckedChange={(c) => setAgree(Boolean(c))}
                       className="mt-0.5"
                     />
                     <span>
-                      أوافق على{" "}
+                      {copy.agreePrefix}{" "}
                       <Link
                         href="/terms"
                         target="_blank"
-                        className="font-medium text-primary underline-offset-4 hover:underline"
+                        className="text-primary font-medium underline-offset-4 hover:underline"
                       >
-                        الشروط والأحكام
+                        {copy.terms}
                       </Link>{" "}
-                      و{" "}
+                      {copy.and}{" "}
                       <Link
                         href="/privacy"
                         target="_blank"
-                        className="font-medium text-primary underline-offset-4 hover:underline"
+                        className="text-primary font-medium underline-offset-4 hover:underline"
                       >
-                        سياسة الخصوصية
+                        {copy.privacy}
                       </Link>
-                      ، وأقر بأن المنصة وسيط للتواصل مع مقدّمي الخدمة ولا تقدم
-                      نصيحة طبية.
+                      {copy.medicalDisclaimer}
                     </span>
                   </label>
                 </>
               )}
 
               {!isSignUp && (
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
-                  <Checkbox
-                    checked={remember}
-                    onCheckedChange={(c) => setRemember(Boolean(c))}
-                  />
-                  تذكّرني على هذا الجهاز
+                <label className="text-foreground flex cursor-pointer items-center gap-2.5 text-sm">
+                  <Checkbox checked={remember} onCheckedChange={(c) => setRemember(Boolean(c))} />
+                  {copy.rememberMe}
                 </label>
               )}
 
               {error && (
-                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                <p
+                  className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm"
+                  role="alert"
+                >
                   {error}
                 </p>
               )}
 
               <Button type="submit" disabled={loading} className="w-full" size="lg">
                 {loading
-                  ? "يرجى الانتظار…"
+                  ? copy.loading
                   : isSignUp
                     ? accountType === "doctor"
-                      ? "إنشاء الحساب ومتابعة طلب الاعتماد"
+                      ? copy.createDoctorAccount
                       : dict.signUpTitle
                     : dict.signInTitle}
               </Button>
             </form>
           )}
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-6 text-center text-sm">
             {isSignUp ? dict.haveAccount : dict.noAccount}{" "}
             <Link
               href={isSignUp ? "/sign-in" : "/sign-up"}
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              className="text-primary font-medium underline-offset-4 hover:underline"
             >
               {isSignUp ? dict.signInTitle : dict.signUpTitle}
             </Link>
@@ -441,22 +429,18 @@ function TypeChoiceCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex items-start gap-3.5 rounded-xl border border-border bg-card p-4 text-start transition-all duration-200",
-        "hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-elegant",
+        "group border-border bg-card flex items-start gap-3.5 rounded-xl border p-4 text-start transition-all duration-200",
+        "hover:border-primary/45 hover:shadow-elegant hover:-translate-y-0.5",
       )}
     >
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 transition-transform duration-200 group-hover:scale-105">
+      <span className="bg-primary/10 text-primary ring-primary/15 flex size-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-200 group-hover:scale-105">
         <Icon className="size-5.5" />
       </span>
       <span className="flex flex-col gap-1">
-        <span className="font-heading text-base font-bold text-foreground">
-          {title}
-        </span>
-        <span className="text-xs leading-relaxed text-muted-foreground">
-          {description}
-        </span>
+        <span className="font-heading text-foreground text-base font-bold">{title}</span>
+        <span className="text-muted-foreground text-xs leading-relaxed">{description}</span>
       </span>
-      <ChevronLeft className="ms-auto mt-1 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-x-0.5 group-hover:text-primary rtl:rotate-0 ltr:rotate-180" />
+      <ChevronLeft className="text-muted-foreground group-hover:text-primary ms-auto mt-1 size-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5 ltr:rotate-180 rtl:rotate-0" />
     </button>
   )
 }
@@ -486,18 +470,119 @@ function GoogleGlyph({ className }: { className?: string }) {
   )
 }
 
-function translateAuthError(message?: string): string {
-  if (!message) return "حدث خطأ ما، حاول مرة أخرى."
+const AUTH_COPY = {
+  ar: {
+    googleError: "تعذّر تسجيل الدخول عبر Google. حاول مرة أخرى.",
+    termsRequired: "يلزم الموافقة على الشروط وسياسة الخصوصية للمتابعة.",
+    accountCreatedSignIn: "تم إنشاء الحساب. سجّل الدخول لإكمال بياناتك.",
+    chooseAccountType: "اختر نوع الحساب لنجهّز لك التجربة المناسبة",
+    accountDisabled: "تم تعطيل هذا الحساب. تواصل مع فريق الدعم لمراجعة حالته.",
+    loading: "يرجى الانتظار…",
+    googleSignUp: "إنشاء حساب عبر Google",
+    googleSignIn: "الدخول عبر Google",
+    or: "أو",
+    patientTitle: "أنا مريض",
+    patientDescription: "أبحث عن إجراء تجميلي وأريد استشارة ومتابعة موثوقة من مكان واحد.",
+    doctorTitle: "أنا طبيب",
+    doctorDescription: "أقدّم خدمات تجميلية وأرغب بالانضمام للمنصة بعد التحقق من الترخيص.",
+    providerReviewNote: "يظهر مقدّمو الخدمة للمرضى بعد مراجعة بياناتهم وتراخيصهم.",
+    doctorAccount: "حساب طبيب",
+    patientAccount: "حساب مريض",
+    changeType: "· تغيير النوع",
+    doctorNextPrefix: "بعد إنشاء الحساب ستنتقل مباشرة لاستكمال",
+    doctorApplication: "طلب اعتماد الطبيب",
+    doctorNextSuffix: "(الترخيص، التخصص، وسنوات الخبرة) ليراجعه فريق الامتثال.",
+    forgotPassword: "نسيت كلمة المرور؟",
+    phone: "رقم الجوال",
+    country: "دولة الإقامة",
+    chooseCountry: "اختر الدولة",
+    city: "المدينة",
+    optional: "(اختياري)",
+    agreePrefix: "أوافق على",
+    terms: "الشروط والأحكام",
+    and: "و",
+    privacy: "سياسة الخصوصية",
+    medicalDisclaimer:
+      "، وأفهم أن المنصة تسهّل التواصل مع مقدّمي الخدمة ولا تستبدل الاستشارة الطبية.",
+    rememberMe: "تذكّرني على هذا الجهاز",
+    createDoctorAccount: "إنشاء الحساب ومتابعة طلب الاعتماد",
+    genericError: "تعذّر إتمام العملية. حاول مرة أخرى.",
+    invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    shortPassword: "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
+    emailExists: "هذا البريد الإلكتروني مسجّل بالفعل.",
+    invalidEmail: "يرجى إدخال بريد إلكتروني صحيح.",
+    invalidOrigin: "تعذّر التحقق من الجلسة. حدّث الصفحة وحاول مرة أخرى.",
+    rateLimited: "عدد المحاولات كبير. انتظر قليلًا ثم حاول مرة أخرى.",
+    invalidPhone: "تحقّق من رقم الجوال وأعد المحاولة.",
+    invalidCountry: "اختر دولة الإقامة للمتابعة.",
+  },
+  en: {
+    googleError: "Google sign-in could not be completed. Please try again.",
+    termsRequired: "Accept the Terms and Privacy Policy to continue.",
+    accountCreatedSignIn: "Your account was created. Sign in to complete your details.",
+    chooseAccountType: "Choose an account type to personalize your experience",
+    accountDisabled: "This account is disabled. Contact support to review its status.",
+    loading: "Please wait…",
+    googleSignUp: "Create an account with Google",
+    googleSignIn: "Continue with Google",
+    or: "or",
+    patientTitle: "I am a patient",
+    patientDescription:
+      "I am exploring aesthetic care and want trusted consultation and follow-up in one place.",
+    doctorTitle: "I am a doctor",
+    doctorDescription: "I provide aesthetic care and want to join after license verification.",
+    providerReviewNote:
+      "Providers become visible to patients after their profile and license are reviewed.",
+    doctorAccount: "Doctor account",
+    patientAccount: "Patient account",
+    changeType: "· change type",
+    doctorNextPrefix: "After creating your account, you will continue to the",
+    doctorApplication: "doctor accreditation application",
+    doctorNextSuffix: "with your license, specialty, and experience for compliance review.",
+    forgotPassword: "Forgot password?",
+    phone: "Mobile number",
+    country: "Country of residence",
+    chooseCountry: "Choose a country",
+    city: "City",
+    optional: "(optional)",
+    agreePrefix: "I agree to the",
+    terms: "Terms and Conditions",
+    and: "and",
+    privacy: "Privacy Policy",
+    medicalDisclaimer:
+      ", and understand that Med Aura facilitates contact with providers and does not replace medical advice.",
+    rememberMe: "Remember me on this device",
+    createDoctorAccount: "Create account and continue accreditation",
+    genericError: "We couldn't complete that request. Please try again.",
+    invalidCredentials: "The email or password is incorrect.",
+    shortPassword: "Your password must be at least 8 characters.",
+    emailExists: "An account already exists for this email.",
+    invalidEmail: "Enter a valid email address.",
+    invalidOrigin: "We couldn't verify this session. Refresh the page and try again.",
+    rateLimited: "Too many attempts. Wait a moment and try again.",
+    invalidPhone: "Check your mobile number and try again.",
+    invalidCountry: "Choose your country of residence to continue.",
+  },
+} as const
+
+function translateAuthError(message: string | undefined, locale: Locale): string {
+  const copy = AUTH_COPY[locale]
+  if (!message) return copy.genericError
   const m = message.toLowerCase()
-  if (m.includes("invalid") && m.includes("password"))
-    return "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+  if (m.includes("invalid") && m.includes("password")) return copy.invalidCredentials
   if (m.includes("password") && (m.includes("short") || m.includes("length") || m.includes("8")))
-    return "كلمة المرور يجب أن تكون 8 أحرف على الأقل."
-  if (m.includes("credential")) return "البريد الإلكتروني أو كلمة المرور غير صحيحة."
-  if (m.includes("exist") || m.includes("already")) return "هذا البريد الإلكتروني مسجّل بالفعل."
-  if (m.includes("email")) return "يرجى إدخال بريد إلكتروني صحيح."
-  if (m.includes("origin") || m.includes("csrf") || m.includes("cors"))
-    return "تعذّر التحقق من مصدر الطلب. حدّث الصفحة وحاول مرة أخرى."
-  if (m.includes("rate")) return "عدد المحاولات كبير، انتظر قليلًا ثم حاول مرة أخرى."
-  return "تعذّر إتمام العملية، حاول مرة أخرى."
+    return copy.shortPassword
+  if (m.includes("credential")) return copy.invalidCredentials
+  if (m.includes("exist") || m.includes("already")) return copy.emailExists
+  if (m.includes("email")) return copy.invalidEmail
+  if (m.includes("origin") || m.includes("csrf") || m.includes("cors")) return copy.invalidOrigin
+  if (m.includes("rate")) return copy.rateLimited
+  return copy.genericError
+}
+
+function translateProfileError(message: string, locale: Locale): string {
+  if (locale === "ar") return message
+  if (message.includes("الهاتف") || message.includes("الجوال")) return AUTH_COPY.en.invalidPhone
+  if (message.includes("الدولة")) return AUTH_COPY.en.invalidCountry
+  return AUTH_COPY.en.genericError
 }

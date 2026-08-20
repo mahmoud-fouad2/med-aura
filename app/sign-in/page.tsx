@@ -16,10 +16,11 @@ export default async function SignInPage({
   const user = await getCurrentUser()
   const { next, disabled, googleError } = await searchParams
   if (user) redirect(next || "/dashboard")
-  const { t } = await getI18n()
+  const { locale, t } = await getI18n()
   return (
     <AuthForm
       mode="sign-in"
+      locale={locale}
       dict={t.auth}
       home={t.home}
       authShell={t.authShell}

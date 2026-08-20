@@ -24,6 +24,7 @@ import {
 } from "@/lib/seo"
 
 import { getI18n } from "@/lib/i18n"
+import { formatRecoveryDays } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -38,10 +39,12 @@ export async function generateMetadata({
   const p = r.status === "ok" ? r.data : null
   if (!p) return { title: t.common.none }
   return buildPageMetadata({
-    title: `${p.nameAr} — ${p.categoryNameAr}`,
+    title: `${locale === "ar" ? p.nameAr : p.nameEn} — ${locale === "ar" ? p.categoryNameAr : p.categoryNameEn}`,
     description:
-      p.descriptionAr ??
-      `تعرّف على ${p.nameAr} وقارن بين الأطباء المناسبين قبل حجز الاستشارة.`,
+      (locale === "ar" ? p.descriptionAr : p.descriptionEn) ??
+      (locale === "ar"
+        ? `تعرّف على ${p.nameAr} وقارن بين الأطباء المناسبين قبل حجز الاستشارة.`
+        : `Learn about ${p.nameEn} and compare suitable doctors before booking.`),
     path: `/procedures/${p.slug}`,
     image: serviceImageForProcedure(p.slug, p.categorySlug),
     locale: locale === "en" ? "en" : "ar",
@@ -77,7 +80,7 @@ export default async function ProcedureDetailPage({
   const procedure = procRes.data
   if (!procedure) notFound()
 
-  const doctorsRes = await query(() => searchDoctors({ procedure: slug, pageSize: 6 }))
+  const doctorsRes = await query(() => searchDoctors({ procedure: slug, pageSize: 6, locale }))
   const results = doctorsRes.status === "ok" ? doctorsRes.data.results : []
   const procedureImage =
     procedure.imageUrl ?? serviceImageForProcedure(procedure.slug, procedure.categorySlug)
@@ -85,10 +88,10 @@ export default async function ProcedureDetailPage({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "MedicalProcedure",
-    name: procedure.nameAr,
+    name: isAr ? procedure.nameAr : procedure.nameEn,
     alternateName: procedure.nameEn,
     category: procedure.categoryNameAr,
-    description: procedure.descriptionAr ?? undefined,
+    description: (isAr ? procedure.descriptionAr : procedure.descriptionEn) ?? undefined,
     image: procedure.imageUrl ?? absoluteUrl(procedureImage),
     url: absoluteUrl(`/procedures/${procedure.slug}`),
     provider: {
@@ -102,9 +105,9 @@ export default async function ProcedureDetailPage({
     },
   }
   const breadcrumb = breadcrumbJsonLd([
-    { name: "الرئيسية", url: absoluteUrl("/") },
-    { name: "إجراءات التجميل", url: absoluteUrl("/procedures") },
-    { name: procedure.nameAr, url: absoluteUrl(`/procedures/${procedure.slug}`) },
+    { name: isAr ? "الرئيسية" : "Home", url: absoluteUrl("/") },
+    { name: isAr ? "إجراءات التجميل" : "Aesthetic procedures", url: absoluteUrl("/procedures") },
+    { name: isAr ? procedure.nameAr : procedure.nameEn, url: absoluteUrl(`/procedures/${procedure.slug}`) },
   ])
 
   return (
@@ -119,7 +122,7 @@ export default async function ProcedureDetailPage({
           <div className="absolute inset-0">
             <Image
               src={procedureImage}
-              alt=""
+              alt={isAr ? procedure.nameAr : procedure.nameEn}
               fill
               priority
               className="object-cover object-center"
@@ -146,11 +149,11 @@ export default async function ProcedureDetailPage({
                 </Badge>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <span>{isAr ? `التصنيف: ${procedure.categoryNameAr}` : `Category: ${procedure.categoryNameAr}`}</span>
+                <span>{isAr ? `التصنيف: ${procedure.categoryNameAr}` : `Category: ${procedure.categoryNameEn}`}</span>
                 {procedure.recoveryDays != null && procedure.recoveryDays > 0 && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="size-4" />
-                    {isAr ? `العودة للروتين غالبًا خلال ${procedure.recoveryDays} يوم` : `Estimated recovery: ${procedure.recoveryDays} Days`}
+                    {formatRecoveryDays(procedure.recoveryDays, locale)}
                   </span>
                 )}
               </div>
@@ -182,6 +185,26 @@ export default async function ProcedureDetailPage({
           </div>
         </section>
 
+        <section className="border-b border-border bg-background">
+          <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+            <h2 className="font-heading text-2xl font-bold text-foreground">
+              {isAr ? "نقاط تناقشها في الاستشارة" : "What to discuss in your consultation"}
+            </h2>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                isAr ? "مدى ملاءمة الإجراء لهدفك وحالتك الصحية" : "Whether the procedure fits your goals and health history",
+                isAr ? "النتيجة المتوقعة وحدود ما يمكن تحقيقه" : "Expected outcomes and realistic limitations",
+                isAr ? "فترة التعافي والتعليمات الخاصة بك" : "Your recovery timeline and aftercare instructions",
+                isAr ? "التكلفة الكاملة وما تتضمنه الخطة" : "The complete cost and what the plan includes",
+              ].map((point) => (
+                <div key={point} className="rounded-lg border border-border/70 bg-card p-4 text-sm leading-6 text-muted-foreground">
+                  {point}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="bg-section-soft">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <h2 className="mb-8 font-heading text-2xl font-bold text-foreground">
@@ -203,7 +226,7 @@ export default async function ProcedureDetailPage({
               <Stagger className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {results.map((d) => (
                   <StaggerItem key={d.id}>
-                    <DoctorCard doctor={d} />
+                    <DoctorCard doctor={d} locale={locale} />
                   </StaggerItem>
                 ))}
               </Stagger>

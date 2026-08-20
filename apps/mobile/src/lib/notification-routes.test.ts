@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest"
-import { resolveNativeNotificationRoute } from "./notification-routes"
+import {
+  notificationHref,
+  resolveNativeNotificationRoute,
+  resolveNotificationDestination,
+} from "./notification-routes"
 
 describe("resolveNativeNotificationRoute", () => {
   it("maps a case href to the native case screen", () => {
@@ -34,5 +38,26 @@ describe("resolveNativeNotificationRoute", () => {
     expect(resolveNativeNotificationRoute(null)).toBeNull()
     expect(resolveNativeNotificationRoute(undefined)).toBeNull()
     expect(resolveNativeNotificationRoute("")).toBeNull()
+  })
+})
+
+describe("notification response data", () => {
+  it("accepts the href and url payload keys", () => {
+    expect(notificationHref({ href: "/dashboard/appointments" })).toBe(
+      "/dashboard/appointments",
+    )
+    expect(notificationHref({ url: "/dashboard/support/ticket-1" })).toBe(
+      "/dashboard/support/ticket-1",
+    )
+  })
+
+  it("opens a native destination and safely falls back to the inbox", () => {
+    expect(resolveNotificationDestination({ href: "/dashboard/cases/case-1" })).toBe(
+      "/case/case-1",
+    )
+    expect(resolveNotificationDestination({ href: "/admin/tickets" })).toBe(
+      "/notifications",
+    )
+    expect(resolveNotificationDestination(null)).toBe("/notifications")
   })
 })

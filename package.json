@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "postbuild": "node scripts/prepare-standalone.mjs",
-    "start": "node --max-old-space-size=320 .next/standalone/server.js",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --max-old-space-size=320 .next/standalone/server.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

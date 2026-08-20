@@ -1,6 +1,4 @@
 import type { ReactNode } from "react"
-import Image from "next/image"
-import { cn } from "@/lib/utils"
 
 /**
  * Warm, editorial welcome banner for personal dashboards. Left column holds
@@ -20,34 +18,19 @@ export function DashboardHero({
   aside?: ReactNode
 }) {
   return (
-    <section
-      className={cn(
-        "relative isolate overflow-hidden rounded-3xl border border-white/70 bg-card",
-        "shadow-elegant-lg",
-      )}
-    >
-      <Image
-        src="/hero-medaura-consultation.png"
-        alt=""
-        fill
-        className="absolute inset-0 -z-20 object-cover object-left opacity-28"
-        sizes="(min-width: 1024px) 80rem, 100vw"
-      />
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,color-mix(in_oklab,var(--card)_96%,transparent)_0%,color-mix(in_oklab,var(--card)_92%,transparent)_48%,color-mix(in_oklab,var(--card)_72%,transparent)_100%)] ltr:bg-[linear-gradient(270deg,color-mix(in_oklab,var(--card)_96%,transparent)_0%,color-mix(in_oklab,var(--card)_92%,transparent)_48%,color-mix(in_oklab,var(--card)_72%,transparent)_100%)]" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" />
-
-      <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
-        <div className="min-w-0 space-y-4">
+    <section className="overflow-hidden rounded-lg border border-border/70 bg-card">
+      <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+        <div className="min-w-0 space-y-3">
           {eyebrow && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-1 font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
               {eyebrow}
             </span>
           )}
-          <h1 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-[36px]">
+          <h1 className="font-heading text-2xl font-bold leading-tight text-foreground sm:text-3xl">
             {greeting}
           </h1>
           {subtitle && (
-            <p className="max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+            <p className="max-w-xl text-sm leading-6 text-muted-foreground">
               {subtitle}
             </p>
           )}
@@ -59,10 +42,8 @@ export function DashboardHero({
         </div>
 
         {aside && (
-          <div className="lg:pt-2">
-            <div className="rounded-2xl border border-white/70 bg-background/82 p-4 shadow-sm backdrop-blur-md">
-              {aside}
-            </div>
+          <div className="border-t border-border/70 pt-5 lg:border-s lg:border-t-0 lg:ps-6 lg:pt-0">
+            {aside}
           </div>
         )}
       </div>

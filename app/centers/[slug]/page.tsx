@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Reveal } from "@/components/motion"
 import { getCenterBySlug } from "@/lib/data/centers"
 import { query } from "@/lib/db/query"
-import { countryNameAr } from "@/lib/status-labels"
+import { countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { Stethoscope } from "lucide-react"
 import { getI18n } from "@/lib/i18n"
 import {
@@ -23,6 +23,7 @@ import {
   geoCoordinatesJsonLd,
   jsonLdScript,
 } from "@/lib/seo"
+import { PUBLIC_MEDIA } from "@/lib/public-media"
 
 export const dynamic = "force-dynamic"
 
@@ -32,17 +33,18 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const { t } = await getI18n()
+  const { t, locale } = await getI18n()
   const r = await query(() => getCenterBySlug(slug))
   const c = r.status === "ok" ? r.data : null
   if (!c) return { title: t.common.none }
   return buildPageMetadata({
     title: c.name,
     description:
-      c.description ??
-      `${c.name} على Med Aura: أطباء معتمدون، بيانات واضحة، وحجز استشارة تجميلية بثقة.`,
+      c.description ?? (locale === "ar"
+        ? `${c.name} على Med Aura: بيانات واضحة وخيارات استشارة مناسبة.`
+        : `${c.name} on Med Aura: a clear profile and consultation options.`),
     path: `/centers/${c.slug}`,
-    image: "/demo-services/aesthetic-clinic-lounge.png",
+    image: c.coverUrl ?? PUBLIC_MEDIA.centers,
   })
 }
 
@@ -51,7 +53,7 @@ export default async function CenterDetailPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const [{ slug }, { t }] = await Promise.all([
+  const [{ slug }, { t, locale }] = await Promise.all([
     params,
     getI18n(),
   ])
@@ -72,18 +74,20 @@ export default async function CenterDetailPage({
   }
   const c = r.data
   if (!c) notFound()
+  const isAr = locale === "ar"
+  const l = (ar: string, en: string) => (isAr ? ar : en)
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "MedicalClinic",
     name: c.name,
     ...(c.description ? { description: c.description } : {}),
-    image: absoluteUrl("/demo-services/aesthetic-clinic-lounge.png"),
+    image: absoluteUrl(c.coverUrl ?? PUBLIC_MEDIA.centers),
     address: {
       "@type": "PostalAddress",
       ...(c.address ? { streetAddress: c.address } : {}),
       ...(c.city ? { addressLocality: c.city } : {}),
-      addressCountry: countryNameAr(c.country) || c.country,
+      addressCountry: (isAr ? countryNameAr(c.country) : countryNameEn(c.country)) || c.country,
     },
     ...(geoCoordinatesJsonLd(c.country) ? { geo: geoCoordinatesJsonLd(c.country) } : {}),
     url: absoluteUrl(`/centers/${c.slug}`),
@@ -116,8 +120,8 @@ export default async function CenterDetailPage({
     })
   }
   const breadcrumb = breadcrumbJsonLd([
-    { name: "الرئيسية", url: absoluteUrl("/") },
-    { name: "المراكز", url: absoluteUrl("/centers") },
+    { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
+    { name: l("المراكز", "Centers"), url: absoluteUrl("/centers") },
     { name: c.name, url: absoluteUrl(`/centers/${c.slug}`) },
   ])
 
@@ -132,8 +136,8 @@ export default async function CenterDetailPage({
         <section className="relative overflow-hidden border-b border-border bg-background">
           <div className="absolute inset-0">
             <Image
-              src="/demo-services/aesthetic-clinic-lounge.png"
-              alt=""
+              src={c.coverUrl ?? PUBLIC_MEDIA.centers}
+              alt={l(`واجهة ${c.name}`, `${c.name} center`)}
               fill
               priority
               className="object-cover object-center"
@@ -164,7 +168,7 @@ export default async function CenterDetailPage({
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="size-4" />
-                      {[c.city, countryNameAr(c.country)].filter(Boolean).join("، ")}
+                      {[c.city, isAr ? countryNameAr(c.country) : countryNameEn(c.country)].filter(Boolean).join(isAr ? "، " : ", ")}
                     </span>
                     {c.languages.length > 0 && (
                       <span className="inline-flex items-center gap-1">
@@ -187,12 +191,12 @@ export default async function CenterDetailPage({
         <section className="bg-section-soft">
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
             <h2 className="mb-8 font-heading text-2xl font-bold text-foreground">
-              أطباء المركز
+              {l("أطباء المركز", "Center doctors")}
             </h2>
             {c.doctors.length === 0 ? (
               <EmptyState
                 icon={Stethoscope}
-                title="لا يوجد أطباء منشورون في هذا المركز بعد"
+                title={l("لا يوجد أطباء منشورون في هذا المركز بعد", "No doctors are published for this center yet")}
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

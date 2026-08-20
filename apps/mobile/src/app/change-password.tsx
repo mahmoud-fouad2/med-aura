@@ -16,7 +16,7 @@ import { AppText, Button, Card, ChevronBack, SectionHeading } from "../component
 import { authClient } from "../lib/auth-client"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
-import { Field, inputStyle } from "./sign-in"
+import { Field, inputStyle } from "../components/form"
 
 /**
  * In-app password change via the platform's own auth endpoint — requires the

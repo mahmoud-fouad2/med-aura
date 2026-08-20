@@ -31,15 +31,17 @@ export function AdminShell({
 
   const activeLabel = nav
     .flatMap((g) => g.items)
-    .find((i) => (i.href === "/admin" ? pathname === i.href : pathname.startsWith(i.href.split("#")[0])))
-    ?.label
+    .find((i) => {
+      const base = i.href.split("#")[0] ?? i.href
+      return i.href === "/admin" ? pathname === i.href : pathname.startsWith(base)
+    })?.label
 
   return (
-    <div className="flex min-h-svh bg-muted/30">
+    <div className="bg-muted/30 flex min-h-svh">
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-4 my-4 ms-4 hidden h-[calc(100svh-2rem)] shrink-0 flex-col rounded-xl border border-border/70 bg-card shadow-sm ease-premium transition-[width] duration-200 md:flex",
+          "border-border/70 bg-card ease-premium sticky top-4 my-4 ms-4 hidden h-[calc(100svh-2rem)] shrink-0 flex-col rounded-xl border shadow-sm transition-[width] duration-200 md:flex",
           collapsed ? "w-[72px]" : "w-[248px]",
         )}
       >
@@ -49,7 +51,7 @@ export function AdminShell({
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center justify-center gap-2 border-t border-sidebar-border/70 py-3 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="border-sidebar-border/70 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center justify-center gap-2 border-t py-3 text-sm transition-colors"
           aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
         >
           {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -81,7 +83,7 @@ export function AdminShell({
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6">
-          <div className="flex h-16 items-center gap-3 rounded-xl border border-border/70 bg-background px-4 shadow-sm sm:px-6">
+          <div className="border-border/70 bg-background flex h-16 items-center gap-3 rounded-xl border px-4 shadow-sm sm:px-6">
             <Button
               variant="ghost"
               size="icon"
@@ -92,17 +94,21 @@ export function AdminShell({
               <Menu className="size-5" />
             </Button>
 
-            <div className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex">
-              <Link href="/admin" className="hover:text-foreground">الإدارة</Link>
+            <div className="text-muted-foreground hidden items-center gap-1.5 text-xs md:flex">
+              <Link href="/admin" className="hover:text-foreground">
+                الإدارة
+              </Link>
               {activeLabel && activeLabel !== "نظرة عامة" && (
                 <>
-                  <ChevronLeft className="size-3 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180" />
-                  <span className="rounded-full bg-secondary px-2.5 py-1 font-semibold text-foreground">{activeLabel}</span>
+                  <ChevronLeft className="size-3 transition-transform duration-300 ltr:rotate-180 rtl:rotate-0" />
+                  <span className="bg-secondary text-foreground rounded-full px-2.5 py-1 font-semibold">
+                    {activeLabel}
+                  </span>
                 </>
               )}
             </div>
 
-            <h1 className="font-heading text-base font-bold text-foreground md:hidden">
+            <h1 className="font-heading text-foreground text-base font-bold md:hidden">
               {activeLabel ?? "الإدارة"}
             </h1>
 
@@ -116,11 +122,11 @@ export function AdminShell({
               <Link
                 href="/dashboard/notifications"
                 aria-label="الإشعارات"
-                className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground relative flex size-9 items-center justify-center rounded-lg transition-colors"
               >
                 <Bell className="size-[18px]" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute top-1 end-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                  <span className="bg-destructive text-destructive-foreground absolute end-1 top-1 flex size-4 items-center justify-center rounded-full text-[10px] font-bold">
                     {unreadNotifications > 9 ? "9+" : unreadNotifications}
                   </span>
                 )}
@@ -137,7 +143,7 @@ export function AdminShell({
 }
 
 function isActiveHref(href: string, pathname: string): boolean {
-  const base = href.split("#")[0]
+  const base = href.split("#")[0] ?? href
   return base === "/admin" ? pathname === "/admin" : pathname.startsWith(base)
 }
 
@@ -158,7 +164,9 @@ function SidebarInner({
   // Recreated whenever the active group changes (e.g. navigating from one
   // section to another) so the sidebar always opens on wherever you are,
   // while still letting the user freely open/close any other group by hand.
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(activeGroup ? [activeGroup] : []))
+  const [openGroups, setOpenGroups] = useState<Set<string>>(
+    () => new Set(activeGroup ? [activeGroup] : []),
+  )
   const [lastActiveGroup, setLastActiveGroup] = useState(activeGroup)
   if (activeGroup !== lastActiveGroup) {
     setLastActiveGroup(activeGroup)
@@ -175,16 +183,26 @@ function SidebarInner({
   }
 
   return (
-    <div className="flex h-full flex-col bg-transparent text-sidebar-foreground">
-      <div className={cn("flex h-16 items-center border-b border-sidebar-border/70 px-3.5", collapsed && "justify-center px-2")}>
-        <Link href="/admin" aria-label="Med Aura" onClick={onNavigate} className="flex items-center gap-3">
-          {collapsed ? <LogoMark className="size-7 text-primary" /> : <Logo className="h-7" />}
+    <div className="text-sidebar-foreground flex h-full flex-col bg-transparent">
+      <div
+        className={cn(
+          "border-sidebar-border/70 flex h-16 items-center border-b px-3.5",
+          collapsed && "justify-center px-2",
+        )}
+      >
+        <Link
+          href="/admin"
+          aria-label="Med Aura"
+          onClick={onNavigate}
+          className="flex items-center gap-3"
+        >
+          {collapsed ? <LogoMark className="text-primary size-7" /> : <Logo className="h-7" />}
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
+              <p className="text-primary/70 text-[11px] font-semibold tracking-[0.18em] uppercase">
                 إدارة المنصة
               </p>
-              <p className="truncate text-sm font-bold text-foreground">لوحة الإدارة</p>
+              <p className="text-foreground truncate text-sm font-bold">لوحة الإدارة</p>
             </div>
           )}
         </Link>
@@ -195,7 +213,13 @@ function SidebarInner({
           // accordion chrome — there's nothing meaningful to collapse.
           if (collapsed || group.items.length === 1) {
             return group.items.map((item) => (
-              <NavLink key={item.href} item={item} active={isActiveHref(item.href, pathname)} collapsed={collapsed} onNavigate={onNavigate} />
+              <NavLink
+                key={item.href}
+                item={item}
+                active={isActiveHref(item.href, pathname)}
+                collapsed={collapsed}
+                onNavigate={onNavigate}
+              />
             ))
           }
 
@@ -208,17 +232,29 @@ function SidebarInner({
                 aria-expanded={open}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold tracking-wide transition-colors",
-                  group.title === activeGroup ? "text-primary" : "text-foreground/75 hover:text-foreground",
+                  group.title === activeGroup
+                    ? "text-primary"
+                    : "text-foreground/75 hover:text-foreground",
                 )}
               >
                 <span className="flex-1 truncate text-start">{group.title}</span>
-                <ChevronDown className={cn("size-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")} />
+                <ChevronDown
+                  className={cn(
+                    "size-3.5 shrink-0 transition-transform duration-200",
+                    open && "rotate-180",
+                  )}
+                />
               </button>
               {open && (
                 <ul className="space-y-0.5 pb-1">
                   {group.items.map((item) => (
                     <li key={item.href}>
-                      <NavLink item={item} active={isActiveHref(item.href, pathname)} collapsed={false} onNavigate={onNavigate} />
+                      <NavLink
+                        item={item}
+                        active={isActiveHref(item.href, pathname)}
+                        collapsed={false}
+                        onNavigate={onNavigate}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -227,7 +263,12 @@ function SidebarInner({
           )
         })}
       </nav>
-      <div className={cn("border-t border-sidebar-border p-1.5", collapsed && "flex justify-center p-1.5")}>
+      <div
+        className={cn(
+          "border-sidebar-border border-t p-1.5",
+          collapsed && "flex justify-center p-1.5",
+        )}
+      >
         {collapsed ? (
           <UserMenu name={user.name} email={user.email} />
         ) : (
@@ -259,11 +300,11 @@ function NavLink({
         "group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition-all duration-150",
         collapsed && "mb-0.5 justify-center px-0",
         active
-          ? "bg-primary/12 font-bold text-primary shadow-sm shadow-primary/10"
-          : "font-medium text-foreground/70 hover:bg-secondary/85 hover:text-foreground",
+          ? "bg-primary/12 text-primary shadow-primary/10 font-bold shadow-sm"
+          : "text-foreground/70 hover:bg-secondary/85 hover:text-foreground font-medium",
       )}
     >
-      {active && <span className="absolute inset-y-1.5 -start-2.5 w-1 rounded-full bg-primary" />}
+      {active && <span className="bg-primary absolute inset-y-1.5 -start-2.5 w-1 rounded-full" />}
       <AdminIcon name={item.icon} className="size-[18px] shrink-0" />
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>

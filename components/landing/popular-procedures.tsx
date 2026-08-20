@@ -14,6 +14,7 @@ import { CategoryIconBadge } from "@/components/marketing/category-icon"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { serviceImageForProcedure } from "@/lib/seo"
 import type { Locale } from "@/lib/i18n"
+import { formatRecoveryDays } from "@/lib/format"
 
 export async function PopularProcedures({ locale }: { locale: Locale }) {
   const isAr = locale === "ar"
@@ -100,11 +101,7 @@ export async function PopularProcedures({ locale }: { locale: Locale }) {
                         : (isAr ? "غير جراحي" : "Non-surgical")}
                     </Badge>
                     <p className="mt-auto border-t border-border/40 pt-3 text-xs font-medium text-muted-foreground">
-                      {p.recoveryDays != null && p.recoveryDays > 0
-                        ? (isAr
-                            ? `العودة للروتين غالبًا خلال ${p.recoveryDays} يوم`
-                            : `Usually back to routine within ${p.recoveryDays} days`)
-                        : (isAr ? "يمكن العودة للروتين سريعًا" : "Usually little to no downtime")}
+                      {formatRecoveryDays(p.recoveryDays, locale)}
                     </p>
                   </div>
                 </Link>

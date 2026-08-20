@@ -10,6 +10,8 @@ const ar = {
     procedures: "الإجراءات",
     doctors: "الأطباء",
     centers: "المراكز",
+    destinations: "الوجهات",
+    onlineConsultation: "الاستشارة أونلاين",
     howItWorks: "كيف تعمل المنصة",
     trust: "الثقة والأمان",
     signIn: "تسجيل الدخول",
@@ -50,7 +52,7 @@ const ar = {
   search: {
     title: "ابحث عن طبيب أو إجراء",
     resultsCount: (n: number) => {
-      if (n === 0) return "لا توجد نتائج"
+      if (n === 0) return "0 طبيب"
       if (n === 1) return "نتيجة واحدة"
       if (n === 2) return "نتيجتان"
       if (n >= 3 && n <= 10) return `${n} نتائج`
@@ -85,6 +87,8 @@ const en: Dictionary = {
     procedures: "Procedures",
     doctors: "Doctors",
     centers: "Centers",
+    destinations: "Destinations",
+    onlineConsultation: "Online consultation",
     howItWorks: "How it works",
     trust: "Trust & Safety",
     signIn: "Sign in",

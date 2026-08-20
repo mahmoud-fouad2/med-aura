@@ -22,20 +22,21 @@ import {
   ChevronForward,
 } from "../components/ui"
 import { CountryPicker } from "../components/country-picker"
+import { Field, FormError, inputStyle } from "../components/form"
 import { brandAssets, Logo } from "../components/brand"
 import { GoogleGlyph } from "../components/google-glyph"
 import { authClient } from "../lib/auth-client"
-import { api, NetworkError } from "../lib/api"
+import { api } from "../lib/api"
+import { localizedApiError } from "../lib/request-errors"
 import { registerForPushNotifications } from "../lib/push-notifications"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, shadows, spacing } from "../theme"
-import { Field, inputStyle } from "./sign-in"
 
 type AccountType = "patient" | "doctor"
 
 export default function SignUp() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const [accountType, setAccountType] = useState<AccountType | null>(null)
   const [name, setName] = useState("")
@@ -81,6 +82,18 @@ export default function SignUp() {
       setError(t.auth.agreeRequired)
       return
     }
+    if (!name.trim() || !email.trim() || !password) {
+      setError(t.auth.requiredFields)
+      return
+    }
+    if (password.length < 8) {
+      setError(t.password.tooShort)
+      return
+    }
+    if (!phone.trim()) {
+      setError(t.auth.phoneRequired)
+      return
+    }
     if (!country) {
       setError(t.auth.selectCountryRequired)
       return
@@ -107,16 +120,14 @@ export default function SignUp() {
       })
     } catch (err) {
       setLoading(false)
-      // A NetworkError's message is the literal English word "offline" (see
-      // lib/api.ts) — never render it as-is. Any other thrown Error already
-      // carries the server's own (Arabic) validation message.
-      setError(
-        err instanceof NetworkError
-          ? t.common.offline
-          : err instanceof Error && err.message
-            ? err.message
-            : t.auth.genericError,
-      )
+      setError(localizedApiError(err, locale, {
+        fallback: t.auth.genericError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.auth.profileValidationError,
+        conflict: t.auth.profileConflictError,
+        rateLimited: t.common.rateLimited,
+      }))
       return
     }
     setLoading(false)
@@ -175,7 +186,7 @@ export default function SignUp() {
             borderRadius: radius.md,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: colors.card,
             opacity: googleLoading ? 0.6 : 1,
             marginBottom: spacing.lg,
             ...shadows.card,
@@ -288,32 +299,32 @@ export default function SignUp() {
               <Switch
                 value={agree}
                 onValueChange={setAgree}
+                accessibilityLabel={t.auth.agree}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: agree }}
                 trackColor={{ true: colors.primary, false: colors.border }}
-                thumbColor="#FFFFFF"
+                thumbColor={colors.onPrimary}
               />
-              <Pressable
-                style={{ flex: 1 }}
-                onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/terms`)}
-              >
+              <View style={{ flex: 1, gap: 4 }}>
                 <AppText variant="caption" color={colors.textMuted}>
-                  {t.auth.agree}
+                  {t.auth.agreePrefix}
                 </AppText>
-              </Pressable>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                  <Pressable onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/terms`)} accessibilityRole="link">
+                    <AppText variant="caption" weight="bold" color={colors.primary}>
+                      {t.auth.termsLink}
+                    </AppText>
+                  </Pressable>
+                  <Pressable onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/privacy`)} accessibilityRole="link">
+                    <AppText variant="caption" weight="bold" color={colors.primary}>
+                      {t.auth.privacyLink}
+                    </AppText>
+                  </Pressable>
+                </View>
+              </View>
             </View>
 
-            {error ? (
-              <View
-                style={{
-                  backgroundColor: colors.dangerSoft,
-                  borderRadius: radius.md,
-                  padding: spacing.md,
-                }}
-              >
-                <AppText variant="sub" color={colors.danger}>
-                  {error}
-                </AppText>
-              </View>
-            ) : null}
+            {error ? <FormError message={error} /> : null}
 
             <Button label={t.auth.signUp} onPress={() => void submit()} loading={loading} />
           </Card>

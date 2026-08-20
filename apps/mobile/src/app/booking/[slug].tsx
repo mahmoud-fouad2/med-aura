@@ -18,15 +18,10 @@ import {
 } from "../../components/ui"
 import { stateArt } from "../../components/brand"
 import { QueryErrorState } from "../../components/query-error"
-import {
-  api,
-  useDoctor,
-  useSlots,
-  NetworkError,
-  type BookingResult,
-  type ConsultationType,
-} from "../../lib/api"
+import { api, useDoctor, useSlots, type BookingResult, type ConsultationType } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { queryKeys } from "../../lib/query-keys"
+import { localizedApiError } from "../../lib/request-errors"
 import { colors, radius, spacing } from "../../theme"
 
 export default function Booking() {
@@ -84,8 +79,8 @@ export default function Booking() {
             type,
           })
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      void queryClient.invalidateQueries({ queryKey: ["appointments"] })
-      void queryClient.invalidateQueries({ queryKey: ["home"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.appointments })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.home })
       setDone(result)
     } catch (err) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -93,13 +88,14 @@ export default function Booking() {
       // lib/api.ts) — never render it as-is. Any other thrown Error already
       // carries the server's own (Arabic) message; a non-Error throw falls
       // back to the slot-taken copy, the most likely real cause here.
-      setError(
-        err instanceof NetworkError
-          ? t.common.offline
-          : err instanceof Error && err.message
-            ? err.message
-            : t.booking.slotTaken,
-      )
+      setError(localizedApiError(err, locale, {
+        fallback: t.booking.slotTaken,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.booking.slotTaken,
+        conflict: t.booking.slotTaken,
+        rateLimited: t.common.rateLimited,
+      }))
       setSelectedSlot(null)
       void slots.refetch()
     }

@@ -6,10 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText, Button, Card, ChevronBack, Chip } from "../../components/ui"
+import { Field } from "../../components/form"
 import { api, useMyAvailability } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { queryKeys } from "../../lib/query-keys"
+import { localizedApiError } from "../../lib/request-errors"
 import { colors, radius, spacing } from "../../theme"
-import { Field } from "../sign-in"
 
 type ConsultationType = "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
 
@@ -32,7 +34,7 @@ const TIME_OPTIONS = timeOptions()
  *  queryKey the list screen already populated — rather than a second
  *  "get one rule" endpoint that doesn't exist. */
 export default function AvailabilityForm() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const params = useLocalSearchParams<{ id?: string }>()
   const query = useMyAvailability()
@@ -68,11 +70,18 @@ export default function AvailabilityForm() {
         active,
       })
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      await queryClient.invalidateQueries({ queryKey: ["my-availability"] })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.availability })
       router.back()
     } catch (err) {
       setBusy(false)
-      setError(err instanceof Error ? err.message : t.availability.saveError)
+      setError(localizedApiError(err, locale, {
+        fallback: t.availability.saveError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.availability.saveError,
+        conflict: t.availability.saveError,
+        rateLimited: t.common.rateLimited,
+      }))
     }
   }
 

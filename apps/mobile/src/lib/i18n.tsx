@@ -27,6 +27,9 @@ const ar = {
     loadFailed: "تعذر تحميل البيانات. حاول مرة أخرى.",
     offline: "لا يوجد اتصال بالإنترنت.",
     offlineBody: "تحققي من اتصالك ثم أعيدي المحاولة.",
+    timeout: "استغرق الطلب وقتًا أطول من المعتاد.",
+    timeoutBody: "الاتصال موجود، لكن الاستجابة تأخرت. حاولي مرة أخرى.",
+    rateLimited: "المحاولات كثيرة الآن. انتظري قليلًا ثم حاولي مجددًا.",
     sessionExpired: "انتهت الجلسة. سجّل الدخول مرة أخرى.",
     seeAll: "عرض الكل",
   },
@@ -73,6 +76,8 @@ const ar = {
     revokeOthersHint: "ينهي الجلسات المفتوحة على أي جهاز آخر",
     sectionNew: "كلمة مرور جديدة",
     sectionSessions: "الجلسات الأخرى",
+    show: "إظهار كلمة المرور",
+    hide: "إخفاء كلمة المرور",
   },
   onboarding: {
     slides: [
@@ -117,6 +122,9 @@ const ar = {
     country: "دولة الإقامة",
     city: "المدينة (اختياري)",
     agree: "أوافق على الشروط والأحكام وسياسة الخصوصية",
+    agreePrefix: "قرأت وأوافق على",
+    termsLink: "الشروط والأحكام",
+    privacyLink: "سياسة الخصوصية",
     invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
     emailExists: "هذا البريد الإلكتروني مسجّل بالفعل.",
     genericError: "تعذّر إتمام العملية، حاول مرة أخرى.",
@@ -124,6 +132,10 @@ const ar = {
     selectCountry: "اختر دولة الإقامة",
     searchCountry: "ابحث عن دولة…",
     selectCountryRequired: "يرجى اختيار دولة الإقامة للمتابعة.",
+    requiredFields: "أكمل الاسم والبريد الإلكتروني وكلمة المرور للمتابعة.",
+    phoneRequired: "أدخل رقم الجوال للمتابعة.",
+    profileValidationError: "تحقق من رقم الجوال والبيانات المدخلة ثم حاول مرة أخرى.",
+    profileConflictError: "تعذر حفظ هذه البيانات الآن. حاول مرة أخرى.",
     signOut: "تسجيل الخروج",
     signOutConfirm: "هل تريد تسجيل الخروج من حسابك؟",
     or: "أو",
@@ -151,6 +163,8 @@ const ar = {
     greeting: "أهلاً بك! أنا مستشارك الذكي. اسألني عن الإجراءات أو دعني أرشّح لك طبيباً مناسباً.",
     disclaimer: "هذه المساعدة للإرشاد فقط وليست بديلاً عن الاستشارة الطبية.",
     placeholder: "اكتب سؤالك…",
+    send: "إرسال",
+    viewDoctor: "عرض ملف الطبيب",
     thinking: "يكتب…",
     error: "تعذّر الرد الآن. حاول مرة أخرى.",
     slow: "استغرق الرد وقتًا أطول من المعتاد. حاول مرة أخرى.",
@@ -547,6 +561,11 @@ const ar = {
     flipCamera: "تبديل الكاميرا",
     speaker: "مكبّر الصوت",
     endCall: "إنهاء المكالمة",
+    testSession: "جلسة فيديو تجريبية",
+    testDoctor: "طبيب",
+    testPatient: "مريض",
+    testFailed: "تعذر الدخول إلى جلسة الاختبار. تأكد من أن الرابط ما زال صالحًا.",
+    testEnded: "انتهت جلسة الاختبار",
     endConfirmTitle: "إنهاء الاستشارة؟",
     endConfirmBody: "يمكنك العودة ما دامت نافذة الدخول مفتوحة.",
     endedTitle: "انتهت الاستشارة",
@@ -664,6 +683,9 @@ const en: typeof ar = {
     loadFailed: "Couldn't load data. Please try again.",
     offline: "No internet connection.",
     offlineBody: "Check your connection and try again.",
+    timeout: "This is taking longer than usual.",
+    timeoutBody: "You're connected, but the response was delayed. Please try again.",
+    rateLimited: "Too many attempts right now. Wait a moment and try again.",
     sessionExpired: "Your session ended. Please sign in again.",
     seeAll: "See all",
   },
@@ -710,6 +732,8 @@ const en: typeof ar = {
     revokeOthersHint: "Ends sessions open on any other device",
     sectionNew: "New password",
     sectionSessions: "Other sessions",
+    show: "Show password",
+    hide: "Hide password",
   },
   onboarding: {
     slides: [
@@ -754,6 +778,9 @@ const en: typeof ar = {
     country: "Country of residence",
     city: "City (optional)",
     agree: "I agree to the Terms and the Privacy Policy",
+    agreePrefix: "I have read and agree to the",
+    termsLink: "Terms & Conditions",
+    privacyLink: "Privacy Policy",
     invalidCredentials: "Incorrect email or password.",
     emailExists: "This email is already registered.",
     genericError: "Something went wrong. Please try again.",
@@ -761,6 +788,10 @@ const en: typeof ar = {
     selectCountry: "Select country",
     searchCountry: "Search country…",
     selectCountryRequired: "Please select your country of residence to continue.",
+    requiredFields: "Complete your name, email, and password to continue.",
+    phoneRequired: "Enter your mobile number to continue.",
+    profileValidationError: "Check your mobile number and details, then try again.",
+    profileConflictError: "We couldn't save these details right now. Please try again.",
     signOut: "Sign out",
     signOutConfirm: "Do you want to sign out of your account?",
     or: "or",
@@ -789,6 +820,8 @@ const en: typeof ar = {
       "Hi! I'm your AI concierge. Ask me about procedures, or let me match you with the right doctor.",
     disclaimer: "This is guidance only and not a substitute for a medical consultation.",
     placeholder: "Type your question…",
+    send: "Send",
+    viewDoctor: "View doctor profile",
     thinking: "Typing…",
     error: "Couldn't respond right now. Try again.",
     slow: "That took longer than usual. Please try again.",
@@ -1185,6 +1218,11 @@ const en: typeof ar = {
     flipCamera: "Flip camera",
     speaker: "Speaker",
     endCall: "End call",
+    testSession: "Video test session",
+    testDoctor: "Doctor",
+    testPatient: "Patient",
+    testFailed: "Couldn't join the test session. Check that the link is still valid.",
+    testEnded: "Test session ended",
     endConfirmTitle: "End the consultation?",
     endConfirmBody: "You can rejoin while the entry window is open.",
     endedTitle: "Consultation ended",
@@ -1314,9 +1352,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback(async (l: Locale) => {
     setLocaleState(l)
     await writePlatformStorage(LOCALE_KEY, l).catch(() => undefined)
-    // The layout stays RTL-anchored (native `forcesRTL` in app.json): the
-    // shell is designed RTL-first, so switching to English swaps the strings
-    // instantly with no restart and no mirrored-relayout flash.
   }, [])
 
   const value = useMemo<I18nValue>(

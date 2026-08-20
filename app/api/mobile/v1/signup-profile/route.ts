@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const result = await completeSignupProfile(body)
-    if (!result.ok) return jsonError(result.error, 400)
+    if (!result.ok) {
+      const status = result.code === "CONFLICT" ? 409 : result.code === "INTERNAL" ? 500 : 422
+      return jsonError(result.error, status, result.code)
+    }
     return jsonOk({ next: result.next })
   } catch (err) {
     return jsonServerError("mobile.signup-profile", err, "تعذر حفظ البيانات. حاول مرة أخرى.")

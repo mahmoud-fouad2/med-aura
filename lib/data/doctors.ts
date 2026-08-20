@@ -6,10 +6,10 @@ import {
   inArray,
   gte,
   lte,
-  isNull,
   isNotNull,
   desc,
   count,
+  countDistinct,
   sql,
   type SQL,
 } from "drizzle-orm"
@@ -24,6 +24,8 @@ import {
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { haversineKm, haversineKmSql } from "@/lib/distance"
+import { demoDoctorPhoto } from "@/lib/public-media"
+import { publicDoctorConditions } from "@/lib/data/public-visibility"
 
 export type DoctorCard = {
   id: string
@@ -48,6 +50,7 @@ export type DoctorCard = {
 }
 
 export type SearchParams = {
+  locale?: "ar" | "en"
   q?: string
   procedure?: string // procedure slug
   category?: string // category slug
@@ -69,56 +72,27 @@ export type SearchParams = {
   radiusKm?: number
 }
 
-const DEMO_DOCTOR_PHOTOS: Record<string, string> = {
-  "dr-sara-alotaibi": "/demo-doctors/dr-sara-alotaibi.jpg",
-  "dr-noura-alqahtani": "/demo-doctors/dr-noura-alqahtani.jpg",
-  "dr-ahmet-yilmaz": "/demo-doctors/dr-ahmet-yilmaz.jpg",
-}
-
 function doctorPhotoUrl(slug: string, photoKey: string | null): string | null {
-  return (photoKey ? getPublicUrl(photoKey) : null) ?? DEMO_DOCTOR_PHOTOS[slug] ?? null
-}
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-/**
- * The single source of truth for which doctors are publicly visible:
- *  - status approved AND published
- *  - has at least one VALID, non-expired license
- *  - if attached to a center, that center is approved
- * Returns the SQL conditions array to AND together.
- */
-function visibilityConditions(): SQL[] {
-  const validLicenseIds = db
-    .select({ id: doctorLicense.doctorId })
-    .from(doctorLicense)
-    .where(
-      and(eq(doctorLicense.status, "VALID"), gte(doctorLicense.expiryDate, today())),
-    )
-
-  return [
-    eq(doctorProfile.published, true),
-    eq(doctorProfile.status, "approved"),
-    isNull(doctorProfile.deletedAt),
-    inArray(doctorProfile.id, validLicenseIds),
-    // independent doctors (no center) pass; centered doctors need approved center
-    or(
-      isNull(doctorProfile.centerId),
-      inArray(
-        doctorProfile.centerId,
-        db.select({ id: center.id }).from(center).where(eq(center.status, "approved")),
-      ),
-    )!,
-  ]
+  return (photoKey ? getPublicUrl(photoKey) : null) ?? demoDoctorPhoto(slug)
 }
 
 function filterConditions(params: SearchParams): SQL[] {
   const conds: SQL[] = []
   if (params.q?.trim()) {
     const like = `%${params.q.trim()}%`
-    conds.push(or(ilike(doctorProfile.name, like), ilike(doctorProfile.title, like))!)
+    const procedureMatches = db
+      .select({ id: doctorProcedure.doctorId })
+      .from(doctorProcedure)
+      .innerJoin(procedureT, eq(doctorProcedure.procedureId, procedureT.id))
+      .where(or(ilike(procedureT.nameAr, like), ilike(procedureT.nameEn, like)))
+    conds.push(
+      or(
+        ilike(doctorProfile.name, like),
+        ilike(doctorProfile.title, like),
+        ilike(doctorProfile.city, like),
+        inArray(doctorProfile.id, procedureMatches),
+      )!,
+    )
   }
   if (params.country) conds.push(eq(doctorProfile.country, params.country))
   if (params.city) conds.push(eq(doctorProfile.city, params.city))
@@ -167,49 +141,78 @@ function filterConditions(params: SearchParams): SQL[] {
 export async function getDoctorFilterFacets(): Promise<{
   cities: string[]
   languages: string[]
-  categories: { slug: string; nameAr: string }[]
+  categories: { slug: string; nameAr: string; nameEn: string; count: number }[]
   /** True only if at least one approved, visible center has real coordinates
    *  set — the app must not offer "nearest" as if it works before this. */
   hasNearestSupport: boolean
 }> {
-  const where = and(...visibilityConditions())
+  const where = and(...publicDoctorConditions())
 
-  const locatedCenters = await db
-    .select({ n: count() })
-    .from(center)
-    .where(
-      and(
-        eq(center.status, "approved"),
-        isNotNull(center.latitude),
-        isNotNull(center.longitude),
+  const [locatedCenters, cityRows, langRows, categoryRows, categoryCountRows] =
+    await Promise.all([
+      db
+        .select({ n: count() })
+        .from(center)
+        .where(
+          and(
+            eq(center.status, "approved"),
+            isNotNull(center.latitude),
+            isNotNull(center.longitude),
+          ),
+        ),
+      db
+        .selectDistinct({ city: doctorProfile.city })
+        .from(doctorProfile)
+        .where(where),
+      db.execute<{ lang: string }>(
+        sql`select distinct unnest(${doctorProfile.languages}) as lang
+            from ${doctorProfile} where ${where}`,
       ),
-    )
+      db
+        .select({
+          slug: procedureCategory.slug,
+          nameAr: procedureCategory.nameAr,
+          nameEn: procedureCategory.nameEn,
+        })
+        .from(procedureCategory)
+        .where(eq(procedureCategory.visible, true))
+        .orderBy(procedureCategory.sortOrder),
+      db
+        .select({
+          slug: procedureCategory.slug,
+          n: countDistinct(doctorProfile.id),
+        })
+        .from(procedureCategory)
+        .innerJoin(procedureT, eq(procedureT.categoryId, procedureCategory.id))
+        .innerJoin(doctorProcedure, eq(doctorProcedure.procedureId, procedureT.id))
+        .innerJoin(doctorProfile, eq(doctorProcedure.doctorId, doctorProfile.id))
+        .where(
+          and(
+            eq(procedureCategory.visible, true),
+            eq(procedureT.visible, true),
+            ...publicDoctorConditions(),
+          ),
+        )
+        .groupBy(procedureCategory.slug),
+    ])
   const hasNearestSupport = (locatedCenters[0]?.n ?? 0) > 0
 
-  const cityRows = await db
-    .selectDistinct({ city: doctorProfile.city })
-    .from(doctorProfile)
-    .where(where)
   const cities = cityRows
     .map((r) => r.city)
     .filter((c): c is string => Boolean(c && c.trim()))
     .sort()
 
   // languages is text[]; unnest to get the distinct set actually in use.
-  const langRows = await db.execute<{ lang: string }>(
-    sql`select distinct unnest(${doctorProfile.languages}) as lang
-        from ${doctorProfile} where ${where}`,
-  )
   const languages = (langRows.rows ?? [])
     .map((r) => r.lang)
     .filter((l): l is string => Boolean(l && l.trim()))
     .sort()
 
-  const categories = await db
-    .select({ slug: procedureCategory.slug, nameAr: procedureCategory.nameAr })
-    .from(procedureCategory)
-    .where(eq(procedureCategory.visible, true))
-    .orderBy(procedureCategory.sortOrder)
+  const countByCategory = new Map(categoryCountRows.map((row) => [row.slug, row.n]))
+  const categories = categoryRows.map((category) => ({
+    ...category,
+    count: countByCategory.get(category.slug) ?? 0,
+  }))
 
   return { cities, languages, categories, hasNearestSupport }
 }
@@ -219,7 +222,7 @@ export async function searchDoctors(
 ): Promise<{ results: DoctorCard[]; total: number }> {
   const page = Math.max(1, params.page ?? 1)
   const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 12))
-  const where = and(...visibilityConditions(), ...filterConditions(params))
+  const where = and(...publicDoctorConditions(), ...filterConditions(params))
   // sort=nearest only makes sense with real device coordinates — otherwise
   // it silently falls back to the organic ranking instead of faking order.
   const nearest =
@@ -283,13 +286,14 @@ export async function searchDoctors(
       .select({
         doctorId: doctorProcedure.doctorId,
         nameAr: procedureT.nameAr,
+        nameEn: procedureT.nameEn,
       })
       .from(doctorProcedure)
       .innerJoin(procedureT, eq(doctorProcedure.procedureId, procedureT.id))
       .where(inArray(doctorProcedure.doctorId, ids))
     for (const p of procs) {
       const arr = procMap.get(p.doctorId) ?? []
-      arr.push(p.nameAr)
+      arr.push(params.locale === "en" ? p.nameEn : p.nameAr)
       procMap.set(p.doctorId, arr)
     }
   }
@@ -338,7 +342,7 @@ export type PublicDoctor = DoctorCard & {
 export async function getPublicDoctorBySlug(
   slug: string,
 ): Promise<PublicDoctor | null> {
-  const where = and(eq(doctorProfile.slug, slug), ...visibilityConditions())
+  const where = and(eq(doctorProfile.slug, slug), ...publicDoctorConditions())
   const rows = await db
     .select({
       id: doctorProfile.id,

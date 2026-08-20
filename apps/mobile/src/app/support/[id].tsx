@@ -12,10 +12,12 @@ import {
   StatusPill,
 } from "../../components/ui"
 import { QueryErrorState } from "../../components/query-error"
+import { inputStyle } from "../../components/form"
 import { api, useTicket, type TicketMessage } from "../../lib/api"
 import { useI18n } from "../../lib/i18n"
+import { queryKeys } from "../../lib/query-keys"
+import { isApiErrorStatus } from "../../lib/request-errors"
 import { colors, radius, spacing } from "../../theme"
-import { inputStyle } from "../sign-in"
 
 const STATUS_TONE: Record<string, "info" | "warning" | "success"> = {
   OPEN: "info",
@@ -47,8 +49,8 @@ export default function TicketThread() {
     onSuccess: () => {
       setReply("")
       setError(null)
-      void queryClient.invalidateQueries({ queryKey: ["ticket", id] })
-      void queryClient.invalidateQueries({ queryKey: ["tickets"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.ticket(id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tickets })
     },
     onError: () => setError(t.tickets.replyError),
   })
@@ -56,8 +58,7 @@ export default function TicketThread() {
   // Same technique as the case-summary screen: the server's Arabic message
   // is the only signal for "not found / not a participant" — never a
   // translated copy that would fail to match in English mode.
-  const isNotFound =
-    query.isError && query.error instanceof Error && query.error.message === "التذكرة غير موجودة."
+  const isNotFound = query.isError && isApiErrorStatus(query.error, 404)
   const closed = query.data?.status === "CLOSED"
 
   return (

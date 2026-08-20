@@ -8,13 +8,80 @@
  * products and stay legible at any size.
  */
 const numberFmt = new Intl.NumberFormat("ar-SA-u-nu-latn")
+const numberFmtEn = new Intl.NumberFormat("en-US")
+
+export type DisplayLocale = "ar" | "en"
+
+export function formatNumber(n: number, locale: DisplayLocale = "ar"): string {
+  return (locale === "ar" ? numberFmt : numberFmtEn).format(n)
+}
 
 export function nf(n: number): string {
-  return numberFmt.format(n)
+  return formatNumber(n)
 }
 
 export function nfCurrency(n: number, currencyLabel: string): string {
   return `${numberFmt.format(n)} ${currencyLabel}`
+}
+
+function arabicCount(
+  value: number,
+  forms: { one: string; two: string; few: string; many: string },
+): string {
+  if (value === 1) return forms.one
+  if (value === 2) return forms.two
+  if (value >= 3 && value <= 10) return `${nf(value)} ${forms.few}`
+  return `${nf(value)} ${forms.many}`
+}
+
+export function formatRecoveryDays(
+  days: number | null | undefined,
+  locale: DisplayLocale = "ar",
+): string {
+  if (!days || days < 1) {
+    return locale === "ar"
+      ? "يمكن العودة للروتين سريعًا"
+      : "Usually little to no downtime"
+  }
+  if (locale === "en") {
+    return `Usually back to routine within ${formatNumber(days, "en")} ${days === 1 ? "day" : "days"}`
+  }
+  return `العودة للروتين غالبًا خلال ${arabicCount(days, {
+    one: "يوم واحد",
+    two: "يومين",
+    few: "أيام",
+    many: "يومًا",
+  })}`
+}
+
+export function formatExperience(
+  years: number,
+  locale: DisplayLocale = "ar",
+): string {
+  if (locale === "en") {
+    return `${formatNumber(years, "en")} ${years === 1 ? "year" : "years"} experience`
+  }
+  return `${arabicCount(years, {
+    one: "سنة خبرة",
+    two: "سنتان خبرة",
+    few: "سنوات خبرة",
+    many: "سنة خبرة",
+  })}`
+}
+
+export function formatDoctorCount(
+  count: number,
+  locale: DisplayLocale = "ar",
+): string {
+  if (locale === "en") {
+    return `${formatNumber(count, "en")} ${count === 1 ? "doctor" : "doctors"}`
+  }
+  return arabicCount(count, {
+    one: "طبيب واحد",
+    two: "طبيبان",
+    few: "أطباء",
+    many: "طبيبًا",
+  })
 }
 
 const dateFmt = new Intl.DateTimeFormat("ar-SA-u-nu-latn", {

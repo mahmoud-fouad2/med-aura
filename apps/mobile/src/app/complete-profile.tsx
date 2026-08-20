@@ -3,11 +3,12 @@ import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from "rea
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { AppText, Button, Card } from "../components/ui"
+import { Field, FormError, inputStyle } from "../components/form"
 import { CountryPicker } from "../components/country-picker"
-import { api, NetworkError } from "../lib/api"
+import { api } from "../lib/api"
+import { localizedApiError } from "../lib/request-errors"
 import { useI18n } from "../lib/i18n"
-import { colors, radius, spacing } from "../theme"
-import { Field, inputStyle } from "./sign-in"
+import { colors, spacing } from "../theme"
 
 /**
  * Landing screen for a first-time Google sign-in (see sign-in.tsx's
@@ -16,7 +17,7 @@ import { Field, inputStyle } from "./sign-in"
  * signUp.email(), via the exact same completeSignupProfile action.
  */
 export default function CompleteProfile() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const insets = useSafeAreaInsets()
   const [phone, setPhone] = useState("")
   const [country, setCountry] = useState("")
@@ -24,23 +25,29 @@ export default function CompleteProfile() {
   const [loading, setLoading] = useState(false)
 
   const submit = async () => {
-    if (loading || !phone.trim() || !country.trim()) return
+    if (loading) return
+    if (!phone.trim()) {
+      setError(t.auth.phoneRequired)
+      return
+    }
+    if (!country.trim()) {
+      setError(t.auth.selectCountryRequired)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
       await api.completeSignupProfile({ accountType: "patient", phone, residenceCountry: country })
       router.replace("/(tabs)")
     } catch (err) {
-      // A NetworkError's message is the literal English word "offline" (see
-      // lib/api.ts) — never render it as-is. Any other thrown Error already
-      // carries the server's own (Arabic) validation message.
-      setError(
-        err instanceof NetworkError
-          ? t.common.offline
-          : err instanceof Error && err.message
-            ? err.message
-            : t.auth.genericError,
-      )
+      setError(localizedApiError(err, locale, {
+        fallback: t.auth.genericError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.auth.profileValidationError,
+        conflict: t.auth.profileConflictError,
+        rateLimited: t.common.rateLimited,
+      }))
     } finally {
       setLoading(false)
     }
@@ -88,19 +95,7 @@ export default function CompleteProfile() {
             <CountryPicker value={country} onChange={setCountry} />
           </Field>
 
-          {error ? (
-            <View
-              style={{
-                backgroundColor: colors.dangerSoft,
-                borderRadius: radius.md,
-                padding: spacing.md,
-              }}
-            >
-              <AppText variant="sub" color={colors.danger}>
-                {error}
-              </AppText>
-            </View>
-          ) : null}
+          {error ? <FormError message={error} /> : null}
 
           <Button label={t.auth.continue} onPress={() => void submit()} loading={loading} />
         </Card>
