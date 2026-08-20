@@ -24,6 +24,13 @@ export default defineConfig({
     // replacing environment variables supplied by CI or the hosting platform.
     command:
       "node --env-file-if-exists=.env --env-file-if-exists=.env.local --max-old-space-size=320 .next/standalone/server.js",
+    env: {
+      // CI uses demo data while seeding. The running production-mode server
+      // must never inherit that flag, even inside an isolated E2E database.
+      ENABLE_DEMO_DATA: "false",
+      HOSTNAME: "0.0.0.0",
+      PORT: "3000",
+    },
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
