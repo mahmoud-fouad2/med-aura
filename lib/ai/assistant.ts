@@ -34,16 +34,15 @@ import { listProceduresGrouped } from "@/lib/data/procedures"
  * concierge returned 503 "high demand" in production even with effectively
  * zero traffic. Versioned GA IDs get real production capacity.
  *
- * - gemini-3.7-flash  — GA, most capable Flash, tuned for agentic/tool use
- * - gemini-3.6-flash  — GA, the model Google's own function-calling docs use
- * - gemini-3.5-flash-lite — GA, cheapest/fastest, a separate capacity pool so
- *   a spike on the newer models still resolves instead of erroring
+ * - gemini-3.5-flash-lite — GA, lowest latency for this short routing chat
+ * - gemini-3.6-flash — GA fallback for more complex tool use
+ * - gemini-3.7-flash — GA capacity/quality fallback
  *
  * Retirement is handled at runtime, not by hoping: a 404/NOT_FOUND on any
  * entry advances to the next model instead of failing the request (see
  * isModelUnavailable), so the assistant survives Google retiring one.
  */
-export const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"] as const
+export const MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash"] as const
 /**
  * Latency budget. This runs behind a phone request that the user is staring
  * at, so every knob here is tuned for "answers fast" over "answers perfectly":
@@ -54,23 +53,21 @@ export const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash
  * over budget for no benefit.
  */
 const MAX_TOOL_ROUNDS = 2
-/** Attempts per model before moving to the next one in the chain. */
-export const ATTEMPTS_PER_MODEL = 2
+/** One bounded attempt per model; fallback is faster than retrying one busy pool. */
+export const ATTEMPTS_PER_MODEL = 1
+export const MODEL_REQUEST_TIMEOUT_MS = 12_000
 
 /**
- * Real transient failures worth a short same-model retry: 500/502/504 blips
- * and undici's bare "fetch failed" — momentary and usually gone within a
- * second. 429/RESOURCE_EXHAUSTED is deliberately NOT here — see
- * isRateLimited — because on the free tier it is a per-minute quota, not a
- * blip, and a short backoff on the same model just burns the request's time
- * budget for a retry that cannot possibly succeed yet.
+ * Transient failures worth trying on the next model pool: provider 5xx,
+ * network resets, and request timeouts. Quota failures are classified
+ * separately so we skip the exhausted model without another attempt.
  */
 export function isTransient(err: unknown): boolean {
   if (isRateLimited(err)) return true
   const status = (err as { status?: number })?.status
   if (typeof status === "number") return status >= 500
   const msg = err instanceof Error ? err.message : String(err)
-  return /\b(500|502|503|504)\b|UNAVAILABLE|overloaded|high demand|fetch failed|ETIMEDOUT|ECONNRESET|socket hang up/i.test(
+  return /\b(500|502|503|504)\b|UNAVAILABLE|overloaded|high demand|fetch failed|timed? ?out|timeout|ETIMEDOUT|ECONNRESET|socket hang up/i.test(
     msg,
   )
 }
@@ -104,13 +101,10 @@ export function isRateLimited(err: unknown): boolean {
   return /\b429\b|RESOURCE_EXHAUSTED|quota/i.test(msg)
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-
 /**
- * Runs `call` against each model in the chain, retrying real transient
- * failures with exponential backoff + jitter, but skipping straight to the
- * next model (no wasted backoff) on a retired model or a rate-limit quota
- * hit. Throws the last error only when every model and attempt is exhausted.
+ * Runs `call` against each model in the chain. A transient provider failure
+ * advances immediately to a separate capacity pool; the SDK's own default
+ * five retries are disabled at each call site so latency stays bounded.
  */
 export async function withModelFallback<T>(call: (model: string) => Promise<T>): Promise<T> {
   let lastError: unknown
@@ -120,19 +114,8 @@ export async function withModelFallback<T>(call: (model: string) => Promise<T>):
         return await call(model)
       } catch (err) {
         lastError = err
-        // Retired/restricted model, or this model's own quota is exhausted
-        // for the current window — either way, stop hammering it and try the
-        // next one immediately.
-        if (isModelUnavailable(err) || isRateLimited(err)) break
-        // A genuine bug (400 bad request, 401 bad key) — surface it now
-        // rather than burning the whole retry budget on it.
-        if (!isTransient(err)) throw err
-        // Don't sleep after the final attempt on the final model.
-        const isLast = model === MODELS[MODELS.length - 1] && attempt === ATTEMPTS_PER_MODEL - 1
-        if (isLast) break
-        // 400ms, 800ms, 1600ms (+ up to 250ms jitter) — enough to ride out a
-        // short capacity blip without making the user wait on a dead call.
-        await sleep(400 * 2 ** attempt + Math.random() * 250)
+        if (!isModelUnavailable(err) && !isRateLimited(err) && !isTransient(err)) throw err
+        break
       }
     }
   }
@@ -209,7 +192,7 @@ ${profileBlock}
 - بطاقات الأطباء تظهر للمريض تلقائياً أسفل ردك، فلا تعيد كتابة أسمائهم أو أسعارهم في النص. اكتفِ بجملة قصيرة مثل "اخترت لك هؤلاء الأطباء" ثم اتركه يضغط على البطاقة.
 - عند الحديث عن الإجراءات المتاحة، استخدم أداة list_procedures لمعرفة ما تقدّمه المنصة.
 - لا تحجز ولا تنفّذ أي دفع. المريض يفتح ملف الطبيب ويحجز بنفسه من البطاقة.
-- في نهاية كل رد، استخدم أداة set_followups لاقتراح 2-4 أسئلة قصيرة يمكن للمريض الضغط عليها لمتابعة الحوار.`
+- اختم الرد مباشرة دون طلب أداة إضافية؛ التطبيق يقترح أسئلة المتابعة تلقائياً.`
 }
 
 /**
@@ -276,22 +259,6 @@ const TOOLS: FunctionDeclaration[] = [
     description:
       "List the aesthetic procedures and categories Med Aura offers, so you can ground recommendations in what's actually available. Returns Arabic names grouped by category.",
     parameters: { type: Type.OBJECT, properties: {} },
-  },
-  {
-    name: "set_followups",
-    description:
-      "Provide 2-4 short suggested follow-up questions (in Arabic) the patient can tap to continue. Call this once near the end of your reply.",
-    parameters: {
-      type: Type.OBJECT,
-      properties: {
-        chips: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING },
-          description: "2-4 short suggested questions, each under ~40 characters.",
-        },
-      },
-      required: ["chips"],
-    },
   },
 ]
 
@@ -363,9 +330,15 @@ function finalizeReply(text: string | undefined, parts: Part[] | undefined, doct
   return doctors.length > 0 ? "تفضّلي، اخترت لك هؤلاء الأطباء بناءً على طلبك." : ""
 }
 
+function suggestedFollowups(doctors: AssistantDoctor[]): string[] {
+  return doctors.length > 0
+    ? ["أريد مقارنة الخيارات", "هل تتوفر استشارة فيديو؟", "كم تكلفة الاستشارة؟"]
+    : ["ما الخطوة التالية؟", "ما مدة التعافي المتوقعة؟", "رشّح لي طبيباً مناسباً"]
+}
+
 /**
  * Runs one assistant turn: feeds the conversation to Gemini, executes any
- * function calls (doctor search / procedure list / follow-ups), and returns
+ * function calls (doctor search / procedure list), and returns
  * the final reply plus the structured doctor cards and follow-up chips the app
  * renders.
  */
@@ -383,8 +356,6 @@ export async function runAssistant(
   }))
 
   const doctors: AssistantDoctor[] = []
-  let followups: string[] = []
-
   onStage?.("understanding")
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -400,6 +371,11 @@ export async function runAssistant(
           // task, and the user is waiting on a phone — LOW keeps replies
           // quick while leaving enough headroom for correct tool selection.
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          maxOutputTokens: 512,
+          httpOptions: {
+            timeout: MODEL_REQUEST_TIMEOUT_MS,
+            retryOptions: { attempts: 1 },
+          },
         },
       }),
     )
@@ -408,7 +384,11 @@ export async function runAssistant(
     if (calls.length === 0) {
       onStage?.("finalizing")
       const parts = response.candidates?.[0]?.content?.parts
-      return { reply: finalizeReply(response.text, parts, doctors), doctors, followups }
+      return {
+        reply: finalizeReply(response.text, parts, doctors),
+        doctors,
+        followups: suggestedFollowups(doctors),
+      }
     }
 
     // Echo the model's turn back VERBATIM. Gemini 3 attaches an encrypted
@@ -454,12 +434,6 @@ export async function runAssistant(
         }
       } else if (call.name === "list_procedures") {
         output = { catalog: await runListProcedures() }
-      } else if (call.name === "set_followups") {
-        const chips = (args as { chips?: unknown }).chips
-        if (Array.isArray(chips)) {
-          followups = chips.filter((c): c is string => typeof c === "string").slice(0, 4)
-        }
-        output = { ok: true }
       } else {
         output = { error: "أداة غير معروفة." }
       }
@@ -481,12 +455,17 @@ export async function runAssistant(
       config: {
         systemInstruction: SYSTEM_PROMPT,
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        maxOutputTokens: 512,
+        httpOptions: {
+          timeout: MODEL_REQUEST_TIMEOUT_MS,
+          retryOptions: { attempts: 1 },
+        },
       },
     }),
   )
   return {
     reply: finalizeReply(closing.text, closing.candidates?.[0]?.content?.parts, doctors),
     doctors,
-    followups,
+    followups: suggestedFollowups(doctors),
   }
 }

@@ -23,6 +23,8 @@ const BodySchema = z.object({
     .max(24),
 })
 
+const MAX_MODEL_MESSAGES = 12
+
 /** The AI concierge. Runs a Gemini function-calling turn server-side and
  *  returns the reply plus structured doctor cards + follow-up chips. */
 export async function POST(request: Request) {
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response
 
   if (!isAiConfigured()) {
-    return jsonError("المساعد الذكي غير متاح حاليًا.", 503)
+    return jsonError("المساعد الذكي غير متاح حاليًا.", 503, "ASSISTANT_UNAVAILABLE")
   }
 
   // Every turn is a multi-round Gemini call billed to our key, so a client
@@ -43,21 +45,12 @@ export async function POST(request: Request) {
     windowMs: 5 * 60_000,
   })
   if (!limit.ok) {
-    return jsonError("لقد أرسلت رسائل كثيرة. انتظر قليلاً ثم حاول مجددًا.", 429)
+    return jsonError("لقد أرسلت رسائل كثيرة. انتظر قليلاً ثم حاول مجددًا.", 429, "RATE_LIMITED")
   }
 
   const parsed = BodySchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return jsonError("طلب غير صالح.", 400)
-
-  // Hand the assistant what the account already knows, so it stops asking
-  // the patient for their own city/name on every conversation.
-  const profile = (
-    await db
-      .select({ city: patientProfile.city, country: patientProfile.residenceCountry })
-      .from(patientProfile)
-      .where(eq(patientProfile.userId, auth.user.id))
-      .limit(1)
-  )[0]
+  const modelMessages = parsed.data.messages.slice(-MAX_MODEL_MESSAGES)
 
   // A single Gemini turn can legitimately run through several rounds of tool
   // calls, and the wall-clock total is genuinely unpredictable — a fixed
@@ -68,21 +61,43 @@ export async function POST(request: Request) {
   // spinner.
   const encoder = new TextEncoder()
   const send = (controller: ReadableStreamDefaultController<Uint8Array>, line: object) => {
-    controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`))
+    try {
+      controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`))
+      return true
+    } catch {
+      return false
+    }
   }
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      const startedAt = Date.now()
+      let lastStage: AssistantStage | null = "understanding"
+      send(controller, { type: "stage", stage: lastStage })
       // Keeps the connection visibly alive for any idle-timeout proxy in the
       // path, independent of stage transitions — a single stage's real Gemini
       // latency can easily run longer than the heartbeat interval.
-      const heartbeat = setInterval(() => send(controller, { type: "heartbeat" }), 7_000)
+      const heartbeat = setInterval(() => send(controller, { type: "heartbeat" }), 5_000)
 
       try {
+        // Load profile context after the stream has started so the user sees
+        // immediate progress instead of waiting on auth + a silent DB query.
+        const profile = (
+          await db
+            .select({ city: patientProfile.city, country: patientProfile.residenceCountry })
+            .from(patientProfile)
+            .where(eq(patientProfile.userId, auth.user.id))
+            .limit(1)
+        )[0]
+
         const result = await runAssistant(
-          parsed.data.messages,
+          modelMessages,
           { name: auth.user.name, city: profile?.city ?? null, country: profile?.country ?? null },
-          (stage) => send(controller, { type: "stage", stage }),
+          (stage) => {
+            if (stage === lastStage) return
+            lastStage = stage
+            send(controller, { type: "stage", stage })
+          },
         )
         send(controller, {
           type: "result",
@@ -99,9 +114,14 @@ export async function POST(request: Request) {
             photoUrl: absolutize(d.photoUrl),
           })),
         })
+        logger.info("mobile.assistant completed", {
+          durationMs: Date.now() - startedAt,
+          turns: modelMessages.length,
+          doctors: result.doctors.length,
+        })
       } catch (err) {
-        // The assistant already retries transient 503/network failures and
-        // skips a rate-limited model to the next one in the chain, so
+        // The assistant already moves transient 503/network failures and a
+        // rate-limited model to the next capacity pool, so
         // reaching here means every model was unavailable. Distinguish a
         // free-tier quota hit — the honest fix is "wait a bit", not "try
         // again right now" — from a genuine provider outage.
@@ -116,11 +136,19 @@ export async function POST(request: Request) {
             message: "المساعد وصل لحد الطلبات المسموح به حاليًا. انتظر دقيقة وحاول مرة أخرى.",
           })
         } else {
-          send(controller, { type: "error", message: "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات." })
+          send(controller, {
+            type: "error",
+            reason: "unavailable",
+            message: "المساعد مشغول حاليًا. حاول مرة أخرى بعد لحظات.",
+          })
         }
       } finally {
         clearInterval(heartbeat)
-        controller.close()
+        try {
+          controller.close()
+        } catch {
+          // The app may have left the screen after the provider call began.
+        }
       }
     },
   })

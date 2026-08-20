@@ -25,6 +25,7 @@ describe("assistant transient-failure detection", () => {
       ),
     ).toBe(true)
     expect(isTransient(new TypeError("fetch failed"))).toBe(true)
+    expect(isTransient(new Error("Request timeout after 12000ms"))).toBe(true)
     expect(isTransient(Object.assign(new Error("rate limited"), { status: 429 }))).toBe(true)
     expect(isTransient(Object.assign(new Error("boom"), { status: 500 }))).toBe(true)
   })
@@ -38,8 +39,7 @@ describe("assistant transient-failure detection", () => {
 })
 
 describe("assistant model fallback", () => {
-  it("retries the same model, then falls back to the next one", async () => {
-    vi.useFakeTimers()
+  it("moves immediately from a busy model to the next capacity pool", async () => {
     const seen: string[] = []
     // Fail every attempt on the primary model, succeed on the fallback.
     const call = vi.fn(async (model: string) => {
@@ -50,12 +50,9 @@ describe("assistant model fallback", () => {
       return "ok"
     })
 
-    const promise = withModelFallback(call)
-    await vi.runAllTimersAsync()
-    await expect(promise).resolves.toBe("ok")
-    vi.useRealTimers()
+    await expect(withModelFallback(call)).resolves.toBe("ok")
 
-    // Every attempt on the primary is used, then the next model answers.
+    // One bounded attempt on the primary, then the next model answers.
     expect(seen.filter((m) => m === MODELS[0])).toHaveLength(ATTEMPTS_PER_MODEL)
     expect(seen.at(-1)).toBe(MODELS[1])
   })
@@ -134,6 +131,8 @@ describe("configured assistant models", () => {
     // A fallback chain of one is not a fallback chain.
     expect(MODELS.length).toBeGreaterThanOrEqual(2)
     expect(new Set(MODELS).size).toBe(MODELS.length)
+    expect(MODELS[0]).toBe("gemini-3.5-flash-lite")
+    expect(ATTEMPTS_PER_MODEL).toBe(1)
   })
 
   it("classifies retirement separately from overload", () => {

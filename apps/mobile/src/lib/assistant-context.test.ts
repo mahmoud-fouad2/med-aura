@@ -5,8 +5,8 @@ describe("assistant context", () => {
   it("keeps the newest turns within the server contract", () => {
     const turns = Array.from({ length: 30 }, (_, index) => index)
     const kept = keepRecentItems(turns, ASSISTANT_CONTEXT_LIMIT)
-    expect(kept).toHaveLength(24)
-    expect(kept[0]).toBe(6)
+    expect(kept).toHaveLength(12)
+    expect(kept[0]).toBe(18)
     expect(kept.at(-1)).toBe(29)
   })
 

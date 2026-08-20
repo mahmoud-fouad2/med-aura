@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 // vi.mock calls below are hoisted above this import by Vitest, so runAssistant
 // resolves against the fakes rather than the real SDK and data layer.
-import { runAssistant } from "@/lib/ai/assistant"
+import { MODEL_REQUEST_TIMEOUT_MS, MODELS, runAssistant } from "@/lib/ai/assistant"
 
 /**
  * The AI chat screen shows "thinking stage" progress (e.g. "Searching
@@ -104,5 +104,18 @@ describe("runAssistant onStage", () => {
     generateContent.mockResolvedValueOnce({ functionCalls: [], text: "ok" })
     const result = await runAssistant([{ role: "user", content: "hi" }])
     expect(result.reply).toBe("ok")
+  })
+
+  it("uses the fast model first and disables hidden SDK retries", async () => {
+    generateContent.mockResolvedValueOnce({ functionCalls: [], text: "ok" })
+    await runAssistant([{ role: "user", content: "hi" }])
+
+    const request = generateContent.mock.calls[0][0]
+    expect(request.model).toBe(MODELS[0])
+    expect(request.config.httpOptions).toEqual({
+      timeout: MODEL_REQUEST_TIMEOUT_MS,
+      retryOptions: { attempts: 1 },
+    })
+    expect(request.config.maxOutputTokens).toBe(512)
   })
 })

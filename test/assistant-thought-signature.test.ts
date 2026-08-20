@@ -51,14 +51,14 @@ describe("thought signature round-trip", () => {
   it("echoes the model's function-call parts back unmodified", async () => {
     // Turn 1: a function call carrying a thought signature.
     generateContent.mockResolvedValueOnce({
-      functionCalls: [{ name: "set_followups", args: { chips: ["س؟"] } }],
+      functionCalls: [{ name: "list_procedures", args: {} }],
       candidates: [
         {
           content: {
             role: "model",
             parts: [
               {
-                functionCall: { name: "set_followups", args: { chips: ["س؟"] } },
+                functionCall: { name: "list_procedures", args: {} },
                 thoughtSignature: SIGNATURE,
               },
             ],
@@ -71,7 +71,7 @@ describe("thought signature round-trip", () => {
 
     const result = await runAssistant([{ role: "user", content: "مرحبا" }])
     expect(result.reply).toBe("تم.")
-    expect(result.followups).toEqual(["س؟"])
+    expect(result.followups).toHaveLength(3)
 
     // The second request must carry the model turn WITH its signature intact.
     const secondRequest = generateContent.mock.calls[1][0]

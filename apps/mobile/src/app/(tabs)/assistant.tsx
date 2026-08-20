@@ -23,6 +23,7 @@ import Animated, {
 import { AppText, Avatar } from "../../components/ui"
 import { AiDoctor } from "../../components/ai-doctor"
 import {
+  ApiError,
   NetworkError,
   RateLimitedError,
   streamAssistant,
@@ -109,14 +110,14 @@ export default function Assistant() {
         // check their connection. TimeoutError extends NetworkError, so it
         // must be tested first. A rate limit isn't a failure at all — it's
         // the provider's own quota, so it gets its own honest message.
-        const msg =
-          err instanceof RateLimitedError
-            ? t.assistant.rateLimited
-            : err instanceof TimeoutError
-              ? t.assistant.slow
-              : err instanceof NetworkError
-                ? t.common.offline
-                : t.assistant.error
+        let msg = t.assistant.error
+        if (err instanceof RateLimitedError) msg = t.assistant.rateLimited
+        else if (err instanceof TimeoutError) msg = t.assistant.slow
+        else if (err instanceof ApiError && err.code === "ASSISTANT_INTERRUPTED") {
+          msg = t.assistant.interrupted
+        } else if (err instanceof ApiError && err.code === "ASSISTANT_UNAVAILABLE") {
+          msg = t.assistant.unavailable
+        } else if (err instanceof NetworkError) msg = t.assistant.connection
         setMessages((prev) => keepRecentItems([
           ...prev,
           { id: nextId(), role: "assistant", content: msg, sentAt: Date.now() },
