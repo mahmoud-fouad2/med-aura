@@ -3,6 +3,7 @@ import { Hero } from "@/components/landing/hero"
 import { CosmeticAreas } from "@/components/landing/cosmetic-areas"
 import { PopularProcedures } from "@/components/landing/popular-procedures"
 import { FeaturedDoctors } from "@/components/landing/featured-doctors"
+import { FeaturedReviews } from "@/components/landing/featured-reviews"
 import { TrustBand } from "@/components/landing/trust-band"
 import { BeforeAfterShowcase } from "@/components/landing/before-after-showcase"
 import { CtaFooter } from "@/components/landing/cta-footer"
@@ -20,6 +21,7 @@ export default async function HomePage() {
         <CosmeticAreas t={t.home} locale={locale} />
         <PopularProcedures locale={locale} />
         <FeaturedDoctors />
+        <FeaturedReviews />
         <TrustBand locale={locale} />
         <BeforeAfterShowcase />
         <CtaFooter />
