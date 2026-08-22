@@ -10,7 +10,9 @@ import {
   date,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import { lifecycle, authorship } from "./_shared"
 import { user } from "./auth"
 import { aestheticCase, medicalDocument } from "./cases"
@@ -135,6 +137,7 @@ export const refundStatusEnum = pgEnum("refund_status", [
   "APPROVED",
   "REJECTED",
   "PROVIDER_CONFIRMED",
+  "PROCESSING",
   "PROCESSED",
   "FAILED",
   "CANCELLED",
@@ -553,6 +556,7 @@ export const refundRequest = pgTable(
     reviewNotes: text("reviewNotes"),
     providerConfirmedBy: text("providerConfirmedBy"),
     providerConfirmedAt: timestamp("providerConfirmedAt", { withTimezone: true }),
+    processingStartedAt: timestamp("processingStartedAt", { withTimezone: true }),
     creditNoteId: text("creditNoteId").references(() => creditNote.id, { onDelete: "set null" }),
     providerRefundId: text("providerRefundId"),
     processedAt: timestamp("processedAt", { withTimezone: true }),
@@ -565,6 +569,7 @@ export const refundRequest = pgTable(
     index("refund_case_idx").on(t.caseId),
     index("refund_status_idx").on(t.status),
     uniqueIndex("refund_provider_refund_idx").on(t.providerRefundId),
+    check("refund_amount_positive", sql`${t.amount} > 0`),
   ],
 )
 
@@ -692,6 +697,20 @@ export const review = pgTable(
     index("review_moderation_idx").on(t.moderationStatus),
     // one review per patient per transaction (appointment or procedure booking)
     uniqueIndex("review_unique_appointment").on(t.patientUserId, t.appointmentId),
+    uniqueIndex("review_unique_case")
+      .on(t.patientUserId, t.caseId)
+      .where(sql`${t.caseId} is not null`),
+    check("review_overall_range", sql`${t.overallRating} between 1 and 5`),
+    check(
+      "review_optional_ratings_range",
+      sql`
+        (${t.doctorRating} is null or ${t.doctorRating} between 1 and 5) and
+        (${t.centerRating} is null or ${t.centerRating} between 1 and 5) and
+        (${t.communicationRating} is null or ${t.communicationRating} between 1 and 5) and
+        (${t.priceClarityRating} is null or ${t.priceClarityRating} between 1 and 5) and
+        (${t.followUpRating} is null or ${t.followUpRating} between 1 and 5)
+      `,
+    ),
   ],
 )
 

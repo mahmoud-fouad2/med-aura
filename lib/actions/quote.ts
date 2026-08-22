@@ -15,7 +15,13 @@ import {
   payment,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
-import { requirePermission, hasRole, PERMISSIONS, ROLES } from "@/lib/rbac"
+import {
+  requirePermission,
+  hasRole,
+  getUserRoles,
+  PERMISSIONS,
+  ROLES,
+} from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
@@ -96,6 +102,7 @@ export async function createQuote(
     )[0]
     if (!caseRow) throw new AppError("NOT_FOUND")
     await assertCanPriceCase(user.id, caseRow.doctorId)
+    const roles = await getUserRoles(user.id)
 
     if (caseRow.status !== "TREATMENT_PLAN_ISSUED")
       throw conflict("لا يمكن إصدار عرض سعر دون خطة علاجية منشورة.")
@@ -168,7 +175,7 @@ export async function createQuote(
         changedBy: user.id,
       })
 
-      assertCaseTransition(caseRow.status as CaseStatus, "QUOTE_ISSUED")
+      assertCaseTransition(caseRow.status as CaseStatus, "QUOTE_ISSUED", roles)
       await tx
         .update(aestheticCase)
         .set({ status: "QUOTE_ISSUED", updatedBy: user.id })
@@ -291,7 +298,9 @@ export async function acceptQuote(
         changedBy: user.id,
       })
 
-      assertCaseTransition(caseRow.status as CaseStatus, "QUOTE_ACCEPTED")
+      assertCaseTransition(caseRow.status as CaseStatus, "QUOTE_ACCEPTED", [
+        ROLES.PATIENT,
+      ])
       await tx
         .update(aestheticCase)
         .set({ status: "QUOTE_ACCEPTED", updatedBy: user.id })

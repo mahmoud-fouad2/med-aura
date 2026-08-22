@@ -10,12 +10,13 @@ import {
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
-import { isSlotAvailable, getAvailableSlots } from "@/lib/data/availability"
+import { getAvailableSlots, PAYMENT_HOLD_MS } from "@/lib/data/availability"
 import { writeAudit, requestMeta } from "@/lib/audit"
-import { AppError, toSafeError, validation, conflict } from "@/lib/errors"
+import { AppError, toSafeError, validation, conflict, notConfigured } from "@/lib/errors"
 import { appUrl } from "@/lib/env"
 import { isStripeConfigured, createCheckoutSession } from "@/lib/payments/stripe"
 import type { ActionResult } from "@/lib/actions/provider"
+import { trackAnalyticsEvent } from "@/lib/analytics"
 
 function ref(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase()}`
@@ -36,6 +37,9 @@ export async function bookConsultation(input: {
   try {
     const user = await requireUser()
     await requirePermission(user.id, PERMISSIONS.APPOINTMENT_BOOK)
+    if (!isStripeConfigured()) {
+      throw notConfigured("بوابة الدفع غير مفعّلة حاليًا، ولم يتم حجز الموعد.")
+    }
 
     const type = input.type ?? "VIDEO_CONSULTATION"
 
@@ -68,6 +72,7 @@ export async function bookConsultation(input: {
     const currency = doc.currency
     const apptRef = ref("APT")
     const payRef = ref("PAY")
+    const paymentExpiresAt = new Date(Date.now() + PAYMENT_HOLD_MS)
 
     let appointmentId: string
     let paymentId: string
@@ -85,6 +90,7 @@ export async function bookConsultation(input: {
             status: "PENDING_PAYMENT",
             startsAt: new Date(slot.startsAt),
             endsAt: new Date(slot.endsAt),
+            paymentExpiresAt,
             priceAmount: String(amount),
             currency,
           })
@@ -139,24 +145,47 @@ export async function bookConsultation(input: {
       throw err
     }
 
-    // Payment step — never fake success.
-    if (!isStripeConfigured()) {
-      return {
-        ok: true,
-        data: { appointmentId, paymentConfigured: false },
-      }
+    let checkout: { id: string; url: string }
+    try {
+      checkout = await createCheckoutSession({
+        paymentId,
+        appointmentId,
+        amount,
+        currency,
+        description: `استشارة مع ${doc.name}`,
+        customerEmail: user.email,
+        successUrl: `${appUrl()}/dashboard/appointments?booked=1`,
+        cancelUrl: `${appUrl()}/dashboard/appointments?canceled=1`,
+        expiresAt: paymentExpiresAt,
+      })
+    } catch (err) {
+      await db.transaction(async (tx) => {
+        await tx
+          .update(appointment)
+          .set({ status: "PAYMENT_EXPIRED", updatedAt: new Date() })
+          .where(eq(appointment.id, appointmentId))
+        await tx
+          .update(payment)
+          .set({ status: "FAILED", failureReason: "Checkout session creation failed" })
+          .where(eq(payment.id, paymentId))
+        await tx.insert(appointmentStatusHistory).values({
+          appointmentId,
+          fromStatus: "PENDING_PAYMENT",
+          toStatus: "PAYMENT_EXPIRED",
+          note: "تعذّر بدء جلسة الدفع وتم تحرير الموعد",
+        })
+        await writeAudit(
+          {
+            action: "appointment.payment_setup_failed",
+            actorUserId: user.id,
+            entityType: "appointment",
+            entityId: appointmentId,
+          },
+          tx,
+        )
+      })
+      throw err
     }
-
-    const checkout = await createCheckoutSession({
-      paymentId,
-      appointmentId,
-      amount,
-      currency,
-      description: `استشارة مع ${doc.name}`,
-      customerEmail: user.email,
-      successUrl: `${appUrl()}/dashboard/appointments?booked=1`,
-      cancelUrl: `${appUrl()}/dashboard/appointments?canceled=1`,
-    })
 
     await db
       .update(payment)
@@ -171,6 +200,13 @@ export async function bookConsultation(input: {
       entityId: paymentId,
       metadata: { provider: "stripe", amount, currency },
       ...meta,
+    })
+
+    await trackAnalyticsEvent({
+      name: "booking_created",
+      userId: user.id,
+      locale: "ar",
+      properties: { doctorId: doc.id, type },
     })
 
     return { ok: true, data: { appointmentId, paymentConfigured: true, checkoutUrl: checkout.url } }

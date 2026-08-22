@@ -153,17 +153,21 @@ export function canRoleTransition(
   const tr = (T[from] ?? []).find((t) => t.to === to)
   if (!tr) return false
   if (!tr.roles || tr.roles.length === 0) return true
+  // Payment transitions are exclusively driven by a verified webhook. Even a
+  // super admin must not be able to impersonate the payment provider.
+  if (tr.roles.includes("system")) return roles.includes("system")
   if (roles.includes(ROLES.SUPER_ADMIN)) return true
   return tr.roles.some((r) => roles.includes(r))
 }
 
-/** Throw CONFLICT if the transition is not allowed. Use before persisting. */
+/** Throw CONFLICT unless the transition and caller roles are allowed. */
 export function assertCaseTransition(
   from: CaseStatus,
   to: CaseStatus,
+  roles: (RoleKey | "system")[],
 ): void {
   if (from === to) return
-  if (!canTransition(from, to)) {
+  if (!canRoleTransition(from, to, roles)) {
     throw conflict(
       `انتقال غير مسموح لحالة الملف من ${from} إلى ${to}.`,
     )

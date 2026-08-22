@@ -120,6 +120,39 @@ export async function objectExists(key: string): Promise<boolean> {
   }
 }
 
+export type ObjectInspection = {
+  sizeBytes: number
+  contentType: string | null
+  prefix: Uint8Array
+}
+
+/** Reads authoritative object metadata and only the first signature bytes. */
+export async function inspectObject(key: string): Promise<ObjectInspection | null> {
+  try {
+    const [head, prefixObject] = await Promise.all([
+      getClient().send(new HeadObjectCommand({ Bucket: env.R2_BUCKET, Key: key })),
+      getClient().send(
+        new GetObjectCommand({
+          Bucket: env.R2_BUCKET,
+          Key: key,
+          Range: "bytes=0-31",
+        }),
+      ),
+    ])
+    const body = prefixObject.Body
+    if (!body) return null
+    const chunks: Uint8Array[] = []
+    for await (const chunk of body as AsyncIterable<Uint8Array>) chunks.push(chunk)
+    return {
+      sizeBytes: head.ContentLength ?? 0,
+      contentType: head.ContentType ?? null,
+      prefix: Buffer.concat(chunks),
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function deleteObject(key: string): Promise<void> {
   await getClient().send(
     new DeleteObjectCommand({ Bucket: env.R2_BUCKET, Key: key }),

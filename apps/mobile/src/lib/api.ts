@@ -214,6 +214,7 @@ export type MyPractice = {
   offersInPerson: boolean
   published: boolean
   status: string
+  timezone: string
   procedures: PracticeProcedure[]
 }
 
@@ -469,6 +470,7 @@ export const api = {
     certifications?: string[]
     fellowships?: string[]
     memberships?: string[]
+    timezone?: string
   }) =>
     request<{ updated: boolean }>("/api/mobile/v1/me/practice", {
       method: "PATCH",

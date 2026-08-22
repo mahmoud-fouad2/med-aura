@@ -302,7 +302,8 @@ export default async function SearchPage({
                     title={isAr ? "لا توجد نتائج مطابقة" : "No matching results"}
                     description={t.search.empty}
                     action={
-                      activeFilters > 0 ? (
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {activeFilters > 0 ? (
                         <Button
                           variant="outline"
                           render={
@@ -311,7 +312,10 @@ export default async function SearchPage({
                             </Link>
                           }
                         />
-                      ) : undefined
+                        ) : null}
+                        <Button render={<Link href="/online-consultation">{isAr ? "اطلب مساعدة في الاختيار" : "Get help choosing"}</Link>} />
+                        <Button variant="ghost" render={<Link href="/contact">{isAr ? "تواصل معنا" : "Contact us"}</Link>} />
+                      </div>
                     }
                   />
                 </Card>

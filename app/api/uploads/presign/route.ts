@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "بيانات الملف ناقصة." }, { status: 400 })
   }
 
-  const check = validateUpload({ contentType, sizeBytes })
+  const check = validateUpload({ contentType, sizeBytes, fileName })
   if (!check.ok) return NextResponse.json({ error: check.reason }, { status: 422 })
 
   // ownership: only the case owner may upload to their case

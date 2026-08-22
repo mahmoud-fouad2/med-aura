@@ -18,6 +18,7 @@ import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
 import { assertCaseTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
 import type { ActionResult } from "@/lib/actions/provider"
+import { ROLES } from "@/lib/rbac"
 
 async function loadCaseForDoctor(userId: string, caseId: string) {
   const caseRow = (
@@ -157,7 +158,9 @@ export async function publishTreatmentPlan(planId: string): Promise<ActionResult
         createdBy: user.id,
       })
       if (caseRow.status === "CONSULTATION_COMPLETED") {
-        assertCaseTransition(caseRow.status as CaseStatus, "TREATMENT_PLAN_ISSUED")
+        assertCaseTransition(caseRow.status as CaseStatus, "TREATMENT_PLAN_ISSUED", [
+          ROLES.DOCTOR,
+        ])
         await tx
           .update(aestheticCase)
           .set({ status: "TREATMENT_PLAN_ISSUED", updatedBy: user.id })

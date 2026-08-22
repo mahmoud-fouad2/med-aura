@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { eq, desc } from "drizzle-orm"
+import { and, desc, eq, isNull, lt, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import {
   payment,
@@ -16,7 +16,7 @@ import {
   role,
 } from "@/lib/db/schema"
 import { ROLES } from "@/lib/rbac"
-import { assertCaseTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
+import { canTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
 import { constructWebhookEvent } from "@/lib/payments/stripe"
 import { writeAudit } from "@/lib/audit"
 import { notify, type NotifyInput } from "@/lib/notifications"
@@ -43,8 +43,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid signature" }, { status: 400 })
   }
 
-  // Idempotency: record the event; if it already exists, we've handled it.
-  const recorded = await db
+  // Persist the provider event once, then claim any still-unprocessed delivery.
+  // A row's existence alone never means success: Stripe must be able to retry a
+  // row whose previous processing attempt failed.
+  await db
     .insert(paymentWebhookEvent)
     .values({
       provider: "stripe",
@@ -53,28 +55,59 @@ export async function POST(req: Request) {
       payload: parsed.raw as object,
     })
     .onConflictDoNothing()
+
+  const now = new Date()
+  const staleClaim = new Date(now.getTime() - 5 * 60_000)
+  const claimed = await db
+    .update(paymentWebhookEvent)
+    .set({
+      processingAt: now,
+      error: null,
+      attemptCount: sql`${paymentWebhookEvent.attemptCount} + 1`,
+    })
+    .where(
+      and(
+        eq(paymentWebhookEvent.provider, "stripe"),
+        eq(paymentWebhookEvent.eventId, parsed.eventId),
+        isNull(paymentWebhookEvent.processedAt),
+        or(
+          isNull(paymentWebhookEvent.processingAt),
+          lt(paymentWebhookEvent.processingAt, staleClaim),
+        ),
+      ),
+    )
     .returning({ id: paymentWebhookEvent.id })
 
-  if (recorded.length === 0) {
-    // duplicate delivery — already processed
-    return NextResponse.json({ received: true, duplicate: true })
+  if (claimed.length === 0) {
+    const existing = (
+      await db
+        .select({ processedAt: paymentWebhookEvent.processedAt })
+        .from(paymentWebhookEvent)
+        .where(
+          and(
+            eq(paymentWebhookEvent.provider, "stripe"),
+            eq(paymentWebhookEvent.eventId, parsed.eventId),
+          ),
+        )
+        .limit(1)
+    )[0]
+    if (existing?.processedAt) {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+    // Another worker currently owns the event. Do not acknowledge an event
+    // that has not completed; a later provider retry can reclaim a stale lease.
+    return NextResponse.json({ error: "processing in progress" }, { status: 409 })
   }
-  const eventRowId = recorded[0].id
+  const eventRowId = claimed[0].id
 
   try {
-    if (parsed.kind === "payment_succeeded" && parsed.paymentId) {
+    if (parsed.kind === "payment_succeeded") {
+      if (!parsed.paymentId) {
+        throw new Error("Paid Stripe session is missing the internal payment id")
+      }
       await applyPaymentSucceeded(parsed.paymentId, parsed.providerIntentId)
     } else if (parsed.kind === "payment_failed" && parsed.paymentId) {
-      await db
-        .update(payment)
-        .set({ status: "FAILED", failureReason: parsed.reason ?? "unknown" })
-        .where(eq(payment.id, parsed.paymentId))
-      await writeAudit({
-        action: "payment.failed",
-        entityType: "payment",
-        entityId: parsed.paymentId,
-        metadata: { reason: parsed.reason },
-      })
+      await applyPaymentFailed(parsed.paymentId, parsed.reason)
     } else if (parsed.kind === "dispute_opened") {
       await applyDisputeOpened(parsed.providerIntentId, parsed.reason, parsed.amount, parsed.currency)
     } else if (parsed.kind === "dispute_closed") {
@@ -83,7 +116,7 @@ export async function POST(req: Request) {
 
     await db
       .update(paymentWebhookEvent)
-      .set({ processedAt: new Date() })
+      .set({ processedAt: new Date(), processingAt: null, error: null })
       .where(eq(paymentWebhookEvent.id, eventRowId))
 
     return NextResponse.json({ received: true })
@@ -94,9 +127,12 @@ export async function POST(req: Request) {
     })
     await db
       .update(paymentWebhookEvent)
-      .set({ error: err instanceof Error ? err.message : String(err) })
+      .set({
+        processingAt: null,
+        error: err instanceof Error ? err.message : String(err),
+      })
       .where(eq(paymentWebhookEvent.id, eventRowId))
-    // 500 so Stripe retries; the unique constraint keeps retries idempotent.
+    // The row remains unprocessed and claimable, so Stripe's retry is useful.
     return NextResponse.json({ error: "processing failed" }, { status: 500 })
   }
 }
@@ -212,11 +248,16 @@ async function applyPaymentSucceeded(
     const pay = (
       await tx.select().from(payment).where(eq(payment.id, paymentId)).limit(1)
     )[0]
-    if (!pay) {
-      logger.warn("webhook: payment not found", { paymentId })
+    if (!pay) throw new Error(`Payment not found for verified webhook: ${paymentId}`)
+    if (pay.status === "PAID") return // already applied — idempotent
+    if (["PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"].includes(pay.status)) {
+      await markPaymentForReconciliation(
+        tx,
+        paymentId,
+        `Late success event received while payment was ${pay.status}`,
+      )
       return
     }
-    if (pay.status === "PAID") return // already applied — idempotent
 
     await tx
       .update(payment)
@@ -224,6 +265,7 @@ async function applyPaymentSucceeded(
         status: "PAID",
         paidAt: new Date(),
         providerIntentId: providerIntentId ?? pay.providerIntentId,
+        failureReason: null,
       })
       .where(eq(payment.id, paymentId))
 
@@ -260,15 +302,34 @@ async function applyPaymentSucceeded(
           tx,
         )
         if (appt.caseId) {
-          await tx
-            .update(aestheticCase)
-            .set({ status: "CONSULTATION_BOOKED" })
-            .where(eq(aestheticCase.id, appt.caseId))
-          await tx.insert(caseStatusHistory).values({
-            caseId: appt.caseId,
-            toStatus: "CONSULTATION_BOOKED",
-            note: "تم تأكيد حجز الاستشارة",
-          })
+          const caseRow = (
+            await tx
+              .select({ status: aestheticCase.status })
+              .from(aestheticCase)
+              .where(eq(aestheticCase.id, appt.caseId))
+              .limit(1)
+          )[0]
+          if (
+            caseRow &&
+            canTransition(caseRow.status as CaseStatus, "CONSULTATION_BOOKED")
+          ) {
+            await tx
+              .update(aestheticCase)
+              .set({ status: "CONSULTATION_BOOKED" })
+              .where(eq(aestheticCase.id, appt.caseId))
+            await tx.insert(caseStatusHistory).values({
+              caseId: appt.caseId,
+              fromStatus: caseRow.status,
+              toStatus: "CONSULTATION_BOOKED",
+              note: "تم تأكيد حجز الاستشارة",
+            })
+          } else {
+            await markPaymentForReconciliation(
+              tx,
+              paymentId,
+              `Consultation paid while case was ${caseRow?.status ?? "missing"}`,
+            )
+          }
         }
         post.push({
           userId: pay.payerUserId,
@@ -277,6 +338,12 @@ async function applyPaymentSucceeded(
           caseId: appt.caseId ?? undefined,
           href: appt.caseId ? `/dashboard/cases/${appt.caseId}` : "/dashboard/appointments",
         })
+      } else {
+        await markPaymentForReconciliation(
+          tx,
+          paymentId,
+          `Consultation paid while appointment was ${appt?.status ?? "missing"}`,
+        )
       }
       return
     }
@@ -297,7 +364,14 @@ async function applyPaymentSucceeded(
           .where(eq(aestheticCase.id, pay.caseId))
           .limit(1)
       )[0]
-      if (!caseRow || caseRow.status !== "QUOTE_ACCEPTED") return
+      if (!caseRow || caseRow.status !== "QUOTE_ACCEPTED") {
+        await markPaymentForReconciliation(
+          tx,
+          paymentId,
+          `Deposit paid while case was ${caseRow?.status ?? "missing"}`,
+        )
+        return
+      }
 
       await tx
         .update(aestheticCase)
@@ -369,7 +443,11 @@ async function applyPaymentSucceeded(
         await tx.select().from(invoice).where(eq(invoice.caseId, pay.caseId)).orderBy(desc(invoice.createdAt)).limit(1)
       )[0]
       if (!inv) {
-        logger.warn("webhook: final payment with no invoice", { caseId: pay.caseId, paymentId })
+        await markPaymentForReconciliation(
+          tx,
+          paymentId,
+          "Final payment received without an invoice",
+        )
         return
       }
       const newPaid = Number(inv.paidAmount) + Number(pay.amount)
@@ -388,10 +466,18 @@ async function applyPaymentSucceeded(
         const caseRow = (
           await tx.select({ id: aestheticCase.id, status: aestheticCase.status, patientUserId: aestheticCase.patientUserId }).from(aestheticCase).where(eq(aestheticCase.id, pay.caseId)).limit(1)
         )[0]
-        if (caseRow && ["PROCEDURE_COMPLETED", "FOLLOW_UP"].includes(caseRow.status)) {
-          assertCaseTransition(caseRow.status as CaseStatus, "FULLY_PAID")
+        if (
+          caseRow &&
+          canTransition(caseRow.status as CaseStatus, "FULLY_PAID")
+        ) {
           await tx.update(aestheticCase).set({ status: "FULLY_PAID" }).where(eq(aestheticCase.id, pay.caseId))
           await tx.insert(caseStatusHistory).values({ caseId: pay.caseId, fromStatus: caseRow.status, toStatus: "FULLY_PAID", note: "تم سداد كامل المبلغ المتبقي" })
+        } else {
+          await markPaymentForReconciliation(
+            tx,
+            paymentId,
+            `Final payment completed while case was ${caseRow?.status ?? "missing"}`,
+          )
         }
       }
 
@@ -406,4 +492,65 @@ async function applyPaymentSucceeded(
   })
 
   for (const n of post) await notify(n)
+}
+
+async function applyPaymentFailed(
+  paymentId: string,
+  reason: string | null,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const pay = (
+      await tx
+        .select({ status: payment.status })
+        .from(payment)
+        .where(eq(payment.id, paymentId))
+        .limit(1)
+    )[0]
+    if (!pay) throw new Error(`Payment not found for verified webhook: ${paymentId}`)
+
+    if (["PAID", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"].includes(pay.status)) {
+      await markPaymentForReconciliation(
+        tx,
+        paymentId,
+        `Late failure event received while payment was ${pay.status}`,
+      )
+      return
+    }
+
+    await tx
+      .update(payment)
+      .set({ status: "FAILED", failureReason: reason ?? "unknown" })
+      .where(eq(payment.id, paymentId))
+    await writeAudit(
+      {
+        action: "payment.failed",
+        entityType: "payment",
+        entityId: paymentId,
+        metadata: { reason },
+      },
+      tx,
+    )
+  })
+}
+
+type PaymentTx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+async function markPaymentForReconciliation(
+  tx: PaymentTx,
+  paymentId: string,
+  reason: string,
+): Promise<void> {
+  await tx
+    .update(payment)
+    .set({ needsReconciliation: true, reconciliationReason: reason })
+    .where(eq(payment.id, paymentId))
+  await writeAudit(
+    {
+      action: "payment.reconciliation_required",
+      entityType: "payment",
+      entityId: paymentId,
+      metadata: { reason },
+    },
+    tx,
+  )
 }

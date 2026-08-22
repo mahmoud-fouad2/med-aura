@@ -229,6 +229,7 @@ function PracticeForm({ initial }: { initial: MyPractice }) {
   const [currency, setCurrency] = useState(initial.currency)
   const [offersVideo, setOffersVideo] = useState(initial.offersVideo)
   const [offersInPerson, setOffersInPerson] = useState(initial.offersInPerson)
+  const [timezone, setTimezone] = useState(initial.timezone)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -239,6 +240,7 @@ function PracticeForm({ initial }: { initial: MyPractice }) {
         currency: currency.trim().toUpperCase(),
         offersVideo,
         offersInPerson,
+        timezone: timezone.trim(),
       }),
     onSuccess: () => {
       setError(null)
@@ -293,6 +295,22 @@ function PracticeForm({ initial }: { initial: MyPractice }) {
           </Field>
         </View>
       </View>
+
+      <View style={{ height: 1, backgroundColor: colors.border }} />
+
+      <Field label={t.practice.timezone} hint={t.practice.timezoneHint}>
+        <TextInput
+          value={timezone}
+          onChangeText={(value) => {
+            setSaved(false)
+            setTimezone(value.replace(/\s/g, ""))
+          }}
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={80}
+          style={[inputStyle, { textAlign: "left" }]}
+        />
+      </Field>
 
       <View style={{ height: 1, backgroundColor: colors.border }} />
 

@@ -35,6 +35,7 @@ import { Field } from "@/components/ui/field"
 import { FormSection } from "@/components/ui/form-section"
 import { StatusBadge, providerStatusTone } from "@/components/admin/status-badge"
 import { CountrySelectField } from "@/components/admin/country-select-field"
+import { TimezoneCombobox } from "@/components/admin/timezone-combobox"
 import {
   updateDoctorAction,
   setDoctorStatusAction,
@@ -328,6 +329,7 @@ type DoctorEditData = {
   bio: string
   country: string
   city: string
+  timezone: string
   languages: string[]
   yearsExperience: number
   consultationFee: string
@@ -359,6 +361,7 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
         bio: d.bio ?? "",
         country: d.country,
         city: d.city ?? "",
+        timezone: d.timezone,
         languages: d.languages,
         yearsExperience: d.yearsExperience,
         consultationFee: d.consultationFee ?? "",
@@ -424,6 +427,12 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
         </div>
         <Field label="اللغات (مفصولة بفاصلة)">
           <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="العربية, English" />
+        </Field>
+        <Field label="المنطقة الزمنية للمواعيد">
+          <TimezoneCombobox
+            value={data.timezone}
+            onValueChange={(timezone) => setData({ ...data, timezone })}
+          />
         </Field>
       </FormSection>
 

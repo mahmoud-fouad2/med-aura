@@ -25,11 +25,9 @@ import { browserStorage } from "./platform-storage"
  * so by the time `authClient.getSession()` fires, the buffer is
  * authoritative. A bad key is dropped and cleaned up, never crashed on.
  *
- * `setItem` writes to the buffer synchronously (satisfying better-auth's
- * expectation that the next read sees the new value) and mirrors to the
- * native keychain best-effort in the background — a failed native write
- * costs at most one session survival across a hard restart, never a
- * crash.
+ * `setItem` writes to the buffer synchronously, then returns the async native
+ * write. Better Auth awaits that promise while persisting chunked values, so
+ * its final chunk marker can never overtake an unfinished chunk write.
  */
 
 /** In-memory mirror of the persisted keys @better-auth/expo cares about. */
@@ -37,26 +35,27 @@ const buffer = new Map<string, string>()
 
 /** Track keys we've seen so warmSecureStore can drop-and-clean anything corrupted. */
 const seenKeys = new Set<string>()
+const CHUNK_MARKER = "\u0001ba-chunks:"
+const MAX_CHUNKS = 64
 
 export const safeSecureStore = {
   getItem(key: string): string | null {
     seenKeys.add(key)
     return buffer.get(key) ?? browserStorage()?.getItem(key) ?? null
   },
-  setItem(key: string, value: string): void {
+  setItem(key: string, value: string): Promise<void> {
     seenKeys.add(key)
     buffer.set(key, value)
     const storage = browserStorage()
     if (storage) {
-      storage.setItem(key, value)
-      return
+      try {
+        storage.setItem(key, value)
+        return Promise.resolve()
+      } catch (error) {
+        return Promise.reject(error)
+      }
     }
-    // Fire-and-forget: a keychain write failure never blocks or crashes
-    // the caller. Worst case, this key is missing after a hard restart —
-    // the user re-signs in, no crash loop.
-    void SecureStore.setItemAsync(key, value).catch((error) => {
-      console.warn(`[secure-store] setItemAsync("${key}") failed`, error)
-    })
+    return SecureStore.setItemAsync(key, value)
   },
 }
 
@@ -73,17 +72,43 @@ export async function warmSecureStore(keys: readonly string[]): Promise<void> {
   await Promise.all(
     keys.map(async (key) => {
       seenKeys.add(key)
+      let chunkCount = 0
       try {
         const storage = browserStorage()
         const value = storage ? storage.getItem(key) : await SecureStore.getItemAsync(key)
-        if (value != null) buffer.set(key, value)
+        if (value == null) return
+        buffer.set(key, value)
+
+        if (!value.startsWith(CHUNK_MARKER)) return
+        chunkCount = Number(value.slice(CHUNK_MARKER.length))
+        if (!Number.isInteger(chunkCount) || chunkCount < 1 || chunkCount > MAX_CHUNKS) {
+          throw new Error("Invalid Better Auth chunk marker")
+        }
+
+        for (let index = 0; index < chunkCount; index++) {
+          const chunkKey = `${key}.${index}`
+          seenKeys.add(chunkKey)
+          const chunk = storage
+            ? storage.getItem(chunkKey)
+            : await SecureStore.getItemAsync(chunkKey)
+          if (chunk == null) throw new Error("Incomplete Better Auth chunked value")
+          buffer.set(chunkKey, chunk)
+        }
       } catch (error) {
         console.warn(`[secure-store] warm("${key}") failed — dropping`, error)
+        buffer.delete(key)
         // Best-effort cleanup so the next launch doesn't hit the same bad
         // key. If the delete itself fails there's nothing more we can do.
         const storage = browserStorage()
-        if (storage) storage.removeItem(key)
-        else void SecureStore.deleteItemAsync(key).catch(() => undefined)
+        const cleanupKeys = [
+          key,
+          ...Array.from({ length: chunkCount }, (_, index) => `${key}.${index}`),
+        ]
+        for (const cleanupKey of cleanupKeys) {
+          buffer.delete(cleanupKey)
+          if (storage) storage.removeItem(cleanupKey)
+          else await SecureStore.deleteItemAsync(cleanupKey).catch(() => undefined)
+        }
       }
     }),
   )

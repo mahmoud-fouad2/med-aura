@@ -9,6 +9,7 @@ import { writeAudit, requestMeta } from "@/lib/audit"
 import { logger } from "@/lib/logger"
 import { toSafeError } from "@/lib/errors"
 import { normalizeSignupPhone } from "@/lib/onboarding/validation"
+import { trackAnalyticsEvent } from "@/lib/analytics"
 
 const SignupProfileSchema = z.object({
   // "doctor" only routes the user into the provider-accreditation flow —
@@ -97,6 +98,13 @@ export async function completeSignupProfile(
         },
         tx,
       )
+    })
+
+    await trackAnalyticsEvent({
+      name: "signup_completed",
+      userId: me.id,
+      locale: "ar",
+      properties: { accountType, country: residenceCountry },
     })
 
     return {

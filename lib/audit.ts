@@ -14,9 +14,9 @@ export type AuditInput = {
 }
 
 /**
- * Append a row to the audit log. Best-effort: a logging failure must never
- * break the underlying business operation, so errors are swallowed + logged.
- * Pass a transaction (`tx`) to make the audit atomic with the action.
+ * Append a row to the audit log. Standalone telemetry remains best-effort, but
+ * an audit passed the caller's transaction is part of that critical mutation:
+ * failure is rethrown so the transaction cannot commit without its audit row.
  */
 export async function writeAudit(
   input: AuditInput,
@@ -39,6 +39,7 @@ export async function writeAudit(
       action: input.action,
       error: err instanceof Error ? err.message : String(err),
     })
+    if (tx) throw err
   }
 }
 

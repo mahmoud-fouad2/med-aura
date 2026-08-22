@@ -96,6 +96,7 @@ const CASE: Record<string, string> = {
 
 const APPOINTMENT: Record<string, string> = {
   PENDING_PAYMENT: "بانتظار الدفع",
+  PAYMENT_EXPIRED: "انتهت مهلة الدفع",
   PENDING_PROVIDER_CONFIRMATION: "بانتظار تأكيد الطبيب",
   CONFIRMED: "مؤكد",
   CHECKED_IN: "تم الحضور",

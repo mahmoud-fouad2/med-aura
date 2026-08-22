@@ -50,11 +50,13 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "country-flag-icons": "^1.6.20",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "drizzle-orm": "^0.45.2",
     "expo-server-sdk": "^6.1.0",
     "lucide-react": "^1.16.0",
     "motion": "^12.42.0",
-    "next": "16.2.6",
+    "next": "16.2.11",
     "pg": "^8.22.0",
     "react": "^19",
     "react-dom": "^19",
@@ -69,6 +71,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@fontsource-variable/readex-pro": "^5.3.0",
+    "@next/eslint-plugin-next": "16.2.11",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^24",
@@ -78,7 +81,7 @@
     "dotenv": "^16.4.7",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.2.11",
     "eslint-config-prettier": "^10.1.8",
     "postcss": "^8.5",
     "prettier": "^3.9.6",
@@ -89,10 +92,5 @@
     "typescript": "5.7.3",
     "typescript-eslint": "^8",
     "vitest": "^2.1.8"
-  },
-  "pnpm": {
-    "overrides": {
-      "hono": "4.12.25"
-    }
   }
 }

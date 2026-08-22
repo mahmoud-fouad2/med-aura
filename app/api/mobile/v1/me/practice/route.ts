@@ -38,6 +38,7 @@ export async function GET() {
           offersInPerson: doctorProfile.offersInPerson,
           published: doctorProfile.published,
           status: doctorProfile.status,
+          timezone: doctorProfile.timezone,
         })
         .from(doctorProfile)
         .where(eq(doctorProfile.userId, auth.user.id))
@@ -58,6 +59,7 @@ export async function GET() {
       offersInPerson: dp.offersInPerson,
       published: dp.published,
       status: dp.status,
+      timezone: dp.timezone,
       procedures,
     })
   } catch (err) {
@@ -75,6 +77,7 @@ const PatchSchema = z.object({
   certifications: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
   fellowships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
   memberships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  timezone: z.string().trim().max(80).optional(),
 })
 
 export async function PATCH(request: Request) {

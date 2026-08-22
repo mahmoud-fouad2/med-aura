@@ -46,7 +46,9 @@ const STAGES = new Set<AssistantStage>([
 
 /** Heartbeats arrive every five seconds; this only fires after genuine silence. */
 const AI_INACTIVITY_TIMEOUT_MS = 30_000
-const AI_HARD_TIMEOUT_MS = 90_000
+// Server worst case: 2 models x 10s x 3 model calls = 60s. Keep a margin for
+// auth/DB/tool calls without allowing a request to hang indefinitely.
+const AI_HARD_TIMEOUT_MS = 75_000
 
 function asStage(value: unknown): AssistantStage | null {
   return typeof value === "string" && STAGES.has(value as AssistantStage)

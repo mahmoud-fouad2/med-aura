@@ -31,6 +31,7 @@ export type CheckoutInput = {
   customerEmail?: string
   successUrl: string
   cancelUrl: string
+  expiresAt?: Date
 }
 
 /** Create a Stripe Checkout Session for any payment (consultation/deposit/final). */
@@ -59,6 +60,9 @@ export async function createCheckoutSession(
     metadata,
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
+    expires_at: input.expiresAt
+      ? Math.floor(input.expiresAt.getTime() / 1000)
+      : undefined,
   })
   if (!session.url) throw new Error("Stripe did not return a checkout URL")
   return { id: session.id, url: session.url }

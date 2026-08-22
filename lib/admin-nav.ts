@@ -79,6 +79,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/procedures", label: "المحتوى والإجراءات", icon: "Sparkles", anyOf: [P.CATALOG_MANAGE] },
       { href: "/admin/before-after", label: "قبل وبعد — المراجعة", icon: "ImageIcon", anyOf: [P.BEFORE_AFTER_MODERATE] },
+      { href: "/admin/reviews", label: "مراجعة التقييمات", icon: "MessageSquareText", anyOf: [P.BEFORE_AFTER_MODERATE] },
       { href: "/admin/geography", label: "الدول والمدن", icon: "Globe2", anyOf: [P.CATALOG_MANAGE] },
       { href: "/admin/users", label: "المستخدمون والصلاحيات", icon: "UserCog", anyOf: [P.USER_READ_ANY] },
     ],
@@ -86,6 +87,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     title: "النظام",
     items: [
+      { href: "/admin/analytics", label: "تحليلات المنتج", icon: "ChartNoAxesCombined", anyOf: [P.AUDIT_READ] },
       { href: "/admin/activity", label: "سجل النشاط", icon: "History", anyOf: [P.AUDIT_READ] },
       { href: "/admin/system-health", label: "صحة النظام", icon: "Activity", anyOf: [P.ADMIN_ACCESS] },
       { href: "/admin/settings", label: "الإعدادات", icon: "Settings2", anyOf: [P.ADMIN_ACCESS] },

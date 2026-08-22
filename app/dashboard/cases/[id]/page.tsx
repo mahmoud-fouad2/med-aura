@@ -14,7 +14,7 @@ import {
   getSafetyAlertsForCase,
   getInvoiceForCase,
 } from "@/lib/data/care"
-import { getCaseClosureEligibility } from "@/lib/actions/case-closure"
+import { getCaseClosureEligibilityInternal } from "@/lib/case-closure"
 import { getCaseConversationView } from "@/lib/data/conversations"
 import { getCaseStatusTimeline } from "@/lib/data/concierge"
 import { listActivityForEntityIds } from "@/lib/data/admin-activity"
@@ -106,7 +106,7 @@ export default async function CaseDetailPage({
         (completedStates.includes(c.status) && !careStage.hasReview)))
   const closureEligibility =
     canCloseCase && (completedStates.includes(c.status) || c.status === "CLOSED")
-      ? await getCaseClosureEligibility(c.id)
+      ? await getCaseClosureEligibilityInternal(c.id)
       : null
 
   const activity = canAudit

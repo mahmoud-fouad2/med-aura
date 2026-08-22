@@ -1,4 +1,5 @@
 import { pgTable, text, jsonb, timestamp, index } from "drizzle-orm/pg-core"
+import { user } from "./auth"
 
 /**
  * Append-only audit log for sensitive actions (section 43): logins, role and
@@ -27,5 +28,31 @@ export const auditLog = pgTable(
     index("audit_actor_idx").on(t.actorUserId),
     index("audit_entity_idx").on(t.entityType, t.entityId),
     index("audit_created_idx").on(t.createdAt),
+  ],
+)
+
+/**
+ * First-party, privacy-minimized product events. Event names and properties are
+ * allowlisted at the API boundary; medical text, names, email and phone are
+ * never accepted here.
+ */
+export const analyticsEvent = pgTable(
+  "analytics_event",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    anonymousId: text("anonymousId").notNull(),
+    userId: text("userId").references(() => user.id, { onDelete: "set null" }),
+    locale: text("locale").notNull().default("ar"),
+    path: text("path"),
+    properties: jsonb("properties").notNull().default({}),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("analytics_name_created_idx").on(t.name, t.createdAt),
+    index("analytics_anonymous_idx").on(t.anonymousId, t.createdAt),
+    index("analytics_user_idx").on(t.userId, t.createdAt),
   ],
 )

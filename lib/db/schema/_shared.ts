@@ -78,6 +78,7 @@ export const appointmentStatusEnum = pgEnum("appointment_status", [
   "IN_PROGRESS",
   "COMPLETED",
   "RESCHEDULED",
+  "PAYMENT_EXPIRED",
   "CANCELLED_BY_PATIENT",
   "CANCELLED_BY_PROVIDER",
   "NO_SHOW",

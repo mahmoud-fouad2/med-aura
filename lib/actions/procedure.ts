@@ -20,7 +20,13 @@ import {
   followUpTask,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
-import { requirePermission, PERMISSIONS } from "@/lib/rbac"
+import {
+  requirePermission,
+  getUserRoles,
+  PERMISSIONS,
+  ROLES,
+  type RoleKey,
+} from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
@@ -59,9 +65,10 @@ async function setCaseStatus(
   from: string,
   to: CaseStatus,
   userId: string,
+  roles: RoleKey[],
   note?: string,
 ) {
-  assertCaseTransition(from as CaseStatus, to)
+  assertCaseTransition(from as CaseStatus, to, roles)
   await tx.update(aestheticCase).set({ status: to, updatedBy: userId }).where(eq(aestheticCase.id, caseId))
   await tx.insert(caseStatusHistory).values({ caseId, fromStatus: from as CaseStatus, toStatus: to, changedBy: userId, note })
 }
@@ -81,6 +88,7 @@ export async function medicalApprove(input: unknown): Promise<ActionResult> {
     const data = approveSchema.parse(input)
     const c = await loadCase(data.caseId)
     await caseDoctorGuard(user.id, c.doctorId)
+    const roles = await getUserRoles(user.id)
     if (c.status !== "DEPOSIT_PAID")
       throw conflict("لا يمكن الاعتماد الطبي قبل دفع العربون.")
     if (!data.requiredTestsCompleted)
@@ -111,7 +119,7 @@ export async function medicalApprove(input: unknown): Promise<ActionResult> {
           changedBy: user.id,
         })
       }
-      await setCaseStatus(tx, c.id, c.status, "MEDICALLY_APPROVED", user.id, "اعتماد طبي")
+      await setCaseStatus(tx, c.id, c.status, "MEDICALLY_APPROVED", user.id, roles, "اعتماد طبي")
       await writeAudit({ action: "medical.approve", actorUserId: user.id, entityType: "aesthetic_case", entityId: c.id }, tx)
     })
 
@@ -145,6 +153,7 @@ export async function centerConfirmProcedure(input: unknown): Promise<ActionResu
     await requirePermission(user.id, PERMISSIONS.PROCEDURE_CONFIRM)
     const data = centerSchema.parse(input)
     const c = await loadCase(data.caseId)
+    const roles = await getUserRoles(user.id)
     if (c.status !== "MEDICALLY_APPROVED")
       throw conflict("لا يمكن تأكيد المركز قبل الاعتماد الطبي.")
 
@@ -170,7 +179,7 @@ export async function centerConfirmProcedure(input: unknown): Promise<ActionResu
         changedBy: user.id,
         note: `تاريخ مقترح: ${data.scheduledDate}`,
       })
-      await setCaseStatus(tx, c.id, c.status, "CENTER_CONFIRMED", user.id, "اعتماد المركز للتاريخ")
+      await setCaseStatus(tx, c.id, c.status, "CENTER_CONFIRMED", user.id, roles, "اعتماد المركز للتاريخ")
       await writeAudit({ action: "center.confirm", actorUserId: user.id, entityType: "aesthetic_case", entityId: c.id, metadata: { scheduledDate: data.scheduledDate } }, tx)
     })
 
@@ -227,7 +236,7 @@ export async function patientConfirmProcedure(caseId: string): Promise<ActionRes
         toStatus: "CONFIRMED",
         changedBy: user.id,
       })
-      await setCaseStatus(tx, caseId, c.status, "PROCEDURE_CONFIRMED", user.id, "إقرار المريض وتأكيد الإجراء")
+      await setCaseStatus(tx, caseId, c.status, "PROCEDURE_CONFIRMED", user.id, [ROLES.PATIENT], "إقرار المريض وتأكيد الإجراء")
       await writeAudit({ action: "procedure.confirm", actorUserId: user.id, entityType: "aesthetic_case", entityId: caseId }, tx)
     })
 
@@ -267,6 +276,7 @@ export async function completeProcedure(input: unknown): Promise<ActionResult> {
     await requirePermission(user.id, PERMISSIONS.PROCEDURE_COMPLETE)
     const data = completeSchema.parse(input)
     const c = await loadCase(data.caseId)
+    const roles = await getUserRoles(user.id)
     if (c.status !== "PROCEDURE_CONFIRMED")
       throw conflict("لا يمكن تسجيل إجراء غير مؤكد.")
 
@@ -346,7 +356,7 @@ export async function completeProcedure(input: unknown): Promise<ActionResult> {
         }
       }
 
-      await setCaseStatus(tx, c.id, c.status, "PROCEDURE_COMPLETED", user.id, "تنفيذ الإجراء")
+      await setCaseStatus(tx, c.id, c.status, "PROCEDURE_COMPLETED", user.id, roles, "تنفيذ الإجراء")
       await writeAudit({ action: "procedure.complete", actorUserId: user.id, entityType: "aesthetic_case", entityId: c.id }, tx)
     })
 

@@ -42,5 +42,5 @@ example
 /ios
 /android
 
-# distribution-testing keystore is intentionally committed (see docs/mobile-app.md)
-!signing/medaura-dist.p12
+# Release signing material is restored from CI secrets and must never be committed.
+/signing/

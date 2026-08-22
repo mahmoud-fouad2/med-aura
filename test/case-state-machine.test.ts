@@ -35,8 +35,14 @@ describe("case state machine", () => {
   })
 
   it("assertCaseTransition throws on an illegal transition", () => {
-    expect(() => assertCaseTransition("CONSULTATION_BOOKED", "DEPOSIT_PAID")).toThrow()
-    expect(() => assertCaseTransition("CONSULTATION_COMPLETED", "TREATMENT_PLAN_ISSUED")).not.toThrow()
+    expect(() =>
+      assertCaseTransition("CONSULTATION_BOOKED", "DEPOSIT_PAID", [ROLES.DOCTOR]),
+    ).toThrow()
+    expect(() =>
+      assertCaseTransition("CONSULTATION_COMPLETED", "TREATMENT_PLAN_ISSUED", [
+        ROLES.DOCTOR,
+      ]),
+    ).not.toThrow()
   })
 
   it("gates transitions by role", () => {
@@ -49,6 +55,7 @@ describe("case state machine", () => {
     ).toBe(false)
     // deposit-paid is system-only (verified webhook), not patient-triggerable
     expect(canRoleTransition("QUOTE_ACCEPTED", "DEPOSIT_PAID", [ROLES.PATIENT])).toBe(false)
+    expect(canRoleTransition("QUOTE_ACCEPTED", "DEPOSIT_PAID", [ROLES.SUPER_ADMIN])).toBe(false)
     expect(canRoleTransition("QUOTE_ACCEPTED", "DEPOSIT_PAID", ["system"])).toBe(true)
     // a center/concierge cannot medically approve
     expect(canRoleTransition("DEPOSIT_PAID", "MEDICALLY_APPROVED", [ROLES.CENTER_ADMIN])).toBe(false)

@@ -64,19 +64,36 @@ describe("safeSecureStore + warmSecureStore", () => {
     expect(mockDeleteItemAsync).not.toHaveBeenCalled()
   })
 
-  it("setItem writes to the buffer synchronously and mirrors to native async, without the sync API", () => {
-    safeSecureStore.setItem("k2", "v2")
+  it("setItem writes to the buffer synchronously and exposes the native write promise", async () => {
+    const persisted = safeSecureStore.setItem("k2", "v2")
     // Immediately readable — better-auth's own onSuccess hook reads right
     // after writing, with no await in between.
     expect(safeSecureStore.getItem("k2")).toBe("v2")
     expect(mockSetItemAsync).toHaveBeenCalledWith("k2", "v2")
     expect(mockSetItem).not.toHaveBeenCalled()
+    await expect(persisted).resolves.toBeUndefined()
   })
 
-  it("setItem never throws even when the background native write rejects", async () => {
+  it("setItem rejects safely when persistence fails while keeping the in-memory value", async () => {
     mockSetItemAsync.mockRejectedValue(new Error("value too large for Keychain"))
-    expect(() => safeSecureStore.setItem("k3", "v3")).not.toThrow()
+    const persisted = safeSecureStore.setItem("k3", "v3")
     // The buffer write already happened synchronously regardless.
     expect(safeSecureStore.getItem("k3")).toBe("v3")
+    await expect(persisted).rejects.toThrow("value too large")
+  })
+
+  it("warms every persisted Better Auth chunk before the sync adapter reads it", async () => {
+    mockGetItemAsync.mockImplementation(async (key) => {
+      if (key === "chunked") return "\u0001ba-chunks:2"
+      if (key === "chunked.0") return "first-"
+      if (key === "chunked.1") return "second"
+      return null
+    })
+
+    await warmSecureStore(["chunked"])
+
+    expect(safeSecureStore.getItem("chunked")).toBe("\u0001ba-chunks:2")
+    expect(safeSecureStore.getItem("chunked.0")).toBe("first-")
+    expect(safeSecureStore.getItem("chunked.1")).toBe("second")
   })
 })

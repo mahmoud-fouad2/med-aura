@@ -1,9 +1,10 @@
 import { and, eq, isNull, or, gt } from "drizzle-orm"
 import { db } from "./db"
 import {
-  user,
   userRole,
   role,
+  rolePermission,
+  permission,
   doctorProfile,
   aestheticCase,
   medicalDocument,
@@ -221,7 +222,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
 
 /* ── DB-backed role/permission resolution ─────────────────────────────────── */
 
-/** Authoritative role keys for a user (from user_role; falls back to user.role). */
+/** Authoritative role keys for a user. Missing assignments fail closed. */
 export async function getUserRoles(userId: string): Promise<RoleKey[]> {
   const rows = await db
     .select({ key: role.key })
@@ -229,15 +230,7 @@ export async function getUserRoles(userId: string): Promise<RoleKey[]> {
     .innerJoin(role, eq(userRole.roleId, role.id))
     .where(eq(userRole.userId, userId))
 
-  if (rows.length > 0) return rows.map((r) => r.key as RoleKey)
-
-  // Resilience: if no rows yet, use the denormalised primary role.
-  const u = await db
-    .select({ role: user.role })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1)
-  return u[0] ? [u[0].role as RoleKey] : []
+  return rows.map((r) => r.key as RoleKey)
 }
 
 /** Pure: permissions for a set of role keys (super_admin = wildcard). */
@@ -264,7 +257,18 @@ export function rolesHavePermission(
 export async function getUserPermissions(
   userId: string,
 ): Promise<Set<PermissionKey>> {
-  return computePermissions(await getUserRoles(userId))
+  const roles = await getUserRoles(userId)
+  if (roles.includes(ROLES.SUPER_ADMIN)) {
+    return new Set(Object.values(PERMISSIONS))
+  }
+
+  const rows = await db
+    .select({ key: permission.key })
+    .from(userRole)
+    .innerJoin(rolePermission, eq(userRole.roleId, rolePermission.roleId))
+    .innerJoin(permission, eq(rolePermission.permissionId, permission.id))
+    .where(eq(userRole.userId, userId))
+  return new Set(rows.map((row) => row.key as PermissionKey))
 }
 
 export async function hasRole(userId: string, r: RoleKey): Promise<boolean> {
@@ -275,7 +279,7 @@ export async function hasPermission(
   userId: string,
   perm: PermissionKey,
 ): Promise<boolean> {
-  return rolesHavePermission(await getUserRoles(userId), perm)
+  return (await getUserPermissions(userId)).has(perm)
 }
 
 /** Throws ForbiddenError unless the user holds the permission. */

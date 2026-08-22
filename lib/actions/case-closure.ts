@@ -1,66 +1,30 @@
 "use server"
 
 import { z } from "zod"
-import { and, eq, desc, inArray } from "drizzle-orm"
+import { desc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import {
   aestheticCase,
   caseStatusHistory,
-  invoice,
-  followUpTask,
-  followUpPlan,
   caseClosure,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
-import { requirePermission, canAccessCase, PERMISSIONS } from "@/lib/rbac"
+import {
+  requirePermission,
+  canAccessCase,
+  getUserRoles,
+  PERMISSIONS,
+} from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
 import { assertCaseTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
-import { hasOpenSafetyAlerts } from "@/lib/actions/safety"
+import {
+  getCaseClosureEligibilityInternal,
+  type ClosureEligibility,
+} from "@/lib/case-closure"
 import type { ActionResult } from "@/lib/actions/provider"
-
-const UNPAID_INVOICE_STATUSES = ["DRAFT", "ISSUED", "PARTIALLY_PAID", "OVERDUE"]
-const CLOSABLE_STATUSES: CaseStatus[] = ["PROCEDURE_COMPLETED", "FOLLOW_UP", "FULLY_PAID"]
-
-export type ClosureEligibility = { eligible: boolean; reasons: string[] }
-
-/** Business gates beyond the pure state-machine transition (which only knows FROM/TO validity). */
-export async function getCaseClosureEligibility(caseId: string): Promise<ClosureEligibility> {
-  const reasons: string[] = []
-
-  const c = (
-    await db.select({ id: aestheticCase.id, status: aestheticCase.status }).from(aestheticCase).where(eq(aestheticCase.id, caseId)).limit(1)
-  )[0]
-  if (!c) return { eligible: false, reasons: ["الحالة غير موجودة."] }
-  if (!CLOSABLE_STATUSES.includes(c.status as CaseStatus)) {
-    reasons.push("لا يمكن إغلاق الحالة في مرحلتها الحالية.")
-  }
-
-  if (await hasOpenSafetyAlerts(caseId)) {
-    reasons.push("توجد تنبيهات سلامة مفتوحة لم تُحل بعد.")
-  }
-
-  const inv = (
-    await db.select({ status: invoice.status }).from(invoice).where(eq(invoice.caseId, caseId)).orderBy(desc(invoice.createdAt)).limit(1)
-  )[0]
-  if (inv && UNPAID_INVOICE_STATUSES.includes(inv.status)) {
-    reasons.push("توجد فاتورة غير مسددة بالكامل.")
-  }
-
-  const escalated = await db
-    .select({ id: followUpTask.id })
-    .from(followUpTask)
-    .innerJoin(followUpPlan, eq(followUpTask.planId, followUpPlan.id))
-    .where(and(eq(followUpPlan.caseId, caseId), inArray(followUpTask.status, ["ESCALATED"])))
-    .limit(1)
-  if (escalated.length > 0) {
-    reasons.push("توجد مهمة متابعة مصعّدة لم تُحل بعد.")
-  }
-
-  return { eligible: reasons.length === 0, reasons }
-}
 
 const closeSchema = z.object({
   caseId: z.string().min(1),
@@ -77,16 +41,17 @@ export async function closeCase(input: unknown): Promise<ActionResult> {
 
     await requirePermission(user.id, PERMISSIONS.CASE_CLOSE)
     if (!(await canAccessCase(user.id, data.caseId))) throw forbidden()
+    const roles = await getUserRoles(user.id)
 
     const c = (
       await db.select({ id: aestheticCase.id, status: aestheticCase.status, patientUserId: aestheticCase.patientUserId }).from(aestheticCase).where(eq(aestheticCase.id, data.caseId)).limit(1)
     )[0]
     if (!c) throw new AppError("NOT_FOUND")
 
-    const eligibility = await getCaseClosureEligibility(data.caseId)
+    const eligibility = await getCaseClosureEligibilityInternal(data.caseId)
     if (!eligibility.eligible) throw conflict(eligibility.reasons.join(" "))
 
-    assertCaseTransition(c.status as CaseStatus, "CLOSED")
+    assertCaseTransition(c.status as CaseStatus, "CLOSED", roles)
 
     await db.transaction(async (tx) => {
       await tx.update(aestheticCase).set({ status: "CLOSED", updatedBy: user.id }).where(eq(aestheticCase.id, c.id))
@@ -126,6 +91,7 @@ export async function reopenCase(input: unknown): Promise<ActionResult> {
 
     await requirePermission(user.id, PERMISSIONS.CASE_CLOSE)
     if (!(await canAccessCase(user.id, data.caseId))) throw forbidden()
+    const roles = await getUserRoles(user.id)
 
     const c = (
       await db.select({ id: aestheticCase.id, status: aestheticCase.status, patientUserId: aestheticCase.patientUserId }).from(aestheticCase).where(eq(aestheticCase.id, data.caseId)).limit(1)
@@ -134,7 +100,7 @@ export async function reopenCase(input: unknown): Promise<ActionResult> {
     if (c.status !== "CLOSED") throw conflict("الحالة ليست مغلقة.")
 
     // role-gated inside the state machine (CONCIERGE/CENTER_OWNER/CENTER_ADMIN/SUPER_ADMIN)
-    assertCaseTransition("CLOSED", "FOLLOW_UP")
+    assertCaseTransition("CLOSED", "FOLLOW_UP", roles)
 
     await db.transaction(async (tx) => {
       await tx.update(aestheticCase).set({ status: "FOLLOW_UP", updatedBy: user.id }).where(eq(aestheticCase.id, c.id))

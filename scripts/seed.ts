@@ -27,6 +27,7 @@ import {
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS, type RoleKey } from "@/lib/rbac"
 import { auth } from "@/lib/auth"
 import { encryptString, last4 } from "@/lib/crypto"
+import { COUNTRY_PRESETS } from "@/lib/geo"
 
 const DEV_PASSWORD = "MedAura#2026"
 
@@ -560,6 +561,9 @@ async function seedDemoDoctorPhoto(fileName: string): Promise<string | null> {
 /** Idempotent: creates the doctor + their center (as owner) + license + procedures + availability. */
 async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<string> {
   const doctorUserId = await ensureUser(input.email, input.name, ROLES.DOCTOR, true)
+  const timezone =
+    COUNTRY_PRESETS.find((country) => country.code === input.country)?.timezone ??
+    "Asia/Riyadh"
 
   const centerOwnerRole = (
     await db.select({ id: roleT.id }).from(roleT).where(eq(roleT.key, ROLES.CENTER_OWNER)).limit(1)
@@ -586,6 +590,7 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
           description: input.centerDescription,
           country: input.country,
           city: input.city,
+          timezone,
           languages: ["ar", "en"],
           verified: true,
           published: true,
@@ -605,6 +610,7 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
       description: input.centerDescription,
       country: input.country,
       city: input.city,
+      timezone,
       languages: ["ar", "en"],
     })
     .where(eq(center.id, centerRow.id))
@@ -630,6 +636,7 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
           languages: ["ar", "en"],
           country: input.country,
           city: input.city,
+          timezone,
           yearsExperience: input.yearsExperience,
           consultationFee: input.consultationFee,
           currency: input.currency,
@@ -696,6 +703,7 @@ async function ensureApprovedDoctorWithCenter(input: DemoDoctorInput): Promise<s
       languages: ["ar", "en"],
       country: input.country,
       city: input.city,
+      timezone,
       yearsExperience: input.yearsExperience,
       consultationFee: input.consultationFee,
       currency: input.currency,

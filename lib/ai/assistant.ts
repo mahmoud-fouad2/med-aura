@@ -36,13 +36,12 @@ import { listProceduresGrouped } from "@/lib/data/procedures"
  *
  * - gemini-3.5-flash-lite — GA, lowest latency for this short routing chat
  * - gemini-3.6-flash — GA fallback for more complex tool use
- * - gemini-3.7-flash — GA capacity/quality fallback
  *
  * Retirement is handled at runtime, not by hoping: a 404/NOT_FOUND on any
  * entry advances to the next model instead of failing the request (see
  * isModelUnavailable), so the assistant survives Google retiring one.
  */
-export const MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash"] as const
+export const MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash"] as const
 /**
  * Latency budget. This runs behind a phone request that the user is staring
  * at, so every knob here is tuned for "answers fast" over "answers perfectly":
@@ -55,7 +54,7 @@ export const MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-
 const MAX_TOOL_ROUNDS = 2
 /** One bounded attempt per model; fallback is faster than retrying one busy pool. */
 export const ATTEMPTS_PER_MODEL = 1
-export const MODEL_REQUEST_TIMEOUT_MS = 12_000
+export const MODEL_REQUEST_TIMEOUT_MS = 10_000
 
 /**
  * Transient failures worth trying on the next model pool: provider 5xx,

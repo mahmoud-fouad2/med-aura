@@ -74,3 +74,12 @@ export function listIanaTimezones(): string[] {
   }
   return []
 }
+
+export function isIanaTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format()
+    return true
+  } catch {
+    return false
+  }
+}

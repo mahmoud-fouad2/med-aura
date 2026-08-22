@@ -6,9 +6,11 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { aestheticCase, doctorProfile, center, review } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
+import { PERMISSIONS, requirePermission } from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
 import type { ActionResult } from "@/lib/actions/provider"
+import { trackAnalyticsEvent } from "@/lib/analytics"
 
 const rating = z.coerce.number().int().min(1).max(5)
 const reviewSchema = z.object({
@@ -105,14 +107,98 @@ export async function submitReview(input: unknown): Promise<ActionResult> {
         comment: data.comment,
         anonymousDisplay: data.anonymousDisplay,
         verified: true, // system-determined: tied to a completed case
-        moderationStatus: "PUBLISHED",
+        moderationStatus: data.comment.trim() ? "PENDING" : "PUBLISHED",
       })
-      if (c.doctorId) await recomputeDoctorRating(tx, c.doctorId)
-      if (c.centerId) await recomputeCenterRating(tx, c.centerId)
+      // Star-only reviews contain no free text and can contribute immediately.
+      // Written comments wait for moderation so PII/abuse is never published
+      // directly from an untrusted patient submission.
+      if (!data.comment.trim()) {
+        if (c.doctorId) await recomputeDoctorRating(tx, c.doctorId)
+        if (c.centerId) await recomputeCenterRating(tx, c.centerId)
+      }
       await writeAudit({ action: "review.create", actorUserId: user.id, entityType: "aesthetic_case", entityId: c.id, metadata: { overall: data.overallRating } }, tx)
     })
 
+    await trackAnalyticsEvent({
+      name: "review_submitted",
+      userId: user.id,
+      locale: "ar",
+      properties: { hasComment: Boolean(data.comment.trim()), rating: data.overallRating },
+    })
+
     revalidatePath(`/dashboard/cases/${c.id}`)
+    return { ok: true }
+  } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code?: string }).code === "23505"
+    ) {
+      return { ok: false, error: "سبق أن قيّمت هذه الحالة.", code: "CONFLICT" }
+    }
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const moderationSchema = z.object({
+  reviewId: z.string().min(1),
+  decision: z.enum(["publish", "hide", "reject"]),
+  reason: z.string().trim().max(1000).optional().default(""),
+})
+
+export async function moderateReview(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.BEFORE_AFTER_MODERATE)
+    const data = moderationSchema.parse(input)
+    const row = (
+      await db.select().from(review).where(eq(review.id, data.reviewId)).limit(1)
+    )[0]
+    if (!row) throw new AppError("NOT_FOUND")
+
+    const moderationStatus =
+      data.decision === "publish"
+        ? "PUBLISHED"
+        : data.decision === "hide"
+          ? "HIDDEN"
+          : "REJECTED"
+    if (row.moderationStatus === "REJECTED") {
+      throw conflict("هذا التقييم مرفوض بالفعل ولا يمكن إعادة نشره.")
+    }
+    await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(review)
+        .set({
+          moderationStatus,
+          hiddenReason: moderationStatus === "PUBLISHED" ? null : data.reason || null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(review.id, row.id),
+            eq(review.moderationStatus, row.moderationStatus),
+          ),
+        )
+        .returning({ id: review.id })
+      if (updated.length === 0) throw conflict("تغيّرت حالة التقييم. حدّث الصفحة.")
+      if (row.doctorId) await recomputeDoctorRating(tx, row.doctorId)
+      if (row.centerId) await recomputeCenterRating(tx, row.centerId)
+      await writeAudit(
+        {
+          action: `review.${data.decision}`,
+          actorUserId: user.id,
+          entityType: "review",
+          entityId: row.id,
+          metadata: { reason: data.reason || undefined },
+        },
+        tx,
+      )
+    })
+
+    revalidatePath("/")
+    revalidatePath("/admin/reviews")
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)

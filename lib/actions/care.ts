@@ -16,6 +16,7 @@ import { requireUser } from "@/lib/session"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
+import { ROLES } from "@/lib/rbac"
 import {
   assertCaseTransition,
   type CaseStatus,
@@ -74,7 +75,9 @@ export async function completeConsultation(
         .limit(1)
     )[0]
     if (!caseRow) throw new AppError("NOT_FOUND")
-    assertCaseTransition(caseRow.status as CaseStatus, "CONSULTATION_COMPLETED")
+    assertCaseTransition(caseRow.status as CaseStatus, "CONSULTATION_COMPLETED", [
+      ROLES.DOCTOR,
+    ])
 
     await db.transaction(async (tx) => {
       await tx
@@ -198,7 +201,7 @@ export async function recordConsultationOutcome(
       nextCaseStatus = "MORE_INFORMATION_REQUIRED"
     }
     if (nextCaseStatus) {
-      assertCaseTransition(caseRow.status as CaseStatus, nextCaseStatus)
+      assertCaseTransition(caseRow.status as CaseStatus, nextCaseStatus, [ROLES.DOCTOR])
     }
 
     await db.transaction(async (tx) => {

@@ -8,6 +8,7 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import {
@@ -38,7 +39,12 @@ export const availabilityRule = pgTable(
     active: boolean("active").notNull().default(true),
     ...lifecycle(),
   },
-  (t) => [index("availability_doctor_idx").on(t.doctorId)],
+  (t) => [
+    index("availability_doctor_idx").on(t.doctorId),
+    check("availability_day_range", sql`${t.dayOfWeek} between 0 and 6`),
+    check("availability_time_order", sql`${t.startTime} < ${t.endTime}`),
+    check("availability_slot_range", sql`${t.slotMinutes} between 5 and 480`),
+  ],
 )
 
 export const appointment = pgTable(
@@ -66,6 +72,7 @@ export const appointment = pgTable(
       .default("PENDING_PAYMENT"),
     startsAt: timestamp("startsAt", { withTimezone: true }).notNull(),
     endsAt: timestamp("endsAt", { withTimezone: true }).notNull(),
+    paymentExpiresAt: timestamp("paymentExpiresAt", { withTimezone: true }),
     priceAmount: numeric("priceAmount", { precision: 12, scale: 2 }),
     currency: text("currency").notNull().default("SAR"),
     patientNote: text("patientNote"),
@@ -75,13 +82,19 @@ export const appointment = pgTable(
     index("appointment_patient_idx").on(t.patientUserId),
     index("appointment_doctor_idx").on(t.doctorId),
     index("appointment_starts_idx").on(t.startsAt),
-    // Hard guarantee against double-booking: a doctor cannot have two
-    // non-cancelled appointments at the same start time. Cancelled / no-show
-    // slots are excluded so they can be re-booked.
+    index("appointment_payment_expiry_idx").on(t.status, t.paymentExpiresAt),
+    check("appointment_time_order", sql`${t.startsAt} < ${t.endsAt}`),
+    check(
+      "appointment_price_nonnegative",
+      sql`${t.priceAmount} is null or ${t.priceAmount} >= 0`,
+    ),
+    // Hard guarantee against double-booking: only statuses that actively or
+    // historically occupy a slot participate in the unique index. Using an
+    // allow-list also keeps future terminal statuses re-bookable by default.
     uniqueIndex("appointment_no_double_booking")
       .on(t.doctorId, t.startsAt)
       .where(
-        sql`status NOT IN ('CANCELLED_BY_PATIENT','CANCELLED_BY_PROVIDER','NO_SHOW')`,
+        sql`status IN ('PENDING_PAYMENT','CONFIRMED','IN_PROGRESS','COMPLETED','RESCHEDULED')`,
       ),
   ],
 )

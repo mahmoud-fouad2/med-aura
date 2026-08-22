@@ -15,6 +15,7 @@ import {
 } from "@/lib/seo"
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/pwa/sw-registration"
+import { PageViewTracker } from "@/components/analytics/page-view-tracker"
 
 // Readex Pro — a variable Arabic+Latin family drawn as one design, with a
 // continuous 160–700 weight axis. Two things it fixes over the per-weight
@@ -169,6 +170,7 @@ export default async function RootLayout({
       </head>
       <body className="font-sans antialiased">
         {children}
+        <PageViewTracker locale={locale} />
         <Toaster />
         <ServiceWorkerRegistration />
       </body>

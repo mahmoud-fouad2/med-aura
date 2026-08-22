@@ -17,7 +17,7 @@ import { requirePermission, hasRole, PERMISSIONS, ROLES } from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
-import { createSafetyAlert } from "@/lib/actions/safety"
+import { createSafetyAlertInternal } from "@/lib/safety"
 import type { ActionResult } from "@/lib/actions/provider"
 
 async function loadTaskWithCase(taskId: string) {
@@ -268,7 +268,7 @@ export async function reviewFollowUpTask(input: unknown): Promise<ActionResult> 
         tx,
       )
       if (data.decision === "escalate") {
-        await createSafetyAlert(
+        await createSafetyAlertInternal(
           {
             caseId: task.caseId,
             patientUserId: task.patientUserId,

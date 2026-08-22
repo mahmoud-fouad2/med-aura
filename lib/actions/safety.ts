@@ -1,7 +1,7 @@
 "use server"
 
 import { z } from "zod"
-import { and, eq, inArray } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import {
@@ -9,110 +9,18 @@ import {
   symptomReport,
   safetyAlert,
   doctorProfile,
-  center,
-  centerStaff,
-  userRole,
-  role as roleT,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
-import { requirePermission, PERMISSIONS, ROLES } from "@/lib/rbac"
+import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
 import { WARNING_SIGNS } from "@/lib/care/warning-signs"
+import {
+  createSafetyAlertInternal,
+  notifySafetyAlertRecipientsInternal,
+} from "@/lib/safety"
 import type { ActionResult } from "@/lib/actions/provider"
-
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
-
-/** Pure DB write — insert a safety alert. Callable inside an existing transaction. */
-export async function createSafetyAlert(
-  input: {
-    caseId: string
-    patientUserId: string
-    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
-    summary: string
-    symptomReportId?: string
-  },
-  actorUserId: string | null,
-  tx?: Tx,
-): Promise<string> {
-  const runner = tx ?? db
-  const rows = await runner
-    .insert(safetyAlert)
-    .values({
-      caseId: input.caseId,
-      patientUserId: input.patientUserId,
-      symptomReportId: input.symptomReportId,
-      severity: input.severity,
-      status: "OPEN",
-      summary: input.summary,
-    })
-    .returning({ id: safetyAlert.id })
-  await writeAudit(
-    {
-      action: "safety_alert.create",
-      actorUserId,
-      entityType: "safety_alert",
-      entityId: rows[0].id,
-      metadata: { caseId: input.caseId, severity: input.severity },
-    },
-    tx,
-  )
-  return rows[0].id
-}
-
-/** Best-effort notification fan-out to the case's doctor, center staff, and concierge. */
-export async function notifySafetyAlertRecipients(alertId: string): Promise<void> {
-  const alert = (
-    await db.select().from(safetyAlert).where(eq(safetyAlert.id, alertId)).limit(1)
-  )[0]
-  if (!alert) return
-  const c = (
-    await db
-      .select({ id: aestheticCase.id, doctorId: aestheticCase.doctorId, centerId: aestheticCase.centerId })
-      .from(aestheticCase)
-      .where(eq(aestheticCase.id, alert.caseId))
-      .limit(1)
-  )[0]
-  if (!c) return
-
-  const recipients = new Set<string>()
-
-  if (c.doctorId) {
-    const doc = (
-      await db.select({ userId: doctorProfile.userId }).from(doctorProfile).where(eq(doctorProfile.id, c.doctorId)).limit(1)
-    )[0]
-    if (doc) recipients.add(doc.userId)
-  }
-  if (c.centerId) {
-    const [owner, staff] = await Promise.all([
-      db.select({ ownerId: center.ownerId }).from(center).where(eq(center.id, c.centerId)).limit(1),
-      db.select({ userId: centerStaff.userId }).from(centerStaff).where(eq(centerStaff.centerId, c.centerId)),
-    ])
-    if (owner[0]?.ownerId) recipients.add(owner[0].ownerId)
-    for (const s of staff) recipients.add(s.userId)
-  }
-  const concierges = await db
-    .select({ userId: userRole.userId })
-    .from(userRole)
-    .innerJoin(roleT, eq(userRole.roleId, roleT.id))
-    .where(eq(roleT.key, ROLES.CONCIERGE))
-  for (const cn of concierges) recipients.add(cn.userId)
-
-  const severityLabel: Record<string, string> = {
-    LOW: "منخفضة", MEDIUM: "متوسطة", HIGH: "عالية", CRITICAL: "حرجة",
-  }
-  for (const userId of recipients) {
-    await notify({
-      userId,
-      type: "safety_alert.created",
-      title: `تنبيه سلامة (${severityLabel[alert.severity] ?? alert.severity})`,
-      body: alert.summary ?? undefined,
-      caseId: alert.caseId,
-      href: `/dashboard/cases/${alert.caseId}`,
-    })
-  }
-}
 
 /* ── Patient: report symptoms → may auto-create a safety alert ─────────── */
 const reportSchema = z.object({
@@ -164,7 +72,7 @@ export async function reportSymptoms(
         const labels = selectedWarnings
           .map((k) => WARNING_SIGNS.find((w) => w.key === k)?.labelAr ?? k)
           .join("، ")
-        alertId = await createSafetyAlert(
+        alertId = await createSafetyAlertInternal(
           {
             caseId: c.id,
             patientUserId: user.id,
@@ -178,7 +86,7 @@ export async function reportSymptoms(
       }
     })
 
-    if (alertId) await notifySafetyAlertRecipients(alertId)
+    if (alertId) await notifySafetyAlertRecipientsInternal(alertId)
 
     revalidatePath(`/dashboard/cases/${c.id}`)
     return { ok: true, data: { alertCreated: Boolean(alertId) } }
@@ -328,7 +236,7 @@ export async function createSafetyAlertManual(input: unknown): Promise<ActionRes
 
     let alertId = ""
     await db.transaction(async (tx) => {
-      alertId = await createSafetyAlert(
+      alertId = await createSafetyAlertInternal(
         { caseId: c.id, patientUserId: c.patientUserId, severity: data.severity, summary: data.summary },
         user.id,
         tx,
@@ -339,7 +247,7 @@ export async function createSafetyAlertManual(input: unknown): Promise<ActionRes
       }
     })
 
-    await notifySafetyAlertRecipients(alertId)
+    await notifySafetyAlertRecipientsInternal(alertId)
     // The recipient fan-out above only covers the case's doctor/center
     // staff/concierges — an explicit assignee (e.g. a compliance reviewer)
     // may not be any of those and would otherwise hear nothing.
@@ -408,19 +316,4 @@ export async function assignSafetyAlert(input: unknown): Promise<ActionResult> {
     const safe = toSafeError(err)
     return { ok: false, error: safe.userMessage, code: safe.code }
   }
-}
-
-/** Unresolved alerts for a case — used to gate case closure. */
-export async function hasOpenSafetyAlerts(caseId: string): Promise<boolean> {
-  const rows = await db
-    .select({ id: safetyAlert.id })
-    .from(safetyAlert)
-    .where(
-      and(
-        eq(safetyAlert.caseId, caseId),
-        inArray(safetyAlert.status, ["OPEN", "ACKNOWLEDGED", "CONTACTED", "PROVIDER_REVIEWED", "REFERRED_TO_EMERGENCY"]),
-      ),
-    )
-    .limit(1)
-  return rows.length > 0
 }

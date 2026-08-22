@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest"
-import { validateUpload, MAX_FILE_BYTES, isAllowedMime, validateEntityImage, MAX_IMAGE_BYTES } from "@/lib/uploads"
+import {
+  validateUpload,
+  MAX_FILE_BYTES,
+  isAllowedMime,
+  validateEntityImage,
+  MAX_IMAGE_BYTES,
+  hasValidFileSignature,
+} from "@/lib/uploads"
 
 describe("upload validation", () => {
   it("accepts an in-size image", () => {
@@ -27,6 +34,25 @@ describe("upload validation", () => {
 
   it("rejects empty files", () => {
     expect(validateUpload({ contentType: "image/png", sizeBytes: 0 }).ok).toBe(false)
+  })
+
+  it("rejects an extension that contradicts the declared MIME type", () => {
+    expect(
+      validateUpload({ contentType: "application/pdf", sizeBytes: 1000, fileName: "report.jpg" }).ok,
+    ).toBe(false)
+  })
+
+  it("validates actual JPEG, PNG, WebP and PDF signatures", () => {
+    expect(hasValidFileSignature("image/jpeg", Uint8Array.from([0xff, 0xd8, 0xff]))).toBe(true)
+    expect(
+      hasValidFileSignature(
+        "image/png",
+        Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      ),
+    ).toBe(true)
+    expect(hasValidFileSignature("image/webp", new TextEncoder().encode("RIFFxxxxWEBP"))).toBe(true)
+    expect(hasValidFileSignature("application/pdf", new TextEncoder().encode("%PDF-1.7"))).toBe(true)
+    expect(hasValidFileSignature("application/pdf", new TextEncoder().encode("<script>"))).toBe(false)
   })
 })
 

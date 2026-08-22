@@ -291,6 +291,7 @@ export type DoctorFull = {
   bio: string | null
   country: string
   city: string | null
+  timezone: string
   languages: string[]
   yearsExperience: number
   consultationFee: string | null
@@ -314,6 +315,7 @@ export async function getDoctorForAdmin(doctorId: string): Promise<DoctorFull | 
         bio: doctorProfile.bio,
         country: doctorProfile.country,
         city: doctorProfile.city,
+        timezone: doctorProfile.timezone,
         languages: doctorProfile.languages,
         yearsExperience: doctorProfile.yearsExperience,
         consultationFee: doctorProfile.consultationFee,

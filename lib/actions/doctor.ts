@@ -10,6 +10,7 @@ import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { AppError, toSafeError, validation } from "@/lib/errors"
 import type { ActionResult } from "@/lib/actions/provider"
+import { isIanaTimezone } from "@/lib/geo"
 import {
   getDoctorForAdmin,
   listDoctorProcedureOptions,
@@ -36,6 +37,7 @@ const updateDoctorSchema = z.object({
   offersVideo: z.boolean(),
   offersInPerson: z.boolean(),
   centerId: z.string().trim().optional().or(z.literal("").transform(() => undefined)),
+  timezone: z.string().trim().refine(isIanaTimezone, "المنطقة الزمنية غير صحيحة"),
 })
 
 export async function updateDoctorAction(input: unknown): Promise<ActionResult> {
@@ -67,6 +69,7 @@ export async function updateDoctorAction(input: unknown): Promise<ActionResult> 
         offersVideo: data.offersVideo,
         offersInPerson: data.offersInPerson,
         centerId: data.centerId ?? null,
+        timezone: data.timezone,
         updatedBy: user.id,
         updatedAt: new Date(),
       })
@@ -287,6 +290,7 @@ const updateMyPracticeSchema = z.object({
   certifications: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
   fellowships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
   memberships: z.array(z.string().trim().min(2).max(180)).max(20).optional(),
+  timezone: z.string().trim().refine(isIanaTimezone, "المنطقة الزمنية غير صحيحة").optional(),
 })
 
 /** A doctor updating their own price/currency/consultation types. */
@@ -317,6 +321,7 @@ export async function updateMyPracticeAction(input: unknown): Promise<ActionResu
         ...(data.certifications !== undefined ? { certifications: data.certifications } : {}),
         ...(data.fellowships !== undefined ? { fellowships: data.fellowships } : {}),
         ...(data.memberships !== undefined ? { memberships: data.memberships } : {}),
+        ...(data.timezone !== undefined ? { timezone: data.timezone } : {}),
         updatedBy: user.id,
         updatedAt: new Date(),
       })

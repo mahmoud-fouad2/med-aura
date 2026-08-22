@@ -24,6 +24,8 @@ import {
   MessageCircle,
   LifeBuoy,
   Megaphone,
+  ChartNoAxesCombined,
+  MessageSquareText,
   Circle,
   type LucideIcon,
 } from "lucide-react"
@@ -54,6 +56,8 @@ const ICONS: Record<string, LucideIcon> = {
   MessageCircle,
   LifeBuoy,
   Megaphone,
+  ChartNoAxesCombined,
+  MessageSquareText,
 }
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {

@@ -23,6 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # publishes the APK to the fixed "apk-latest" release
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     defaults:
       run:
         working-directory: apps/mobile
@@ -48,10 +53,33 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Expo Doctor
+        run: npx --yes expo-doctor@latest
+
       - name: Generate the Android project
         run: npx expo prebuild --platform android --no-install
         env:
           CI: "true"
+
+      - name: Restore release keystore from secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required GitHub Actions secret: $name" >&2
+              exit 1
+            fi
+          done
+          mkdir -p signing
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > signing/medaura-release.p12
+          chmod 600 signing/medaura-release.p12
 
       - name: Apply release signing (consistent distribution key)
         run: node scripts/apply-release-signing.mjs

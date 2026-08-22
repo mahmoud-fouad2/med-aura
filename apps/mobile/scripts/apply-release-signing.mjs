@@ -2,10 +2,9 @@
  * Post-prebuild step (CI): patches the generated android project before
  * `assembleRelease`. Two things:
  *
- * 1. Wires the committed distribution keystore in, so the APK has a CONSISTENT
- *    signature across builds (debug keystores rotate per runner, which makes
- *    phones refuse to update: "app not installed"). Testing-distribution key
- *    only — the Play Store release uses a separate private key (docs/mobile-app.md).
+ * 1. Wires the CI-provided release keystore into Gradle. The private key and
+ *    passwords live only in GitHub Actions secrets; this script never embeds
+ *    or prints them.
  *
  * 2. Narrows the built ABIs to the two ARM variants real phones use
  *    (arm64-v8a + armeabi-v7a). Once the native video (WebRTC) libraries were
@@ -38,7 +37,19 @@ try {
 const gradlePath = "android/app/build.gradle"
 let gradle = readFileSync(gradlePath, "utf8")
 
-if (gradle.includes("medaura-dist.p12")) {
+const requiredSigningEnv = [
+  "ANDROID_KEYSTORE_PASSWORD",
+  "ANDROID_KEY_ALIAS",
+  "ANDROID_KEY_PASSWORD",
+]
+const missingSigningEnv = requiredSigningEnv.filter((key) => !process.env[key])
+if (missingSigningEnv.length > 0) {
+  throw new Error(
+    `Missing Android signing configuration: ${missingSigningEnv.join(", ")}`,
+  )
+}
+
+if (gradle.includes("medaura-release.p12")) {
   console.log("release signing already applied")
   process.exit(0)
 }
@@ -46,10 +57,10 @@ if (gradle.includes("medaura-dist.p12")) {
 const signing = `
     signingConfigs {
         release {
-            storeFile file('../../signing/medaura-dist.p12')
-            storePassword 'medaura-dist-2026'
-            keyAlias 'medaura'
-            keyPassword 'medaura-dist-2026'
+            storeFile file('../../signing/medaura-release.p12')
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('ANDROID_KEY_ALIAS')
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD')
             storeType 'pkcs12'
         }
     }

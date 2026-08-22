@@ -6,7 +6,11 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  boolean,
+  integer,
+  check,
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import { lifecycle, paymentStatusEnum, paymentPurposeEnum } from "./_shared"
 import { user } from "./auth"
 import { appointment } from "./scheduling"
@@ -37,6 +41,12 @@ export const payment = pgTable(
     providerSessionId: text("providerSessionId"),
     failureReason: text("failureReason"),
     paidAt: timestamp("paidAt", { withTimezone: true }),
+    needsReconciliation: boolean("needsReconciliation").notNull().default(false),
+    reconciliationReason: text("reconciliationReason"),
+    reconciledAt: timestamp("reconciledAt", { withTimezone: true }),
+    reconciledBy: text("reconciledBy").references(() => user.id, {
+      onDelete: "set null",
+    }),
     // Only set when provider = "manual" — how/why a Finance/Super Admin
     // recorded this payment outside the online gateway.
     manualMethod: text("manualMethod"),
@@ -50,7 +60,9 @@ export const payment = pgTable(
     index("payment_payer_idx").on(t.payerUserId),
     index("payment_appointment_idx").on(t.appointmentId),
     index("payment_status_idx").on(t.status),
+    index("payment_reconciliation_idx").on(t.needsReconciliation, t.createdAt),
     uniqueIndex("payment_intent_idx").on(t.providerIntentId),
+    check("payment_amount_nonnegative", sql`${t.amount} >= 0`),
   ],
 )
 
@@ -69,6 +81,8 @@ export const paymentWebhookEvent = pgTable(
     eventId: text("eventId").notNull(),
     type: text("type").notNull(),
     payload: jsonb("payload").notNull(),
+    processingAt: timestamp("processingAt", { withTimezone: true }),
+    attemptCount: integer("attemptCount").notNull().default(0),
     processedAt: timestamp("processedAt", { withTimezone: true }),
     error: text("error"),
     createdAt: timestamp("createdAt", { withTimezone: true })

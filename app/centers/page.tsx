@@ -110,14 +110,10 @@ export default async function CentersPage() {
                   title={l("لا توجد مراكز منشورة بعد", "No centers are published yet")}
                   description={l("ستظهر المراكز هنا بعد التحقق من تراخيصها.", "Centers will appear here after their licenses are reviewed.")}
                   action={
-                    <Button
-                      render={
-                        <Link href="/for-centers/apply">
-                          {l("سجّل مركزك", "Register your center")}
-                          <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
-                        </Link>
-                      }
-                    />
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button render={<Link href="/online-consultation">{l("اطلب مساعدة في الاختيار", "Get help choosing")}</Link>} />
+                      <Button variant="outline" render={<Link href="/for-centers/apply">{l("سجّل مركزك", "Register your center")}<ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" /></Link>} />
+                    </div>
                   }
                 />
               </Card>

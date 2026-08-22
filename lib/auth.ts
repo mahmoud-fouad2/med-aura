@@ -1,8 +1,6 @@
 import { betterAuth } from "better-auth"
 import { expo } from "@better-auth/expo"
-import { eq } from "drizzle-orm"
-import { pool, db } from "@/lib/db"
-import { patientProfile, role as roleTable, userRole } from "@/lib/db/schema"
+import { pool } from "@/lib/db"
 import { betterAuthUrl, env, isGoogleAuthConfigured, trustedAuthOrigins } from "@/lib/env"
 import { ROLES } from "@/lib/rbac"
 import { logger } from "@/lib/logger"
@@ -140,62 +138,17 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        // After a new account is created, provision the patient profile and
-        // assign the PATIENT role in one transaction. The follow-up onboarding
-        // action also repairs the same profile row if the auth provider retries.
+        // PostgreSQL provisions patient_profile + user_role in the SAME
+        // transaction as the user INSERT (migration trigger). This post-commit
+        // hook is deliberately audit-only; it must never be the integrity
+        // boundary for account provisioning.
         async after(createdUser) {
-          try {
-            await db.transaction(async (tx) => {
-              await tx
-                .insert(patientProfile)
-                .values({ userId: createdUser.id, language: "ar" })
-                .onConflictDoNothing()
-
-              const patientRole = await tx
-                .select({ id: roleTable.id })
-                .from(roleTable)
-                .where(eq(roleTable.key, ROLES.PATIENT))
-                .limit(1)
-
-              if (!patientRole[0]) {
-                logger.warn("patient role not seeded; skipped RBAC assignment", {
-                  userId: createdUser.id,
-                })
-                return
-              }
-
-              await tx
-                .insert(userRole)
-                .values({ userId: createdUser.id, roleId: patientRole[0].id })
-                .onConflictDoNothing()
-
-              await writeAudit(
-                {
-                  action: "auth.signup",
-                  actorUserId: createdUser.id,
-                  entityType: "user",
-                  entityId: createdUser.id,
-                },
-                tx,
-              )
-            })
-          } catch (err) {
-            logger.error("post-signup provisioning failed", {
-              userId: createdUser.id,
-              errorName: err instanceof Error ? err.name : "UnknownError",
-            })
-            try {
-              await db
-                .insert(patientProfile)
-                .values({ userId: createdUser.id, language: "ar" })
-                .onConflictDoNothing()
-            } catch (repairErr) {
-              logger.error("post-signup profile repair failed", {
-                userId: createdUser.id,
-                errorName: repairErr instanceof Error ? repairErr.name : "UnknownError",
-              })
-            }
-          }
+          await writeAudit({
+            action: "auth.signup",
+            actorUserId: createdUser.id,
+            entityType: "user",
+            entityId: createdUser.id,
+          })
         },
       },
     },

@@ -40,6 +40,7 @@ const DEAD_STATUSES = new Set([
   "CANCELLED_BY_PATIENT",
   "CANCELLED_BY_PROVIDER",
   "NO_SHOW",
+  "PAYMENT_EXPIRED",
 ])
 
 export function decideVideoAccess(input: {
