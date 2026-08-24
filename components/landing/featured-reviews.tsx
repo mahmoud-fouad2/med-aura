@@ -45,7 +45,7 @@ function ReviewCard({ review, locale }: { review: FeaturedReview; locale: Locale
   const meta = [procedureName, review.city].filter(Boolean).join(" · ")
 
   return (
-    <figure className="border-border/75 bg-card/80 hover:border-primary/30 hover:shadow-elegant relative flex h-full min-h-[292px] snap-center flex-col overflow-hidden rounded-lg border p-5 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 sm:min-h-[310px] sm:p-6">
+    <figure className="border-border/80 bg-card/90 hover:border-primary/40 hover:shadow-elegant relative flex h-full min-h-[292px] snap-center flex-col overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 sm:min-h-[310px] sm:p-7">
       <Quote
         className="fill-gold/10 text-gold/10 pointer-events-none absolute end-5 top-16 size-16"
         aria-hidden="true"
@@ -99,11 +99,11 @@ export async function FeaturedReviews() {
         <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             align="start"
-            eyebrow={isAr ? "تجارب موثّقة" : "Verified experiences"}
-            title={isAr ? "تجارب تمنحك ثقة أكبر" : "Real experiences. Greater confidence."}
+            eyebrow={isAr ? "آراء وتجارب المراجعين" : "Verified experiences"}
+            title={isAr ? "قصص نجاح وتجارب تجميلية ملهمة" : "Real experiences. Greater confidence."}
             subtitle={
               isAr
-                ? "آراء مرضى أكملوا استشاراتهم عبر Med Aura."
+                ? "تجارب حقيقية وتقييمات صادقة من مراجعين أتمّوا استشاراتهم ورحلتهم التجميلية مع نخبة أطباء Med Aura."
                 : "Reviews from patients who completed consultations through Med Aura."
             }
           />

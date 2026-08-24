@@ -44,9 +44,9 @@ export async function PopularProcedures({ locale }: { locale: Locale }) {
     <section className="border-b border-border bg-section-soft">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow={isAr ? "اختيارات شائعة" : "Popular choices"}
-          title={isAr ? "ابدأ من احتياجك" : "Start with your needs"}
-          subtitle={isAr ? "تعرّف على الخيارات الأكثر طلبًا، ثم قارن بين الأطباء قبل الحجز." : "Explore popular options, then compare doctors before booking."}
+          eyebrow={isAr ? "الإجراءات الأكثر طلباً" : "Popular choices"}
+          title={isAr ? "خيارات علاجية متقدمة تناسب تطلعاتكِ" : "Start with your needs"}
+          subtitle={isAr ? "استكشفي أحدث الإجراءات الجراحية وغير الجراحية وقارني بين الأطباء المتخصصين قبل اتخاذ القرار." : "Explore popular options, then compare doctors before booking."}
         />
 
         {res.status !== "ok" ? (
@@ -65,14 +65,14 @@ export async function PopularProcedures({ locale }: { locale: Locale }) {
             />
           </div>
         ) : (
-          <Stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Stagger className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {rows.map((p) => (
               <StaggerItem key={p.slug}>
                 <Link
                   href={`/search?procedure=${p.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-elegant"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
                 >
-                  <div className="relative h-32 overflow-hidden bg-muted">
+                  <div className="relative h-36 overflow-hidden bg-muted">
                     <Image
                       src={
                         (p.imageKey ? getPublicUrl(p.imageKey) : null) ??
@@ -83,8 +83,8 @@ export async function PopularProcedures({ locale }: { locale: Locale }) {
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
-                    <CategoryIconBadge icon={p.categoryIcon} className="absolute bottom-3 right-3 size-10 bg-white/92 ring-1 ring-white/50 transition-transform duration-300 group-hover:scale-105" iconClassName="size-5" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                    <CategoryIconBadge icon={p.categoryIcon} className="absolute bottom-3 right-3 size-10 bg-card/92 ring-1 ring-border/80 border border-primary/20 shadow-elegant transition-transform duration-300 group-hover:scale-105" iconClassName="size-5" />
                     <ArrowLeft className="absolute bottom-5 left-4 size-4 text-white transition-transform duration-300 ltr:rotate-180 rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1" />
                   </div>
                   <div className="flex flex-1 flex-col gap-3.5 p-5">

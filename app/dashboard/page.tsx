@@ -179,27 +179,29 @@ export default async function DashboardHome() {
     <div className="space-y-6">
       <FadeIn>
       <DashboardHero
-        eyebrow="لوحة الرحلة التجميلية"
-        greeting={`أهلًا ${firstName}`}
-        subtitle="كل ما يخص رحلتك في مكان واحد: الحالات، المواعيد، الرسائل، والخطوات المطلوبة منك."
+        eyebrow="بوابتكِ التجميلية الشخصية"
+        greeting={`أهلاً بكِ، ${firstName}`}
+        subtitle="متابعة شاملة لرحلتكِ العلاجية: الاستشارات المرئية، خطط العلاج، المواعيد، وتفاصيل حالتكِ بخصوصية تامة."
         actions={
           <>
             <Button
               size="lg"
+              className="rounded-xl shadow-sm"
               render={
                 <Link href="/search">
                   <Search className="size-4" />
-                  ابحث عن طبيب تجميل
+                  استكشفي الأطباء
                 </Link>
               }
             />
             <Button
               variant="outline"
               size="lg"
+              className="rounded-xl"
               render={
                 <Link href="/dashboard/cases/new">
-                  <Sparkles className="size-4" />
-                  ابدأ حالة جديدة
+                  <Sparkles className="size-4 text-gold" />
+                  إنشاء ملف حالة جديدة
                 </Link>
               }
             />
@@ -243,15 +245,15 @@ export default async function DashboardHome() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                <Sparkles className="size-3.5" />
-                ابدأ رحلتك
+                <Sparkles className="size-3.5 text-gold" />
+                ابدئي رحلتكِ التجميلية
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                لم تُنشئ أي حالة بعد. ابدأ باختيار الإجراء الذي يهمّك ومشاركة صورك بأمان تام.
+                شاركي تفاصيل حالتكِ وتطلعاتكِ وصوركِ الطبية بسرية تامة للحصول على استشارة وخطة علاجية مخصصة.
               </p>
               <Button
                 size="sm"
-                className="w-full"
+                className="w-full rounded-xl"
                 render={<Link href="/dashboard/cases/new">إنشاء أول حالة</Link>}
               />
             </div>

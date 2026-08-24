@@ -22,9 +22,9 @@ export default async function ContactPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow={l("تواصل معنا", "Contact")}
-          title={l("نسعد بمساعدتك", "How can we help?")}
-          subtitle={l("لأي استفسار عن المنصة أو الخدمات أو الشراكات، أرسل لنا رسالة وسيتواصل معك فريقنا.", "Send us a message about the platform, support, privacy, or provider partnerships.")}
+          eyebrow={l("خدمة العملاء والشراكات", "Contact")}
+          title={l("فريقنا دائماً في خدمتكِ ومساعدتكِ", "How can we help?")}
+          subtitle={l("يسعدنا تلقي استفساراتكِ ومساعدتكِ في كل ما يخص استشاراتكِ الطبية أو انضمام الأطباء والمراكز التجميلية المعتمدة.", "Send us a message about the platform, support, privacy, or provider partnerships.")}
         />
 
         <section className="bg-background">
@@ -32,18 +32,18 @@ export default async function ContactPage() {
             <div className="space-y-4">
               <InfoCard
                 icon={MessageSquare}
-                title={l("الدعم والاستفسارات", "Support and questions")}
-                desc={l("فريقنا جاهز للإجابة عن أسئلتك حول استخدام المنصة وحجز الاستشارات.", "Our team can help with using the platform and booking consultations.")}
+                title={l("الدعم ورعاية المراجعين", "Support and questions")}
+                desc={l("فريقنا جاهز للإجابة عن تساؤلاتكِ ومساعدتكِ في اختيار الطبيب وإتمام الاستشارة.", "Our team can help with using the platform and booking consultations.")}
               />
               <InfoCard
                 icon={ShieldCheck}
-                title={l("الشراكات والاعتماد", "Partnerships and credentialing")}
-                desc={l("هل أنت طبيب أو مركز وترغب بالانضمام؟ راسلنا لبدء المراجعة.", "Doctors and centers can contact us to begin the credential review process.")}
+                title={l("انضمام الأطباء والمراكز", "Partnerships and credentialing")}
+                desc={l("هل أنت طبيب أو ممثل مركز تجميل ترغب بالانضمام؟ تواصل معنا لبدء إجراءات الاعتماد المهني.", "Doctors and centers can contact us to begin the credential review process.")}
               />
               <InfoCard
                 icon={Mail}
-                title={l("الخصوصية والبيانات", "Privacy and data")}
-                desc={l("لطلبات الوصول إلى بياناتك أو حذفها، تواصل معنا وسنتعامل مع طلبك بسرّية.", "Contact us for data access or deletion requests, handled privately.")}
+                title={l("الخصوصية وحماية البيانات", "Privacy and data")}
+                desc={l("لأي استفسارات تتعلق بحماية بياناتكِ وملفاتكِ الطبية، نتعامل مع طلبكِ بأعلى سرية.", "Contact us for data access or deletion requests, handled privately.")}
               />
             </div>
             <ContactForm locale={locale} />
@@ -65,9 +65,9 @@ function InfoCard({
   desc: string
 }) {
   return (
-    <Card className="flex gap-4 rounded-lg p-5">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <Icon className="size-5" />
+    <Card className="flex gap-4 rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-elegant">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+        <Icon className="size-6" />
       </span>
       <div>
         <h3 className="font-heading font-bold text-foreground">{title}</h3>

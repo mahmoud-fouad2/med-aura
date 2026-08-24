@@ -29,19 +29,20 @@ export async function BeforeAfterShowcase() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             align="start"
-            eyebrow={isAr ? "نتائج حقيقية" : "Real Results"}
-            title={isAr ? "نتائج قبل وبعد" : "Before & After Results"}
+            eyebrow={isAr ? "تحولات ملهمة ونتائج واقعية" : "Real Results"}
+            title={isAr ? "معرض قبل وبعد — تجارب حقيقية موثّقة" : "Before & After Results"}
             subtitle={
               isAr
-                ? "نتائج حقيقية لمرضى Med Aura، بموافقتهم على النشر."
+                ? "استكشفي نتائج فعلية لمراجعي Med Aura عبر سلايدر المقارنة التفاعلي، منشورة بموافقة موثقة وتدقيق مهني دقيق."
                 : "Real Med Aura patient results, published with their consent."
             }
           />
           <Button
             variant="outline"
+            className="rounded-xl"
             render={
               <Link href="/before-after">
-                {isAr ? "عرض كل النتائج" : "View all results"}
+                {isAr ? "استكشفي كل النتائج" : "View all results"}
                 <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />
               </Link>
             }
@@ -56,9 +57,9 @@ export async function BeforeAfterShowcase() {
           ))}
         </Stagger>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
+        <p className="mt-6 text-center text-xs text-muted-foreground/80">
           {isAr
-            ? "النتائج تختلف من شخص لآخر وتعتمد على الحالة والاستجابة للعلاج."
+            ? "تنويه طبي: تختلف النتائج من شخص لآخر بناءً على الخصائص الفردية والتقييم الطبي وخطة العلاج المعتمدة."
             : "Results vary by individual and depend on condition and response to treatment."}
         </p>
       </div>

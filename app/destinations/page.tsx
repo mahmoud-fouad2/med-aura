@@ -63,15 +63,15 @@ export default async function DestinationsPage() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow={l("الوجهات", "Destinations")}
-          title={l("اختر وجهتك التجميلية بوضوح", "Compare aesthetic destinations clearly")}
-          subtitle={l("قارن بين الدول حسب الأطباء والمراكز واللغات، ثم اختر الوجهة التي تناسب خطتك.", "Compare destinations by available doctors, centers, and languages before choosing your next step.")}
+          eyebrow={l("الوجهات العلاجية", "Destinations")}
+          title={l("وجهتكِ التجميلية المثالية بأعلى معايير الرعاية", "Compare aesthetic destinations clearly")}
+          subtitle={l("استكشفي نخبة أطباء ومراكز التجميل المعتمدة عبر أبرز الوجهات في المملكة والخليج وتركيا، مع مقارنة شفافة للخبرات والأسعار.", "Compare destinations by available doctors, centers, and languages before choosing your next step.")}
           imageSrc={PUBLIC_MEDIA.destinations}
           imageAlt={l("عيادة تجميل حديثة", "Modern aesthetic clinic")}
           stats={[
-            { label: l("وجهات", "Destinations"), value: destinations.length.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
-            { label: l("أطباء", "Doctors"), value: doctorsTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
-            { label: l("مراكز", "Centers"), value: centersTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("وجهات معتمدة", "Destinations"), value: destinations.length.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("أطباء استشاريون", "Doctors"), value: doctorsTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("مراكز ومستشفيات", "Centers"), value: centersTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
           ]}
         />
 
@@ -101,13 +101,13 @@ export default async function DestinationsPage() {
                       >
                         <Card
                           className={
-                            "h-full overflow-hidden p-0 transition-all duration-300 " +
+                            "h-full overflow-hidden p-0 rounded-2xl border border-border/80 bg-card transition-all duration-300 " +
                             (inactive
                               ? "opacity-60"
                               : "hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant")
                           }
                         >
-                          <div className="relative h-32 bg-muted">
+                          <div className="relative h-36 bg-muted">
                             <Image
                               src={destinationImage(d.code)}
                               alt={l(`وجهة ${d.nameAr}`, `${d.nameEn} destination`)}
@@ -115,13 +115,13 @@ export default async function DestinationsPage() {
                               className="object-cover"
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
-                            <span className="absolute bottom-3 right-3 flex size-12 items-center justify-center rounded-2xl bg-white/92 text-primary ring-1 ring-white/50 shadow-elegant backdrop-blur">
-                              <MapPin className="size-6" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
+                            <span className="absolute bottom-3 right-3 flex size-11 items-center justify-center rounded-xl bg-card/92 text-primary ring-1 ring-border/80 border border-primary/20 shadow-elegant backdrop-blur">
+                              <MapPin className="size-5" />
                             </span>
                             <span
                               dir="ltr"
-                              className="absolute left-3 top-3 rounded-full bg-white/88 px-2 py-0.5 font-mono text-[10px] font-medium text-foreground shadow-sm backdrop-blur"
+                              className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-0.5 font-mono text-[11px] font-bold text-foreground shadow-sm backdrop-blur border border-border/70"
                             >
                               {d.code}
                             </span>

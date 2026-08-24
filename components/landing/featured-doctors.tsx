@@ -26,14 +26,15 @@ export async function FeaturedDoctors() {
             align="start"
             eyebrow={isAr ? "اختيارات موثوقة" : "Verified Selection"}
             title={t.home.verifiedDoctors}
-            subtitle={isAr ? "اختيارك لخبير موثوق هو أول خطوة نحو نتيجة آمنة ومرضية." : "Start with a trusted expert before making your treatment decision."}
+            subtitle={isAr ? "نخبة من كبار استشاريي وجراحي التجميل المرخصين، لمساعدتكِ على اتخاذ قراركِ بثقة واطمئنان." : "Start with a trusted expert before making your treatment decision."}
           />
           {results.length > 0 && (
             <Button
               variant="outline"
+              className="rounded-xl"
               render={
                 <Link href="/search">
-                  {isAr ? "عرض جميع الأطباء" : "View all doctors"}
+                  {isAr ? "استكشفي جميع الأطباء" : "View all doctors"}
                   <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />
                 </Link>
               }

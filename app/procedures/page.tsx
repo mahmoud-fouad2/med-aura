@@ -90,9 +90,9 @@ export default async function ProceduresPage({
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow={isAr ? "دليلك للعناية" : "Your care guide"}
-          title={isAr ? "اختر الإجراء بعد فهم خياراتك" : "Understand your options before choosing"}
-          subtitle={isAr ? "ابحث حسب المنطقة أو نوع الإجراء، واقرأ المعلومات الأساسية قبل مقارنة الأطباء." : "Browse by area or procedure type, then review the essentials before comparing doctors."}
+          eyebrow={isAr ? "دليل الإجراءات التجميلية" : "Your care guide"}
+          title={isAr ? "استكشفي أحدث الإجراءات التجميلية الجراحية وغير الجراحية" : "Understand your options before choosing"}
+          subtitle={isAr ? "دليل طبي شامل يوضح مدة التعافي، نوع التخدير، والنتائج المتوقعة لمساعدتكِ على اتخاذ القرار الأنسب لجمالكِ بثقة." : "Browse by area or procedure type, then review the essentials before comparing doctors."}
           imageSrc="/demo-services/service-face-neck.png"
           imageAlt={isAr ? "غرفة علاج تجميلي حديثة" : "Modern aesthetic treatment room"}
         />
