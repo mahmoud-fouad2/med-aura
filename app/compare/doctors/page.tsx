@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { getDoctorsForCompare } from "@/lib/data/compare"
 import { countryNameAr } from "@/lib/status-labels"
+import { formatMoney } from "@/lib/money"
 
 export const dynamic = "force-dynamic"
 export const metadata = {
@@ -129,7 +130,7 @@ export default async function DoctorComparePage({
                   {rows.map((d) => (
                     <Cell key={d.id}>
                       {d.consultationFee
-                        ? `${d.consultationFee} ${d.currency}`
+                        ? formatMoney(d.consultationFee, d.currency, "ar")
                         : "—"}
                     </Cell>
                   ))}

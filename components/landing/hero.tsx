@@ -103,7 +103,7 @@ export function Hero({
             ))}
           </div>
 
-          <div className="grid max-w-2xl gap-2 pt-2 sm:grid-cols-3">
+          <div className="grid max-w-2xl gap-3 pt-3 sm:grid-cols-3">
             {trustPoints.map((tp) => (
               <TrustPoint key={tp.label} icon={tp.icon} label={tp.label} />
             ))}
@@ -122,13 +122,11 @@ function TrustPoint({
   label: string
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/82 px-3 py-2.5 backdrop-blur-md">
-      <Icon
-        className="size-5 shrink-0"
-        style={{ color: "oklch(0.6 0.1 85)" }}
-        aria-hidden="true"
-      />
-      <span className="text-sm font-semibold leading-snug text-foreground/85">
+    <div className="group flex items-center gap-2.5 rounded-xl border border-primary/15 bg-card/85 px-3.5 py-3 backdrop-blur-md shadow-sm transition-all duration-300 hover:border-gold/40 hover:shadow-elegant">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold transition-transform duration-300 group-hover:scale-110">
+        <Icon className="size-4.5" aria-hidden="true" />
+      </div>
+      <span className="text-xs sm:text-sm font-semibold leading-snug text-foreground/90">
         {label}
       </span>
     </div>

@@ -20,11 +20,12 @@ function applyCors(response: NextResponse): NextResponse {
 }
 
 /**
- * Expo Web is a development surface only. Native Android/iOS requests do not
- * require CORS, but browser-based QA needs a valid preflight response for
- * mutation routes such as ticket creation and profile updates.
+ * Standard Next.js middleware.
+ * Handles:
+ * 1. Mobile Web CORS in local development.
+ * 2. Locale prefix rewrites (/(ar|en)/...) and setting the locale cookie.
  */
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   if (isLocalMobileWebRequest(request)) {
     if (request.method === "OPTIONS") {
       return applyCors(new NextResponse(null, { status: 204 }))

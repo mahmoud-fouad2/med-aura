@@ -356,51 +356,61 @@ async function request<T>(
   path: string,
   init?: RequestInit & { auth?: boolean; timeoutMs?: number },
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    ...(init?.body != null ? { "Content-Type": "application/json" } : {}),
-    ...(init?.headers as Record<string, string>),
-  }
-  if (init?.auth !== false && Platform.OS !== "web") {
-    const cookie = authClient.getCookie()
-    if (cookie) headers.Cookie = cookie
-  }
-  const abortController = new AbortController()
-  const timeout = setTimeout(
-    () => abortController.abort(),
-    init?.timeoutMs ?? REQUEST_TIMEOUT_MS,
-  )
-  let res: Response
-  try {
-    res = await fetch(`${API_URL}${path}`, {
-      ...init,
-      headers,
-      signal: init?.signal ?? abortController.signal,
-      ...(Platform.OS === "web" ? { credentials: "include" } : {}),
-    })
-  } catch (cause) {
-    // fetch itself rejecting means connectivity, not the server — the UI
-    // must say "offline", never blame the data, and vice versa. An abort is
-    // our own deadline firing, which is a different story from no signal.
-    if ((cause as { name?: string } | null)?.name === "AbortError") {
-      throw new TimeoutError("timeout", { cause })
+  const isRead = !init?.method || init.method.toUpperCase() === "GET"
+  const maxAttempts = isRead ? 2 : 1
+
+  let lastError: unknown = null
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const headers: Record<string, string> = {
+      ...(init?.body != null ? { "Content-Type": "application/json" } : {}),
+      ...(init?.headers as Record<string, string>),
     }
-    throw new NetworkError("offline", { cause })
-  } finally {
-    clearTimeout(timeout)
-  }
-  if (res.status === 401) throw new SessionExpiredError()
-  const body = (await res.json().catch(() => null)) as
-    | { ok: true; data: T }
-    | { ok: false; error: string; code?: string }
-    | null
-  if (!res.ok || !body || !body.ok) {
-    throw new ApiError(
-      body && "error" in body && body.error ? body.error : "Request failed",
-      res.status,
-      body && "code" in body ? body.code : undefined,
+    if (init?.auth !== false && Platform.OS !== "web") {
+      const cookie = authClient.getCookie()
+      if (cookie) headers.Cookie = cookie
+    }
+    const abortController = new AbortController()
+    const timeout = setTimeout(
+      () => abortController.abort(),
+      init?.timeoutMs ?? REQUEST_TIMEOUT_MS,
     )
+    let res: Response
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        ...init,
+        headers,
+        signal: init?.signal ?? abortController.signal,
+        ...(Platform.OS === "web" ? { credentials: "include" } : {}),
+      })
+    } catch (cause) {
+      if ((cause as { name?: string } | null)?.name === "AbortError") {
+        lastError = new TimeoutError("timeout", { cause })
+      } else {
+        lastError = new NetworkError("offline", { cause })
+      }
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 400 * attempt))
+        continue
+      }
+      throw lastError
+    } finally {
+      clearTimeout(timeout)
+    }
+    if (res.status === 401) throw new SessionExpiredError()
+    const body = (await res.json().catch(() => null)) as
+      | { ok: true; data: T }
+      | { ok: false; error: string; code?: string }
+      | null
+    if (!res.ok || !body || !body.ok) {
+      throw new ApiError(
+        body && "error" in body && body.error ? body.error : "Request failed",
+        res.status,
+        body && "code" in body ? body.code : undefined,
+      )
+    }
+    return body.data
   }
-  return body.data
+  throw lastError ?? new NetworkError("offline")
 }
 
 export type ConsultationType = "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
