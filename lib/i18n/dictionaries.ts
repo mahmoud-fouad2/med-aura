@@ -5,17 +5,17 @@ import type { Locale } from "./config"
  * shape. Keep UI copy here rather than scattering literals across components.
  */
 const ar = {
-  brand: { tagline: "رحلتك التجميلية تبدأ بقرار موثوق" },
+  brand: { tagline: "رحلتكِ نحو الجمال تبدأ بقرارٍ موثوق وخبرةٍ رائدة" },
   nav: {
-    procedures: "الإجراءات",
-    doctors: "الأطباء",
-    centers: "المراكز",
-    destinations: "الوجهات",
-    onlineConsultation: "الاستشارة أونلاين",
+    procedures: "الإجراءات التجميلية",
+    doctors: "نخبة الأطباء",
+    centers: "المراكز المعتمدة",
+    destinations: "الوجهات العلاجية",
+    onlineConsultation: "الاستشارة المرئية",
     howItWorks: "كيف تعمل المنصة",
     trust: "الثقة والأمان",
     signIn: "تسجيل الدخول",
-    startConsultation: "ابدأ استشارتك",
+    startConsultation: "ابدئي استشارتكِ",
     dashboard: "لوحة التحكم",
     signOut: "تسجيل الخروج",
   },
@@ -32,52 +32,52 @@ const ar = {
     sar: "ر.س",
   },
   home: {
-    heroTitle: "رحلتك التجميلية تبدأ بقرار موثوق",
+    heroTitle: "رحلتكِ التجميلية تبدأ بقرارٍ موثوق ووضوحٍ تام",
     heroSubtitle:
-      "استشر أطباء ومراكز تجميل معتمدين ومرخّصين، شارك حالتك بأمان، واستلم خطة وسعرًا واضحًا قبل اتخاذ القرار.",
-    searchPlaceholder: "ابحث عن إجراء أو طبيب أو مركز…",
-    exploreByArea: "اكتشف حسب المنطقة",
-    popularProcedures: "الإجراءات الأكثر طلبًا",
-    verifiedDoctors: "الأطباء الموثقون",
-    verifiedCenters: "المراكز الموثقة",
-    howItWorks: "كيف تعمل Med Aura",
+      "استشيري نخبة من أمهر أطباء ومراكز التجميل المعتمدين، شاركي تفاصيل حالتكِ بخصوصية تامة، واحصلي على خطة علاجية مخصصة وتكلفة شفافة قبل أي التزام.",
+    searchPlaceholder: "ابحثي عن إجراء تجميلي، طبيب، أو مركز معتمد…",
+    exploreByArea: "استكشفي حسب المنطقة التجميلية",
+    popularProcedures: "الإجراءات التجميلية الأكثر طلباً",
+    verifiedDoctors: "نخبة أطباء التجميل المعتمدين",
+    verifiedCenters: "أرقى مراكز ومستشفيات التجميل",
+    howItWorks: "كيف نرافقكِ في Med Aura",
     noDataYet: "لا يوجد محتوى منشور بعد في هذا القسم.",
   },
   authShell: {
-    licenseCheck: "أطباء ومراكز يتم قبولهم بعناية",
-    fileProtection: "مشاركة صورك وملفاتك بإذنك",
-    verifiedReviews: "آراء وتجارب تساعدك على المقارنة",
+    licenseCheck: "أطباء ومراكز استوفت أعلى معايير الفحص والترخيص",
+    fileProtection: "خصوصية تامة وتشفير كامل لملفاتكِ وصوركِ الطبية",
+    verifiedReviews: "تجارب وتقييمات حقيقية من مراجعين موثقين",
     backHome: "العودة إلى الرئيسية",
   },
   search: {
-    title: "ابحث عن طبيب أو إجراء",
+    title: "ابحث عن طبيب أو إجراء تجميلي",
     resultsCount: (n: number) => {
       if (n === 0) return "0 طبيب"
-      if (n === 1) return "نتيجة واحدة"
-      if (n === 2) return "نتيجتان"
-      if (n >= 3 && n <= 10) return `${n} نتائج`
-      return `${n} نتيجة`
+      if (n === 1) return "طبيب واحد متاح"
+      if (n === 2) return "طبيبان متاحان"
+      if (n >= 3 && n <= 10) return `${n} أطباء متاحين`
+      return `${n} طبيباً متاحاً`
     },
-    empty: "لا توجد نتائج مطابقة. جرّب تعديل عوامل التصفية.",
-    filters: "عوامل التصفية",
-    procedure: "الإجراء",
+    empty: "لم نجد نتائج تطابق بحثك حالياً. يمكنك تعديل خيارات التصفية أو التواصل معنا لمساعدتك.",
+    filters: "تصفية النتائج",
+    procedure: "الإجراء التجميلي",
     country: "الدولة",
     city: "المدينة",
     consultationType: "نوع الاستشارة",
     sortBy: "ترتيب حسب",
   },
   auth: {
-    signInTitle: "مرحبًا بعودتك",
-    signUpTitle: "أنشئ حسابك",
-    signInSubtitle: "سجّل الدخول لمتابعة رحلتك",
-    signUpSubtitle: "ننشئ لك حساب مريض للبدء بأمان",
+    signInTitle: "مرحباً بكِ مجدداً",
+    signUpTitle: "إنشاء حساب جديد",
+    signInSubtitle: "سجّلي الدخول لمتابعة استشاراتكِ وخطتكِ العلاجية بكل سهولة",
+    signUpSubtitle: "أنشئي حسابكِ للبدء في استشارتكِ الطبية بسرية وأمان تام",
     name: "الاسم الكامل",
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
-    haveAccount: "لديك حساب بالفعل؟",
-    noAccount: "ليس لديك حساب؟",
+    haveAccount: "لديكِ حساب بالفعل؟",
+    noAccount: "ليس لديكِ حساب بعد؟",
     providerNote:
-      "هل أنت طبيب أو مركز تجميل؟ أنشئ حساب مريض أولًا ثم قدّم طلب انضمام مقدّم خدمة من لوحة التحكم.",
+      "هل أنت طبيب أو ممثل مركز تجميل؟ أنشئ حساب مريض أولاً ثم قدّم طلب انضمام مقدّم خدمة من لوحة التحكم.",
   },
 }
 

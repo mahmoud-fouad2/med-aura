@@ -20,32 +20,32 @@ export default async function AboutPage() {
   const isAr = locale === "ar"
   const l = (ar: string, en: string) => (isAr ? ar : en)
   const values = [
-    { icon: ShieldCheck, title: l("تحقّق فعلي من التراخيص", "License checks that affect visibility"), desc: l("لا يظهر الطبيب للعامة إلا بترخيص ساري وملف معتمد.", "A doctor can appear publicly only with an approved profile and a valid, unexpired license.") },
-    { icon: Lock, title: l("وصول بإذنك", "Access under your control"), desc: l("لا يطّلع الطبيب على ملفات حالتك إلا بعد موافقتك، ويمكنك سحب الوصول.", "A doctor can view your case files only after you grant access, and you can withdraw it.") },
-    { icon: Sparkles, title: l("خطوات واضحة", "Clear next steps"), desc: l("تتابع الاستشارة والخطة والسعر والحجز من مكان واحد.", "Keep consultation, planning, pricing, and booking together.") },
-    { icon: HeartHandshake, title: l("متابعة بعد الإجراء", "Connected aftercare"), desc: l("تظل مهام المتابعة والتواصل مرتبطة بحالتك بعد الإجراء.", "Follow-up tasks and communication remain connected to your case.") },
-    { icon: Globe, title: l("خيارات عبر عدة وجهات", "Options across destinations"), desc: l("قارن المواقع واللغات والعملات كما هي لدى كل مقدم خدمة.", "Compare locations, languages, and currencies as offered by each provider.") },
-    { icon: Stethoscope, title: l("تركيز على الرعاية التجميلية", "Focused on aesthetic care"), desc: l("المعلومات ومسارات الحجز مصممة لقرارات وإجراءات التجميل الطبي.", "Information and booking journeys are designed around aesthetic care decisions.") },
+    { icon: ShieldCheck, title: l("نخبة معتمدة وتراخيص موثّقة", "Certified Experts & Verified Licenses"), desc: l("نلتزم بأعلى المعايير الطبية؛ فلا ينضم إلينا إلا أطباء ومراكز استوفت الفحص المهني الدقيق والتراخيص السارية.", "A doctor can appear publicly only with an approved profile and a valid, unexpired license.") },
+    { icon: Lock, title: l("خصوصية مطلقة وأمان لبياناتك", "Absolute Privacy & Data Protection"), desc: l("ملفاتكِ وصوركِ الطبية مشفرة بالكامل، ولا يطلع عليها أي طبيب إلا بعد موافقتكِ الصريحة، مع إمكانية إلغاء الإذن في أي لحظة.", "A doctor can view your case files only after you grant access, and you can withdraw it.") },
+    { icon: Sparkles, title: l("خطة علاجية مخصصة وتكلفة واضحة", "Clear Treatment Plan & Pricing"), desc: l("تحصلين على تصور طبي متكامل يشمل خطوات الإجراء، النتائج المتوقعة، والتكلفة الدقيقة بكل شفافية.", "Keep consultation, planning, pricing, and booking together.") },
+    { icon: HeartHandshake, title: l("رعاية مستمرة ومتابعة بعد الإجراء", "Connected Aftercare & Support"), desc: l("نرافقكِ خطوة بخطوة أثناء فترة التعافي مع إرشادات دورية وتواصل مباشر مع فريق الرعاية.", "Follow-up tasks and communication remain connected to your case.") },
+    { icon: Globe, title: l("أرقى الوجهات التجميلية العالمية", "Top Global Medical Destinations"), desc: l("استكشفي نخبة المراكز التجميلية في المملكة والخليج وتركيا مع مقارنة شفافة للخيارات والأسعار.", "Compare locations, languages, and currencies as offered by each provider.") },
+    { icon: Stethoscope, title: l("تجربة مصممة لراحتكِ التامة", "Crafted for Aesthetic Excellence"), desc: l("صممنا كل تفصيلة في المنصة لتمنحكِ راحة البال والثقة في كل مرحلة من رحلتكِ الجمالية.", "Information and booking journeys are designed around aesthetic care decisions.") },
   ]
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
       <main className="flex-1">
         <PageHero
-          eyebrow={l("من نحن", "About Med Aura")}
-          title={l("رحلة تجميلية أوضح من أول مقارنة", "A clearer aesthetic care journey")}
-          subtitle={l("نساعدك على مقارنة مقدمي الرعاية، مشاركة حالتك، وحفظ خطوات الاستشارة والمتابعة في مكان واحد.", "Compare providers, share your case privately, and keep consultation and aftercare steps in one place.")}
-          primary={{ href: "/search", label: l("ابحث عن طبيب", "Find a doctor") }}
-          secondary={{ href: "/how-it-works", label: l("كيف نعمل", "How it works") }}
+          eyebrow={l("عن Med Aura", "About Med Aura")}
+          title={l("رحلتكِ نحو الجمال بأعلى معايير الثقة والأمان", "A clearer aesthetic care journey")}
+          subtitle={l("نرافقكِ في اختيار أفضل أطباء ومراكز التجميل المعتمدة، مع استشارات مرئية مريحة وخصوصية تامة لملفاتكِ الطبية.", "Compare providers, share your case privately, and keep consultation and aftercare steps in one place.")}
+          primary={{ href: "/search", label: l("استكشفي الأطباء", "Find a doctor") }}
+          secondary={{ href: "/how-it-works", label: l("كيف نرافقكِ", "How it works") }}
         />
 
         <section className="border-b border-border bg-background">
           <div className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 lg:px-8">
             <Reveal>
               <SectionHeading
-                eyebrow={l("لماذا بنينا Med Aura", "Why we built Med Aura")}
-                title={l("لأن القرار يحتاج معلومات قابلة للمقارنة", "Because better decisions need comparable information")}
-                subtitle={l("جمعنا البحث والاستشارة والخطة والسعر والحجز والمتابعة في مسار واحد لتعرف ما الخطوة التالية.", "We brought search, consultation, planning, pricing, booking, and follow-up into one journey with a clear next step.")}
+                eyebrow={l("رؤيتنا ورسالتنا", "Why we built Med Aura")}
+                title={l("لأن قراركِ الجمالي يستحق أعلى درجات العناية والوضوح", "Because better decisions need comparable information")}
+                subtitle={l("جمعنا لكِ نخبة الأطباء، الاستشارة المرئية، التخطيط الطبي الدقيق، والرعاية اللاحقة في تجربة واحدة راقية ومطمئنة.", "We brought search, consultation, planning, pricing, booking, and follow-up into one journey with a clear next step.")}
               />
             </Reveal>
           </div>

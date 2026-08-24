@@ -31,13 +31,13 @@ export default async function OnlineConsultationPage() {
   const isAr = locale === "ar"
   const l = (ar: string, en: string) => (isAr ? ar : en)
   const features = [
-    { icon: Video, title: l("لقاء مريح من مكانك", "Meet from wherever you are"), desc: l("تحدّث مع الطبيب في موعد يناسبك قبل السفر أو زيارة المركز.", "Speak with your doctor before travelling or visiting a center.") },
-    { icon: FileLock2, title: l("مشاركة مطمئنة", "Private sharing"), desc: l("أرسل الصور والتقارير المطلوبة، واختر من يستطيع الاطلاع عليها.", "Share the requested photos and reports and control who can view them.") },
-    { icon: ClipboardList, title: l("خطة مفهومة", "A clear plan"), desc: l("بعد الاستشارة تعرف الخيارات المناسبة والتكلفة المتوقعة بوضوح.", "Understand suitable options and expected costs after your consultation.") },
-    { icon: ShieldCheck, title: l("أطباء مختارون بعناية", "Carefully selected doctors"), desc: l("لا يظهر الطبيب إلا بعد مراجعة بياناته المهنية وترخيصه.", "Doctors appear only after their credentials and license are reviewed.") },
+    { icon: Video, title: l("استشارة مرئية براحة تامة من مكانكِ", "Meet from wherever you are"), desc: l("تواصلي مباشرة مع طبيبكِ المفضل في موعد يناسبكِ لمناقشة تطلعاتكِ بكل خصوصية قبل السفر أو زيارة المركز.", "Speak with your doctor before travelling or visiting a center.") },
+    { icon: FileLock2, title: l("مشاركة آمنة ومشفرة لملفكِ", "Private sharing"), desc: l("ارفعي صوركِ وتقاريركِ الطبية بأمان تام، مع تحكمكِ الكامل فيمن يطلع عليها وإمكانية سحب الإذن بأي وقت.", "Share the requested photos and reports and control who can view them.") },
+    { icon: ClipboardList, title: l("خطة علاجية دقيقة وتكلفة واضحة", "A clear plan"), desc: l("تحصلين بعد الاستشارة على تقرير طبي شامل يوضح الخطوات المقترحة، البدائل، والتقدير المالي الدقيق.", "Understand suitable options and expected costs after your consultation.") },
+    { icon: ShieldCheck, title: l("نخبة من كبار أطباء التجميل", "Carefully selected doctors"), desc: l("أطباء مرخصون واستشاريون ذوو خبرة دولية تم التحقق من مؤهلاتهم وتراخيصهم المهنية بعناية فائقة.", "Doctors appear only after their credentials and license are reviewed.") },
   ]
   const steps = isAr
-    ? ["اختر طبيبًا معتمدًا من نتائج البحث.", "أنشئ حالتك وارفع الصور والتقارير المطلوبة.", "امنح الطبيب إذن الاطلاع على حالتك.", "احجز موعدًا متاحًا وادفع رسوم الاستشارة بأمان.", "أجرِ الاستشارة عبر الفيديو، واستلم الخطة وعرض السعر."]
+    ? ["استكشفي الأطباء المعتمدين واختاري الطبيب الأنسب لاحتياجكِ.", "أنشئي ملف حالتكِ وارفعي الصور والتقارير الطبية المطلوبة بسرية.", "امنحي الطبيب إذن استعراض حالتكِ لبدء دراستها قبل اللقاء.", "حددي موعد الاستشارة المرئية المناسب لكِ وأتمي الدفع الآمن.", "التقي بطبيبكِ عبر اتصال فيديو مشفر، واستلمي خطتكِ العلاجية وعرض السعر."]
     : ["Choose a licensed doctor from search results.", "Create your case and upload the requested files.", "Grant the doctor access to your case.", "Choose an available time and pay securely.", "Join the video consultation and receive your plan and quote."]
   const structuredData = [
     breadcrumbJsonLd([
