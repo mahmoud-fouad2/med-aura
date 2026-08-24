@@ -21,6 +21,8 @@ import type { AppointmentRow } from "@/lib/data/appointments"
 import { isVideoConfigured } from "@/lib/env"
 import { videoJoinWindow } from "@/lib/video"
 
+import { AddToCalendarDropdown } from "@/components/calendar/add-to-calendar-dropdown"
+
 const typeIcon: Record<string, LucideIcon> = {
   VIDEO_CONSULTATION: Video,
   IN_PERSON_CONSULTATION: Building2,
@@ -104,8 +106,8 @@ export function AppointmentList({
           <li key={a.id}>
             <Card
               className={
-                "flex items-stretch gap-0 overflow-hidden p-0 transition-shadow " +
-                (isPast ? "opacity-80" : "hover:shadow-[0_2px_4px_rgba(20,20,60,0.05),0_12px_28px_-12px_rgba(20,20,60,0.16)]")
+                "flex items-stretch gap-0 overflow-hidden p-0 rounded-2xl border border-border/80 bg-card shadow-sm transition-all duration-300 " +
+                (isPast ? "opacity-80" : "hover:border-primary/40 hover:shadow-elegant")
               }
             >
               {/* Date tile column */}
@@ -192,13 +194,27 @@ export function AppointmentList({
                       className={
                         "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors " +
                         (entry === "open"
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                           : "bg-primary/10 text-primary hover:bg-primary/15")
                       }
                     >
                       <Video className="size-3.5" />
                       {entry === "open" ? "دخول الاستشارة" : "استشارة عن بُعد"}
                     </Link>
+                  )}
+                  {!isPast && (a.status === "CONFIRMED" || a.status === "CHECKED_IN" || a.status === "PENDING_PAYMENT") && (
+                    <div className="mt-1">
+                      <AddToCalendarDropdown
+                        event={{
+                          title: `${appointmentTypeAr(a.type)} مع ${a.counterpartName}`,
+                          description: `موعد ${appointmentTypeAr(a.type)} عبر منصة Med Aura.\nالمرجع: ${a.reference}`,
+                          location: a.type === "VIDEO_CONSULTATION" ? "عيادة Med Aura الافتراضية" : "المركز الطبي المعتمد",
+                          startTime: new Date(a.startsAt),
+                          endTime: new Date(a.endsAt),
+                          url: a.type === "VIDEO_CONSULTATION" ? `https://medauraworld.com/consultation/${a.id}/video` : undefined,
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
               </div>
