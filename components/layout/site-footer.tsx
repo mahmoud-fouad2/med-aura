@@ -67,16 +67,16 @@ export async function SiteFooter() {
                 official store badges are presented. */}
             <a
               href={APK_DOWNLOAD_URL}
-              className="group inline-flex w-fit items-center gap-3 rounded-2xl bg-foreground px-4 py-2.5 text-background shadow-elegant transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elegant-lg"
+              className="group inline-flex w-fit items-center gap-3.5 rounded-2xl bg-foreground px-4.5 py-3 text-background shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:shadow-elegant-lg border border-border/40"
             >
-              <AndroidMark className="size-7 shrink-0 text-[#3DDC84] transition-transform duration-300 group-hover:scale-110" />
+              <AndroidMark className="size-8 shrink-0 text-[#3DDC84] transition-transform duration-300 group-hover:scale-110" />
               <span className="flex flex-col text-start leading-tight">
-                <span className="text-[10px] font-medium text-background/70">
-                  {l("حمّل تطبيق Med Aura", "Download Med Aura")}
+                <span className="text-[11px] font-medium text-background/75">
+                  {l("حمّلي تطبيق Med Aura مجاناً", "Download Med Aura for free")}
                 </span>
-                <span className="text-sm font-bold">{l("لأجهزة أندرويد", "for Android")}</span>
+                <span className="text-sm font-bold tracking-tight">{l("تطبيق أندرويد (APK)", "Android App (APK)")}</span>
               </span>
-              <Download className="size-4 shrink-0 text-background/60 transition-transform duration-300 group-hover:translate-y-0.5" />
+              <Download className="size-4.5 shrink-0 text-background/70 transition-transform duration-300 group-hover:translate-y-0.5" />
             </a>
           </div>
 
