@@ -44,29 +44,29 @@ export function ForgotPasswordForm({
   return (
     <AuthShell home={home} authShell={authShell}>
       <FadeIn>
-        <Card className="p-6 shadow-elegant sm:p-8">
+        <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
           {sent ? (
             <div className="flex flex-col items-center gap-4 text-center">
               <span className="flex size-14 items-center justify-center rounded-2xl bg-success/10 text-success">
                 <MailCheck className="size-7" />
               </span>
               <h1 className="font-heading text-2xl font-bold text-foreground">
-                تحقّق من بريدك
+                تحقّق من بريدك الإلكتروني
               </h1>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 إذا كان هذا البريد مسجّلًا لدينا، فستصلك رسالة تحتوي على رابط
-                لإعادة تعيين كلمة المرور. تحقّق أيضًا من مجلد البريد غير المرغوب.
+                لإعادة تعيين كلمة المرور بكل أمان. تحقّق أيضًا من مجلد البريد غير الهام (Spam).
               </p>
-              <Button variant="outline" className="w-full" render={<Link href="/sign-in">العودة لتسجيل الدخول</Link>} />
+              <Button variant="outline" className="w-full rounded-xl" render={<Link href="/sign-in">العودة لتسجيل الدخول</Link>} />
             </div>
           ) : (
             <>
               <div className="mb-6 text-center">
-                <h1 className="font-heading text-2xl font-bold text-foreground">
+                <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
                   إعادة تعيين كلمة المرور
                 </h1>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.
+                <p className="mt-2 text-sm text-muted-foreground">
+                  أدخل بريدك الإلكتروني وسنرسل لك رابطاً آمناً لإعادة تعيين كلمة المرور.
                 </p>
               </div>
               <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -88,7 +88,7 @@ export function ForgotPasswordForm({
                     {error}
                   </p>
                 )}
-                <Button type="submit" disabled={loading} className="w-full" size="lg">
+                <Button type="submit" disabled={loading} className="w-full rounded-xl shadow-sm" size="lg">
                   {loading ? "جارٍ الإرسال…" : "إرسال رابط الإعادة"}
                 </Button>
               </form>

@@ -57,28 +57,28 @@ export function ResetPasswordForm({
   return (
     <AuthShell home={home} authShell={authShell}>
       <FadeIn>
-        <Card className="p-6 shadow-elegant sm:p-8">
+        <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
           {!token ? (
             <div className="flex flex-col items-center gap-4 text-center">
               <span className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
                 <ShieldAlert className="size-7" />
               </span>
               <h1 className="font-heading text-2xl font-bold text-foreground">
-                رابط غير صالح
+                رابط غير صالح أو منتهي
               </h1>
               <p className="text-sm text-muted-foreground">
-                رابط إعادة التعيين مفقود أو منتهي الصلاحية.
+                رابط إعادة التعيين مفقود أو انتهت صلاحيته الأمنية.
               </p>
-              <Button className="w-full" render={<Link href="/forgot-password">طلب رابط جديد</Link>} />
+              <Button className="w-full rounded-xl shadow-sm" render={<Link href="/forgot-password">طلب رابط جديد</Link>} />
             </div>
           ) : (
             <>
               <div className="mb-6 text-center">
-                <h1 className="font-heading text-2xl font-bold text-foreground">
+                <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
                   تعيين كلمة مرور جديدة
                 </h1>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  اختر كلمة مرور قوية لحسابك.
+                <p className="mt-2 text-sm text-muted-foreground">
+                  اختر كلمة مرور قوية ومحمية لحسابك.
                 </p>
               </div>
               <form onSubmit={onSubmit} className="flex flex-col gap-4">

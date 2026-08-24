@@ -154,12 +154,12 @@ export function AuthForm({
   return (
     <AuthShell home={home} authShell={authShell}>
       <FadeIn>
-        <Card className="shadow-elegant p-6 sm:p-8">
+        <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
           <div className="mb-6 text-center">
-            <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight">
+            <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
               {isSignUp ? dict.signUpTitle : dict.signInTitle}
             </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
               {showTypeChoice
                 ? copy.chooseAccountType
                 : isSignUp
@@ -171,7 +171,7 @@ export function AuthForm({
           {accountDisabled && (
             <div
               role="alert"
-              className="border-destructive/30 bg-destructive/10 text-destructive mb-5 flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-sm"
+              className="border-destructive/30 bg-destructive/10 text-destructive mb-5 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm"
             >
               <ShieldAlert className="mt-0.5 size-4.5 shrink-0" />
               <span>{copy.accountDisabled}</span>
@@ -184,7 +184,7 @@ export function AuthForm({
                 type="button"
                 onClick={() => void handleGoogle()}
                 disabled={googleLoading}
-                className="border-border bg-card text-foreground hover:shadow-elegant flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border text-sm font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-60"
+                className="border-border/80 bg-card text-foreground hover:shadow-elegant flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border text-sm font-semibold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 disabled:pointer-events-none disabled:opacity-60"
               >
                 <GoogleGlyph className="size-4.5" />
                 {googleLoading ? copy.loading : isSignUp ? copy.googleSignUp : copy.googleSignIn}
@@ -198,7 +198,7 @@ export function AuthForm({
           )}
 
           {showTypeChoice ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3.5">
               <TypeChoiceCard
                 icon={HeartPulse}
                 title={copy.patientTitle}
@@ -211,7 +211,7 @@ export function AuthForm({
                 description={copy.doctorDescription}
                 onClick={() => setAccountType("doctor")}
               />
-              <p className="bg-muted/60 text-muted-foreground mt-1 rounded-lg p-3 text-xs leading-relaxed">
+              <p className="bg-muted/60 text-muted-foreground mt-1 rounded-xl p-3.5 text-xs leading-relaxed border border-border/60">
                 {copy.providerReviewNote}
               </p>
             </div>
@@ -429,18 +429,18 @@ function TypeChoiceCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group border-border bg-card flex items-start gap-3.5 rounded-xl border p-4 text-start transition-all duration-200",
-        "hover:border-primary/45 hover:shadow-elegant hover:-translate-y-0.5",
+        "group border-border/80 bg-card flex items-start gap-4 rounded-2xl border p-4.5 text-start transition-all duration-300 shadow-sm",
+        "hover:border-primary/50 hover:bg-secondary/30 hover:shadow-elegant hover:-translate-y-1",
       )}
     >
-      <span className="bg-primary/10 text-primary ring-primary/15 flex size-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-200 group-hover:scale-105">
-        <Icon className="size-5.5" />
+      <span className="bg-primary/10 text-primary ring-primary/20 flex size-12 shrink-0 items-center justify-center rounded-2xl ring-1 transition-transform duration-300 group-hover:scale-105 shadow-sm">
+        <Icon className="size-6" />
       </span>
-      <span className="flex flex-col gap-1">
+      <span className="flex flex-col gap-1 min-w-0 flex-1">
         <span className="font-heading text-foreground text-base font-bold">{title}</span>
         <span className="text-muted-foreground text-xs leading-relaxed">{description}</span>
       </span>
-      <ChevronLeft className="text-muted-foreground group-hover:text-primary ms-auto mt-1 size-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5 ltr:rotate-180 rtl:rotate-0" />
+      <ChevronLeft className="text-muted-foreground group-hover:text-primary ms-auto mt-2 size-4 shrink-0 transition-transform duration-300 group-hover:-translate-x-1 ltr:rotate-180 rtl:rotate-0" />
     </button>
   )
 }
@@ -474,25 +474,25 @@ const AUTH_COPY = {
   ar: {
     googleError: "تعذّر تسجيل الدخول عبر Google. حاول مرة أخرى.",
     termsRequired: "يلزم الموافقة على الشروط وسياسة الخصوصية للمتابعة.",
-    accountCreatedSignIn: "تم إنشاء الحساب. سجّل الدخول لإكمال بياناتك.",
-    chooseAccountType: "اختر نوع الحساب لنجهّز لك التجربة المناسبة",
+    accountCreatedSignIn: "تم إنشاء الحساب بنجاح. سجّلي الدخول لإكمال بياناتكِ.",
+    chooseAccountType: "اختر نوع الحساب لنجهّز لكِ التجربة والرعاية التجميلية الأنسب",
     accountDisabled: "تم تعطيل هذا الحساب. تواصل مع فريق الدعم لمراجعة حالته.",
     loading: "يرجى الانتظار…",
-    googleSignUp: "إنشاء حساب عبر Google",
-    googleSignIn: "الدخول عبر Google",
-    or: "أو",
-    patientTitle: "أنا مريض",
-    patientDescription: "أبحث عن إجراء تجميلي وأريد استشارة ومتابعة موثوقة من مكان واحد.",
-    doctorTitle: "أنا طبيب",
-    doctorDescription: "أقدّم خدمات تجميلية وأرغب بالانضمام للمنصة بعد التحقق من الترخيص.",
-    providerReviewNote: "يظهر مقدّمو الخدمة للمرضى بعد مراجعة بياناتهم وتراخيصهم.",
+    googleSignUp: "إنشاء حساب سريع عبر Google",
+    googleSignIn: "المتابعة عبر Google",
+    or: "أو عبر البريد الإلكتروني",
+    patientTitle: "أنا مراجع / مريضة",
+    patientDescription: "أبحث عن رعاية تجميلية راقية واستشارات مرئية ومتابعة موثوقة من نخبة الأطباء.",
+    doctorTitle: "أنا طبيب / جراح تجميل",
+    doctorDescription: "أقدّم خدمات ورعاية تجميلية متخصصة وأرغب في الانضمام بعد اعتماد وتوثيق تراخيصي المهنية.",
+    providerReviewNote: "نراجع التراخيص والمؤهلات الطبية بعناية فائقة لضمان أعلى معايير الجودة والأمان لجميع المراجعين.",
     doctorAccount: "حساب طبيب",
     patientAccount: "حساب مريض",
-    changeType: "· تغيير النوع",
-    doctorNextPrefix: "بعد إنشاء الحساب ستنتقل مباشرة لاستكمال",
-    doctorApplication: "طلب اعتماد الطبيب",
-    doctorNextSuffix: "(الترخيص، التخصص، وسنوات الخبرة) ليراجعه فريق الامتثال.",
-    forgotPassword: "نسيت كلمة المرور؟",
+    changeType: "· تغيير نوع الحساب",
+    doctorNextPrefix: "بعد إنشاء الحساب ستنتقل مباشرة لتقديم",
+    doctorApplication: "طلب اعتماد وتوثيق الطبيب",
+    doctorNextSuffix: "(الترخيص، التخصص، وسنوات الخبرة) لمراجعته من فريق الامتثال الطبي.",
+    forgotPassword: "نسيتِ كلمة المرور؟",
     phone: "رقم الجوال",
     country: "دولة الإقامة",
     chooseCountry: "اختر الدولة",

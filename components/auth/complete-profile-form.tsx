@@ -38,13 +38,13 @@ export function CompleteProfileForm({ destination }: { destination: string }) {
 
   return (
     <FadeIn>
-      <Card className="p-6 shadow-elegant sm:p-8">
+      <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
         <div className="mb-6 text-center">
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-            خطوة أخيرة قبل البدء
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            خطوة أخيرة لإتمام ملفكِ
           </h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            نحتاج رقم جوالك ودولة إقامتك لإتمام حسابك.
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            نحتاج رقم جوالكِ ودولة إقامتكِ لتخصيص الاستشارات والمواعيد الأنسب لكِ.
           </p>
         </div>
 

@@ -45,17 +45,17 @@ export function VerifyEmailNotice({
   return (
     <AuthShell home={home} authShell={authShell}>
       <FadeIn>
-        <Card className="p-6 shadow-elegant sm:p-8">
+        <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <MailCheck className="size-7" />
             </span>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              فعّل بريدك الإلكتروني
+            <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
+              تأكيد وتفعيل بريدكِ الإلكتروني
             </h1>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              أرسلنا رابط تفعيل إلى بريدك. افتح الرسالة واضغط الرابط لتفعيل حسابك.
-              لم تصلك الرسالة؟ يمكنك إعادة الإرسال.
+              أرسلنا رابط تفعيل آمن إلى بريدكِ. افتحي الرسالة واضغطي الرابط للتحقق من ملكية الحساب.
+              لم تصلكِ الرسالة؟ يمكنكِ طلب إعادة إرسالها فوراً.
             </p>
           </div>
 
