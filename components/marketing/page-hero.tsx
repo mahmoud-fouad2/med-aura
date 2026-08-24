@@ -70,7 +70,7 @@ export function PageHero({
                 <Button
                   size="lg"
                   variant="outline"
-                  className="rounded-2xl border-white/70 bg-card/72 px-6 backdrop-blur-md"
+                  className="rounded-2xl border-border/80 bg-card/90 px-6 backdrop-blur-md hover:bg-card hover:border-primary/40"
                   render={<Link href={secondary.href}>{secondary.label}</Link>}
                 />
               )}

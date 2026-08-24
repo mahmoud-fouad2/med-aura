@@ -48,7 +48,7 @@ export function CosmeticAreas({
             <StaggerItem key={a.slug}>
               <Link
                 href={`/search?category=${a.slug}`}
-                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-card/85 text-center shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-elegant-lg backdrop-blur-sm"
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-center shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-elegant-lg"
               >
                 <span className="relative block h-24 overflow-hidden bg-muted">
                   <Image

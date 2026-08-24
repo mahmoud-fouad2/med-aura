@@ -39,7 +39,7 @@ export function CommandCenter({ items }: { items: AttentionItem[] }) {
   const hasItems = items.length > 0
   const criticalCount = items.filter((i) => i.tone === "critical").length
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-card/88 shadow-elegant">
+    <div className="overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-elegant">
       <div className="flex items-center gap-3 border-b border-border/60 px-5 py-4">
         {criticalCount > 0 ? (
           <AlertTriangle className="size-[18px] shrink-0 text-destructive" />

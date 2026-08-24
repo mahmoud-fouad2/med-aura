@@ -98,12 +98,12 @@ export default async function HowItWorksPage() {
             <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {steps.map((step, i) => (
                 <StaggerItem key={step.title}>
-                  <div className="group/feature relative flex h-full flex-col gap-4.5 rounded-lg border border-border/70 bg-card p-6 transition-colors hover:border-primary/45">
-                    <span className="flex size-12 items-center justify-center rounded-lg bg-gold-gradient text-white ring-1 ring-gold/30">
+                  <div className="group/feature relative flex h-full flex-col gap-4.5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant">
+                    <span className="flex size-12 items-center justify-center rounded-xl bg-gold-gradient text-white ring-1 ring-gold/30 shadow-sm transition-transform duration-300 group-hover/feature:scale-105">
                       <step.icon className="size-6" />
                     </span>
                     <div>
-                      <span className="font-heading text-sm font-bold" style={{ color: "oklch(0.52 0.1 85)" }}>
+                      <span className="font-heading text-xs font-bold tracking-widest text-gold uppercase">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <h2 className="mt-1 font-heading text-lg font-bold text-foreground">

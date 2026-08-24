@@ -7,7 +7,7 @@ const CARD_VARIANTS = {
   // (tables, forms) where the content itself needs the contrast, but with
   // the same soft rim-light border + a small lift the rest of the app uses
   // instead of sitting completely flat next to the polished shell around it.
-  default: "border border-white/70 bg-card shadow-sm",
+  default: "border border-border/80 bg-card shadow-sm",
   // soft tinted surface — for lower-emphasis grouping (sidebars of info,
   // secondary panels) where a flat white box would blend into every other
   // flat white box on the page.

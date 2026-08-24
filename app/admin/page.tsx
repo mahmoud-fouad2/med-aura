@@ -284,7 +284,7 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-card/88 p-6 shadow-elegant-lg">
+      <div className="relative overflow-hidden rounded-[2rem] border border-border/80 bg-card p-6 shadow-elegant-lg">
         <div className="absolute -end-12 top-0 size-56 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -start-12 bottom-0 size-48 rounded-full bg-gold/10 blur-3xl" />
         <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -315,7 +315,7 @@ export default async function AdminOverviewPage() {
           {overviewCards.map((card) => (
             <div
               key={card.key}
-              className="rounded-[1.45rem] border border-white/70 bg-background/88 p-4 shadow-sm"
+              className="rounded-[1.45rem] border border-border/80 bg-background/88 p-4 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

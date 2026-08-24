@@ -63,14 +63,14 @@ export function Hero({
             {t.heroTitle}
           </h1>
 
-          <p className="max-w-xl text-pretty text-lg leading-8 text-foreground/75 sm:text-xl">
+          <p className="max-w-xl text-pretty text-lg leading-8 text-foreground/88 sm:text-xl font-medium">
             {t.heroSubtitle}
           </p>
 
           <form
             action={localizedPath("/search", locale)}
             method="get"
-            className="flex w-full max-w-2xl items-center gap-2 rounded-lg border border-border/70 bg-card/94 p-2 shadow-elegant backdrop-blur-md"
+            className="flex w-full max-w-2xl items-center gap-2 rounded-2xl border border-border/80 bg-card/96 p-2 shadow-elegant backdrop-blur-md"
           >
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute top-1/2 start-4 size-5 -translate-y-1/2 text-muted-foreground" />
@@ -81,7 +81,7 @@ export function Hero({
                 aria-label={t.searchPlaceholder}
               />
             </div>
-            <Button type="submit" size="lg" className="h-14 shrink-0 rounded-lg px-5 sm:px-7">
+            <Button type="submit" size="lg" className="h-14 shrink-0 rounded-xl px-5 sm:px-7">
               <Search className="size-5" />
               <span className="hidden sm:inline">{tCommon.search}</span>
             </Button>

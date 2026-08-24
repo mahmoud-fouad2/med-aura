@@ -195,7 +195,7 @@ export default async function SearchPage({
 
               <form
                 method="get"
-                className="bg-card/90 shadow-elegant mt-7 flex flex-col gap-3 rounded-2xl border border-white/70 p-2 backdrop-blur-md sm:flex-row"
+                className="bg-card/94 shadow-elegant mt-7 flex flex-col gap-3 rounded-2xl border border-border/80 p-2 backdrop-blur-md sm:flex-row"
               >
                 <div className="relative min-w-0 flex-1">
                   <Search className="text-primary/70 pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2" />
@@ -540,7 +540,7 @@ function QuickFilter({
   return (
     <Link
       href={href}
-      className="bg-card/85 text-foreground hover:border-primary/30 hover:text-primary inline-flex items-center gap-1.5 rounded-full border border-white/70 px-3 py-1.5 font-medium shadow-sm transition-colors"
+      className="bg-card/90 text-foreground hover:border-primary/40 hover:text-primary inline-flex items-center gap-1.5 rounded-full border border-border/80 px-3 py-1.5 font-medium shadow-sm transition-colors"
     >
       <Icon className="text-primary size-3.5" />
       {children}

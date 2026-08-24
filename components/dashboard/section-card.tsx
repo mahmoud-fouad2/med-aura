@@ -31,7 +31,7 @@ export function SectionCard({
   children: React.ReactNode
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-border/70 bg-card">
+    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
       <header className="flex items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
         <div className="flex items-start gap-3">
           {Icon && (

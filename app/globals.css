@@ -83,7 +83,7 @@
   --warning-foreground: oklch(0.28 0.06 70);
   --info: oklch(0.58 0.15 240);
   --info-foreground: oklch(0.99 0.01 95);
-  --gold: oklch(0.76 0.095 82);
+  --gold: oklch(0.68 0.12 78);
   --border: oklch(0.91 0.014 290);
   --input: oklch(0.91 0.014 290);
   --ring: oklch(0.47 0.17 292);
@@ -123,7 +123,7 @@
   --success: oklch(0.68 0.14 158);
   --success-foreground: oklch(0.18 0.03 278);
   --warning: oklch(0.78 0.14 75);
-  --warning-foreground: oklch(0.2 0.04 75);
+  --warning-foreground: oklch(0.92 0.08 85);
   --info: oklch(0.7 0.13 240);
   --info-foreground: oklch(0.18 0.03 278);
   --gold: oklch(0.82 0.08 85);

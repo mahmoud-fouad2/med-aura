@@ -72,9 +72,9 @@ export function MetricCard({
   const body = (
     <div
       className={cn(
-        "group relative flex flex-col justify-between gap-4 overflow-hidden rounded-lg border border-border/70 bg-card p-5 transition-colors duration-200",
+        "group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-sm transition-all duration-300",
         href
-          ? "hover:border-primary/30"
+          ? "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant"
           : "",
         emphasis && "sm:p-6",
         emphasis && tone === "danger" && "alert-glow-danger",
@@ -103,48 +103,49 @@ export function MetricCard({
             t.ring,
           )}
         >
-          <Icon className={emphasis ? "size-5" : "size-[18px]"} />
+          <Icon className={emphasis ? "size-5" : "size-4.5"} aria-hidden="true" />
         </span>
+
         {href && (
-          <ArrowUpRight
-            className={cn(
-              "size-4 shrink-0 text-muted-foreground/60 opacity-0 -translate-y-0.5 translate-x-0.5 transition-all duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:text-primary group-hover:opacity-100",
-            )}
-          />
+          <span
+            aria-hidden="true"
+            className="flex size-7 items-center justify-center rounded-lg text-muted-foreground/60 transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary rtl:-scale-x-100"
+          >
+            <ArrowUpRight className="size-4" />
+          </span>
         )}
+        {action && !href && <div className="shrink-0">{action}</div>}
       </div>
 
       <div className="space-y-1">
-        <p className={cn("text-xs font-bold text-muted-foreground/90")}>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {label}
         </p>
         <p
           className={cn(
-            "font-heading font-bold leading-none tracking-tight tabular-nums",
-            emphasis ? "text-[32px] sm:text-[34px]" : "text-2xl sm:text-[26px]",
+            "font-heading font-bold tabular-nums leading-tight",
+            emphasis ? "text-3xl sm:text-4xl" : "text-2xl sm:text-3xl",
             t.number,
           )}
         >
           {value}
         </p>
         {hint && (
-          <p className="pt-1.5 text-[11px] leading-snug text-muted-foreground/80 font-medium">
+          <p className="text-xs leading-5 text-muted-foreground">
             {hint}
           </p>
         )}
       </div>
-
-      {action && (
-        <div className="border-t border-border/50 pt-3 text-xs">{action}</div>
-      )}
     </div>
   )
 
-  return href ? (
-    <Link href={href} className="block">
-      {body}
-    </Link>
-  ) : (
-    body
-  )
+  if (href) {
+    return (
+      <Link href={href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
+        {body}
+      </Link>
+    )
+  }
+
+  return body
 }

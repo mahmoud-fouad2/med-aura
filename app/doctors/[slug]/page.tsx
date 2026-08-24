@@ -144,7 +144,7 @@ export default async function DoctorProfilePage({
         <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-6">
-              <Card className="relative overflow-hidden p-0 border-white/60 bg-card/85 backdrop-blur-md shadow-elegant-lg">
+              <Card className="relative overflow-hidden p-0 border-border/80 bg-card/95 backdrop-blur-md shadow-elegant-lg">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent" />
                 
                 <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/15 via-background to-secondary/25 sm:h-60">
@@ -291,7 +291,7 @@ export default async function DoctorProfilePage({
             </div>
 
             <aside className="space-y-4">
-              <Card className="sticky top-24 p-6 sm:p-7 border-white/60 bg-gradient-to-b from-card to-secondary/5 shadow-elegant-lg backdrop-blur-md">
+              <Card className="sticky top-24 p-6 sm:p-7 border-border/80 bg-gradient-to-b from-card to-secondary/5 shadow-elegant-lg backdrop-blur-md">
                 <div className="mb-5 rounded-2xl bg-primary/5 p-4 border border-primary/10">
                   {doctor.consultationFee ? (
                     <div>

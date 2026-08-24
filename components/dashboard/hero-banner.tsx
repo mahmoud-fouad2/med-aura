@@ -18,8 +18,8 @@ export function DashboardHero({
   aside?: ReactNode
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-border/70 bg-card">
-      <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+    <section className="overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-card via-card to-secondary/30 p-1 shadow-elegant">
+      <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
         <div className="min-w-0 space-y-3">
           {eyebrow && (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">

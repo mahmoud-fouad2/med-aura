@@ -35,7 +35,7 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
       {stats.map((s) => {
         const tone = TONE[s.tone ?? "neutral"]
         const content = (
-          <div className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/70 bg-card/88 p-5 shadow-elegant transition-all duration-200 hover:-translate-y-1 hover:shadow-elegant-lg">
+          <div className="group relative h-full overflow-hidden rounded-[1.75rem] border border-border/80 bg-card p-5 shadow-elegant transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elegant-lg">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/10 via-primary/70 to-gold/80" />
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">

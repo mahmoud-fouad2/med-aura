@@ -51,7 +51,7 @@ export function WorkspaceSection({
   className?: string
 }) {
   return (
-    <div className={cn("overflow-hidden rounded-[1.75rem] border border-white/70 bg-card/88 shadow-elegant", className)}>
+    <div className={cn("overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-elegant", className)}>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-5 py-4">
         <div className="flex min-w-0 items-center gap-2.5">
           {Icon && <Icon className={cn("size-[18px] shrink-0", TONE_ICON[tone])} />}

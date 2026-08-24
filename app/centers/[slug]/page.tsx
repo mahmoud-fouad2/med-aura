@@ -155,7 +155,7 @@ export default async function CenterDetailPage({
             </nav>
             <Reveal>
               <div className="flex items-start gap-4">
-                <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-card/85 text-primary shadow-elegant ring-1 ring-white/70 backdrop-blur-md">
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-card/90 text-primary shadow-elegant ring-1 ring-border/80 border border-primary/15 backdrop-blur-md">
                   <Building2 className="size-8" />
                 </span>
                 <div>
