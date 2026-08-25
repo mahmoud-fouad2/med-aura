@@ -4,7 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { HeartPulse, ShieldAlert, Stethoscope, ChevronLeft } from "lucide-react"
+import { HeartPulse, ShieldAlert, Stethoscope, ChevronLeft, Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { completeSignupProfile } from "@/lib/actions/onboarding"
 import { COUNTRY_CODES, countryNameAr, countryNameEn } from "@/lib/status-labels"
@@ -81,6 +81,7 @@ function AuthFormInner({
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [phone, setPhone] = useState("")
   const [country, setCountry] = useState("")
   const [city, setCity] = useState("")
@@ -289,6 +290,7 @@ function AuthFormInner({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        autoFocus
                         autoComplete="name"
                       />
                     </div>
@@ -306,6 +308,7 @@ function AuthFormInner({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      autoFocus={!isSignUp}
                       autoComplete="email"
                     />
                   </div>
@@ -324,17 +327,30 @@ function AuthFormInner({
                         </Link>
                       )}
                     </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      dir="ltr"
-                      className="text-right"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      autoComplete={isSignUp ? "new-password" : "current-password"}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        dir="ltr"
+                        className="text-right pr-9"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        autoComplete={isSignUp ? "new-password" : "current-password"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
                     {isSignUp && <PasswordStrength password={password} />}
                   </div>
                 </StaggerItem>
