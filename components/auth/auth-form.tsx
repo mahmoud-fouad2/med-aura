@@ -14,14 +14,40 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AuthShell } from "@/components/auth/auth-shell"
-import { FadeIn } from "@/components/motion"
+import { FadeIn, Stagger, StaggerItem } from "@/components/motion"
+import { PasswordStrength } from "@/components/auth/password-strength"
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3"
 import { cn } from "@/lib/utils"
 import type { Dictionary, Locale } from "@/lib/i18n"
 
 type AuthDict = Dictionary["auth"]
 type AccountType = "patient" | "doctor"
 
-export function AuthForm({
+export function AuthForm(props: {
+  mode: "sign-in" | "sign-up"
+  locale: Locale
+  dict: AuthDict
+  home: Dictionary["home"]
+  authShell: Dictionary["authShell"]
+  nextPath?: string
+  accountDisabled?: boolean
+  initialType?: AccountType
+  googleEnabled?: boolean
+  googleError?: boolean
+}) {
+  const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+  if (!recaptchaKey) {
+    return <AuthFormInner {...props} />
+  }
+
+  return (
+    <GoogleReCaptchaProvider reCaptchaKey={recaptchaKey} language={props.locale}>
+      <AuthFormInner {...props} />
+    </GoogleReCaptchaProvider>
+  )
+}
+
+function AuthFormInner({
   mode,
   locale,
   dict,
@@ -48,6 +74,7 @@ export function AuthForm({
   /** Bounced back from a failed Google OAuth callback (?googleError=1). */
   googleError?: boolean
 }) {
+  const { executeRecaptcha } = useGoogleReCaptcha()
   const router = useRouter()
   const copy = AUTH_COPY[locale]
   const [accountType, setAccountType] = useState<AccountType | null>(initialType ?? null)
@@ -95,7 +122,24 @@ export function AuthForm({
       setError(copy.termsRequired)
       return
     }
+    
     setLoading(true)
+
+    // Execute reCAPTCHA if configured
+    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && executeRecaptcha) {
+      try {
+        const token = await executeRecaptcha("auth_submit")
+        if (!token) {
+          setLoading(false)
+          setError(copy.genericError)
+          return
+        }
+      } catch (err) {
+        setLoading(false)
+        setError(copy.genericError)
+        return
+      }
+    }
 
     if (!isSignUp) {
       const { error } = await authClient.signIn.email({
@@ -217,184 +261,193 @@ export function AuthForm({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {isSignUp && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setAccountType(null)}
-                    className="group text-primary -mt-2 inline-flex w-fit items-center gap-1 text-xs font-medium hover:underline"
-                  >
-                    <ChevronLeft className="size-3.5 rtl:rotate-180" />
-                    {accountType === "doctor" ? copy.doctorAccount : copy.patientAccount}{" "}
-                    {copy.changeType}
-                  </button>
+              <Stagger>
+                {isSignUp && (
+                  <StaggerItem>
+                    <button
+                      type="button"
+                      onClick={() => setAccountType(null)}
+                      className="group text-primary -mt-2 mb-2 inline-flex w-fit items-center gap-1 text-xs font-medium hover:underline"
+                    >
+                      <ChevronLeft className="size-3.5 rtl:rotate-180" />
+                      {accountType === "doctor" ? copy.doctorAccount : copy.patientAccount}{" "}
+                      {copy.changeType}
+                    </button>
 
-                  {accountType === "doctor" && (
-                    <p className="border-primary/20 bg-primary/5 text-foreground rounded-lg border p-3 text-xs leading-relaxed">
-                      {copy.doctorNextPrefix}{" "}
-                      <span className="font-bold">{copy.doctorApplication}</span>{" "}
-                      {copy.doctorNextSuffix}
+                    {accountType === "doctor" && (
+                      <p className="border-primary/20 bg-primary/5 text-foreground rounded-lg border p-3 text-xs leading-relaxed mb-4">
+                        {copy.doctorNextPrefix}{" "}
+                        <span className="font-bold">{copy.doctorApplication}</span>{" "}
+                        {copy.doctorNextSuffix}
+                      </p>
+                    )}
+
+                    <div className="flex flex-col gap-2 mb-4">
+                      <Label htmlFor="name">{dict.name}</Label>
+                      <Input
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        autoComplete="name"
+                      />
+                    </div>
+                  </StaggerItem>
+                )}
+
+                <StaggerItem>
+                  <div className="flex flex-col gap-2 mb-4">
+                    <Label htmlFor="email">{dict.email}</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      dir="ltr"
+                      className="text-right"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                    />
+                  </div>
+                </StaggerItem>
+
+                <StaggerItem>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">{dict.password}</Label>
+                      {!isSignUp && (
+                        <Link
+                          href="/forgot-password"
+                          className="text-primary text-xs font-medium underline-offset-4 hover:underline"
+                        >
+                          {copy.forgotPassword}
+                        </Link>
+                      )}
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      dir="ltr"
+                      className="text-right"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                    />
+                    {isSignUp && <PasswordStrength password={password} />}
+                  </div>
+                </StaggerItem>
+
+                {isSignUp && (
+                  <StaggerItem>
+                    <div className="flex flex-col gap-2 mb-4">
+                      <Label htmlFor="phone">{copy.phone}</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        dir="ltr"
+                        className="text-right"
+                        placeholder="+9665xxxxxxxx"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
+                        minLength={8}
+                        autoComplete="tel"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 mb-4">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="country">{copy.country}</Label>
+                        <select
+                          id="country"
+                          required
+                          value={country}
+                          onChange={(e) => setCountry(e.target.value)}
+                          className="border-input focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 h-8 w-full rounded-lg border bg-transparent px-2.5 text-base transition-colors outline-none focus-visible:ring-3 md:text-sm"
+                        >
+                          <option value="" disabled>
+                            {copy.chooseCountry}
+                          </option>
+                          {COUNTRY_CODES.map((code) => (
+                            <option key={code} value={code}>
+                              {locale === "ar" ? countryNameAr(code) : countryNameEn(code)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="city">
+                          {copy.city}{" "}
+                          <span className="text-muted-foreground font-normal">{copy.optional}</span>
+                        </Label>
+                        <Input
+                          id="city"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          autoComplete="address-level2"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="text-foreground flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed mb-4">
+                      <Checkbox
+                        checked={agree}
+                        onCheckedChange={(c) => setAgree(Boolean(c))}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        {copy.agreePrefix}{" "}
+                        <Link
+                          href="/terms"
+                          target="_blank"
+                          className="text-primary font-medium underline-offset-4 hover:underline"
+                        >
+                          {copy.terms}
+                        </Link>{" "}
+                        {copy.and}{" "}
+                        <Link
+                          href="/privacy"
+                          target="_blank"
+                          className="text-primary font-medium underline-offset-4 hover:underline"
+                        >
+                          {copy.privacy}
+                        </Link>
+                        {copy.medicalDisclaimer}
+                      </span>
+                    </label>
+                  </StaggerItem>
+                )}
+
+                <StaggerItem>
+                  {!isSignUp && (
+                    <label className="text-foreground flex cursor-pointer items-center gap-2.5 text-sm mb-4">
+                      <Checkbox checked={remember} onCheckedChange={(c) => setRemember(Boolean(c))} />
+                      {copy.rememberMe}
+                    </label>
+                  )}
+
+                  {error && (
+                    <p
+                      className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm mb-4"
+                      role="alert"
+                    >
+                      {error}
                     </p>
                   )}
 
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="name">{dict.name}</Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      autoComplete="name"
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="email">{dict.email}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  dir="ltr"
-                  className="text-right"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{dict.password}</Label>
-                  {!isSignUp && (
-                    <Link
-                      href="/forgot-password"
-                      className="text-primary text-xs font-medium underline-offset-4 hover:underline"
-                    >
-                      {copy.forgotPassword}
-                    </Link>
-                  )}
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  dir="ltr"
-                  className="text-right"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  autoComplete={isSignUp ? "new-password" : "current-password"}
-                />
-              </div>
-
-              {isSignUp && (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="phone">{copy.phone}</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      dir="ltr"
-                      className="text-right"
-                      placeholder="+9665xxxxxxxx"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required
-                      minLength={8}
-                      autoComplete="tel"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="country">{copy.country}</Label>
-                      <select
-                        id="country"
-                        required
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        className="border-input focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 h-8 w-full rounded-lg border bg-transparent px-2.5 text-base transition-colors outline-none focus-visible:ring-3 md:text-sm"
-                      >
-                        <option value="" disabled>
-                          {copy.chooseCountry}
-                        </option>
-                        {COUNTRY_CODES.map((code) => (
-                          <option key={code} value={code}>
-                            {locale === "ar" ? countryNameAr(code) : countryNameEn(code)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="city">
-                        {copy.city}{" "}
-                        <span className="text-muted-foreground font-normal">{copy.optional}</span>
-                      </Label>
-                      <Input
-                        id="city"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        autoComplete="address-level2"
-                      />
-                    </div>
-                  </div>
-
-                  <label className="text-foreground flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
-                    <Checkbox
-                      checked={agree}
-                      onCheckedChange={(c) => setAgree(Boolean(c))}
-                      className="mt-0.5"
-                    />
-                    <span>
-                      {copy.agreePrefix}{" "}
-                      <Link
-                        href="/terms"
-                        target="_blank"
-                        className="text-primary font-medium underline-offset-4 hover:underline"
-                      >
-                        {copy.terms}
-                      </Link>{" "}
-                      {copy.and}{" "}
-                      <Link
-                        href="/privacy"
-                        target="_blank"
-                        className="text-primary font-medium underline-offset-4 hover:underline"
-                      >
-                        {copy.privacy}
-                      </Link>
-                      {copy.medicalDisclaimer}
-                    </span>
-                  </label>
-                </>
-              )}
-
-              {!isSignUp && (
-                <label className="text-foreground flex cursor-pointer items-center gap-2.5 text-sm">
-                  <Checkbox checked={remember} onCheckedChange={(c) => setRemember(Boolean(c))} />
-                  {copy.rememberMe}
-                </label>
-              )}
-
-              {error && (
-                <p
-                  className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm"
-                  role="alert"
-                >
-                  {error}
-                </p>
-              )}
-
-              <Button type="submit" disabled={loading} className="w-full" size="lg">
-                {loading
-                  ? copy.loading
-                  : isSignUp
-                    ? accountType === "doctor"
-                      ? copy.createDoctorAccount
-                      : dict.signUpTitle
-                    : dict.signInTitle}
-              </Button>
+                  <Button type="submit" disabled={loading} className="w-full" size="lg">
+                    {loading
+                      ? copy.loading
+                      : isSignUp
+                        ? accountType === "doctor"
+                          ? copy.createDoctorAccount
+                          : dict.signUpTitle
+                        : dict.signInTitle}
+                  </Button>
+                </StaggerItem>
+              </Stagger>
             </form>
           )}
 
