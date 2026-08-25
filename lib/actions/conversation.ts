@@ -94,6 +94,14 @@ export async function sendCaseMessage(input: unknown): Promise<ActionResult> {
       })
     }
 
+    const pusher = (await import("@/lib/pusher")).getPusherServer()
+    if (pusher) {
+      await pusher.trigger(`case-${data.caseId}`, "new-message", {
+        caseId: data.caseId,
+        senderUserId: user.id,
+      })
+    }
+
     revalidatePath(`/dashboard/cases/${data.caseId}`)
     return { ok: true }
   } catch (err) {

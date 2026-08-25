@@ -25,9 +25,12 @@ import {
 } from "@/lib/data/center-dashboard"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
+import { ExportInvoicesButton } from "@/components/dashboard/export-invoices-button"
+import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
 import {
   caseStatusAr,
   quoteStatusAr,
@@ -359,6 +362,7 @@ export default async function CenterDashboardPage() {
             title="الفواتير"
             description="فواتير الحالات مع المتبقي والحالة."
             tone="warning"
+            action={<ExportInvoicesButton centerId={centerIds[0]} />}
           >
             {invoices.length === 0 ? (
               <div className="p-8">

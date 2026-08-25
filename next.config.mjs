@@ -56,16 +56,20 @@ const nextConfig = {
       { pathname: "/demo-services/**" },
       { pathname: "/service-images/**" },
     ],
-    // Image optimization stays ON. Remote provider images (R2 public assets)
-    // are allowlisted here when a public base URL is configured.
-    remotePatterns: process.env.R2_PUBLIC_BASE_URL
-      ? [
-          {
-            protocol: "https",
-            hostname: new URL(process.env.R2_PUBLIC_BASE_URL).hostname,
-          },
-        ]
-      : [],
+    // Image optimization stays ON. Remote provider images (R2 public assets,
+    // Unsplash stock photography used by the static blog posts) are
+    // allowlisted here.
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      ...(process.env.R2_PUBLIC_BASE_URL
+        ? [
+            {
+              protocol: "https",
+              hostname: new URL(process.env.R2_PUBLIC_BASE_URL).hostname,
+            },
+          ]
+        : []),
+    ],
     // Next's defaults (8 deviceSizes x 8 imageSizes = up to 64 distinct
     // sharp-transform variants per unique source image) are real memory/CPU
     // pressure on a small instance — this is the leading suspect for the

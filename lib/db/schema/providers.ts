@@ -47,6 +47,7 @@ export const center = pgTable(
     // fabricate a position for a center that hasn't been located yet.
     latitude: numeric("latitude", { precision: 9, scale: 6 }),
     longitude: numeric("longitude", { precision: 9, scale: 6 }),
+    platformCommissionRate: numeric("platformCommissionRate", { precision: 5, scale: 2 }).notNull().default("15.00"),
     // rating/reviewCount are computed from verified reviews; shown only when > 0
     rating: numeric("rating", { precision: 2, scale: 1 }),
     reviewCount: integer("reviewCount").notNull().default(0),
@@ -111,6 +112,7 @@ export const doctorProfile = pgTable(
     yearsExperience: integer("yearsExperience").notNull().default(0),
     consultationFee: numeric("consultationFee", { precision: 12, scale: 2 }),
     currency: text("currency").notNull().default("SAR"),
+    platformCommissionRate: numeric("platformCommissionRate", { precision: 5, scale: 2 }).notNull().default("15.00"),
     offersVideo: boolean("offersVideo").notNull().default(false),
     offersInPerson: boolean("offersInPerson").notNull().default(true),
     // rating/reviewCount computed from verified reviews; null/0 until earned

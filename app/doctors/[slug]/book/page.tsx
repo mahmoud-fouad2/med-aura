@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { Clock } from "lucide-react"
 import { requireAuthPage } from "@/lib/session"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { getAvailableSlots } from "@/lib/data/availability"
@@ -58,6 +59,16 @@ export default async function BookPage({
               ? `سعر الاستشارة ${Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(doctor.currency)}`
               : "سعر الاستشارة غير محدد"}
           </p>
+          
+          <div className="mt-4 rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm text-warning-foreground flex items-start gap-3">
+            <Clock className="size-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">تنبيه فروق التوقيت</p>
+              <p className="mt-1 opacity-90">
+                جميع المواعيد المعروضة أدناه تظهر <span className="font-bold underline underline-offset-4">بتوقيت جهازك الحالي</span>. لا داعي للقلق بشأن فرق التوقيت بينك وبين الطبيب في تركيا، النظام يقوم بتحويل الأوقات تلقائياً.
+              </p>
+            </div>
+          </div>
 
           <div className="mt-6">
             {!doctor.consultationFee ? (

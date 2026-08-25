@@ -265,6 +265,7 @@ type CenterEditData = {
   email: string
   website: string
   languages: string[]
+  platformCommissionRate: string
 }
 
 function CenterEditForm({ centerId }: { centerId: string }) {
@@ -294,6 +295,7 @@ function CenterEditForm({ centerId }: { centerId: string }) {
         email: c.email ?? "",
         website: c.website ?? "",
         languages: c.languages ?? [],
+        platformCommissionRate: c.platformCommissionRate ?? "15.00",
       })
       setLanguagesInput((c.languages ?? []).join(", "))
     })
@@ -371,6 +373,20 @@ function CenterEditForm({ centerId }: { centerId: string }) {
         </Field>
         <Field label="اللغات (مفصولة بفاصلة)">
           <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="العربية, English" />
+        </Field>
+      </FormSection>
+
+      <FormSection title="المالية">
+        <Field label="عمولة المنصة %">
+          <Input 
+            type="number"
+            min={0}
+            max={100}
+            step="0.01"
+            dir="ltr"
+            value={data.platformCommissionRate} 
+            onChange={(e) => setData({ ...data, platformCommissionRate: e.target.value })} 
+          />
         </Field>
       </FormSection>
 

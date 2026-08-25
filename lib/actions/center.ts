@@ -25,6 +25,7 @@ const updateCenterSchema = z.object({
   email: z.email("بريد إلكتروني غير صالح").optional().or(z.literal("").transform(() => undefined)),
   website: z.string().trim().max(300).optional().or(z.literal("").transform(() => undefined)),
   languages: z.array(z.string().trim().min(1)).max(20),
+  platformCommissionRate: z.coerce.number().min(0).max(100).optional(),
 })
 
 /** Full profile edit — the fields collected at application time, editable afterwards by compliance/ops. */
@@ -55,6 +56,7 @@ export async function updateCenterAction(input: unknown): Promise<ActionResult> 
         email: data.email ?? null,
         website: data.website ?? null,
         languages: data.languages,
+        platformCommissionRate: data.platformCommissionRate != null ? String(data.platformCommissionRate) : "15.00",
         updatedBy: user.id,
         updatedAt: new Date(),
       })

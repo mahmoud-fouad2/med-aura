@@ -229,6 +229,7 @@ export type CenterFull = {
   email: string | null
   website: string | null
   languages: string[]
+  platformCommissionRate: string
   latitude: string | null
   longitude: string | null
   published: boolean
@@ -253,6 +254,7 @@ export async function getCenterForAdmin(centerId: string): Promise<CenterFull | 
         email: centerT.email,
         website: centerT.website,
         languages: centerT.languages,
+        platformCommissionRate: centerT.platformCommissionRate,
         latitude: centerT.latitude,
         longitude: centerT.longitude,
         published: centerT.published,
@@ -296,6 +298,7 @@ export type DoctorFull = {
   yearsExperience: number
   consultationFee: string | null
   currency: string
+  platformCommissionRate: string
   offersVideo: boolean
   offersInPerson: boolean
   centerId: string | null
@@ -320,6 +323,7 @@ export async function getDoctorForAdmin(doctorId: string): Promise<DoctorFull | 
         yearsExperience: doctorProfile.yearsExperience,
         consultationFee: doctorProfile.consultationFee,
         currency: doctorProfile.currency,
+        platformCommissionRate: doctorProfile.platformCommissionRate,
         offersVideo: doctorProfile.offersVideo,
         offersInPerson: doctorProfile.offersInPerson,
         centerId: doctorProfile.centerId,

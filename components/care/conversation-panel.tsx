@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { MessageSquare, Lock, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,37 @@ export function ConversationPanel({
   const [asInternalNote, setAsInternalNote] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_PUSHER_KEY || !process.env.NEXT_PUBLIC_PUSHER_CLUSTER) return
+
+    let channel: any = null
+    let pusherClient: any = null
+
+    import("pusher-js").then(({ default: Pusher }) => {
+      pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+      })
+
+      channel = pusherClient.subscribe(`case-${caseId}`)
+      channel.bind("new-message", (data: any) => {
+        // If the message is from someone else, refresh the page to fetch it
+        if (data.senderUserId !== currentUserId) {
+          router.refresh()
+        }
+      })
+    }).catch(console.error)
+
+    return () => {
+      if (channel) {
+        channel.unbind_all()
+        channel.unsubscribe()
+      }
+      if (pusherClient) {
+        pusherClient.disconnect()
+      }
+    }
+  }, [caseId, currentUserId, router])
 
   async function onSend() {
     if (!body.trim()) return

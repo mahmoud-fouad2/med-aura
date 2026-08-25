@@ -1,0 +1,2 @@
+ALTER TABLE "center" ADD COLUMN "platformCommissionRate" numeric(5, 2) DEFAULT '15.00' NOT NULL;--> statement-breakpoint
+ALTER TABLE "doctor_profile" ADD COLUMN "platformCommissionRate" numeric(5, 2) DEFAULT '15.00' NOT NULL;

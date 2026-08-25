@@ -334,6 +334,7 @@ type DoctorEditData = {
   yearsExperience: number
   consultationFee: string
   currency: string
+  platformCommissionRate: string
   offersVideo: boolean
   offersInPerson: boolean
   centerId: string
@@ -366,6 +367,7 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
         yearsExperience: d.yearsExperience,
         consultationFee: d.consultationFee ?? "",
         currency: d.currency,
+        platformCommissionRate: d.platformCommissionRate ?? "15.00",
         offersVideo: d.offersVideo,
         offersInPerson: d.offersInPerson,
         centerId: d.centerId ?? "",
@@ -460,7 +462,7 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
             </select>
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Field label="رسوم الاستشارة">
             <Input
               type="number"
@@ -473,6 +475,17 @@ function DoctorEditForm({ doctorId, centers }: { doctorId: string; centers: { id
           </Field>
           <Field label="العملة">
             <Input dir="ltr" className="uppercase" maxLength={3} value={data.currency} onChange={(e) => setData({ ...data, currency: e.target.value.toUpperCase() })} />
+          </Field>
+          <Field label="عمولة المنصة %">
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              dir="ltr"
+              value={data.platformCommissionRate}
+              onChange={(e) => setData({ ...data, platformCommissionRate: e.target.value })}
+            />
           </Field>
         </div>
         <div className="flex flex-wrap gap-4">

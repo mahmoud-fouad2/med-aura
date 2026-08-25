@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Upload, FileText, Eye, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import imageCompression from "browser-image-compression"
 import { MAX_FILE_BYTES, isAllowedMime } from "@/lib/uploads"
 
 type Doc = { id: string; fileName: string; contentType: string }
@@ -28,13 +29,28 @@ export function DocumentUploader({
     setError(null)
     setBusy(true)
     try {
-      for (const file of Array.from(files)) {
-        if (!isAllowedMime(file.type)) {
+      for (const rawFile of Array.from(files)) {
+        if (!isAllowedMime(rawFile.type)) {
           setError("نوع الملف غير مسموح. ارفع صورة أو PDF.")
           continue
         }
+
+        let file = rawFile
+        // Compress images if possible
+        if (rawFile.type.startsWith("image/") && rawFile.type !== "image/heic") {
+          try {
+            file = await imageCompression(rawFile, {
+              maxSizeMB: 1, // Compress to ~1MB
+              maxWidthOrHeight: 1920,
+              useWebWorker: true,
+            })
+          } catch (e) {
+            console.error("Image compression failed", e)
+          }
+        }
+
         if (file.size > MAX_FILE_BYTES) {
-          setError("حجم الملف يتجاوز 15 ميجابايت.")
+          setError("حجم الملف يتجاوز 15 ميجابايت حتى بعد الضغط.")
           continue
         }
 
