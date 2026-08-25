@@ -79,8 +79,11 @@ export default async function FaqPage() {
           imageAlt={l("استشارة عناية بالبشرة", "Aesthetic care consultation")}
         />
 
-        <section className="bg-background">
-          <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+        <section className="bg-background relative overflow-hidden">
+          <div className="absolute top-0 left-0 -translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-0 translate-y-1/3 translate-x-1/3 w-96 h-96 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8 relative z-10">
             {res.status !== "ok" ? (
               <DataState
                 status={res.status}
@@ -93,15 +96,17 @@ export default async function FaqPage() {
                 description={l("نحضّر إجابات مختصرة وواضحة للأسئلة الأكثر تكرارًا.", "We are preparing concise answers to the most common questions.")}
               />
             ) : (
-              <div className="space-y-3">
-                {items.map((item) => (
-                  <Reveal key={item.id}>
-                    <details className="group rounded-lg border border-border bg-card p-1 transition-colors hover:border-primary/30">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg px-5 py-4 font-heading font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+              <div className="space-y-4">
+                {items.map((item, i) => (
+                  <Reveal key={item.id} delay={i * 0.05}>
+                    <details className="group rounded-2xl border border-border/80 bg-card/95 backdrop-blur-sm shadow-sm transition-all hover:border-primary/40 hover:shadow-elegant">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-6 py-5 font-heading font-semibold text-foreground [&::-webkit-details-marker]:hidden">
                         {item.question}
-                        <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                          <ChevronDown className="size-5 transition-transform duration-300 group-open:rotate-180" />
+                        </span>
                       </summary>
-                      <div className="px-5 pb-5 pt-1 leading-loose text-muted-foreground">
+                      <div className="px-6 pb-6 pt-1 text-base leading-relaxed text-muted-foreground">
                         {item.answer}
                       </div>
                     </details>
@@ -110,10 +115,20 @@ export default async function FaqPage() {
               </div>
             )}
 
-            <div className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-border bg-secondary/40 p-8 text-center">
-              <p className="text-foreground">لم تجد إجابة لسؤالك؟</p>
-              <Button render={<Link href="/contact">تواصل معنا</Link>} />
-            </div>
+            <Reveal delay={0.2}>
+              <div className="mt-16 flex flex-col items-center gap-4 rounded-3xl border border-border/80 bg-secondary/30 p-10 text-center shadow-sm">
+                <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <HelpCircle className="size-7" />
+                </span>
+                <h3 className="font-heading text-xl font-bold text-foreground">
+                  {l("لم تجد إجابة لسؤالك؟", "Didn't find your answer?")}
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {l("نحن هنا لمساعدتك والإجابة على أي استفسارات إضافية لديك.", "We are here to help and answer any additional questions you may have.")}
+                </p>
+                <Button render={<Link href="/contact">{l("تواصل معنا", "Contact us")}</Link>} size="lg" className="rounded-full px-8" />
+              </div>
+            </Reveal>
           </div>
         </section>
       </main>
