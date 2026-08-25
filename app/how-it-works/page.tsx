@@ -94,7 +94,16 @@ export default async function HowItWorksPage() {
         />
 
         <section className="border-b border-border bg-background">
-          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl mb-4">
+                {l("رحلتكِ العلاجية في 6 خطوات بسيطة", "Your journey in 6 simple steps")}
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                {l("صممنا المنصة لتأخذ بيدك خطوة بخطوة، من لحظة التفكير في الإجراء التجميلي وحتى التعافي التام.", "We designed the platform to guide you step-by-step from consideration to full recovery.")}
+              </p>
+            </div>
+            
             <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {steps.map((step, i) => (
                 <StaggerItem key={step.title}>
@@ -117,6 +126,26 @@ export default async function HowItWorksPage() {
                 </StaggerItem>
               ))}
             </Stagger>
+          </div>
+        </section>
+
+        <section className="bg-secondary/30 border-b border-border">
+          <div className="mx-auto max-w-4xl px-4 py-24 text-center sm:px-6 lg:px-8">
+            <h2 className="font-heading text-3xl font-bold text-foreground mb-8">
+              {l("جاهزة للخطوة الأولى؟", "Ready for the first step?")}
+            </h2>
+            <div className="rounded-3xl bg-background p-8 border border-border/80 shadow-sm sm:p-12">
+              <ShieldCheck className="size-12 text-primary mx-auto mb-6" />
+              <h3 className="font-heading text-2xl font-bold text-foreground mb-4">
+                {l("ملفك الطبي المشفر بانتظارك", "Your encrypted medical file awaits")}
+              </h3>
+              <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+                {l("ابدئي بإنشاء حسابك مجاناً اليوم، وارفعي صورك بأمان تام لبدء استشارة أفضل أطباء التجميل.", "Start by creating your free account today and upload your photos securely.")}
+              </p>
+              <a href="/sign-up" className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
+                {l("أنشئي حسابك الآن", "Create your account now")}
+              </a>
+            </div>
           </div>
         </section>
       </main>

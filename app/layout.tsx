@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import NextTopLoader from "nextjs-toploader"
 import localFont from "next/font/local"
 import "./globals.css"
 import { getLocale, dir } from "@/lib/i18n"
@@ -169,6 +170,17 @@ export default async function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
+        <NextTopLoader
+          color="hsl(var(--primary))"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={true}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px hsl(var(--primary)),0 0 5px hsl(var(--primary))"
+        />
         {children}
         <PageViewTracker locale={locale} />
         <Toaster />
