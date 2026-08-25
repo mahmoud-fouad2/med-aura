@@ -42,7 +42,7 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   const email = `e2e+${Date.now()}@medaura.test`
   await page.goto("/sign-up")
   // Step 1: the account-type choice
-  await page.getByRole("button", { name: /أنا مريض/ }).click()
+  await page.getByRole("button", { name: /مريضة/ }).click()
   // Step 2: the full profile form
   await page.getByLabel("الاسم الكامل").fill("مريض اختبار")
   await page.getByLabel("البريد الإلكتروني").fill(email)
@@ -53,7 +53,7 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   await page.getByRole("button", { name: /أنشئ|إنشاء|تسجيل/ }).click()
   // auto sign-in → dashboard greets the patient by first name
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
-  await expect(page.getByText(/أهلًا/).first()).toBeVisible()
+  await expect(page.getByText(/أهلاً|أهلًا/).first()).toBeVisible()
   // fresh patient sees the humane empty states, not errors
   await expect(page.getByText("لا مواعيد قادمة حاليًا").first()).toBeVisible()
 })

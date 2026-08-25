@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { Download, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
@@ -117,8 +118,24 @@ export async function SiteFooter() {
           />
         </div>
 
-        <div className="mt-12 border-t border-border/60 pt-6 text-xs text-muted-foreground">
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground">
           <p>© {year} Med Aura. {l("جميع الحقوق محفوظة.", "All rights reserved.")}</p>
+          {/* Quiet developer credit — never the phone number here. */}
+          <a
+            href="https://ma-fo.info"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-muted-foreground/70 transition-colors hover:text-primary"
+          >
+            <Image
+              src="/brand/mafo-mark.png"
+              alt=""
+              width={64}
+              height={64}
+              className="size-3 shrink-0 rounded-sm object-contain"
+            />
+            Ma-Fo
+          </a>
         </div>
       </div>
     </footer>

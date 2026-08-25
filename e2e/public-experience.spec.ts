@@ -60,6 +60,6 @@ test("protected workspaces redirect anonymous visitors without looping", async (
   for (const path of ["/dashboard", "/admin"]) {
     await page.goto(path)
     await expect(page).toHaveURL(/\/sign-in\?next=/)
-    await expect(page.getByRole("heading", { name: /مرحبًا بعودتك|Welcome back/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: /مرحباً بكِ مجدداً|Welcome back/ })).toBeVisible()
   }
 })

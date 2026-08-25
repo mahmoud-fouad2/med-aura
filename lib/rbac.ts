@@ -3,8 +3,6 @@ import { db } from "./db"
 import {
   userRole,
   role,
-  rolePermission,
-  permission,
   doctorProfile,
   aestheticCase,
   medicalDocument,
@@ -105,7 +103,7 @@ export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
 const P = PERMISSIONS
 
-/** Role → permissions. Seeded into role_permission from this single source. */
+/** Role → permissions. The single source of truth — see getUserPermissions. */
 export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
   [ROLES.PATIENT]: [
     P.PROVIDER_APPLY,
@@ -220,9 +218,10 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
   [ROLES.SUPER_ADMIN]: [],
 }
 
-/* ── DB-backed role/permission resolution ─────────────────────────────────── */
+/* ── Role/permission resolution ───────────────────────────────────────────── */
 
-/** Authoritative role keys for a user. Missing assignments fail closed. */
+/** Authoritative role keys for a user (DB-backed — assignments are dynamic).
+ *  Missing assignments fail closed. */
 export async function getUserRoles(userId: string): Promise<RoleKey[]> {
   const rows = await db
     .select({ key: role.key })
@@ -254,21 +253,22 @@ export function rolesHavePermission(
   return roleKeys.some((r) => (ROLE_PERMISSIONS[r] ?? []).includes(perm))
 }
 
+/**
+ * Deliberately NOT a query against `role_permission`/`permission`: those
+ * tables are a seed-script artifact with nothing keeping them in sync (no
+ * migration or boot hook populates them — only a manually-run seed command
+ * does). Resolving permissions through them made every permission check
+ * depend on that seed having been run, with no error if it hadn't — a fresh
+ * database, or a `role_permission` row that fell out of sync, would silently
+ * deny every non-super-admin user every permission. `ROLE_PERMISSIONS` in
+ * this file is the actual single source of truth; `computePermissions`
+ * reads it directly, in-process, with no DB round trip and no way to be
+ * empty.
+ */
 export async function getUserPermissions(
   userId: string,
 ): Promise<Set<PermissionKey>> {
-  const roles = await getUserRoles(userId)
-  if (roles.includes(ROLES.SUPER_ADMIN)) {
-    return new Set(Object.values(PERMISSIONS))
-  }
-
-  const rows = await db
-    .select({ key: permission.key })
-    .from(userRole)
-    .innerJoin(rolePermission, eq(userRole.roleId, rolePermission.roleId))
-    .innerJoin(permission, eq(rolePermission.permissionId, permission.id))
-    .where(eq(userRole.userId, userId))
-  return new Set(rows.map((row) => row.key as PermissionKey))
+  return computePermissions(await getUserRoles(userId))
 }
 
 export async function hasRole(userId: string, r: RoleKey): Promise<boolean> {
