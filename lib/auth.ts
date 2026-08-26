@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth"
+import { createAuthMiddleware, APIError } from "better-auth/api"
 import { expo } from "@better-auth/expo"
 import { pool } from "@/lib/db"
 import { betterAuthUrl, env, isGoogleAuthConfigured, trustedAuthOrigins } from "@/lib/env"
@@ -6,6 +7,25 @@ import { ROLES } from "@/lib/rbac"
 import { logger } from "@/lib/logger"
 import { writeAudit } from "@/lib/audit"
 import { sendEmail } from "@/lib/email"
+import { verifyRecaptcha } from "@/lib/security/recaptcha"
+
+/**
+ * The sign-up/sign-in forms call `executeRecaptcha("auth_submit")` and send
+ * the token as an extra `recaptchaToken` body field — Better Auth ignores
+ * unknown fields in its own endpoint schemas, so the check must happen here,
+ * before the endpoint runs, not in the endpoint's own validated body. Without
+ * this, the client-side widget ran but nothing ever verified its result:
+ * scripting straight against /sign-up/email or /sign-in/email skipped it
+ * entirely.
+ */
+const recaptchaGate = createAuthMiddleware(async (ctx) => {
+  if (ctx.path !== "/sign-up/email" && ctx.path !== "/sign-in/email") return
+  const token = (ctx.body as { recaptchaToken?: string } | undefined)?.recaptchaToken
+  const result = await verifyRecaptcha(token, "auth_submit")
+  if (!result.success) {
+    throw new APIError("BAD_REQUEST", { message: "تعذّر التحقق من أنك لست روبوتًا، حاول مرة أخرى." })
+  }
+})
 
 /**
  * Better Auth configuration.
@@ -132,6 +152,10 @@ export const auth = betterAuth({
   // The native app authenticates over the same endpoints; its custom scheme
   // must be trusted or Better Auth's CSRF origin check rejects it.
   trustedOrigins: trustedAuthOrigins(),
+
+  hooks: {
+    before: recaptchaGate,
+  },
 
   plugins: [expo()],
 

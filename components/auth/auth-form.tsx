@@ -126,11 +126,15 @@ function AuthFormInner({
     
     setLoading(true)
 
-    // Execute reCAPTCHA if configured
+    // Executed client-side, but it's the recaptchaToken field below that
+    // actually matters — lib/auth.ts's hooks.before verifies it server-side
+    // against Google before either endpoint runs. A token that merely exists
+    // proves nothing on its own.
+    let recaptchaToken: string | undefined
     if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && executeRecaptcha) {
       try {
-        const token = await executeRecaptcha("auth_submit")
-        if (!token) {
+        recaptchaToken = await executeRecaptcha("auth_submit")
+        if (!recaptchaToken) {
           setLoading(false)
           setError(copy.genericError)
           return
@@ -147,6 +151,10 @@ function AuthFormInner({
         email,
         password,
         rememberMe: remember,
+        // @ts-expect-error — extra field read by lib/auth.ts's hooks.before;
+        // Better Auth's own signIn schema doesn't declare it, but does not
+        // reject unknown body fields either.
+        recaptchaToken,
       })
       setLoading(false)
       if (error) {
@@ -161,7 +169,13 @@ function AuthFormInner({
     // No `role` is ever sent — public signup always creates a PATIENT.
     // Choosing "doctor" only routes into the accreditation application.
     if (!accountCreated) {
-      const { error } = await authClient.signUp.email({ email, password, name })
+      const { error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        // @ts-expect-error — extra field read by lib/auth.ts's hooks.before.
+        recaptchaToken,
+      })
       if (error) {
         setLoading(false)
         setError(translateAuthError(error.message, locale))
