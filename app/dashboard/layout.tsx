@@ -3,8 +3,10 @@ import { hasPermission, PERMISSIONS, ROLES } from "@/lib/rbac"
 import { getUnreadNotificationCount } from "@/lib/data/notifications"
 import { AppShell, type ShellNavLink } from "@/components/layout/app-shell"
 import { getLocale } from "@/lib/i18n"
+import type { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 export default async function DashboardLayout({
   children,

@@ -23,8 +23,10 @@ export const user = pgTable("user", {
   image: text("image"),
 
   // Med Aura extensions (defaults let Better Auth insert without these).
-  // `role` is the denormalised PRIMARY role for fast routing only. The
-  // authoritative permission source is the RBAC tables (userRole/rolePermission).
+  // `role` is the denormalised PRIMARY role for fast routing only. Assigned
+  // roles live in userRole; their permission mapping is the code-owned
+  // ROLE_PERMISSIONS catalog in lib/rbac.ts. The role/permission tables are
+  // a queryable catalog mirror populated by the seed, not the runtime source.
   // Public signup can only ever produce "patient" (enforced in lib/auth.ts).
   role: text("role").notNull().default("patient"),
   status: userStatusEnum("status").notNull().default("active"),

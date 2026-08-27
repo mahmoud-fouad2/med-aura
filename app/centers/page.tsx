@@ -22,23 +22,25 @@ import { query } from "@/lib/db/query"
 import { getCurrentUser } from "@/lib/session"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
 import { countryNameAr, countryNameEn } from "@/lib/status-labels"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript, localizedUrl } from "@/lib/seo"
 import { PUBLIC_MEDIA } from "@/lib/public-media"
 import { formatDoctorCount } from "@/lib/format"
 import { getI18n } from "@/lib/i18n"
+import { SeoEditorialBand } from "@/components/marketing/seo-editorial-band"
 
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata() {
   const { locale } = await getI18n()
   return buildPageMetadata({
-    title: locale === "ar" ? "مراكز التجميل" : "Aesthetic centers",
+    title: locale === "ar" ? "مراكز وعيادات التجميل" : "Aesthetic clinics and centers",
     description: locale === "ar"
-      ? "تصفّح مراكز التجميل وقارن الأطباء والخدمات والتقييمات المتاحة قبل الحجز."
-      : "Browse aesthetic centers and compare available doctors, services, and reviews before booking.",
+      ? "قارن مراكز وعيادات التجميل حسب الموقع والأطباء والخدمات واللغات والتقييمات المنشورة قبل طلب الاستشارة."
+      : "Compare aesthetic clinics and centers by location, doctors, services, languages, and published reviews before requesting a consultation.",
     path: "/centers",
     image: PUBLIC_MEDIA.centers,
     locale,
+    keywords: locale === "ar" ? ["مراكز تجميل", "عيادات تجميل", "مركز تجميل معتمد", "مستشفى تجميل"] : ["aesthetic clinics", "cosmetic centers", "verified aesthetic clinic", "plastic surgery center"],
   })
 }
 
@@ -60,14 +62,14 @@ export default async function CentersPage() {
   const doctorsTotal = centers.reduce((sum, c) => sum + c.doctorCount, 0)
   const structuredData = [
     breadcrumbJsonLd([
-      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
-      { name: l("المراكز", "Centers"), url: absoluteUrl("/centers") },
+      { name: l("الرئيسية", "Home"), url: localizedUrl("/", locale) },
+      { name: l("المراكز", "Centers"), url: localizedUrl("/centers", locale) },
     ]),
     itemListJsonLd({
       name: l("مراكز التجميل على Med Aura", "Aesthetic centers on Med Aura"),
       items: centers.map((c) => ({
         name: c.name,
-        url: absoluteUrl(`/centers/${c.slug}`),
+        url: localizedUrl(`/centers/${c.slug}`, locale),
         image: absoluteUrl(c.coverUrl ?? PUBLIC_MEDIA.centers),
       })),
     }),
@@ -214,6 +216,20 @@ export default async function CentersPage() {
             )}
           </div>
         </section>
+        <SeoEditorialBand
+          eyebrow={l("مقارنة عملية", "A practical comparison")}
+          title={l("ماذا تراجع قبل اختيار مركز تجميل؟", "What should you review before choosing an aesthetic clinic?")}
+          intro={l("اسم المركز أو جمال المكان لا يكفيان. راجع الفريق الطبي ونطاق الخدمات ومكان الإجراء وخطة المتابعة وكيفية التعامل مع الطوارئ.", "A clinic name or polished setting is not enough. Review the medical team, service scope, procedure location, follow-up plan, and emergency arrangements.")}
+          items={isAr ? [
+            { title: "الفريق والمسؤولية الطبية", body: "تأكد من هوية الطبيب الذي سيقيّم الحالة وينفذ الإجراء ومن يتابعك بعده." },
+            { title: "المعلومات المكتوبة", body: "اطلب خطة واضحة تشمل التكلفة وما تتضمنه والمواعيد والتعليمات قبل الدفع." },
+            { title: "المتابعة والسلامة", body: "اسأل عن التواصل بعد الإجراء وسياسة المراجعة والتصرف عند ظهور عرض غير متوقع." },
+          ] : [
+            { title: "Team and clinical responsibility", body: "Confirm who assesses you, who performs the procedure, and who follows up afterward." },
+            { title: "Written information", body: "Request a clear plan covering cost, inclusions, timings, and instructions before payment." },
+            { title: "Follow-up and safety", body: "Ask about post-procedure contact, review policy, and what happens if an unexpected symptom appears." },
+          ]}
+        />
       </main>
       <SiteFooter />
     </div>

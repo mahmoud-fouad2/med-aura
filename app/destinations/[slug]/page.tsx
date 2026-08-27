@@ -23,6 +23,7 @@ import {
   geoCoordinatesJsonLd,
   itemListJsonLd,
   jsonLdScript,
+  localizedUrl,
 } from "@/lib/seo"
 import { destinationImage, PUBLIC_MEDIA } from "@/lib/public-media"
 import { getI18n } from "@/lib/i18n"
@@ -44,6 +45,7 @@ export async function generateMetadata({
     description: locale === "ar" ? `قارن الأطباء والمراكز المتاحة في ${name} على Med Aura.` : `Compare available doctors and centers in ${name} on Med Aura.`,
     path: `/destinations/${d.code.toLowerCase()}`,
     image: destinationImage(d.code),
+    locale,
   })
 }
 
@@ -67,25 +69,25 @@ export default async function DestinationDetailPage({
     image: absoluteUrl(destinationImage(d.code)),
     address: { "@type": "PostalAddress", addressCountry: d.code },
     ...(geoCoordinatesJsonLd(d.code) ? { geo: geoCoordinatesJsonLd(d.code) } : {}),
-    url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`),
+    url: localizedUrl(`/destinations/${d.code.toLowerCase()}`, locale),
     containsPlace: d.cities.map((city) => ({
       "@type": "City",
-      name: city.nameAr,
-      alternateName: city.nameEn,
+      name: isAr ? city.nameAr : city.nameEn,
+      alternateName: isAr ? city.nameEn : city.nameAr,
     })),
   }
   const structuredData = [
     jsonLd,
     breadcrumbJsonLd([
-      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
-      { name: l("الوجهات", "Destinations"), url: absoluteUrl("/destinations") },
-      { name: destinationName, url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`) },
+      { name: l("الرئيسية", "Home"), url: localizedUrl("/", locale) },
+      { name: l("الوجهات", "Destinations"), url: localizedUrl("/destinations", locale) },
+      { name: destinationName, url: localizedUrl(`/destinations/${d.code.toLowerCase()}`, locale) },
     ]),
     itemListJsonLd({
       name: l(`المراكز المتاحة في ${d.nameAr}`, `Available centers in ${d.nameEn}`),
       items: d.centers.map((c) => ({
         name: c.name,
-        url: absoluteUrl(`/centers/${c.slug}`),
+        url: localizedUrl(`/centers/${c.slug}`, locale),
         image: absoluteUrl(c.coverUrl ?? PUBLIC_MEDIA.centers),
       })),
     }),
@@ -93,7 +95,7 @@ export default async function DestinationDetailPage({
       name: l(`الأطباء المتاحون في ${d.nameAr}`, `Available doctors in ${d.nameEn}`),
       items: d.doctors.map((doctor) => ({
         name: doctor.name,
-        url: absoluteUrl(`/doctors/${doctor.slug}`),
+        url: localizedUrl(`/doctors/${doctor.slug}`, locale),
         ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
       })),
     }),

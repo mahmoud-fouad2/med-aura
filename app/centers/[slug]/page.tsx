@@ -22,6 +22,7 @@ import {
   buildPageMetadata,
   geoCoordinatesJsonLd,
   jsonLdScript,
+  localizedUrl,
 } from "@/lib/seo"
 import { PUBLIC_MEDIA } from "@/lib/public-media"
 
@@ -45,6 +46,7 @@ export async function generateMetadata({
         : `${c.name} on Med Aura: a clear profile and consultation options.`),
     path: `/centers/${c.slug}`,
     image: c.coverUrl ?? PUBLIC_MEDIA.centers,
+    locale,
   })
 }
 
@@ -90,11 +92,11 @@ export default async function CenterDetailPage({
       addressCountry: (isAr ? countryNameAr(c.country) : countryNameEn(c.country)) || c.country,
     },
     ...(geoCoordinatesJsonLd(c.country) ? { geo: geoCoordinatesJsonLd(c.country) } : {}),
-    url: absoluteUrl(`/centers/${c.slug}`),
+    url: localizedUrl(`/centers/${c.slug}`, locale),
     medicalSpecialty: "Aesthetic Medicine",
     areaServed: {
       "@type": "Country",
-      name: countryNameAr(c.country) || c.country,
+      name: (isAr ? countryNameAr(c.country) : countryNameEn(c.country)) || c.country,
     },
     ...(c.languages.length ? { knowsLanguage: c.languages } : {}),
     ...(c.doctors.length
@@ -102,7 +104,7 @@ export default async function CenterDetailPage({
           employee: c.doctors.map((doctor) => ({
             "@type": "Physician",
             name: doctor.name,
-            url: absoluteUrl(`/doctors/${doctor.slug}`),
+            url: localizedUrl(`/doctors/${doctor.slug}`, locale),
             ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
           })),
         }
@@ -120,9 +122,9 @@ export default async function CenterDetailPage({
     })
   }
   const breadcrumb = breadcrumbJsonLd([
-    { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
-    { name: l("المراكز", "Centers"), url: absoluteUrl("/centers") },
-    { name: c.name, url: absoluteUrl(`/centers/${c.slug}`) },
+    { name: l("الرئيسية", "Home"), url: localizedUrl("/", locale) },
+    { name: l("المراكز", "Centers"), url: localizedUrl("/centers", locale) },
+    { name: c.name, url: localizedUrl(`/centers/${c.slug}`, locale) },
   ])
 
   return (

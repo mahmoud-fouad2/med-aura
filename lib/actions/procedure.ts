@@ -8,6 +8,7 @@ import {
   aestheticCase,
   caseStatusHistory,
   doctorProfile,
+  center,
   medicalApproval,
   procedureBooking,
   procedureBookingHistory,
@@ -32,6 +33,7 @@ import { notify } from "@/lib/notifications"
 import { AppError, toSafeError, validation, forbidden, conflict } from "@/lib/errors"
 import { assertCaseTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
 import type { ActionResult } from "@/lib/actions/provider"
+import { calculateCommissionSnapshot } from "@/lib/money"
 
 const ref = (p: string) => `${p}-${crypto.randomUUID().replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase()}`
 
@@ -324,6 +326,20 @@ export async function completeProcedure(input: unknown): Promise<ActionResult> {
         await tx.select().from(quote).where(and(eq(quote.caseId, c.id), eq(quote.status, "ACCEPTED"))).orderBy(desc(quote.createdAt)).limit(1)
       )[0]
       if (q) {
+        const commissionRate = c.centerId
+          ? (await tx
+              .select({ rate: center.platformCommissionRate })
+              .from(center)
+              .where(eq(center.id, c.centerId))
+              .limit(1))[0]?.rate
+          : c.doctorId
+            ? (await tx
+                .select({ rate: doctorProfile.platformCommissionRate })
+                .from(doctorProfile)
+                .where(eq(doctorProfile.id, c.doctorId))
+                .limit(1))[0]?.rate
+            : undefined
+        const commission = calculateCommissionSnapshot(q.subtotal, q.total, commissionRate ?? "15.00")
         const inv = await tx
           .insert(invoice)
           .values({
@@ -336,6 +352,9 @@ export async function completeProcedure(input: unknown): Promise<ActionResult> {
             subtotal: q.subtotal,
             tax: q.tax,
             total: q.total,
+            platformCommissionRate: commission.rate,
+            platformCommissionAmount: commission.commissionAmount,
+            providerNetAmount: commission.providerNetAmount,
             paidAmount: q.depositRequired,
             remainingAmount: q.remainingBalance,
             status: Number(q.remainingBalance) > 0 ? "PARTIALLY_PAID" : "PAID",

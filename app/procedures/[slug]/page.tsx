@@ -20,6 +20,7 @@ import {
   breadcrumbJsonLd,
   buildPageMetadata,
   jsonLdScript,
+  localizedUrl,
   serviceImageForProcedure,
 } from "@/lib/seo"
 
@@ -90,24 +91,24 @@ export default async function ProcedureDetailPage({
     "@type": "MedicalProcedure",
     name: isAr ? procedure.nameAr : procedure.nameEn,
     alternateName: procedure.nameEn,
-    category: procedure.categoryNameAr,
+    category: isAr ? procedure.categoryNameAr : procedure.categoryNameEn,
     description: (isAr ? procedure.descriptionAr : procedure.descriptionEn) ?? undefined,
-    image: procedure.imageUrl ?? absoluteUrl(procedureImage),
-    url: absoluteUrl(`/procedures/${procedure.slug}`),
+    image: absoluteUrl(procedureImage),
+    url: localizedUrl(`/procedures/${procedure.slug}`, locale),
     provider: {
       "@type": "Organization",
       name: SITE_NAME,
-      url: absoluteUrl("/"),
+      url: localizedUrl("/", locale),
     },
     potentialAction: {
       "@type": "SearchAction",
-      target: `${absoluteUrl("/search")}?procedure=${procedure.slug}`,
+      target: `${localizedUrl("/search", locale)}?procedure=${procedure.slug}`,
     },
   }
   const breadcrumb = breadcrumbJsonLd([
-    { name: isAr ? "الرئيسية" : "Home", url: absoluteUrl("/") },
-    { name: isAr ? "إجراءات التجميل" : "Aesthetic procedures", url: absoluteUrl("/procedures") },
-    { name: isAr ? procedure.nameAr : procedure.nameEn, url: absoluteUrl(`/procedures/${procedure.slug}`) },
+    { name: isAr ? "الرئيسية" : "Home", url: localizedUrl("/", locale) },
+    { name: isAr ? "إجراءات التجميل" : "Aesthetic procedures", url: localizedUrl("/procedures", locale) },
+    { name: isAr ? procedure.nameAr : procedure.nameEn, url: localizedUrl(`/procedures/${procedure.slug}`, locale) },
   ])
 
   return (

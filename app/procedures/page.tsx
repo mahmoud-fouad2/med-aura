@@ -19,9 +19,11 @@ import {
   buildPageMetadata,
   itemListJsonLd,
   jsonLdScript,
+  localizedUrl,
   serviceImageForProcedure,
 } from "@/lib/seo"
 import { getI18n } from "@/lib/i18n"
+import { SeoEditorialBand } from "@/components/marketing/seo-editorial-band"
 import { firstParam } from "@/lib/utils"
 import { formatRecoveryDays } from "@/lib/format"
 
@@ -30,13 +32,16 @@ export const dynamic = "force-dynamic"
 export async function generateMetadata() {
   const { locale } = await getI18n()
   return buildPageMetadata({
-    title: locale === "ar" ? "إجراءات التجميل" : "Aesthetic procedures",
+    title: locale === "ar" ? "إجراءات التجميل الجراحية وغير الجراحية" : "Surgical and non-surgical aesthetic procedures",
     description: locale === "ar"
-      ? "تصفّح إجراءات التجميل الجراحية وغير الجراحية حسب المنطقة ومدة التعافي."
-      : "Browse surgical and non-surgical aesthetic procedures by area and recovery time.",
+      ? "تعرّف على إجراءات تجميل الوجه والجسم والبشرة والشعر والأسنان، وقارن نوع الإجراء وفترة العودة للروتين والأطباء المتاحين."
+      : "Explore face, body, skin, hair, and dental aesthetic procedures, then compare procedure type, return-to-routine ranges, and available doctors.",
     path: "/procedures",
     image: "/demo-services/service-face-neck.png",
     locale,
+    keywords: locale === "ar"
+      ? ["إجراءات التجميل", "تجميل الأنف", "شد الوجه", "علاجات البشرة", "زراعة الشعر", "تجميل الأسنان"]
+      : ["aesthetic procedures", "rhinoplasty", "facelift", "skin treatments", "hair transplant", "cosmetic dentistry"],
   })
 }
 
@@ -67,15 +72,15 @@ export default async function ProceduresPage({
     .filter((g) => g.procedures.length > 0)
   const total = visibleGroups.reduce((sum, group) => sum + group.procedures.length, 0)
   const breadcrumb = breadcrumbJsonLd([
-    { name: isAr ? "الرئيسية" : "Home", url: absoluteUrl("/") },
-    { name: isAr ? "إجراءات التجميل" : "Aesthetic procedures", url: absoluteUrl("/procedures") },
+    { name: isAr ? "الرئيسية" : "Home", url: localizedUrl("/", locale) },
+    { name: isAr ? "إجراءات التجميل" : "Aesthetic procedures", url: localizedUrl("/procedures", locale) },
   ])
   const listJsonLd = itemListJsonLd({
     name: isAr ? "إجراءات التجميل على Med Aura" : "Aesthetic procedures on Med Aura",
     items: visibleGroups.flatMap((g) =>
       g.procedures.map((p) => ({
         name: isAr ? p.nameAr : p.nameEn,
-        url: absoluteUrl(`/procedures/${p.slug}`),
+        url: localizedUrl(`/procedures/${p.slug}`, locale),
         image: p.imageUrl ?? absoluteUrl(serviceImageForProcedure(p.slug, g.slug)),
       })),
     ),
@@ -222,6 +227,20 @@ export default async function ProceduresPage({
             )}
           </div>
         </section>
+        <SeoEditorialBand
+          eyebrow={isAr ? "معلومة أوضح قبل الاستشارة" : "Clarity before consultation"}
+          title={isAr ? "اختيار الإجراء يبدأ بفهم الهدف والبدائل" : "Choosing a procedure starts with goals and alternatives"}
+          intro={isAr ? "تقدّم صفحات Med Aura تعريفًا أوليًا يساعدك على تنظيم أسئلتك، بينما يحدد الطبيب الملاءمة الطبية بعد معرفة تاريخك الصحي وفحص الحالة." : "Med Aura procedure pages provide an initial overview to organize your questions, while a clinician determines medical suitability after reviewing your health and condition."}
+          items={isAr ? [
+            { title: "الوجه والرقبة", body: "تعرّف على تجميل الأنف وشد الوجه والجفون والرقبة والذقن، ثم قارن الخبرة المرتبطة بكل إجراء." },
+            { title: "الجسم والبشرة والشعر", body: "استكشف نحت الجسم والعناية بالبشرة والإجراءات غير الجراحية وزراعة الشعر مع توقعات تعافٍ أكثر وضوحًا." },
+            { title: "الأسنان والابتسامة", body: "قارن خيارات الفينير والتبييض وتصميم الابتسامة واسأل عن صحة الفم والبدائل ومدة النتيجة." },
+          ] : [
+            { title: "Face and neck", body: "Learn about rhinoplasty, face, eyelid, neck, and chin procedures, then compare relevant experience." },
+            { title: "Body, skin, and hair", body: "Explore body contouring, skin care, non-surgical treatments, and hair restoration with clearer recovery expectations." },
+            { title: "Teeth and smile", body: "Compare veneers, whitening, and smile design while asking about oral health, alternatives, and longevity." },
+          ]}
+        />
       </main>
       <SiteFooter />
     </div>

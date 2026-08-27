@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger"
 import { writeAudit } from "@/lib/audit"
 import { sendEmail } from "@/lib/email"
 import { verifyRecaptcha } from "@/lib/security/recaptcha"
+import { isExpoNativeAuthRequest } from "@/lib/security/auth-channel"
 
 /**
  * The sign-up/sign-in forms call `executeRecaptcha("auth_submit")` and send
@@ -20,9 +21,14 @@ import { verifyRecaptcha } from "@/lib/security/recaptcha"
  */
 const recaptchaGate = createAuthMiddleware(async (ctx) => {
   if (ctx.path !== "/sign-up/email" && ctx.path !== "/sign-in/email") return
+  if (isExpoNativeAuthRequest(ctx.headers)) return
   const token = (ctx.body as { recaptchaToken?: string } | undefined)?.recaptchaToken
   const result = await verifyRecaptcha(token, "auth_submit")
   if (!result.success) {
+    logger.warn("Authentication reCAPTCHA rejected", {
+      path: ctx.path,
+      reason: result.reason ?? "unknown",
+    })
     throw new APIError("BAD_REQUEST", { message: "تعذّر التحقق من أنك لست روبوتًا، حاول مرة أخرى." })
   }
 })

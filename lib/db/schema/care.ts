@@ -501,13 +501,22 @@ export const invoice = pgTable(
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull().default("0"),
     tax: numeric("tax", { precision: 12, scale: 2 }).notNull().default("0"),
     total: numeric("total", { precision: 12, scale: 2 }).notNull().default("0"),
+    platformCommissionRate: numeric("platformCommissionRate", { precision: 5, scale: 2 }).notNull().default("15.00"),
+    platformCommissionAmount: numeric("platformCommissionAmount", { precision: 12, scale: 2 }).notNull().default("0"),
+    providerNetAmount: numeric("providerNetAmount", { precision: 12, scale: 2 }).notNull().default("0"),
     paidAmount: numeric("paidAmount", { precision: 12, scale: 2 }).notNull().default("0"),
     remainingAmount: numeric("remainingAmount", { precision: 12, scale: 2 }).notNull().default("0"),
     status: invoiceStatusEnum("status").notNull().default("DRAFT"),
     ...lifecycle(),
     ...authorship(),
   },
-  (t) => [index("invoice_patient_idx").on(t.patientUserId), index("invoice_status_idx").on(t.status)],
+  (t) => [
+    index("invoice_patient_idx").on(t.patientUserId),
+    index("invoice_status_idx").on(t.status),
+    check("invoice_commission_rate_check", sql`${t.platformCommissionRate} between 0 and 100`),
+    check("invoice_commission_amount_check", sql`${t.platformCommissionAmount} >= 0`),
+    check("invoice_provider_net_check", sql`${t.providerNetAmount} >= 0`),
+  ],
 )
 
 export const invoiceItem = pgTable(

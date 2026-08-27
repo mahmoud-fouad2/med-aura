@@ -18,6 +18,47 @@ export const BASE_CURRENCY = "SAR"
 
 export type MoneyTotal = { currency: string; amount: number }
 
+export type CommissionSnapshot = {
+  rate: string
+  commissionAmount: string
+  providerNetAmount: string
+}
+
+function toMinorUnits(value: number | string): number {
+  const normalized = String(value).trim()
+  const match = normalized.match(/^-?(\d+)(?:\.(\d{0,2}))?$/)
+  if (!match) throw new Error("Invalid monetary value")
+  const sign = normalized.startsWith("-") ? -1 : 1
+  const whole = Number(match[1])
+  const fraction = Number((match[2] ?? "").padEnd(2, "0"))
+  return sign * (whole * 100 + fraction)
+}
+
+function fromMinorUnits(value: number): string {
+  return (value / 100).toFixed(2)
+}
+
+/** Snapshot platform economics without floating-point money arithmetic. */
+export function calculateCommissionSnapshot(
+  subtotal: number | string,
+  total: number | string,
+  rate: number | string,
+): CommissionSnapshot {
+  const subtotalMinor = toMinorUnits(subtotal)
+  const totalMinor = toMinorUnits(total)
+  const rateBasisPoints = toMinorUnits(rate)
+  if (subtotalMinor < 0 || totalMinor < 0 || rateBasisPoints < 0 || rateBasisPoints > 10_000) {
+    throw new Error("Commission inputs are out of range")
+  }
+
+  const commissionMinor = Math.round((subtotalMinor * rateBasisPoints) / 10_000)
+  return {
+    rate: (rateBasisPoints / 100).toFixed(2),
+    commissionAmount: fromMinorUnits(commissionMinor),
+    providerNetAmount: fromMinorUnits(Math.max(0, totalMinor - commissionMinor)),
+  }
+}
+
 const NUM = new Intl.NumberFormat("ar-SA-u-nu-latn", { maximumFractionDigits: 2 })
 const NUM_EN = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 })
 

@@ -17,6 +17,7 @@ export type RecaptchaResult = {
 }
 
 const DEFAULT_THRESHOLD = 0.5
+const VERIFY_TIMEOUT_MS = 5_000
 
 export async function verifyRecaptcha(
   token: string | undefined | null,
@@ -36,6 +37,7 @@ export async function verifyRecaptcha(
     const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
       body: new URLSearchParams({
         secret: env.RECAPTCHA_SECRET_KEY as string,
         response: token,
@@ -51,7 +53,7 @@ export async function verifyRecaptcha(
     if (!data.success) {
       return { success: false, score: 0, skipped: false, reason: data["error-codes"]?.join(",") }
     }
-    if (expectedAction && data.action && data.action !== expectedAction) {
+    if (expectedAction && data.action !== expectedAction) {
       return { success: false, score: data.score ?? 0, skipped: false, reason: "action_mismatch" }
     }
     const score = data.score ?? 0

@@ -34,7 +34,10 @@ import {
   buildPageMetadata,
   itemListJsonLd,
   jsonLdScript,
+  localizedUrl,
 } from "@/lib/seo"
+import { localizedPath } from "@/lib/i18n/config"
+import { DoctorDirectoryGuide } from "@/components/search/doctor-directory-guide"
 
 export const dynamic = "force-dynamic"
 
@@ -48,6 +51,7 @@ export async function generateMetadata() {
     path: "/search",
     image: "/hero-medaura-consultation.png",
     locale,
+    robots: { index: false, follow: true },
   })
 }
 
@@ -143,14 +147,14 @@ export default async function SearchPage({
   ].filter(Boolean).length
   const structuredData = [
     breadcrumbJsonLd([
-      { name: isAr ? "الرئيسية" : "Home", url: absoluteUrl("/") },
-      { name: isAr ? "الأطباء" : "Doctors", url: absoluteUrl("/search") },
+      { name: isAr ? "الرئيسية" : "Home", url: localizedUrl("/", locale) },
+      { name: isAr ? "الأطباء" : "Doctors", url: localizedUrl("/doctors", locale) },
     ]),
     itemListJsonLd({
       name: isAr ? "أطباء التجميل على Med Aura" : "Aesthetic doctors on Med Aura",
       items: results.map((doctor) => ({
         name: doctor.name,
-        url: absoluteUrl(`/doctors/${doctor.slug}`),
+        url: localizedUrl(`/doctors/${doctor.slug}`, locale),
         ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
       })),
     }),
@@ -214,13 +218,13 @@ export default async function SearchPage({
               </form>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <QuickFilter href="/search?consultation=VIDEO_CONSULTATION" icon={Video}>
+                <QuickFilter href={`${localizedPath("/search", locale)}?consultation=VIDEO_CONSULTATION`} icon={Video}>
                   {isAr ? "استشارة فيديو" : "Video consultation"}
                 </QuickFilter>
-                <QuickFilter href="/search?surgical=false" icon={Sparkles}>
+                <QuickFilter href={`${localizedPath("/search", locale)}?surgical=false`} icon={Sparkles}>
                   {isAr ? "غير جراحي" : "Non-surgical"}
                 </QuickFilter>
-                <QuickFilter href="/search?category=face-neck" icon={Star}>
+                <QuickFilter href={`${localizedPath("/search", locale)}?category=face-neck`} icon={Star}>
                   {isAr ? "الوجه والرقبة" : "Face & neck"}
                 </QuickFilter>
               </div>
@@ -237,7 +241,7 @@ export default async function SearchPage({
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <UseMyLocationButton active={nearestActive} currentQuery={currentQuery} />
+              <UseMyLocationButton active={nearestActive} currentQuery={currentQuery} locale={locale} />
               {activeFilters > 0 && (
                 <Button
                   variant="outline"
@@ -369,6 +373,7 @@ export default async function SearchPage({
               )}
             </section>
           </div>
+          {activeFilters === 0 && <DoctorDirectoryGuide locale={locale} />}
         </div>
       </main>
       <SiteFooter />

@@ -4,8 +4,10 @@ import { getUserPermissions } from "@/lib/rbac"
 import { getUnreadNotificationCount } from "@/lib/data/notifications"
 import { ADMIN_SHELL_ENTRY_PERMISSIONS, visibleAdminNav } from "@/lib/admin-nav"
 import { AdminShell } from "@/components/admin/admin-shell"
+import type { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 export default async function AdminLayout({
   children,

@@ -8,6 +8,8 @@ import { TrustBand } from "@/components/landing/trust-band"
 import { BeforeAfterShowcase } from "@/components/landing/before-after-showcase"
 import { CtaFooter } from "@/components/landing/cta-footer"
 import { getI18n } from "@/lib/i18n"
+import { SearchIntentContent } from "@/components/landing/search-intent-content"
+import { jsonLdScript, organizationJsonLd, websiteJsonLd } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -15,12 +17,19 @@ export default async function HomePage() {
   const { locale, t } = await getI18n()
   return (
     <div className="flex min-h-svh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript([organizationJsonLd(), websiteJsonLd()]),
+        }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <Hero t={t.home} tCommon={t.common} locale={locale} />
         <CosmeticAreas t={t.home} locale={locale} />
         <PopularProcedures locale={locale} />
         <FeaturedDoctors />
+        <SearchIntentContent locale={locale} />
         <FeaturedReviews />
         <TrustBand locale={locale} />
         <BeforeAfterShowcase />

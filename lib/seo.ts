@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { appUrl } from "@/lib/env"
+import { localizedPath, type Locale } from "@/lib/i18n/config"
 import {
   categoryImage,
   procedureImage,
@@ -39,6 +40,10 @@ export function absoluteUrl(path = "/"): string {
   return new URL(path, appUrl()).toString()
 }
 
+export function localizedUrl(path: string, locale: Locale): string {
+  return absoluteUrl(localizedPath(path, locale))
+}
+
 export function serviceImageForCategory(slug: string | null | undefined): string {
   return categoryImage(slug)
 }
@@ -72,6 +77,8 @@ export function buildPageMetadata({
   image = "/hero-medaura-consultation.png",
   locale = "ar",
   type = "website",
+  keywords,
+  robots,
 }: {
   title: string
   description: string
@@ -79,18 +86,22 @@ export function buildPageMetadata({
   image?: string
   locale?: "ar" | "en"
   type?: "website" | "article"
+  keywords?: string[]
+  robots?: Metadata["robots"]
 }): Metadata {
-  const url = absoluteUrl(path)
+  const url = localizedUrl(path, locale)
   const imageUrl = absoluteUrl(image)
   return {
     title,
     description,
+    keywords,
+    robots,
     alternates: {
       canonical: url,
       languages: {
-        ar: absoluteUrl(`/ar${path === "/" ? "" : path}`),
-        en: absoluteUrl(`/en${path === "/" ? "" : path}`),
-        "x-default": url,
+        ar: localizedUrl(path, "ar"),
+        en: localizedUrl(path, "en"),
+        "x-default": absoluteUrl(path),
       },
     },
     openGraph: {

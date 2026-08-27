@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { sendCaseMessage } from "@/lib/actions/conversation"
 import type { CaseConversationView } from "@/lib/data/conversations"
+import type Pusher from "pusher-js"
+import type { Channel } from "pusher-js"
 
 export function ConversationPanel({
   caseId,
@@ -28,24 +30,33 @@ export function ConversationPanel({
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_PUSHER_KEY || !process.env.NEXT_PUBLIC_PUSHER_CLUSTER) return
 
-    let channel: any = null
-    let pusherClient: any = null
+    let cancelled = false
+    let channel: Channel | null = null
+    let pusherClient: Pusher | null = null
 
     import("pusher-js").then(({ default: Pusher }) => {
+      if (cancelled) return
       pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+        channelAuthorization: {
+          endpoint: "/api/pusher/auth",
+          transport: "ajax",
+        },
       })
 
-      channel = pusherClient.subscribe(`case-${caseId}`)
-      channel.bind("new-message", (data: any) => {
+      channel = pusherClient.subscribe(`private-case-${caseId}`)
+      channel.bind("new-message", (data: { senderUserId?: string }) => {
         // If the message is from someone else, refresh the page to fetch it
         if (data.senderUserId !== currentUserId) {
           router.refresh()
         }
       })
-    }).catch(console.error)
+    }).catch(() => {
+      // Sending still works through the server action; realtime refresh is an enhancement.
+    })
 
     return () => {
+      cancelled = true
       if (channel) {
         channel.unbind_all()
         channel.unsubscribe()

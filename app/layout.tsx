@@ -5,14 +5,9 @@ import "./globals.css"
 import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
 import {
-  DEFAULT_DESCRIPTION_AR,
-  DEFAULT_DESCRIPTION_EN,
-  DEFAULT_TITLE,
   SITE_NAME,
   absoluteUrl,
-  jsonLdScript,
-  organizationJsonLd,
-  websiteJsonLd,
+  localizedUrl,
 } from "@/lib/seo"
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegistration } from "@/components/pwa/sw-registration"
@@ -66,8 +61,12 @@ const inter = localFont({
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale()
   const isAr = locale === "ar"
-  const title = isAr ? DEFAULT_TITLE : "Med Aura | Aesthetic care with clarity"
-  const description = isAr ? DEFAULT_DESCRIPTION_AR : DEFAULT_DESCRIPTION_EN
+  const title = isAr
+    ? "Med Aura | قارن أطباء ومراكز التجميل واختر بثقة"
+    : "Med Aura | Compare aesthetic doctors and clinics with clarity"
+  const description = isAr
+    ? "قارن أطباء التجميل والمراكز والإجراءات والوجهات، واحجز استشارة تساعدك على اختيار الأنسب لاحتياجك بتوقعات أوضح."
+    : "Compare aesthetic doctors, clinics, procedures, and destinations, then book a consultation to choose the right option with clearer expectations."
   return {
     metadataBase: new URL(appUrl()),
     title: {
@@ -77,8 +76,11 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
+  keywords: isAr
+    ? ["أطباء تجميل", "مراكز تجميل", "إجراءات تجميل", "استشارة تجميل أونلاين", "عناية بالبشرة"]
+    : ["aesthetic doctors", "cosmetic clinics", "aesthetic procedures", "online aesthetic consultation", "skin care"],
   alternates: {
-    canonical: absoluteUrl("/"),
+    canonical: localizedUrl("/", locale),
     languages: {
       ar: absoluteUrl("/ar"),
       en: absoluteUrl("/en"),
@@ -88,7 +90,7 @@ export async function generateMetadata(): Promise<Metadata> {
   openGraph: {
     title,
     description,
-    url: absoluteUrl("/"),
+    url: localizedUrl("/", locale),
     siteName: SITE_NAME,
     locale: isAr ? "ar_SA" : "en_US",
     alternateLocale: [isAr ? "en_US" : "ar_SA"],
@@ -159,14 +161,6 @@ export default async function RootLayout({
             __html:
               "(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t==='dark')}catch(e){}})()",
           }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd()) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLdScript(websiteJsonLd()) }}
         />
       </head>
       <body className="font-sans antialiased">

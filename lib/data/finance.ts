@@ -90,6 +90,9 @@ export type FinanceInvoiceRow = {
   total: string
   paidAmount: string
   remainingAmount: string
+  platformCommissionRate: string
+  platformCommissionAmount: string
+  providerNetAmount: string
   currency: string
   patientName: string
   caseId: string | null
@@ -105,6 +108,9 @@ export async function listInvoicesFinance(limit = 60): Promise<FinanceInvoiceRow
       total: invoice.total,
       paidAmount: invoice.paidAmount,
       remainingAmount: invoice.remainingAmount,
+      platformCommissionRate: invoice.platformCommissionRate,
+      platformCommissionAmount: invoice.platformCommissionAmount,
+      providerNetAmount: invoice.providerNetAmount,
       currency: invoice.currency,
       patientName: userT.name,
       caseId: invoice.caseId,
@@ -184,11 +190,13 @@ export type FinanceSummary = {
   collected: MoneyTotal[]
   invoiced: MoneyTotal[]
   outstanding: MoneyTotal[]
+  platformCommission: MoneyTotal[]
+  providerNet: MoneyTotal[]
   refunded: MoneyTotal[]
   disputedCount: number
 }
 export async function getFinanceSummary(): Promise<FinanceSummary> {
-  const empty: FinanceSummary = { collected: [], invoiced: [], outstanding: [], refunded: [], disputedCount: 0 }
+  const empty: FinanceSummary = { collected: [], invoiced: [], outstanding: [], platformCommission: [], providerNet: [], refunded: [], disputedCount: 0 }
   if (!isDbConfigured) return empty
 
   const [collected, invoiced, refunded, disputed] = await Promise.all([
@@ -202,6 +210,8 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
         currency: invoice.currency,
         total: sql<string>`coalesce(sum(${invoice.total}), 0)`,
         remaining: sql<string>`coalesce(sum(${invoice.remainingAmount}), 0)`,
+        commission: sql<string>`coalesce(sum(${invoice.platformCommissionAmount}), 0)`,
+        providerNet: sql<string>`coalesce(sum(${invoice.providerNetAmount}), 0)`,
       })
       .from(invoice)
       .groupBy(invoice.currency),
@@ -220,6 +230,8 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     collected: collected.map((r) => ({ currency: r.currency, amount: Number(r.sum) })),
     invoiced: invoiced.map((r) => ({ currency: r.currency, amount: Number(r.total) })),
     outstanding: invoiced.map((r) => ({ currency: r.currency, amount: Number(r.remaining) })),
+    platformCommission: invoiced.map((r) => ({ currency: r.currency, amount: Number(r.commission) })),
+    providerNet: invoiced.map((r) => ({ currency: r.currency, amount: Number(r.providerNet) })),
     refunded: refunded.map((r) => ({ currency: r.currency, amount: Number(r.sum) })),
     disputedCount: Number(disputed[0]?.n ?? 0),
   }

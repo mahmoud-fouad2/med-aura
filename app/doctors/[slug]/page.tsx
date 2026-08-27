@@ -21,9 +21,9 @@ import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { DataState } from "@/components/ui/data-state"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
-import { currencyAr, countryNameAr } from "@/lib/status-labels"
+import { currencyAr, countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { getI18n } from "@/lib/i18n"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript, localizedUrl } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
@@ -90,16 +90,16 @@ export default async function DoctorProfilePage({
     name: doctor.name,
     ...(doctor.title ? { jobTitle: doctor.title } : {}),
     ...(doctor.bio ? { description: doctor.bio } : {}),
-    url: absoluteUrl(`/doctors/${doctor.slug}`),
+    url: localizedUrl(`/doctors/${doctor.slug}`, locale),
     ...(doctor.photoUrl ? { image: absoluteUrl(doctor.photoUrl) } : {}),
     address: {
       "@type": "PostalAddress",
-      addressCountry: countryNameAr(doctor.country) || doctor.country,
+      addressCountry: (isAr ? countryNameAr(doctor.country) : countryNameEn(doctor.country)) || doctor.country,
       ...(doctor.city ? { addressLocality: doctor.city } : {}),
     },
     areaServed: {
       "@type": "Country",
-      name: countryNameAr(doctor.country) || doctor.country,
+      name: (isAr ? countryNameAr(doctor.country) : countryNameEn(doctor.country)) || doctor.country,
     },
     ...(doctor.languages?.length ? { knowsLanguage: doctor.languages } : {}),
     medicalSpecialty: "Plastic Surgery",
@@ -128,9 +128,9 @@ export default async function DoctorProfilePage({
     }
   }
   const breadcrumb = breadcrumbJsonLd([
-    { name: "الرئيسية", url: absoluteUrl("/") },
-    { name: "الأطباء", url: absoluteUrl("/doctors") },
-    { name: doctor.name, url: absoluteUrl(`/doctors/${doctor.slug}`) },
+    { name: isAr ? "الرئيسية" : "Home", url: localizedUrl("/", locale) },
+    { name: isAr ? "الأطباء" : "Doctors", url: localizedUrl("/doctors", locale) },
+    { name: doctor.name, url: localizedUrl(`/doctors/${doctor.slug}`, locale) },
   ])
 
   return (

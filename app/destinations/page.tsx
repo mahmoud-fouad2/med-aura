@@ -10,22 +10,24 @@ import { DataState } from "@/components/ui/data-state"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listDestinations } from "@/lib/data/destinations"
 import { query } from "@/lib/db/query"
-import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript } from "@/lib/seo"
+import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript, localizedUrl } from "@/lib/seo"
 import { destinationImage, PUBLIC_MEDIA } from "@/lib/public-media"
 import { getI18n } from "@/lib/i18n"
+import { SeoEditorialBand } from "@/components/marketing/seo-editorial-band"
 
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata() {
   const { locale } = await getI18n()
   return buildPageMetadata({
-    title: locale === "ar" ? "الوجهات التجميلية" : "Aesthetic destinations",
+    title: locale === "ar" ? "وجهات السياحة العلاجية والتجميلية" : "Medical and aesthetic travel destinations",
     description: locale === "ar"
-      ? "قارن الوجهات حسب الأطباء والمراكز والمدن واللغات المتاحة."
-      : "Compare destinations by available doctors, centers, cities, and languages.",
+      ? "قارن وجهات التجميل حسب الأطباء والمراكز والمدن واللغات، وخطط للسفر والمتابعة قبل حجز الإجراء."
+      : "Compare aesthetic travel destinations by doctors, clinics, cities, and languages, then plan travel and follow-up before booking.",
     path: "/destinations",
     image: PUBLIC_MEDIA.destinations,
     locale,
+    keywords: locale === "ar" ? ["السياحة العلاجية", "وجهات التجميل", "تجميل في تركيا", "مراكز تجميل الخليج"] : ["medical tourism", "aesthetic travel", "cosmetic surgery in Türkiye", "Gulf aesthetic clinics"],
   })
 }
 
@@ -41,14 +43,14 @@ export default async function DestinationsPage() {
   const centersTotal = destinations.reduce((sum, d) => sum + d.approvedCenters, 0)
   const structuredData = [
     breadcrumbJsonLd([
-      { name: l("الرئيسية", "Home"), url: absoluteUrl("/") },
-      { name: l("الوجهات", "Destinations"), url: absoluteUrl("/destinations") },
+      { name: l("الرئيسية", "Home"), url: localizedUrl("/", locale) },
+      { name: l("الوجهات", "Destinations"), url: localizedUrl("/destinations", locale) },
     ]),
     itemListJsonLd({
       name: l("الوجهات التجميلية على Med Aura", "Aesthetic destinations on Med Aura"),
       items: destinations.map((d) => ({
         name: isAr ? d.nameAr : d.nameEn,
-        url: absoluteUrl(`/destinations/${d.code.toLowerCase()}`),
+        url: localizedUrl(`/destinations/${d.code.toLowerCase()}`, locale),
         image: absoluteUrl(destinationImage(d.code)),
       })),
     }),
@@ -166,6 +168,20 @@ export default async function DestinationsPage() {
             )}
           </div>
         </section>
+        <SeoEditorialBand
+          eyebrow={l("رعاية تتجاوز تذكرة السفر", "Care beyond the flight")}
+          title={l("قارن الرحلة كاملة، لا سعر الإجراء وحده", "Compare the whole care journey, not only the procedure price")}
+          intro={l("عند التفكير في إجراء خارج بلد الإقامة، أدخل مدة الإقامة والفحوصات والتنقل والمتابعة واحتمال المراجعة الطبية ضمن المقارنة.", "When considering treatment away from home, include stay length, tests, transport, follow-up, and the possibility of an additional clinical review in your comparison.")}
+          items={isAr ? [
+            { title: "قبل السفر", body: "شارك تاريخك الصحي واسأل عن الفحوصات والمدة المناسبة للوصول قبل الإجراء." },
+            { title: "خلال الإقامة", body: "اعرف جهة التواصل وخطة النقل والأدوية ومواعيد المراجعة قبل العودة." },
+            { title: "بعد العودة", body: "اتفق على طريقة المتابعة عن بُعد وما يتطلب مراجعة محلية أو عودة للمركز." },
+          ] : [
+            { title: "Before travel", body: "Share your health history and ask about tests and the appropriate arrival time before treatment." },
+            { title: "During your stay", body: "Know your contact, transport plan, medication, and review dates before returning home." },
+            { title: "After returning", body: "Agree on remote follow-up and what would require a local review or return to the clinic." },
+          ]}
+        />
       </main>
       <SiteFooter />
     </div>

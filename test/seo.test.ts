@@ -23,7 +23,8 @@ describe("faqPageJsonLd", () => {
 
 describe("buildPageMetadata", () => {
   it("publishes real Arabic and English route alternates", () => {
-    const meta = buildPageMetadata({ title: "t", description: "d", path: "/faq" })
+    const meta = buildPageMetadata({ title: "t", description: "d", path: "/faq", locale: "en" })
+    expect(meta.alternates?.canonical).toEqual(expect.stringContaining("/en/faq"))
     expect(meta.alternates?.languages).toEqual({
       ar: expect.stringContaining("/ar/faq"),
       en: expect.stringContaining("/en/faq"),

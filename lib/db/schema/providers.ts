@@ -10,7 +10,9 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  check,
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import {
   lifecycle,
   authorship,
@@ -60,6 +62,7 @@ export const center = pgTable(
   (t) => [
     index("center_status_idx").on(t.status),
     index("center_country_idx").on(t.country),
+    check("center_commission_rate_check", sql`${t.platformCommissionRate} between 0 and 100`),
   ],
 )
 
@@ -130,6 +133,7 @@ export const doctorProfile = pgTable(
     index("doctor_published_idx").on(t.published),
     index("doctor_country_idx").on(t.country),
     index("doctor_center_idx").on(t.centerId),
+    check("doctor_commission_rate_check", sql`${t.platformCommissionRate} between 0 and 100`),
   ],
 )
 

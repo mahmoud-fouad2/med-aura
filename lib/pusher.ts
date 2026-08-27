@@ -1,4 +1,5 @@
 import Pusher from "pusher"
+import { logger } from "@/lib/logger"
 
 let pusherServer: Pusher | null = null
 
@@ -11,7 +12,7 @@ export function getPusherServer() {
     !process.env.PUSHER_SECRET ||
     !process.env.NEXT_PUBLIC_PUSHER_CLUSTER
   ) {
-    console.warn("Pusher environment variables are not set. Real-time features are disabled.")
+    logger.warn("Pusher is not configured; real-time updates are disabled")
     return null
   }
 

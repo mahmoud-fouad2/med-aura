@@ -44,7 +44,7 @@
     "@react-pdf/pdfkit": "5.1.1",
     "@react-pdf/renderer": "^4.5.1",
     "arabic-persian-reshaper": "1.0.1",
-    "better-auth": "^1.6.22",
+    "better-auth": "1.6.23",
     "bidi-js": "1.0.3",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
@@ -99,10 +99,5 @@
     "typescript": "5.7.3",
     "typescript-eslint": "^8",
     "vitest": "^2.1.8"
-  },
-  "pnpm": {
-    "overrides": {
-      "hono": "4.12.25"
-    }
   }
 }

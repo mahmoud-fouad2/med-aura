@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { LocateFixed, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { localizedPath, type Locale } from "@/lib/i18n/config"
 
 /**
  * Browser geolocation → sort=nearest&lat&lng on /search, preserving every
@@ -14,8 +15,9 @@ import { Button } from "@/components/ui/button"
  * searchParams) rather than next/navigation's useSearchParams(), which would
  * need a Suspense boundary this page doesn't otherwise use.
  */
-export function UseMyLocationButton({ active, currentQuery }: { active: boolean; currentQuery: string }) {
+export function UseMyLocationButton({ active, currentQuery, locale }: { active: boolean; currentQuery: string; locale: Locale }) {
   const router = useRouter()
+  const isAr = locale === "ar"
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,12 +28,12 @@ export function UseMyLocationButton({ active, currentQuery }: { active: boolean;
       if (v === undefined) q.delete(k)
       else q.set(k, v)
     }
-    router.push(`/search?${q.toString()}`)
+    router.push(`${localizedPath("/search", locale)}?${q.toString()}`)
   }
 
   function onPress() {
     if (!navigator.geolocation) {
-      setError("متصفحك لا يدعم تحديد الموقع.")
+      setError(isAr ? "متصفحك لا يدعم تحديد الموقع." : "Your browser does not support location access.")
       return
     }
     setError(null)
@@ -48,11 +50,11 @@ export function UseMyLocationButton({ active, currentQuery }: { active: boolean;
       (err) => {
         setBusy(false)
         if (err.code === err.PERMISSION_DENIED) {
-          setError("لم يُسمح بالوصول إلى موقعك — يمكنك البحث بالمدينة بدلًا من ذلك.")
+          setError(isAr ? "لم يُسمح بالوصول إلى موقعك. يمكنك البحث بالمدينة بدلًا من ذلك." : "Location access was not allowed. You can search by city instead.")
         } else if (err.code === err.TIMEOUT) {
-          setError("انتهت مهلة تحديد الموقع، حاول مجددًا.")
+          setError(isAr ? "انتهت مهلة تحديد الموقع، حاول مجددًا." : "Location lookup timed out. Please try again.")
         } else {
-          setError("تعذّر تحديد موقعك حاليًا.")
+          setError(isAr ? "تعذّر تحديد موقعك حاليًا." : "We could not determine your location right now.")
         }
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
@@ -66,7 +68,7 @@ export function UseMyLocationButton({ active, currentQuery }: { active: boolean;
         size="sm"
         onClick={() => navigateWith({ sort: undefined, lat: undefined, lng: undefined })}
       >
-        <X className="size-3.5" /> إلغاء الترتيب حسب الأقرب
+        <X className="size-3.5" /> {isAr ? "إلغاء الترتيب حسب الأقرب" : "Clear nearest sorting"}
       </Button>
     )
   }
@@ -74,7 +76,7 @@ export function UseMyLocationButton({ active, currentQuery }: { active: boolean;
   return (
     <div className="flex flex-col items-end gap-1.5">
       <Button variant="outline" size="sm" onClick={onPress} loading={busy}>
-        <LocateFixed className="size-3.5" /> الأقرب إلى موقعي
+        <LocateFixed className="size-3.5" /> {isAr ? "الأقرب إلى موقعي" : "Nearest to me"}
       </Button>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>

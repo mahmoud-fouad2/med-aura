@@ -19,13 +19,8 @@ function applyCors(response: NextResponse): NextResponse {
   return response
 }
 
-/**
- * Standard Next.js middleware.
- * Handles:
- * 1. Mobile Web CORS in local development.
- * 2. Locale prefix rewrites (/(ar|en)/...) and setting the locale cookie.
- */
-export function middleware(request: NextRequest) {
+/** Local mobile-web CORS and locale-prefix rewrites for Next.js 16. */
+export function proxy(request: NextRequest) {
   if (isLocalMobileWebRequest(request)) {
     if (request.method === "OPTIONS") {
       return applyCors(new NextResponse(null, { status: 204 }))
@@ -33,18 +28,14 @@ export function middleware(request: NextRequest) {
     return applyCors(NextResponse.next())
   }
 
-  const [, locale, rest = ""] = request.nextUrl.pathname.match(
-    /^\/(ar|en)(\/.*)?$/,
-  ) ?? []
+  const [, locale, rest = ""] = request.nextUrl.pathname.match(/^\/(ar|en)(\/.*)?$/) ?? []
   if (!isLocale(locale)) return NextResponse.next()
 
   const url = request.nextUrl.clone()
   url.pathname = rest || "/"
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-medaura-locale", locale)
-  const response = NextResponse.rewrite(url, {
-    request: { headers: requestHeaders },
-  })
+  const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } })
   response.cookies.set(LOCALE_COOKIE, locale, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,

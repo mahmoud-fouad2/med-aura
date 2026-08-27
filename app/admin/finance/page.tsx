@@ -7,6 +7,8 @@ import {
   FileText,
   Undo2,
   Radio,
+  Percent,
+  HandCoins,
 } from "lucide-react"
 import { requirePermissionPage } from "@/lib/session"
 import { PERMISSIONS } from "@/lib/rbac"
@@ -52,6 +54,8 @@ export default async function FinanceDashboardPage() {
   const invoiced = headlineTotal(summary.invoiced)
   const outstanding = headlineTotal(summary.outstanding)
   const refunded = headlineTotal(summary.refunded)
+  const platformCommission = headlineTotal(summary.platformCommission)
+  const providerNet = headlineTotal(summary.providerNet)
 
   return (
     <div className="space-y-6">
@@ -73,7 +77,7 @@ export default async function FinanceDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricTile
           icon={TrendingUp}
           label="إجمالي المحصّل"
@@ -81,6 +85,20 @@ export default async function FinanceDashboardPage() {
           hint={collected.others ? `مدفوعات ناجحة — و${collected.others}` : "مدفوعات ناجحة مؤكَّدة"}
           tone="success"
           emphasis
+        />
+        <MetricTile
+          icon={Percent}
+          label="عمولة المنصة بالفواتير"
+          value={platformCommission.value}
+          hint={platformCommission.others ? `حسب العملات — و${platformCommission.others}` : "مثبتة وقت إصدار كل فاتورة"}
+          tone="primary"
+        />
+        <MetricTile
+          icon={HandCoins}
+          label="صافي مقدمي الخدمة"
+          value={providerNet.value}
+          hint={providerNet.others ? `حسب العملات — و${providerNet.others}` : "إجمالي الفواتير بعد عمولة المنصة"}
+          tone="neutral"
         />
         <MetricTile
           icon={Wallet}
@@ -206,6 +224,8 @@ export default async function FinanceDashboardPage() {
                   { header: "المريض", cell: (i) => <span className="font-medium text-foreground">{i.patientName}</span>, mobile: "title" },
                   { header: "الحالة", cell: (i) => <Badge variant="outline">{invoiceStatusAr(i.status)}</Badge>, mobile: "badge" },
                   { header: "الإجمالي", cell: (i) => <span className="tabular-nums font-medium text-foreground">{formatMoney(i.total, i.currency)}</span> },
+                  { header: "عمولة المنصة", cell: (i) => <span className="tabular-nums">{formatMoney(i.platformCommissionAmount, i.currency)} ({Number(i.platformCommissionRate)}%)</span> },
+                  { header: "صافي المقدم", cell: (i) => <span className="tabular-nums">{formatMoney(i.providerNetAmount, i.currency)}</span> },
                   {
                     header: "المتبقي",
                     cell: (i) => (
