@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { HeartPulse, ShieldAlert, Stethoscope, ChevronLeft, Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
@@ -15,10 +16,18 @@ import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { FadeIn, Stagger, StaggerItem } from "@/components/motion"
-import { PasswordStrength } from "@/components/auth/password-strength"
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3"
 import { cn } from "@/lib/utils"
+import { localizedPath } from "@/lib/i18n/config"
 import type { Dictionary, Locale } from "@/lib/i18n"
+
+// zxcvbn's dictionaries make this ~800KB — split into its own chunk so the
+// sign-in page (which never renders it) doesn't pay for it. Only sign-up
+// mounts <PasswordStrength>, so only that path triggers the fetch.
+const PasswordStrength = dynamic(
+  () => import("@/components/auth/password-strength").then((m) => m.PasswordStrength),
+  { ssr: false },
+)
 
 type AuthDict = Dictionary["auth"]
 type AccountType = "patient" | "doctor"
@@ -211,7 +220,7 @@ function AuthFormInner({
   const showTypeChoice = isSignUp && accountType === null
 
   return (
-    <AuthShell home={home} authShell={authShell}>
+    <AuthShell locale={locale} home={home} authShell={authShell}>
       <FadeIn>
         <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
           <div className="mb-6 text-center">
@@ -365,7 +374,7 @@ function AuthFormInner({
                         )}
                       </button>
                     </div>
-                    {isSignUp && <PasswordStrength password={password} />}
+                    {isSignUp && <PasswordStrength password={password} locale={locale} />}
                   </div>
                 </StaggerItem>
 
@@ -430,7 +439,7 @@ function AuthFormInner({
                       <span>
                         {copy.agreePrefix}{" "}
                         <Link
-                          href="/terms"
+                          href={localizedPath("/terms", locale)}
                           target="_blank"
                           className="text-primary font-medium underline-offset-4 hover:underline"
                         >
@@ -438,7 +447,7 @@ function AuthFormInner({
                         </Link>{" "}
                         {copy.and}{" "}
                         <Link
-                          href="/privacy"
+                          href={localizedPath("/privacy", locale)}
                           target="_blank"
                           className="text-primary font-medium underline-offset-4 hover:underline"
                         >

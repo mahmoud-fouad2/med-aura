@@ -3,14 +3,44 @@
 import zxcvbn from "zxcvbn"
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
+import type { Locale } from "@/lib/i18n"
 
-export function PasswordStrength({ password }: { password: string }) {
+const COPY = {
+  ar: {
+    labels: ["ضعيفة جداً", "ضعيفة", "متوسطة", "قوية", "ممتازة"],
+    empty: "اكتب كلمة مرور",
+    // zxcvbn's own feedback strings are English-only (a fixed internal
+    // dictionary, not localizable) — showing them to an Arabic user reads as
+    // broken. These replace them, keyed by the same 0-4 score.
+    hints: [
+      "أضيفي كلمات أو رموزًا أكثر لتقويتها.",
+      "جرّبي مزجًا من الحروف والأرقام والرموز.",
+      "أضيفي رمزًا خاصًا لجعلها أقوى.",
+      "",
+      "",
+    ],
+  },
+  en: {
+    labels: ["Very weak", "Weak", "Fair", "Strong", "Excellent"],
+    empty: "Type a password",
+    hints: [
+      "Add more words or characters.",
+      "Try mixing letters, numbers, and symbols.",
+      "Add a special character to make it stronger.",
+      "",
+      "",
+    ],
+  },
+} as const
+
+export function PasswordStrength({ password, locale }: { password: string; locale: Locale }) {
   const result = useMemo(() => zxcvbn(password), [password])
   const score = password ? result.score : 0 // 0 to 4
+  const copy = COPY[locale]
 
-  const strengthLabels = ["ضعيفة جداً", "ضعيفة", "متوسطة", "قوية", "ممتازة"]
-  const currentLabel = password ? strengthLabels[score] : "اكتب كلمة مرور"
-  
+  const currentLabel = password ? copy.labels[score] : copy.empty
+  const hint = password ? copy.hints[score] : ""
+
   const getBarColor = (index: number) => {
     if (!password) return "bg-border"
     if (score === 0 || score === 1) return index === 0 ? "bg-destructive" : "bg-border"
@@ -43,10 +73,8 @@ export function PasswordStrength({ password }: { password: string }) {
         )}>
           {currentLabel}
         </span>
-        {password && result.feedback.warning && (
-          <span className="text-muted-foreground truncate max-w-[200px]">
-            {result.feedback.warning}
-          </span>
+        {hint && (
+          <span className="text-muted-foreground truncate max-w-[200px]">{hint}</span>
         )}
       </div>
     </div>

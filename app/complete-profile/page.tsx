@@ -36,10 +36,10 @@ export default async function CompleteProfilePage({
   // other way) — nothing to collect, go straight through.
   if (existing?.onboardingCompleted) redirect(destination)
 
-  const { t } = await getI18n()
+  const { locale, t } = await getI18n()
 
   return (
-    <AuthShell home={t.home} authShell={t.authShell}>
+    <AuthShell locale={locale} home={t.home} authShell={t.authShell}>
       <CompleteProfileForm destination={destination} />
     </AuthShell>
   )

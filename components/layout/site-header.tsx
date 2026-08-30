@@ -71,6 +71,7 @@ export async function SiteHeader() {
           <MobileNav
             links={navLinks}
             isAuthed={Boolean(user)}
+            locale={locale}
             labels={{
               signIn: t.nav.signIn,
               start: t.nav.startConsultation,

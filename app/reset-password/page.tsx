@@ -8,6 +8,8 @@ export default async function ResetPasswordPage({
 }: {
   searchParams: Promise<{ token?: string; error?: string }>
 }) {
-  const [{ token }, { t }] = await Promise.all([searchParams, getI18n()])
-  return <ResetPasswordForm token={token ?? null} home={t.home} authShell={t.authShell} />
+  const [{ token }, { locale, t }] = await Promise.all([searchParams, getI18n()])
+  return (
+    <ResetPasswordForm token={token ?? null} locale={locale} home={t.home} authShell={t.authShell} />
+  )
 }

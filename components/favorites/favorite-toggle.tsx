@@ -36,7 +36,7 @@ export function FavoriteToggle({
     e.preventDefault()
     e.stopPropagation()
     if (!isSignedIn) {
-      router.push("/sign-in?returnTo=" + encodeURIComponent(location.pathname))
+      router.push("/sign-in?next=" + encodeURIComponent(location.pathname))
       return
     }
     const next = !favorited

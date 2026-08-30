@@ -79,12 +79,19 @@ export default async function BookPage({
               <Card className="p-6 text-muted-foreground">
                 لا توجد مواعيد متاحة حاليًا. يرجى المحاولة لاحقًا.
               </Card>
+            ) : !isStripeConfigured() ? (
+              // Booking always requires payment to confirm — bookConsultation()
+              // rejects the request outright when Stripe isn't configured, so
+              // opening the slot picker just to fail at the end would be
+              // misleading. Say so up front instead.
+              <Card className="p-6 text-muted-foreground">
+                الحجز عبر الموقع غير متاح مؤقتًا. يرجى التواصل معنا لإتمام الحجز.
+              </Card>
             ) : (
               <BookingClient
                 doctorId={doctor.id}
                 slots={slots}
                 caseId={caseId}
-                paymentsConfigured={isStripeConfigured()}
                 feeLabel={`${Number(doctor.consultationFee).toLocaleString("ar-SA-u-nu-latn")} ${currencyAr(doctor.currency)}`}
               />
             )}

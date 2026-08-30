@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { CalendarClock, Info } from "lucide-react"
+import { CalendarClock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { bookConsultation } from "@/lib/actions/booking"
@@ -12,20 +11,16 @@ export function BookingClient({
   doctorId,
   slots,
   caseId,
-  paymentsConfigured,
   feeLabel,
 }: {
   doctorId: string
   slots: Slot[]
   caseId?: string
-  paymentsConfigured: boolean
   feeLabel: string
 }) {
-  const router = useRouter()
   const [selected, setSelected] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pendingNotice, setPendingNotice] = useState(false)
 
   async function confirm() {
     if (!selected) return
@@ -42,35 +37,9 @@ export function BookingClient({
       setError(res.error)
       return
     }
-    if (res.data!.paymentConfigured && res.data!.checkoutUrl) {
-      // Go to the secure payment page. Confirmation happens via webhook.
-      window.location.href = res.data!.checkoutUrl
-      return
-    }
-    // Payments not configured: appointment created as pending — be honest.
-    setLoading(false)
-    setPendingNotice(true)
-  }
-
-  if (pendingNotice) {
-    return (
-      <Card className="space-y-3 p-6">
-        <div className="flex items-start gap-2">
-          <Info className="mt-0.5 size-5 text-primary" />
-          <div>
-            <p className="font-medium text-foreground">
-              تم إنشاء موعدك بانتظار الدفع.
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              سيتم تأكيد الموعد تلقائيًا فور إتمام عملية الدفع.
-            </p>
-          </div>
-        </div>
-        <Button onClick={() => router.push("/dashboard/appointments")}>
-          عرض مواعيدي
-        </Button>
-      </Card>
-    )
+    // Payments are always required to confirm — bookConsultation() only ever
+    // succeeds with a checkout URL to send the patient to.
+    window.location.href = res.data!.checkoutUrl!
   }
 
   return (
@@ -109,11 +78,7 @@ export function BookingClient({
           رسوم الاستشارة: <strong className="text-foreground">{feeLabel}</strong>
         </span>
         <Button disabled={!selected || loading} onClick={confirm}>
-          {loading
-            ? "جارٍ المتابعة…"
-            : paymentsConfigured
-              ? "المتابعة إلى الدفع"
-              : "تأكيد الموعد"}
+          {loading ? "جارٍ المتابعة…" : "المتابعة إلى الدفع"}
         </Button>
       </div>
     </div>

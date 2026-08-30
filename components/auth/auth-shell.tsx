@@ -2,17 +2,20 @@ import Link from "next/link"
 import Image from "next/image"
 import { ShieldCheck, FileLock2, Star, ArrowRight } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
-import type { Dictionary } from "@/lib/i18n"
+import { localizedPath } from "@/lib/i18n/config"
+import type { Dictionary, Locale } from "@/lib/i18n"
 
 /** Premium two-panel auth layout: brand story (left) + form (right).
  * Rendered from inside AuthForm ("use client"), so it can't call getI18n()
  * itself — the caller passes the dictionary slices down instead. */
 export function AuthShell({
   children,
+  locale,
   home,
   authShell,
 }: {
   children: React.ReactNode
+  locale: Locale
   home: Dictionary["home"]
   authShell: Dictionary["authShell"]
 }) {
@@ -30,7 +33,7 @@ export function AuthShell({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        <Link href="/" className="relative flex items-center gap-2.5">
+        <Link href={localizedPath("/", locale)} className="relative flex items-center gap-2.5">
           <Logo className="h-10 brightness-0 invert" />
         </Link>
 
@@ -49,10 +52,10 @@ export function AuthShell({
         </div>
 
         <Link
-          href="/"
+          href={localizedPath("/", locale)}
           className="relative inline-flex w-fit items-center gap-2 text-sm text-white/80 transition-colors hover:text-white group"
         >
-          <ArrowRight className="size-4 ltr:rotate-180 transition-transform group-hover:-translate-x-1" />
+          <ArrowRight className="size-4 ltr:rotate-180 transition-transform ltr:group-hover:-translate-x-1 rtl:group-hover:translate-x-1" />
           {authShell.backHome}
         </Link>
       </aside>
@@ -60,7 +63,7 @@ export function AuthShell({
       {/* form panel */}
       <main className="bg-background flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
-          <Link href="/" className="mb-8 flex items-center justify-center lg:hidden">
+          <Link href={localizedPath("/", locale)} className="mb-8 flex items-center justify-center lg:hidden">
             <Logo />
           </Link>
           {children}

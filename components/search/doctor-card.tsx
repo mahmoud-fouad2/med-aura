@@ -19,6 +19,7 @@ import { formatExperience } from "@/lib/format"
 import { formatMoney } from "@/lib/money"
 import type { DoctorCard as DoctorCardData } from "@/lib/data/doctors"
 import type { Locale } from "@/lib/i18n"
+import { localizedPath } from "@/lib/i18n/config"
 
 function hueForName(name: string): number {
   let hash = 0
@@ -135,7 +136,7 @@ export function DoctorCard({
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
                 <Link
-                  href={`/doctors/${doctor.slug}`}
+                  href={localizedPath(`/doctors/${doctor.slug}`, locale)}
                   className="line-clamp-2 font-heading text-xl font-bold leading-tight text-foreground transition-colors hover:text-primary"
                 >
                   {doctor.name}
@@ -223,7 +224,7 @@ export function DoctorCard({
             size="sm"
             className="w-full rounded-xl px-4 sm:w-auto"
             render={
-              <Link href={`/doctors/${doctor.slug}`}>
+              <Link href={localizedPath(`/doctors/${doctor.slug}`, locale)}>
                 {isAr ? "عرض الملف" : "View profile"}
                 <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
               </Link>

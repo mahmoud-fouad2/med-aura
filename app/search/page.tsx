@@ -247,7 +247,7 @@ export default async function SearchPage({
                   variant="outline"
                   size="sm"
                   render={
-                    <Link href="/search">
+                    <Link href={localizedPath("/search", locale)}>
                       {isAr ? "مسح الفلاتر" : "Clear filters"} ({activeFilters})
                     </Link>
                   }
@@ -311,7 +311,7 @@ export default async function SearchPage({
                         <Button
                           variant="outline"
                           render={
-                            <Link href="/search">
+                            <Link href={localizedPath("/search", locale)}>
                               {isAr ? "مسح كل الفلاتر" : "Clear all filters"}
                             </Link>
                           }
@@ -516,7 +516,7 @@ function FiltersPanel({
           type="button"
           variant="ghost"
           className="w-full"
-          render={<Link href="/search">{isAr ? "إعادة ضبط" : "Reset"}</Link>}
+          render={<Link href={localizedPath("/search", locale)}>{isAr ? "إعادة ضبط" : "Reset"}</Link>}
         />
       </form>
     </Card>

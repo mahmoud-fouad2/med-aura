@@ -6,6 +6,13 @@ export const dynamic = "force-dynamic"
 export const metadata = { title: "تفعيل البريد الإلكتروني" }
 
 export default async function VerifyEmailPage() {
-  const [user, { t }] = await Promise.all([getCurrentUser(), getI18n()])
-  return <VerifyEmailNotice defaultEmail={user?.email} home={t.home} authShell={t.authShell} />
+  const [user, { locale, t }] = await Promise.all([getCurrentUser(), getI18n()])
+  return (
+    <VerifyEmailNotice
+      defaultEmail={user?.email}
+      locale={locale}
+      home={t.home}
+      authShell={t.authShell}
+    />
+  )
 }

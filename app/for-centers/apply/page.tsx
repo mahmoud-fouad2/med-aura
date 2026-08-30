@@ -22,7 +22,7 @@ export const metadata = {
 export default async function CenterApplyPage() {
   const user = await getCurrentUser()
   if (!user) {
-    redirect("/sign-in?returnTo=/for-centers/apply")
+    redirect("/sign-in?next=/for-centers/apply")
   }
 
   const open = (

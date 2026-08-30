@@ -6,16 +6,20 @@ import { usePathname } from "next/navigation"
 import { Menu, X, ChevronLeft, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LogoMark } from "@/components/brand/logo"
+import { localizedPath } from "@/lib/i18n/config"
+import type { Locale } from "@/lib/i18n"
 
 type NavLink = { href: string; label: string }
 
 export function MobileNav({
   links,
   isAuthed,
+  locale,
   labels,
 }: {
   links: NavLink[]
   isAuthed: boolean
+  locale: Locale
   labels: { signIn: string; start: string; dashboard: string }
 }) {
   const [open, setOpen] = useState(false)
@@ -40,7 +44,7 @@ export function MobileNav({
   }, [pathname])
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         type="button"
         aria-label="القائمة"
@@ -142,7 +146,7 @@ export function MobileNav({
                     className="w-full"
                     render={
                       <Link
-                        href="/dashboard"
+                        href={localizedPath("/dashboard", locale)}
                         onClick={() => setOpen(false)}
                       >
                         {labels.dashboard}
@@ -156,7 +160,7 @@ export function MobileNav({
                       className="w-full"
                       render={
                         <Link
-                          href="/sign-up"
+                          href={localizedPath("/sign-up", locale)}
                           onClick={() => setOpen(false)}
                         >
                           <Sparkles className="size-4" />
@@ -169,7 +173,7 @@ export function MobileNav({
                       className="w-full"
                       render={
                         <Link
-                          href="/sign-in"
+                          href={localizedPath("/sign-in", locale)}
                           onClick={() => setOpen(false)}
                         >
                           {labels.signIn}

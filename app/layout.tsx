@@ -165,7 +165,7 @@ export default async function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <NextTopLoader
-          color="hsl(var(--primary))"
+          color="var(--primary)"
           initialPosition={0.08}
           crawlSpeed={200}
           height={3}
@@ -173,7 +173,7 @@ export default async function RootLayout({
           showSpinner={true}
           easing="ease"
           speed={200}
-          shadow="0 0 10px hsl(var(--primary)),0 0 5px hsl(var(--primary))"
+          shadow="0 0 10px var(--primary),0 0 5px var(--primary)"
         />
         {children}
         <PageViewTracker locale={locale} />

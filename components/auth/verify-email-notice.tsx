@@ -10,14 +10,17 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { FadeIn } from "@/components/motion"
-import type { Dictionary } from "@/lib/i18n"
+import { localizedPath } from "@/lib/i18n/config"
+import type { Dictionary, Locale } from "@/lib/i18n"
 
 export function VerifyEmailNotice({
   defaultEmail,
+  locale,
   home,
   authShell,
 }: {
   defaultEmail?: string
+  locale: Locale
   home: Dictionary["home"]
   authShell: Dictionary["authShell"]
 }) {
@@ -32,7 +35,7 @@ export function VerifyEmailNotice({
     setLoading(true)
     const { error } = await authClient.sendVerificationEmail({
       email,
-      callbackURL: "/dashboard",
+      callbackURL: localizedPath("/dashboard", locale),
     })
     setLoading(false)
     if (error) {
@@ -43,7 +46,7 @@ export function VerifyEmailNotice({
   }
 
   return (
-    <AuthShell home={home} authShell={authShell}>
+    <AuthShell locale={locale} home={home} authShell={authShell}>
       <FadeIn>
         <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
           <div className="flex flex-col items-center gap-4 text-center">
