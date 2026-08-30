@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth"
 import { createAuthMiddleware, APIError } from "better-auth/api"
+import { twoFactor } from "better-auth/plugins"
 import { expo } from "@better-auth/expo"
 import { pool } from "@/lib/db"
 import { betterAuthUrl, env, isGoogleAuthConfigured, trustedAuthOrigins } from "@/lib/env"
@@ -9,6 +10,16 @@ import { writeAudit } from "@/lib/audit"
 import { sendEmail } from "@/lib/email"
 import { verifyRecaptcha } from "@/lib/security/recaptcha"
 import { isExpoNativeAuthRequest } from "@/lib/security/auth-channel"
+import { twoFactorOtpEmail, verifyEmailTemplate, resetPasswordEmailTemplate } from "@/lib/email-templates"
+import { isLocale, type Locale } from "@/lib/i18n/config"
+
+/** additionalFields carries `locale` through on every user record the
+ *  plugin callbacks receive — fall back to Arabic for the rare row that
+ *  predates the column or has an unrecognized value. */
+function userLocale(user: object): Locale {
+  const value = "locale" in user && typeof user.locale === "string" ? user.locale : undefined
+  return isLocale(value) ? value : "ar"
+}
 
 /**
  * The sign-up/sign-in forms call `executeRecaptcha("auth_submit")` and send
@@ -55,11 +66,8 @@ export const auth = betterAuth({
     // an email provider is configured. Kept false so dev flows work without keys.
     requireEmailVerification: false,
     async sendResetPassword({ user, url }) {
-      await sendEmail({
-        to: user.email,
-        subject: "إعادة تعيين كلمة المرور — Med Aura",
-        html: resetPasswordEmail(url),
-      })
+      const { subject, html } = resetPasswordEmailTemplate({ locale: userLocale(user), url })
+      await sendEmail({ to: user.email, subject, html })
     },
   },
 
@@ -67,11 +75,8 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url }) {
-      await sendEmail({
-        to: user.email,
-        subject: "تأكيد بريدك الإلكتروني — Med Aura",
-        html: verifyEmail(url),
-      })
+      const { subject, html } = verifyEmailTemplate({ locale: userLocale(user), url })
+      await sendEmail({ to: user.email, subject, html })
     },
   },
 
@@ -163,7 +168,36 @@ export const auth = betterAuth({
     before: recaptchaGate,
   },
 
-  plugins: [expo()],
+  plugins: [
+    expo(),
+    // Two-factor: the patient/doctor picks which method(s) to enable from
+    // /dashboard/security (web) or the equivalent native screen — email OTP,
+    // an authenticator app (TOTP), or both. Enabling either flips
+    // user.twoFactorEnabled and challenges every future sign-in; enabling
+    // both lets the sign-in screen offer a choice. Backup codes are always
+    // issued alongside enablement as the account-recovery fallback.
+    twoFactor({
+      issuer: "Med Aura",
+      otpOptions: {
+        period: 3, // minutes — matches the copy in twoFactorOtpEmail
+        digits: 6,
+        storeOTP: "hashed",
+        async sendOTP({ user, otp }) {
+          const { subject, html } = twoFactorOtpEmail({
+            locale: userLocale(user),
+            code: otp,
+            expiresInMinutes: 3,
+          })
+          await sendEmail({ to: user.email, subject, html })
+        },
+      },
+      backupCodeOptions: {
+        amount: 10,
+        length: 10,
+        storeBackupCodes: "encrypted",
+      },
+    }),
+  ],
 
   databaseHooks: {
     user: {
@@ -199,19 +233,3 @@ export const auth = betterAuth({
   },
 })
 
-function verifyEmail(url: string): string {
-  return `<div dir="rtl" style="font-family:sans-serif">
-    <h2>مرحبًا بك في Med Aura</h2>
-    <p>لتأكيد بريدك الإلكتروني، يرجى الضغط على الرابط التالي:</p>
-    <p><a href="${url}">تأكيد البريد الإلكتروني</a></p>
-  </div>`
-}
-
-function resetPasswordEmail(url: string): string {
-  return `<div dir="rtl" style="font-family:sans-serif">
-    <h2>إعادة تعيين كلمة المرور</h2>
-    <p>تلقّينا طلبًا لإعادة تعيين كلمة المرور. اضغط على الرابط التالي للمتابعة:</p>
-    <p><a href="${url}">إعادة تعيين كلمة المرور</a></p>
-    <p>إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.</p>
-  </div>`
-}

@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   boolean,
+  integer,
   uniqueIndex,
   index,
   primaryKey,
@@ -37,6 +38,9 @@ export const user = pgTable("user", {
   // explicitly created for testing, so it can never be pointed at a real
   // patient or doctor. Never set from public signup.
   isTest: boolean("isTest").notNull().default(false),
+  // Set by the two-factor plugin (lib/auth.ts). Column name/shape must match
+  // its schema exactly — see the twoFactor table below.
+  twoFactorEnabled: boolean("twoFactorEnabled").notNull().default(false),
 
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
@@ -81,6 +85,27 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 })
+
+// Better Auth's two-factor plugin (lib/auth.ts). One row per user, holding
+// their TOTP secret + hashed backup codes. `secret`/`backupCodes` are never
+// selected by our own code (Better Auth reads them internally) — this table
+// exists here only so the column set is under migration control like every
+// other table.
+export const twoFactor = pgTable(
+  "twoFactor",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    secret: text("secret").notNull(),
+    backupCodes: text("backupCodes").notNull(),
+    verified: boolean("verified").notNull().default(true),
+    failedVerificationCount: integer("failedVerificationCount").notNull().default(0),
+    lockedUntil: timestamp("lockedUntil"),
+  },
+  (t) => [index("two_factor_user_idx").on(t.userId)],
+)
 
 /* ──────────────────────────────────────────────────────────────────────────
  * RBAC — real roles & permissions (section 13).

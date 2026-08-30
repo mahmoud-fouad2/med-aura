@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AuthShell } from "@/components/auth/auth-shell"
+import { TwoFactorVerify } from "@/components/auth/two-factor-verify"
 import { FadeIn, Stagger, StaggerItem } from "@/components/motion"
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3"
 import { cn } from "@/lib/utils"
@@ -101,6 +102,9 @@ function AuthFormInner({
   const [googleLoading, setGoogleLoading] = useState(false)
   // Survives a failed profile save so retrying doesn't hit "email exists".
   const [accountCreated, setAccountCreated] = useState(false)
+  // Set once signIn.email() reports the account has 2FA enabled — swaps the
+  // whole card over to TwoFactorVerify instead of navigating away.
+  const [twoFactorMethods, setTwoFactorMethods] = useState<string[] | null>(null)
 
   const isSignUp = mode === "sign-up"
   const destination = nextPath || "/dashboard"
@@ -156,7 +160,7 @@ function AuthFormInner({
     }
 
     if (!isSignUp) {
-      const { error } = await authClient.signIn.email({
+      const { data, error } = await authClient.signIn.email({
         email,
         password,
         rememberMe: remember,
@@ -168,6 +172,20 @@ function AuthFormInner({
       setLoading(false)
       if (error) {
         setError(translateAuthError(error.message, locale))
+        return
+      }
+      // The credential was right, but the account has 2FA enabled — the
+      // server never issues a session here (see lib/auth.ts's twoFactor
+      // plugin), it returns which method(s) the account can complete. The
+      // client's own type for signIn.email() doesn't model this alternate
+      // shape (it comes from the plugin's hook, not the endpoint's declared
+      // response), hence the cast.
+      const twoFactorData = data as unknown as
+        | { twoFactorRedirect?: boolean; twoFactorMethods?: string[] }
+        | null
+        | undefined
+      if (twoFactorData?.twoFactorRedirect) {
+        setTwoFactorMethods(twoFactorData.twoFactorMethods ?? [])
         return
       }
       router.push(destination)
@@ -218,6 +236,23 @@ function AuthFormInner({
 
   // Sign-up starts by choosing the account type (unless preselected via URL).
   const showTypeChoice = isSignUp && accountType === null
+
+  if (twoFactorMethods) {
+    return (
+      <AuthShell locale={locale} home={home} authShell={authShell}>
+        <FadeIn>
+          <Card className="rounded-3xl border border-border/80 bg-card/95 p-7 sm:p-9 shadow-elegant backdrop-blur-md">
+            <TwoFactorVerify
+              locale={locale}
+              methods={twoFactorMethods}
+              destination={destination}
+              onBack={() => setTwoFactorMethods(null)}
+            />
+          </Card>
+        </FadeIn>
+      </AuthShell>
+    )
+  }
 
   return (
     <AuthShell locale={locale} home={home} authShell={authShell}>

@@ -19,6 +19,7 @@ export type SessionUser = {
   role: string
   status?: string
   locale?: string
+  twoFactorEnabled?: boolean
 }
 
 export const getSession = cache(async function getSession() {

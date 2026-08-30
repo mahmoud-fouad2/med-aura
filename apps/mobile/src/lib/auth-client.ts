@@ -1,5 +1,6 @@
 import { createAuthClient } from "better-auth/react"
 import { expoClient } from "@better-auth/expo/client"
+import { twoFactorClient } from "better-auth/client/plugins"
 import { API_URL, APP_SCHEME, AUTH_STORAGE_PREFIX } from "./config"
 import { safeSecureStore } from "./secure-storage"
 
@@ -32,5 +33,9 @@ export const authClient = createAuthClient({
       // secure-storage.ts and index.js.
       storage: safeSecureStore,
     }),
+    // No onTwoFactorRedirect here — the sign-in screen reads
+    // signIn.email()'s own response for twoFactorRedirect/twoFactorMethods
+    // and swaps in the verification step directly, same as web.
+    twoFactorClient(),
   ],
 })

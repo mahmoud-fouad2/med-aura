@@ -36,6 +36,7 @@ export default async function DashboardLayout({
     nav.push({ href: "/dashboard/travel", label: l("السفر والاستقبال", "Travel & Concierge") })
   }
   nav.push({ href: "/dashboard/support", label: l("الدعم", "Support") })
+  nav.push({ href: "/dashboard/security", label: l("الأمان", "Security") })
   if (roles.includes(ROLES.DOCTOR)) {
     nav.push({ href: "/dashboard/doctor", label: l("مساحة الطبيب", "Doctor workspace") })
   }
