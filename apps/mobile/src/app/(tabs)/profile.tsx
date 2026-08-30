@@ -186,6 +186,13 @@ export default function Profile() {
           label={t.profile.changePassword}
           onPress={() => router.push("/change-password")}
         />
+        <Divider />
+        <Row
+          icon="shield-checkmark-outline"
+          label={t.profile.security}
+          hint={t.profile.securityHint}
+          onPress={() => router.push("/security")}
+        />
         {/* Favourites + billing are patient-only — a doctor never browses or
             pays for doctors in this app. */}
         {me.data?.accountType === "patient" ? (

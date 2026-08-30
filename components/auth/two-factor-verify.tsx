@@ -80,13 +80,15 @@ export function TwoFactorVerify({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resent, setResent] = useState(false)
-  const [sendingOtp, setSendingOtp] = useState(false)
+  // Starts true when the initial method is already "otp" (lazy init, not a
+  // setState call inside the effect below), so the first send on mount is
+  // covered without the effect needing to flip it on synchronously.
+  const [sendingOtp, setSendingOtp] = useState(hasOtp)
 
   // Fire the email as soon as this step mounts on the "otp" method, and
   // again whenever switching back into it — the code only exists once sent.
   useEffect(() => {
     if (method !== "otp") return
-    setSendingOtp(true)
     authClient.twoFactor
       .sendOtp()
       .catch(() => undefined)
@@ -98,6 +100,7 @@ export function TwoFactorVerify({
     setCode("")
     setError(null)
     setResent(false)
+    if (next === "otp") setSendingOtp(true)
   }
 
   async function handleResend() {

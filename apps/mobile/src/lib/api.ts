@@ -445,6 +445,10 @@ export const api = {
       body: JSON.stringify(input),
     }),
   favorites: () => request<{ doctors: FavoriteDoctor[] }>("/api/mobile/v1/favorites"),
+  security: () =>
+    request<{ enabled: boolean; totpVerified: boolean; otpAvailable: boolean }>(
+      "/api/mobile/v1/security",
+    ),
   toggleFavorite: (kind: "doctor" | "center" | "procedure", refId: string) =>
     request<{ favorited: boolean }>("/api/mobile/v1/favorites/toggle", {
       method: "POST",

@@ -37,7 +37,7 @@ export default function SignIn() {
     if (loading) return
     setError(null)
     setLoading(true)
-    const { error } = await authClient.signIn.email({ email, password })
+    const { data, error } = await authClient.signIn.email({ email, password })
     setLoading(false)
     if (error) {
       const m = (error.message ?? "").toLowerCase()
@@ -46,6 +46,25 @@ export default function SignIn() {
           ? t.auth.invalidCredentials
           : t.auth.genericError,
       )
+      return
+    }
+    // The credential was right, but the account has 2FA enabled — no
+    // session exists yet (see lib/auth.ts's twoFactor plugin). The client's
+    // type for signIn.email() doesn't model this alternate response shape
+    // (it comes from the plugin's hook, not the endpoint's declared
+    // response), hence the cast.
+    const twoFactorData = data as unknown as
+      | { twoFactorRedirect?: boolean; twoFactorMethods?: string[] }
+      | null
+      | undefined
+    if (twoFactorData?.twoFactorRedirect) {
+      router.push({
+        pathname: "/two-factor-verify",
+        params: {
+          methods: (twoFactorData.twoFactorMethods ?? []).join(","),
+          remember: remember ? "1" : "0",
+        },
+      })
       return
     }
     await setRememberMe(remember).catch(() => undefined)
