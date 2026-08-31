@@ -102,6 +102,23 @@ export default function Booking() {
     setBooking(false)
   }
 
+  // Opens Stripe Checkout as an auth session, not a plain browser tab —
+  // openAuthSessionAsync watches for the medaura:// redirect Stripe sends
+  // back to (see lib/actions/booking.ts's platform:"mobile" branch) and
+  // auto-closes the browser itself, the same mechanism already used for
+  // Google sign-in, instead of leaving the patient stranded on the web page.
+  const payNow = async (checkoutUrl: string) => {
+    const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "medaura://booking-payment")
+    if (result.type === "success" && result.url.includes("status=success")) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.appointments })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.home })
+      router.replace("/(tabs)/appointments")
+    }
+    // cancel/dismiss (or a canceled Stripe redirect): stay on this screen so
+    // the patient can retry — the appointment already exists, unpaid.
+  }
+
   // Success state replaces the whole screen — one clear next action.
   if (done) {
     const bookedStart = selectedSlot ? new Date(selectedSlot) : null
@@ -180,7 +197,7 @@ export default function Booking() {
             <Button
               label={t.booking.payNow}
               icon="card"
-              onPress={() => void WebBrowser.openBrowserAsync(done.checkoutUrl!)}
+              onPress={() => void payNow(done.checkoutUrl!)}
             />
           ) : null}
           <Button

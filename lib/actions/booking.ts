@@ -33,6 +33,11 @@ export async function bookConsultation(input: {
   startsAt: string // ISO
   caseId?: string
   type?: "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
+  /** "mobile" sends Stripe to the app's own custom-scheme redirect
+   *  (medaura://) instead of a web dashboard URL, so the in-app browser
+   *  (WebBrowser.openAuthSessionAsync) can detect the return and close
+   *  itself — the same mechanism already used for Google OAuth. */
+  platform?: "web" | "mobile"
 }): Promise<ActionResult<BookResult>> {
   try {
     const user = await requireUser()
@@ -154,8 +159,14 @@ export async function bookConsultation(input: {
         currency,
         description: `استشارة مع ${doc.name}`,
         customerEmail: user.email,
-        successUrl: `${appUrl()}/dashboard/appointments?booked=1`,
-        cancelUrl: `${appUrl()}/dashboard/appointments?canceled=1`,
+        successUrl:
+          input.platform === "mobile"
+            ? "medaura://booking-payment?status=success"
+            : `${appUrl()}/dashboard/appointments?booked=1`,
+        cancelUrl:
+          input.platform === "mobile"
+            ? "medaura://booking-payment?status=canceled"
+            : `${appUrl()}/dashboard/appointments?canceled=1`,
         expiresAt: paymentExpiresAt,
       })
     } catch (err) {

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const parsed = BodySchema.safeParse(await request.json())
     if (!parsed.success) return jsonError("تحقق من بيانات الحجز.", 400)
-    const result = await bookConsultation(parsed.data)
+    const result = await bookConsultation({ ...parsed.data, platform: "mobile" })
     if (!result.ok) {
       // 401 lets the app route the user to sign-in; anything else is a
       // booking-level failure (slot taken, validation) shown in place.
