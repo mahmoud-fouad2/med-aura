@@ -1,10 +1,11 @@
 import Link from "next/link"
-import { Bell, Menu } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { NavLinks } from "@/components/layout/nav-links"
+import { DashboardMobileNav } from "@/components/layout/dashboard-mobile-nav"
 import { getLocale } from "@/lib/i18n"
 
 export type ShellNavLink = { href: string; label: string }
@@ -49,18 +50,12 @@ export async function AppShell({
             <UserMenu name={user.name} email={user.email} />
           </div>
         </div>
-        <details className="group mx-auto max-w-7xl border-t border-border/60 md:hidden">
-          <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm font-semibold text-foreground">
-            <Menu className="size-4 text-primary" />
-            {locale === "ar" ? "أقسام لوحة التحكم" : "Dashboard sections"}
-            <span className="ms-auto text-xs text-muted-foreground">{nav.length}</span>
-          </summary>
-          <NavLinks
-            links={nav}
-            className="grid grid-cols-2 gap-1 pb-3"
-            itemClassName="min-w-0 justify-center text-center"
+        <div className="mx-auto max-w-7xl">
+          <DashboardMobileNav
+            nav={nav}
+            label={locale === "ar" ? "أقسام لوحة التحكم" : "Dashboard sections"}
           />
-        </details>
+        </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {children}
