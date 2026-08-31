@@ -6,12 +6,14 @@ import { getCurrentUser, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
 import { getI18n } from "@/lib/i18n"
 import { listDoctorProcedureOptions } from "@/lib/data/admin-directory"
+import { getMyReviewsAction } from "@/lib/actions/review"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { PageHeader } from "@/components/dashboard/page-header"
 import {
   PracticeSettingsForm,
   type PracticeInitialData,
 } from "@/components/dashboard/practice-settings-form"
+import { DoctorReviewsSection } from "@/components/dashboard/doctor-reviews-section"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "ملفي المهني" }
@@ -48,7 +50,10 @@ export default async function DoctorPracticePage() {
   )[0]
   if (!dp) redirect("/dashboard")
 
-  const procedures = await listDoctorProcedureOptions(dp.id)
+  const [procedures, myReviews] = await Promise.all([
+    listDoctorProcedureOptions(dp.id),
+    getMyReviewsAction(),
+  ])
 
   const initial: PracticeInitialData = {
     bio: dp.bio,
@@ -78,6 +83,7 @@ export default async function DoctorPracticePage() {
         }
       />
       <PracticeSettingsForm initial={initial} procedures={procedures} locale={locale} />
+      <DoctorReviewsSection reviews={myReviews.status === "ok" ? myReviews.reviews : []} locale={locale} />
     </div>
   )
 }

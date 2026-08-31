@@ -4,7 +4,7 @@ import { z } from "zod"
 import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
-import { aestheticCase, doctorProfile, center, review } from "@/lib/db/schema"
+import { aestheticCase, doctorProfile, center, review, user as userT } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { PERMISSIONS, requirePermission } from "@/lib/rbac"
 import { writeAudit } from "@/lib/audit"
@@ -137,6 +137,102 @@ export async function submitReview(input: unknown): Promise<ActionResult> {
     ) {
       return { ok: false, error: "سبق أن قيّمت هذه الحالة.", code: "CONFLICT" }
     }
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+export type MyReviewRow = {
+  id: string
+  rating: number
+  comment: string
+  authorName: string
+  anonymous: boolean
+  providerResponse: string | null
+  createdAt: Date
+}
+
+/** A doctor's own published reviews, for the practice page's reply UI —
+ *  same publication scope patients already see (nothing unmoderated). */
+export async function getMyReviewsAction(): Promise<
+  { status: "ok"; reviews: MyReviewRow[] } | { status: "error"; message: string }
+> {
+  const user = await requireUser()
+  const dp = (
+    await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.userId, user.id)).limit(1)
+  )[0]
+  if (!dp) return { status: "error", message: "لم يتم العثور على ملف الطبيب." }
+
+  const rows = await db
+    .select({
+      id: review.id,
+      rating: review.overallRating,
+      comment: review.comment,
+      authorName: userT.name,
+      anonymous: review.anonymousDisplay,
+      providerResponse: review.providerResponse,
+      createdAt: review.createdAt,
+    })
+    .from(review)
+    .innerJoin(userT, eq(review.patientUserId, userT.id))
+    .where(and(eq(review.doctorId, dp.id), eq(review.moderationStatus, "PUBLISHED")))
+    .orderBy(review.createdAt)
+
+  return {
+    status: "ok",
+    reviews: rows.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: (r.comment ?? "").replace(/\s+/g, " ").trim(),
+      authorName: r.anonymous ? "" : r.authorName,
+      anonymous: r.anonymous,
+      providerResponse: r.providerResponse,
+      createdAt: r.createdAt,
+    })),
+  }
+}
+
+const respondSchema = z.object({
+  reviewId: z.string().min(1),
+  response: z.string().trim().min(1, "اكتب ردًا أولاً").max(1000),
+})
+
+/** A doctor replying to their own review — ownership is the authorization,
+ *  same model as updateMyPracticeAction. Only ever touches a PUBLISHED
+ *  review the doctor's own doctorProfile is attached to. */
+export async function respondToReviewAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const data = respondSchema.parse(input)
+
+    const row = (
+      await db
+        .select({ id: review.id, doctorId: review.doctorId, moderationStatus: review.moderationStatus })
+        .from(review)
+        .where(eq(review.id, data.reviewId))
+        .limit(1)
+    )[0]
+    if (!row || row.moderationStatus !== "PUBLISHED") throw new AppError("NOT_FOUND")
+
+    const dp = (
+      await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.userId, user.id)).limit(1)
+    )[0]
+    if (!dp || row.doctorId !== dp.id) throw forbidden()
+
+    await db
+      .update(review)
+      .set({ providerResponse: data.response, providerRespondedAt: new Date(), updatedAt: new Date() })
+      .where(eq(review.id, row.id))
+
+    await writeAudit({
+      action: "review.provider_response",
+      actorUserId: user.id,
+      entityType: "review",
+      entityId: row.id,
+    })
+
+    return { ok: true }
+  } catch (err) {
     const safe = toSafeError(err)
     return { ok: false, error: safe.userMessage, code: safe.code }
   }
