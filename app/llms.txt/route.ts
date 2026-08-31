@@ -1,10 +1,13 @@
 import { appUrl } from "@/lib/env"
+import { SITE_NAME_AR_VARIANTS, SITE_NAME_EN_VARIANTS } from "@/lib/seo"
 
 export const dynamic = "force-static"
 
 function llmsContent(): string {
   const base = appUrl().replace(/\/$/, "")
   return `# Med Aura | مد أورا
+
+> Also known as: ${SITE_NAME_EN_VARIANTS.join(", ")} | ${SITE_NAME_AR_VARIANTS.join("، ")}
 
 > A bilingual Arabic and English platform for comparing aesthetic doctors, clinics, procedures, and destinations, and for requesting consultations with clearer information.
 

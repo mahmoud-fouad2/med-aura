@@ -10,6 +10,24 @@ export { PROCEDURE_IMAGE_SLUGS } from "@/lib/public-media"
 
 export const SITE_NAME = "Med Aura"
 export const SITE_NAME_AR = "مد أورا"
+/**
+ * How Arabic speakers actually type this brand when searching — the domain
+ * (medauraworld.com) reads "Med Aura World", and there is no single agreed
+ * Arabic transliteration for it. Listed as `alternateName` in the
+ * Organization/WebSite JSON-LD (schema.org explicitly allows an array there)
+ * and folded into the root layout's `keywords`, so a search for any of these
+ * spellings still resolves to the one brand entity instead of splitting
+ * authority across variants Google can't otherwise connect.
+ */
+export const SITE_NAME_AR_VARIANTS = [
+  SITE_NAME_AR,
+  "ميد أورا",
+  "ميد اورا",
+  "ميدورا",
+  "ميد أورا وورلد",
+  "ميدورا وورلد",
+] as const
+export const SITE_NAME_EN_VARIANTS = ["Med Aura", "MedAura", "Med Aura World", "MedAura World"] as const
 export const DEFAULT_TITLE = "Med Aura | رحلتك التجميلية تبدأ بقرار موثوق"
 export const DEFAULT_DESCRIPTION_AR =
   "منصة تساعدك على اختيار طبيب أو مركز تجميل بثقة، ومتابعة رحلتك من أول استشارة حتى الاطمئنان بعد الإجراء."
@@ -201,7 +219,7 @@ export function organizationJsonLd() {
     "@type": "Organization",
     "@id": absoluteUrl("/#organization"),
     name: SITE_NAME,
-    alternateName: SITE_NAME_AR,
+    alternateName: [...SITE_NAME_AR_VARIANTS, ...SITE_NAME_EN_VARIANTS.filter((n) => n !== SITE_NAME)],
     url: absoluteUrl("/"),
     logo: absoluteUrl("/brand/med-aura-logo.png"),
     description: DEFAULT_DESCRIPTION_AR,
@@ -220,7 +238,7 @@ export function websiteJsonLd() {
     "@type": "WebSite",
     "@id": absoluteUrl("/#website"),
     name: SITE_NAME,
-    alternateName: SITE_NAME_AR,
+    alternateName: [...SITE_NAME_AR_VARIANTS, ...SITE_NAME_EN_VARIANTS.filter((n) => n !== SITE_NAME)],
     url: absoluteUrl("/"),
     inLanguage: ["ar", "en"],
     publisher: { "@id": absoluteUrl("/#organization") },

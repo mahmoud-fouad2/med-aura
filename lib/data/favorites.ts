@@ -8,6 +8,7 @@ import {
   procedureCategory,
 } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { publicCenterConditions, publicDoctorConditions } from "@/lib/data/public-visibility"
 
 export type FavoriteKind = "doctor" | "center" | "procedure"
 
@@ -129,7 +130,7 @@ export async function listFavoritesForUser(
             photoKey: doctorProfile.photoKey,
           })
           .from(doctorProfile)
-          .where(inArray(doctorProfile.id, doctorIds))
+          .where(and(inArray(doctorProfile.id, doctorIds), ...publicDoctorConditions()))
       : Promise.resolve([]),
     centerIds.length
       ? db
@@ -142,7 +143,7 @@ export async function listFavoritesForUser(
             logoKey: center.logoKey,
           })
           .from(center)
-          .where(inArray(center.id, centerIds))
+          .where(and(inArray(center.id, centerIds), ...publicCenterConditions()))
       : Promise.resolve([]),
     procIds.length
       ? db

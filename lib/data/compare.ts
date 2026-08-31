@@ -1,7 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm"
+import { and, inArray } from "drizzle-orm"
 import { db, isDbConfigured } from "@/lib/db"
 import { doctorProfile, center } from "@/lib/db/schema"
 import { getPublicUrl } from "@/lib/storage/r2"
+import { publicCenterConditions, publicDoctorConditions } from "@/lib/data/public-visibility"
 
 export type DoctorCompareRow = {
   id: string
@@ -52,13 +53,7 @@ export async function getDoctorsForCompare(
       reviewCount: doctorProfile.reviewCount,
     })
     .from(doctorProfile)
-    .where(
-      and(
-        inArray(doctorProfile.id, trimmed),
-        eq(doctorProfile.published, true),
-        eq(doctorProfile.status, "approved"),
-      ),
-    )
+    .where(and(inArray(doctorProfile.id, trimmed), ...publicDoctorConditions()))
   // Preserve request order
   const byId = new Map(rows.map((r) => [r.id, r]))
   return trimmed
@@ -110,13 +105,7 @@ export async function getCentersForCompare(
       reviewCount: center.reviewCount,
     })
     .from(center)
-    .where(
-      and(
-        inArray(center.id, trimmed),
-        eq(center.published, true),
-        eq(center.status, "approved"),
-      ),
-    )
+    .where(and(inArray(center.id, trimmed), ...publicCenterConditions()))
   const byId = new Map(rows.map((r) => [r.id, r]))
   return trimmed
     .map((id) => byId.get(id))

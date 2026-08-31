@@ -6,6 +6,8 @@ import { getLocale, dir } from "@/lib/i18n"
 import { appUrl } from "@/lib/env"
 import {
   SITE_NAME,
+  SITE_NAME_AR_VARIANTS,
+  SITE_NAME_EN_VARIANTS,
   absoluteUrl,
   localizedUrl,
 } from "@/lib/seo"
@@ -77,8 +79,22 @@ export async function generateMetadata(): Promise<Metadata> {
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
   keywords: isAr
-    ? ["أطباء تجميل", "مراكز تجميل", "إجراءات تجميل", "استشارة تجميل أونلاين", "عناية بالبشرة"]
-    : ["aesthetic doctors", "cosmetic clinics", "aesthetic procedures", "online aesthetic consultation", "skin care"],
+    ? [
+        ...SITE_NAME_AR_VARIANTS,
+        "أطباء تجميل",
+        "مراكز تجميل",
+        "إجراءات تجميل",
+        "استشارة تجميل أونلاين",
+        "عناية بالبشرة",
+      ]
+    : [
+        ...SITE_NAME_EN_VARIANTS,
+        "aesthetic doctors",
+        "cosmetic clinics",
+        "aesthetic procedures",
+        "online aesthetic consultation",
+        "skin care",
+      ],
   alternates: {
     canonical: localizedUrl("/", locale),
     languages: {
