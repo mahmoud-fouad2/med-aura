@@ -98,6 +98,10 @@ export const PERMISSIONS = {
   // Mass push/in-app announcements to members — super admin only (not
   // granted to any role below), given the blast radius of "every member."
   NOTIFICATIONS_BROADCAST: "notifications:broadcast",
+
+  // Discount codes — every value (percentage/amount, limits, dates) is a
+  // row an admin edits, never a hardcoded constant.
+  PROMO_MANAGE: "promo:manage",
 } as const
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
@@ -206,6 +210,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.FINANCE_ACCESS,
     P.AUDIT_READ,
     P.CATALOG_READ,
+    P.PROMO_MANAGE,
   ],
   [ROLES.SUPPORT_AGENT]: [
     P.CASE_READ_ANY,

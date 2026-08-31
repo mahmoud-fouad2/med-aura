@@ -387,6 +387,9 @@ const ar = {
     payNow: "إتمام الدفع",
     viewAppointments: "عرض مواعيدي",
     cancelPolicy: "يمكنك إلغاء الموعد أو إعادة جدولته قبل موعده حسب سياسة الإلغاء.",
+    promoCode: "كود خصم",
+    promoCodeOptional: "اختياري",
+    promoCodePlaceholder: "WELCOME10",
   },
   appointments: {
     title: "مواعيدي",
@@ -1123,6 +1126,9 @@ const en: typeof ar = {
     payNow: "Complete payment",
     viewAppointments: "View my appointments",
     cancelPolicy: "You can cancel or reschedule before your appointment per the cancellation policy.",
+    promoCode: "Promo code",
+    promoCodeOptional: "optional",
+    promoCodePlaceholder: "WELCOME10",
   },
   appointments: {
     title: "My appointments",

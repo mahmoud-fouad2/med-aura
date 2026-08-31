@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { Pressable, ScrollView, TextInput, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useQueryClient } from "@tanstack/react-query"
@@ -16,6 +16,7 @@ import {
   EmptyState,
   Skeleton,
 } from "../../components/ui"
+import { Field, inputStyle } from "../../components/form"
 import { stateArt } from "../../components/brand"
 import { QueryErrorState } from "../../components/query-error"
 import { api, useDoctor, useSlots, type BookingResult, type ConsultationType } from "../../lib/api"
@@ -45,6 +46,7 @@ export default function Booking() {
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState("")
   const [booking, setBooking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<BookingResult | null>(null)
@@ -77,6 +79,7 @@ export default function Booking() {
             doctorId: slots.data.doctorId,
             startsAt: selectedSlot,
             type,
+            promoCode: promoCode.trim() || undefined,
           })
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       void queryClient.invalidateQueries({ queryKey: queryKeys.appointments })
@@ -405,6 +408,21 @@ export default function Booking() {
               <AppText variant="caption" color={colors.textFaint}>
                 {t.booking.cancelPolicy}
               </AppText>
+            </Card>
+
+            <Card>
+              <Field label={`${t.booking.promoCode} (${t.booking.promoCodeOptional})`}>
+                <TextInput
+                  value={promoCode}
+                  onChangeText={(v) => setPromoCode(v.toUpperCase())}
+                  placeholder={t.booking.promoCodePlaceholder}
+                  placeholderTextColor={colors.textFaint}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  style={inputStyle}
+                  textAlign="left"
+                />
+              </Field>
             </Card>
           </>
         )}

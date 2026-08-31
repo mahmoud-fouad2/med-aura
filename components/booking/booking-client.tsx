@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarClock } from "lucide-react"
+import { CalendarClock, Ticket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { bookConsultation } from "@/lib/actions/booking"
 import type { Slot } from "@/lib/data/availability"
 
@@ -19,6 +21,7 @@ export function BookingClient({
   feeLabel: string
 }) {
   const [selected, setSelected] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,6 +34,7 @@ export function BookingClient({
       startsAt: selected,
       caseId,
       type: "VIDEO_CONSULTATION",
+      promoCode: promoCode.trim() || undefined,
     })
     if (!res.ok) {
       setLoading(false)
@@ -65,6 +69,21 @@ export function BookingClient({
             </button>
           ))}
         </div>
+      </Card>
+
+      <Card className="p-4">
+        <Label htmlFor="promo-code" className="mb-2 flex items-center gap-2">
+          <Ticket className="size-4 text-primary" />
+          كود خصم <span className="font-normal text-muted-foreground">(اختياري)</span>
+        </Label>
+        <Input
+          id="promo-code"
+          dir="ltr"
+          className="text-right uppercase"
+          value={promoCode}
+          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+          placeholder="WELCOME10"
+        />
       </Card>
 
       {error && (

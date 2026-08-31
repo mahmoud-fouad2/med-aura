@@ -218,6 +218,13 @@
       "when": 1788147040635,
       "tag": "0030_cultured_gravity",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1788186974142,
+      "tag": "0031_remarkable_sumo",
+      "breakpoints": true
     }
   ]
 }

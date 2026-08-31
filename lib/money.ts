@@ -24,7 +24,7 @@ export type CommissionSnapshot = {
   providerNetAmount: string
 }
 
-function toMinorUnits(value: number | string): number {
+export function toMinorUnits(value: number | string): number {
   const normalized = String(value).trim()
   const match = normalized.match(/^-?(\d+)(?:\.(\d{0,2}))?$/)
   if (!match) throw new Error("Invalid monetary value")
@@ -34,7 +34,7 @@ function toMinorUnits(value: number | string): number {
   return sign * (whole * 100 + fraction)
 }
 
-function fromMinorUnits(value: number): string {
+export function fromMinorUnits(value: number): string {
   return (value / 100).toFixed(2)
 }
 

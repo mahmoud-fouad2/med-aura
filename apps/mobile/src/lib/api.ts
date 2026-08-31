@@ -452,6 +452,7 @@ export type BookingResult = {
   appointmentId: string
   paymentConfigured: boolean
   checkoutUrl?: string
+  discountApplied?: { amount: string; currency: string }
 }
 
 export const api = {
@@ -672,7 +673,7 @@ export const api = {
       `/api/mobile/v1/doctors/${slug}/slots?type=${type}`,
       { auth: false },
     ),
-  book: (input: { doctorId: string; startsAt: string; type: ConsultationType }) =>
+  book: (input: { doctorId: string; startsAt: string; type: ConsultationType; promoCode?: string }) =>
     request<BookingResult>("/api/mobile/v1/bookings", {
       method: "POST",
       body: JSON.stringify(input),

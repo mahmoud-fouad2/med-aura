@@ -7,6 +7,7 @@ import {
   appointment,
   appointmentStatusHistory,
   payment,
+  promoCodeRedemption,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
@@ -15,6 +16,7 @@ import { writeAudit, requestMeta } from "@/lib/audit"
 import { AppError, toSafeError, validation, conflict, notConfigured } from "@/lib/errors"
 import { appUrl } from "@/lib/env"
 import { isStripeConfigured, createCheckoutSession } from "@/lib/payments/stripe"
+import { resolvePromoCode } from "@/lib/promo"
 import type { ActionResult } from "@/lib/actions/provider"
 import { trackAnalyticsEvent } from "@/lib/analytics"
 
@@ -26,6 +28,10 @@ type BookResult = {
   appointmentId: string
   paymentConfigured: boolean
   checkoutUrl?: string
+  /** Present only when a promo code was applied — the list price stays on
+   *  the appointment/payment rows as the discounted total actually charged;
+   *  this is purely so the confirmation screen can show "X off" honestly. */
+  discountApplied?: { amount: string; currency: string }
 }
 
 export async function bookConsultation(input: {
@@ -33,6 +39,7 @@ export async function bookConsultation(input: {
   startsAt: string // ISO
   caseId?: string
   type?: "VIDEO_CONSULTATION" | "IN_PERSON_CONSULTATION"
+  promoCode?: string
   /** "mobile" sends Stripe to the app's own custom-scheme redirect
    *  (medaura://) instead of a web dashboard URL, so the in-app browser
    *  (WebBrowser.openAuthSessionAsync) can detect the return and close
@@ -73,7 +80,7 @@ export async function bookConsultation(input: {
     const slot = slots.find((s) => s.startsAt === input.startsAt)
     if (!slot) throw conflict("هذا الموعد لم يعد متاحًا، اختر موعدًا آخر.")
 
-    const amount = Number(doc.fee)
+    const listAmount = Number(doc.fee)
     const currency = doc.currency
     const apptRef = ref("APT")
     const payRef = ref("PAY")
@@ -81,8 +88,15 @@ export async function bookConsultation(input: {
 
     let appointmentId: string
     let paymentId: string
+    let amount = listAmount
+    let discountApplied: BookResult["discountApplied"]
     try {
       const result = await db.transaction(async (tx) => {
+        const promo = input.promoCode
+          ? await resolvePromoCode(tx, { code: input.promoCode, userId: user.id, amount: listAmount, currency })
+          : null
+        const chargedAmount = promo ? Number(promo.finalAmount) : listAmount
+
         const appt = await tx
           .insert(appointment)
           .values({
@@ -96,7 +110,7 @@ export async function bookConsultation(input: {
             startsAt: new Date(slot.startsAt),
             endsAt: new Date(slot.endsAt),
             paymentExpiresAt,
-            priceAmount: String(amount),
+            priceAmount: String(chargedAmount),
             currency,
           })
           .returning({ id: appointment.id })
@@ -108,13 +122,23 @@ export async function bookConsultation(input: {
           changedBy: user.id,
         })
 
+        if (promo) {
+          await tx.insert(promoCodeRedemption).values({
+            promoCodeId: promo.promoCodeId,
+            userId: user.id,
+            appointmentId: aId,
+            discountAmount: promo.discountAmount,
+            currency,
+          })
+        }
+
         const pay = await tx
           .insert(payment)
           .values({
             reference: payRef,
             purpose: "CONSULTATION_FEE",
             status: "CREATED",
-            amount: String(amount),
+            amount: String(chargedAmount),
             currency,
             payerUserId: user.id,
             appointmentId: aId,
@@ -129,14 +153,21 @@ export async function bookConsultation(input: {
             actorUserId: user.id,
             entityType: "appointment",
             entityId: aId,
-            metadata: { doctorId: doc.id, startsAt: slot.startsAt },
+            metadata: { doctorId: doc.id, startsAt: slot.startsAt, promoApplied: Boolean(promo) },
           },
           tx,
         )
-        return { aId, pId: pay[0].id }
+        return {
+          aId,
+          pId: pay[0].id,
+          chargedAmount,
+          discount: promo ? { amount: promo.discountAmount, currency } : undefined,
+        }
       })
       appointmentId = result.aId
       paymentId = result.pId
+      amount = result.chargedAmount
+      discountApplied = result.discount
     } catch (err) {
       // Postgres unique_violation from the no-double-booking partial index
       if (
@@ -220,7 +251,10 @@ export async function bookConsultation(input: {
       properties: { doctorId: doc.id, type },
     })
 
-    return { ok: true, data: { appointmentId, paymentConfigured: true, checkoutUrl: checkout.url } }
+    return {
+      ok: true,
+      data: { appointmentId, paymentConfigured: true, checkoutUrl: checkout.url, discountApplied },
+    }
   } catch (err) {
     const safe = toSafeError(err)
     return { ok: false, error: safe.userMessage, code: safe.code }

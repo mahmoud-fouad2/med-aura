@@ -9,6 +9,7 @@ const BodySchema = z.object({
   doctorId: z.string().min(1),
   startsAt: z.string().min(10),
   type: z.enum(["VIDEO_CONSULTATION", "IN_PERSON_CONSULTATION"]).optional(),
+  promoCode: z.string().trim().max(40).optional(),
 })
 
 /**
