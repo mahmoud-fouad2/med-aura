@@ -44,6 +44,7 @@ export function AuthForm(props: {
   initialType?: AccountType
   googleEnabled?: boolean
   googleError?: boolean
+  initialReferralCode?: string
 }) {
   const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
   if (!recaptchaKey) {
@@ -68,6 +69,7 @@ function AuthFormInner({
   initialType,
   googleEnabled,
   googleError,
+  initialReferralCode,
 }: {
   mode: "sign-in" | "sign-up"
   locale: Locale
@@ -83,6 +85,8 @@ function AuthFormInner({
   googleEnabled?: boolean
   /** Bounced back from a failed Google OAuth callback (?googleError=1). */
   googleError?: boolean
+  /** Pre-fills the invite-code field from /sign-up?ref=... — still editable. */
+  initialReferralCode?: string
 }) {
   const { executeRecaptcha } = useGoogleReCaptcha()
   const router = useRouter()
@@ -95,6 +99,7 @@ function AuthFormInner({
   const [phone, setPhone] = useState("")
   const [country, setCountry] = useState("")
   const [city, setCity] = useState("")
+  const [referralCode, setReferralCode] = useState(initialReferralCode ?? "")
   const [agree, setAgree] = useState(false)
   const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(googleError ? copy.googleError : null)
@@ -112,6 +117,13 @@ function AuthFormInner({
   const handleGoogle = async () => {
     setError(null)
     setGoogleLoading(true)
+    // A first-time Google sign-up never sees this form's fields (it detours
+    // straight to /complete-profile after the redirect), so the only way to
+    // carry an invite code across that round-trip is a short-lived cookie —
+    // consumed once by saveProfileWizardDetails/skipProfileWizard.
+    if (isSignUp && referralCode.trim()) {
+      document.cookie = `mx_ref=${encodeURIComponent(referralCode.trim())}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`
+    }
     const { error } = await authClient.signIn.social({
       provider: "google",
       // Returning users land where they were headed; a first-time Google
@@ -216,6 +228,7 @@ function AuthFormInner({
       phone,
       residenceCountry: country,
       city: city || undefined,
+      referralCode: referralCode || undefined,
     })
     if (!profile.ok) {
       setLoading(false)
@@ -465,6 +478,22 @@ function AuthFormInner({
                       </div>
                     </div>
 
+                    <div className="flex flex-col gap-2 mb-4">
+                      <Label htmlFor="referralCode">
+                        {copy.referralCode}{" "}
+                        <span className="text-muted-foreground font-normal">{copy.optional}</span>
+                      </Label>
+                      <Input
+                        id="referralCode"
+                        dir="ltr"
+                        className="text-right uppercase"
+                        placeholder={copy.referralCodePlaceholder}
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        maxLength={20}
+                      />
+                    </div>
+
                     <label className="text-foreground flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed mb-4">
                       <Checkbox
                         checked={agree}
@@ -625,6 +654,8 @@ const AUTH_COPY = {
     chooseCountry: "اختر الدولة",
     city: "المدينة",
     optional: "(اختياري)",
+    referralCode: "كود الدعوة",
+    referralCodePlaceholder: "مثال: AB3D9K",
     agreePrefix: "أوافق على",
     terms: "الشروط والأحكام",
     and: "و",
@@ -672,6 +703,8 @@ const AUTH_COPY = {
     chooseCountry: "Choose a country",
     city: "City",
     optional: "(optional)",
+    referralCode: "Invite code",
+    referralCodePlaceholder: "e.g. AB3D9K",
     agreePrefix: "I agree to the",
     terms: "Terms and Conditions",
     and: "and",

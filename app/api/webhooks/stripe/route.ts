@@ -20,6 +20,7 @@ import { canTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
 import { constructWebhookEvent } from "@/lib/payments/stripe"
 import { writeAudit } from "@/lib/audit"
 import { notify, type NotifyInput } from "@/lib/notifications"
+import { qualifyReferralIfApplicable } from "@/lib/referral"
 import { logger } from "@/lib/logger"
 import { AppError } from "@/lib/errors"
 
@@ -243,6 +244,12 @@ async function applyPaymentSucceeded(
   providerIntentId: string | null,
 ) {
   const post: NotifyInput[] = []
+  // Set only when this call just confirmed a consultation for the first
+  // time (never on an idempotent re-delivery) — resolved after the
+  // transaction commits, see the referral-qualification call at the bottom.
+  // A plain mutable object (not a reassigned `let`) so TS doesn't narrow the
+  // read after the transaction closure to `null`.
+  const referralTarget: { value: { refereeUserId: string; appointmentId: string } | null } = { value: null }
 
   await db.transaction(async (tx) => {
     const pay = (
@@ -338,6 +345,7 @@ async function applyPaymentSucceeded(
           caseId: appt.caseId ?? undefined,
           href: appt.caseId ? `/dashboard/cases/${appt.caseId}` : "/dashboard/appointments",
         })
+        referralTarget.value = { refereeUserId: pay.payerUserId, appointmentId: appt.id }
       } else {
         await markPaymentForReconciliation(
           tx,
@@ -492,6 +500,14 @@ async function applyPaymentSucceeded(
   })
 
   for (const n of post) await notify(n)
+
+  // Deliberately after the transaction has committed and outside any
+  // try/catch that could still be interpreted as part of payment handling —
+  // qualifyReferralIfApplicable already never throws on its own, but a bug
+  // here must categorically be unable to affect the real payment above.
+  if (referralTarget.value) {
+    await qualifyReferralIfApplicable(referralTarget.value.refereeUserId, referralTarget.value.appointmentId)
+  }
 }
 
 async function applyPaymentFailed(

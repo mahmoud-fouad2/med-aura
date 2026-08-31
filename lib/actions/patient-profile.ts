@@ -2,6 +2,7 @@
 
 import { z } from "zod"
 import { eq } from "drizzle-orm"
+import { cookies } from "next/headers"
 import { db } from "@/lib/db"
 import { patientProfile, user } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
@@ -9,6 +10,23 @@ import { writeAudit, requestMeta } from "@/lib/audit"
 import { logger } from "@/lib/logger"
 import { toSafeError } from "@/lib/errors"
 import { normalizeSignupPhone } from "@/lib/onboarding/validation"
+import { linkReferral } from "@/lib/referral"
+
+const REFERRAL_COOKIE = "mx_ref"
+
+/**
+ * Consumes the referral code cookie set by /sign-up?ref=... — the only path
+ * this covers is a first-time Google sign-up, which never sees the sign-up
+ * form fields (see auth-form.tsx's handleGoogle) so the code can't be passed
+ * as a normal parameter. Best-effort and self-clearing.
+ */
+async function consumeReferralCookie(refereeUserId: string) {
+  const store = await cookies()
+  const code = store.get(REFERRAL_COOKIE)?.value
+  if (!code) return
+  store.delete(REFERRAL_COOKIE)
+  await linkReferral(db, refereeUserId, code)
+}
 
 const optionalTrimmed = (max: number) =>
   z.preprocess(
@@ -105,6 +123,7 @@ export async function saveProfileWizardDetails(
       emergencyContactPhone: d.emergencyContactPhone ?? null,
       profileWizardSeenAt: new Date(),
     })
+    await consumeReferralCookie(me.id)
 
     const meta = await requestMeta()
     await writeAudit({
@@ -128,6 +147,7 @@ export async function skipProfileWizard(): Promise<ProfileActionResult> {
   try {
     const me = await requireUser()
     await upsertPatientProfile(me.id, { profileWizardSeenAt: new Date() })
+    await consumeReferralCookie(me.id)
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)

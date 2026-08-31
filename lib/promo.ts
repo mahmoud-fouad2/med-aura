@@ -35,6 +35,9 @@ export async function resolvePromoCode(
     await tx.select().from(promoCode).where(eq(promoCode.code, normalized)).limit(1)
   )[0]
   if (!promo || !promo.active) throw validation("كود الخصم غير صالح.")
+  if (promo.restrictedToUserId && promo.restrictedToUserId !== input.userId) {
+    throw validation("كود الخصم غير صالح.")
+  }
 
   const now = new Date()
   if (promo.validFrom && now < promo.validFrom) throw validation("كود الخصم لم يبدأ سريانه بعد.")

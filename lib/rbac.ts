@@ -102,6 +102,10 @@ export const PERMISSIONS = {
   // Discount codes — every value (percentage/amount, limits, dates) is a
   // row an admin edits, never a hardcoded constant.
   PROMO_MANAGE: "promo:manage",
+
+  // Referral program settings (reward type/value for referrer and referee) —
+  // same "admin-editable, never hardcoded" rule as promo codes.
+  REFERRAL_MANAGE: "referral:manage",
 } as const
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
@@ -211,6 +215,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     P.AUDIT_READ,
     P.CATALOG_READ,
     P.PROMO_MANAGE,
+    P.REFERRAL_MANAGE,
   ],
   [ROLES.SUPPORT_AGENT]: [
     P.CASE_READ_ANY,

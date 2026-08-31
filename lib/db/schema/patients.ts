@@ -32,6 +32,9 @@ export const patientProfile = pgTable(
     emergencyContactName: text("emergencyContactName"),
     emergencyContactPhone: text("emergencyContactPhone"),
     onboardingCompleted: boolean("onboardingCompleted").notNull().default(false),
+    // Lazily generated on first use (see lib/referral.ts) — not every patient
+    // has one until they open the "invite a friend" screen.
+    referralCode: text("referralCode").unique(),
     // Set the first time the patient completes (or explicitly skips) the
     // "tell us about yourself" wizard step — separate from
     // onboardingCompleted (phone/country) so the wizard shows exactly once,

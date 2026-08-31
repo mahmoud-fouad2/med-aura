@@ -64,6 +64,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/finance", label: "المدفوعات والفواتير", icon: "Wallet", anyOf: [P.FINANCE_ACCESS] },
       { href: "/admin/finance#refunds", label: "الاسترجاعات", icon: "Undo2", anyOf: [P.FINANCE_ACCESS] },
       { href: "/admin/promo-codes", label: "أكواد الخصم", icon: "Ticket", anyOf: [P.PROMO_MANAGE] },
+      { href: "/admin/referral-settings", label: "برنامج الدعوات", icon: "Gift", anyOf: [P.REFERRAL_MANAGE] },
     ],
   },
   {

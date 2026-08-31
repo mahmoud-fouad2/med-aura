@@ -7,13 +7,13 @@ import { AuthForm } from "@/components/auth/auth-form"
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; type?: string }>
+  searchParams: Promise<{ next?: string; type?: string; ref?: string }>
 }) {
   // Gated getCurrentUser(), not the raw session — see sign-in/page.tsx for
   // why (a disabled account's raw session is still "valid" and would bounce
   // between here and /dashboard forever).
   const user = await getCurrentUser()
-  const { next, type } = await searchParams
+  const { next, type, ref } = await searchParams
   if (user) redirect(next || "/dashboard")
   const { locale, t } = await getI18n()
   const initialType = type === "doctor" || type === "patient" ? type : undefined
@@ -27,6 +27,7 @@ export default async function SignUpPage({
       nextPath={next}
       initialType={initialType}
       googleEnabled={isGoogleAuthConfigured()}
+      initialReferralCode={ref?.trim().slice(0, 20).toUpperCase()}
     />
   )
 }

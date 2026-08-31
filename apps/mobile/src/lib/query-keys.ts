@@ -22,4 +22,5 @@ export const queryKeys = {
   tickets: ["tickets"] as const,
   ticket: (id: string) => ["ticket", id] as const,
   video: (appointmentId: string) => ["video", appointmentId] as const,
+  referral: ["referral"] as const,
 } as const

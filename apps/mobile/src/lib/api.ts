@@ -172,6 +172,19 @@ export type DoctorCaseItem = {
   consentActive: boolean
 }
 
+export type ReferralData = {
+  code: string
+  shareUrl: string
+  invitedCount: number
+  rewardedCount: number
+  programActive: boolean
+  refereeRewardType: "PERCENTAGE" | "FIXED"
+  refereeRewardValue: string
+  referrerRewardType: "PERCENTAGE" | "FIXED"
+  referrerRewardValue: string
+  currency: string
+}
+
 export type HomeData = {
   firstName: string
   upcomingCount: number
@@ -683,11 +696,13 @@ export const api = {
     phone: string
     residenceCountry: string
     city?: string
+    referralCode?: string
   }) =>
     request<{ next: string }>("/api/mobile/v1/signup-profile", {
       method: "POST",
       body: JSON.stringify(input),
     }),
+  referral: () => request<ReferralData>("/api/mobile/v1/referral"),
   saveProfileWizardDetails: (input: {
     dateOfBirth?: string
     biologicalSex?: "male" | "female"
@@ -704,6 +719,9 @@ export const api = {
 
 export const useHome = () =>
   useQuery({ queryKey: queryKeys.home, queryFn: api.home, staleTime: 30_000 })
+
+export const useReferral = () =>
+  useQuery({ queryKey: queryKeys.referral, queryFn: api.referral, staleTime: 30_000 })
 
 export const useAppointments = () =>
   useQuery({

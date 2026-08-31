@@ -36,6 +36,9 @@ export const promoCode = pgTable(
     validFrom: timestamp("validFrom", { withTimezone: true }),
     validUntil: timestamp("validUntil", { withTimezone: true }),
     active: boolean("active").notNull().default(true),
+    // Set only on system-generated codes (referral rewards) — when present,
+    // only this user may redeem it. Null for every admin-created promo code.
+    restrictedToUserId: text("restrictedToUserId").references(() => user.id, { onDelete: "cascade" }),
     ...lifecycle(),
     ...authorship(),
   },

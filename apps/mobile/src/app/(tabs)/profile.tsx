@@ -206,6 +206,13 @@ export default function Profile() {
             />
             <Divider />
             <Row
+              icon="gift-outline"
+              label={t.referral.title}
+              hint={t.referral.rowHint}
+              onPress={() => router.push("/referral")}
+            />
+            <Divider />
+            <Row
               icon="receipt-outline"
               label={t.billing.title}
               onPress={() => router.push("/billing")}

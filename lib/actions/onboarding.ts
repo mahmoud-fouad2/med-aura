@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger"
 import { toSafeError } from "@/lib/errors"
 import { normalizeSignupPhone } from "@/lib/onboarding/validation"
 import { trackAnalyticsEvent } from "@/lib/analytics"
+import { linkReferral } from "@/lib/referral"
 
 const SignupProfileSchema = z.object({
   // "doctor" only routes the user into the provider-accreditation flow —
@@ -25,6 +26,12 @@ const SignupProfileSchema = z.object({
   city: z.preprocess(
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.string().trim().max(120).optional(),
+  ),
+  // Optional invite code (see lib/referral.ts) — a bad/missing one never
+  // blocks signup, it's just silently ignored.
+  referralCode: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(20).optional(),
   ),
 })
 
@@ -86,6 +93,8 @@ export async function completeSignupProfile(
       }
 
       await tx.update(user).set({ phone, country: residenceCountry }).where(eq(user.id, me.id))
+
+      if (!existing[0]) await linkReferral(tx, me.id, parsed.data.referralCode)
 
       await writeAudit(
         {

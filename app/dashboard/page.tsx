@@ -15,6 +15,7 @@ import {
   Clock,
   CreditCard,
   LifeBuoy,
+  Gift,
 } from "lucide-react"
 import { requireAuthPage, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
@@ -25,6 +26,7 @@ import { listCasesForPatient } from "@/lib/data/cases"
 import { listPatientAppointments } from "@/lib/data/appointments"
 import { getUnreadNotificationCount } from "@/lib/data/notifications"
 import { getFavoriteRefIds } from "@/lib/data/favorites"
+import { getActiveReferralSettings } from "@/lib/referral"
 import { DashboardHero } from "@/components/dashboard/hero-banner"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
@@ -112,7 +114,7 @@ export default async function DashboardHome() {
     }
   }
 
-  const [cases, appointments, unread, favs, lastApp] = await Promise.all([
+  const [cases, appointments, unread, favs, lastApp, referralSettings] = await Promise.all([
     listCasesForPatient(user.id),
     listPatientAppointments(user.id),
     getUnreadNotificationCount(user.id),
@@ -124,6 +126,7 @@ export default async function DashboardHome() {
       .orderBy(desc(providerApplication.createdAt))
       .limit(1)
       .then((r) => r[0] ?? null),
+    isPatient ? getActiveReferralSettings() : Promise.resolve(null),
   ])
 
   const activeCases = cases.filter((c) => ACTIVE_CASE.has(c.status))
@@ -451,6 +454,26 @@ export default async function DashboardHome() {
         />
         </StaggerItem>
       </Stagger>
+
+      {referralSettings && (
+        <Reveal delay={0.1}>
+          <Link
+            href="/dashboard/referral"
+            className="flex items-center gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10"
+          >
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+              <Gift className="size-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-base font-bold text-foreground">ادعُ صديقة واحصلا على مكافأة</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                شاركي كود دعوتك — وتحصلان معًا على مكافأة عند أول استشارة مدفوعة لها.
+              </p>
+            </div>
+            <ChevronLeft className="size-5 shrink-0 text-muted-foreground rtl:rotate-180" />
+          </Link>
+        </Reveal>
+      )}
 
       <Reveal delay={0.15}>
       <div className="grid gap-4 lg:grid-cols-3">

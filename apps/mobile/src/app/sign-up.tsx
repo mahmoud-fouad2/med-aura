@@ -45,6 +45,7 @@ export default function SignUp() {
   const [phone, setPhone] = useState("")
   const [country, setCountry] = useState<string | null>(null)
   const [city, setCity] = useState("")
+  const [referralCode, setReferralCode] = useState("")
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -117,6 +118,7 @@ export default function SignUp() {
         phone,
         residenceCountry: country,
         city: city || undefined,
+        referralCode: referralCode.trim() || undefined,
       })
     } catch (err) {
       setLoading(false)
@@ -293,6 +295,18 @@ export default function SignUp() {
             </Field>
             <Field label={t.auth.city}>
               <TextInput value={city} onChangeText={setCity} style={inputStyle} />
+            </Field>
+            <Field label={t.auth.referralCode}>
+              <TextInput
+                value={referralCode}
+                onChangeText={(v) => setReferralCode(v.toUpperCase())}
+                autoCapitalize="characters"
+                placeholder={t.auth.referralCodePlaceholder}
+                placeholderTextColor={colors.textFaint}
+                style={inputStyle}
+                textAlign="left"
+                maxLength={20}
+              />
             </Field>
 
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
