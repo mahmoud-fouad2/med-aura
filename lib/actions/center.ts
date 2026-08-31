@@ -6,12 +6,16 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { center } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
-import { requirePermission, PERMISSIONS } from "@/lib/rbac"
+import { requirePermission, PERMISSIONS, canAccessCenter, resolveUserCenterIds } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { AppError, toSafeError, validation } from "@/lib/errors"
 import type { ActionResult } from "@/lib/actions/provider"
 import { listDoctorsByCenter, getCenterForAdmin, type CenterDoctorRow, type CenterFull } from "@/lib/data/admin-directory"
 import { listActivityForEntityIds, type ActivityRow } from "@/lib/data/admin-activity"
+import { buildObjectKey, getUploadUrl, isR2Configured } from "@/lib/storage/r2"
+
+const MEDIA_MIME = new Set(["image/jpeg", "image/png", "image/webp"])
+const MAX_MEDIA_BYTES = 8 * 1024 * 1024
 
 const updateCenterSchema = z.object({
   centerId: z.string().min(1),
@@ -212,4 +216,208 @@ export async function getCenterActivityAction(
   await requirePermission(user.id, PERMISSIONS.AUDIT_READ)
   const entries = await listActivityForEntityIds([centerId], 30)
   return { status: "ok", entries }
+}
+
+export type MyCenterData = {
+  id: string
+  name: string
+  description: string | null
+  city: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  languages: string[]
+  logoKey: string | null
+  coverKey: string | null
+  published: boolean
+  status: string
+}
+
+/**
+ * Center owner/staff's own center — "tell us more about your center", the
+ * self-service counterpart to updateCenterAction (which stays PROVIDER_REVIEW
+ * / compliance-only, since it also edits legalName/country/commission).
+ * Ownership is the authorization: any center this account belongs to
+ * (resolveUserCenterIds), same model as a doctor's own doctorProfile.
+ */
+export async function getMyCenterAction(): Promise<
+  { status: "ok"; center: MyCenterData } | { status: "error"; message: string }
+> {
+  const user = await requireUser()
+  const centerIds = await resolveUserCenterIds(user.id)
+  if (centerIds.length === 0) return { status: "error", message: "لا يوجد مركز مرتبط بحسابك." }
+
+  const row = (
+    await db
+      .select({
+        id: center.id,
+        name: center.name,
+        description: center.description,
+        city: center.city,
+        address: center.address,
+        phone: center.phone,
+        email: center.email,
+        website: center.website,
+        languages: center.languages,
+        logoKey: center.logoKey,
+        coverKey: center.coverKey,
+        published: center.published,
+        status: center.status,
+      })
+      .from(center)
+      .where(eq(center.id, centerIds[0]))
+      .limit(1)
+  )[0]
+  if (!row) return { status: "error", message: "المركز غير موجود." }
+  return { status: "ok", center: row }
+}
+
+const updateMyCenterSchema = z.object({
+  description: z.string().trim().max(2000).optional().or(z.literal("").transform(() => undefined)),
+  city: z.string().trim().max(120).optional().or(z.literal("").transform(() => undefined)),
+  address: z.string().trim().max(500).optional().or(z.literal("").transform(() => undefined)),
+  phone: z.string().trim().max(30).optional().or(z.literal("").transform(() => undefined)),
+  email: z.email("بريد إلكتروني غير صالح").optional().or(z.literal("").transform(() => undefined)),
+  website: z.string().trim().max(300).optional().or(z.literal("").transform(() => undefined)),
+  languages: z.array(z.string().trim().min(1)).max(20),
+})
+
+/** Self-service equivalent of updateCenterAction — description/contact/languages
+ *  only, never legalName/country/commission (those stay compliance-controlled). */
+export async function updateMyCenterAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const centerIds = await resolveUserCenterIds(user.id)
+    if (centerIds.length === 0) throw new AppError("NOT_FOUND")
+    const centerId = centerIds[0]
+
+    const parsed = updateMyCenterSchema.safeParse(input)
+    if (!parsed.success) throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
+    const data = parsed.data
+
+    await db
+      .update(center)
+      .set({
+        description: data.description ?? null,
+        city: data.city ?? null,
+        address: data.address ?? null,
+        phone: data.phone ?? null,
+        email: data.email ?? null,
+        website: data.website ?? null,
+        languages: data.languages,
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(center.id, centerId))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "center.self.update",
+      actorUserId: user.id,
+      entityType: "center",
+      entityId: centerId,
+      ...meta,
+    })
+
+    revalidatePath("/centers")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const presignCenterMediaSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  contentType: z.string().min(1),
+  sizeBytes: z.number().int().positive(),
+})
+
+export type CenterMediaUploadResult =
+  | { ok: true; uploadUrl: string; objectKey: string }
+  | { ok: false; error: string }
+
+/** Step 1: a presigned upload slot, namespaced under the caller's own center. */
+export async function getCenterMediaUploadUrlAction(
+  input: z.infer<typeof presignCenterMediaSchema>,
+): Promise<CenterMediaUploadResult> {
+  try {
+    const user = await requireUser()
+    if (!isR2Configured()) return { ok: false, error: "خدمة رفع الصور غير مفعّلة حاليًا." }
+
+    const centerIds = await resolveUserCenterIds(user.id)
+    if (centerIds.length === 0) return { ok: false, error: "لا يوجد مركز مرتبط بحسابك." }
+    const centerId = centerIds[0]
+    if (!(await canAccessCenter(user.id, centerId))) return { ok: false, error: "غير مصرّح بهذه العملية." }
+
+    const parsed = presignCenterMediaSchema.safeParse(input)
+    if (!parsed.success) return { ok: false, error: "بيانات الصورة غير صالحة." }
+    const { fileName, contentType, sizeBytes } = parsed.data
+
+    if (!MEDIA_MIME.has(contentType)) {
+      return { ok: false, error: "نوع الصورة غير مدعوم. استخدم JPG أو PNG أو WebP." }
+    }
+    if (sizeBytes > MAX_MEDIA_BYTES) {
+      return { ok: false, error: "حجم الصورة يتجاوز الحد المسموح." }
+    }
+
+    const objectKey = buildObjectKey(`centers/${centerId}`, fileName)
+    const uploadUrl = await getUploadUrl(objectKey, contentType)
+    return { ok: true, uploadUrl, objectKey }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage }
+  }
+}
+
+const finalizeCenterMediaSchema = z.object({
+  field: z.enum(["logo", "cover"]),
+  objectKey: z.string().min(1),
+})
+
+/** Confirms a logo/cover upload (presigned via the shared avatar action's
+ *  object-key pattern, just under a centers/ namespace) and points the
+ *  caller's own center at it — ownership via canAccessCenter, never another
+ *  center's media. */
+export async function finalizeCenterMediaAction(
+  input: z.infer<typeof finalizeCenterMediaSchema>,
+): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const parsed = finalizeCenterMediaSchema.safeParse(input)
+    if (!parsed.success) throw validation("بيانات غير صحيحة")
+    const { field, objectKey } = parsed.data
+
+    const centerIds = await resolveUserCenterIds(user.id)
+    if (centerIds.length === 0) throw new AppError("NOT_FOUND")
+    const centerId = centerIds[0]
+    if (!(await canAccessCenter(user.id, centerId))) throw new AppError("FORBIDDEN")
+    if (!objectKey.startsWith(`centers/${centerId}/`)) throw new AppError("FORBIDDEN")
+
+    await db
+      .update(center)
+      .set({
+        [field === "logo" ? "logoKey" : "coverKey"]: objectKey,
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(center.id, centerId))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "center.media.updated",
+      actorUserId: user.id,
+      entityType: "center",
+      entityId: centerId,
+      metadata: { field },
+      ...meta,
+    })
+
+    revalidatePath("/centers")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
 }

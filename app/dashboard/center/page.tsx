@@ -13,6 +13,9 @@ import {
 } from "lucide-react"
 import { getCurrentUser, requirePermissionPage } from "@/lib/session"
 import { resolveUserCenterIds, PERMISSIONS } from "@/lib/rbac"
+import { getMyCenterAction } from "@/lib/actions/center"
+import { getPublicUrl } from "@/lib/storage/r2"
+import { getI18n } from "@/lib/i18n"
 import {
   listCenterCases,
   listCenterPeople,
@@ -31,6 +34,7 @@ import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
 import { ExportInvoicesButton } from "@/components/dashboard/export-invoices-button"
 import { CenterCoordinatesForm } from "@/components/admin/center-coordinates-form"
+import { CenterProfileForm, type CenterProfileInitial } from "@/components/dashboard/center-profile-form"
 import {
   caseStatusAr,
   quoteStatusAr,
@@ -80,6 +84,8 @@ export default async function CenterDashboardPage() {
     followUps,
     safetyAlerts,
     reviews,
+    myCenter,
+    { locale },
   ] = await Promise.all([
     listCenterCases(centerIds),
     listCenterPeople(centerIds),
@@ -89,7 +95,26 @@ export default async function CenterDashboardPage() {
     listCenterFollowUps(centerIds),
     listCenterSafetyAlerts(centerIds),
     listCenterReviews(centerIds),
+    getMyCenterAction(),
+    getI18n(),
   ])
+
+  const centerProfileInitial: CenterProfileInitial | null =
+    myCenter.status === "ok"
+      ? {
+          description: myCenter.center.description,
+          city: myCenter.center.city,
+          address: myCenter.center.address,
+          phone: myCenter.center.phone,
+          email: myCenter.center.email,
+          website: myCenter.center.website,
+          languages: myCenter.center.languages,
+          logoUrl: myCenter.center.logoKey ? getPublicUrl(myCenter.center.logoKey) : null,
+          coverUrl: myCenter.center.coverKey ? getPublicUrl(myCenter.center.coverKey) : null,
+          published: myCenter.center.published,
+          status: myCenter.center.status,
+        }
+      : null
 
   const activeCases = cases.filter(
     (c) => c.status !== "CLOSED" && c.status !== "CANCELLED",
@@ -190,7 +215,22 @@ export default async function CenterDashboardPage() {
           <TabsTrigger value="reviews">
             التقييمات{avgRating ? ` · ${avgRating}★` : ""} ({reviews.length})
           </TabsTrigger>
+          <TabsTrigger value="profile">ملف المركز</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="profile" className="mt-4">
+          {centerProfileInitial ? (
+            <CenterProfileForm initial={centerProfileInitial} locale={locale} />
+          ) : (
+            <div className="p-8">
+              <EmptyState
+                icon={Building2}
+                title="تعذّر تحميل بيانات المركز"
+                description="حاول تحديث الصفحة، أو تواصل مع الدعم إن استمرت المشكلة."
+              />
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="cases" className="mt-4">
           <SectionCard
