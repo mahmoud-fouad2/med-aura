@@ -51,8 +51,11 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   await page.getByLabel(/دولة الإقامة/).selectOption("SA")
   await page.getByRole("checkbox").check()
   await page.getByRole("button", { name: /أنشئ|إنشاء|تسجيل/ }).click()
-  // auto sign-in → dashboard greets the patient by first name
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
+  // auto sign-in → one-time profile wizard (see app/dashboard/page.tsx) → dashboard
+  await expect(page).toHaveURL(/\/complete-profile/, { timeout: 20_000 })
+  await page.getByRole("button", { name: /تخطي/ }).click()
+  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20_000 })
+  // dashboard greets the patient by first name
   await expect(page.getByText(/أهلاً|أهلًا/).first()).toBeVisible()
   // fresh patient sees the humane empty states, not errors
   await expect(page.getByText("لا مواعيد قادمة حاليًا").first()).toBeVisible()
