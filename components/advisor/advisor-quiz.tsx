@@ -9,14 +9,28 @@ import { FadeIn, Reveal } from "@/components/motion"
 
 type Step = 0 | 1 | 2 | 3
 
+// Each area maps to a real /search?category= slug (components/landing/cosmetic-areas.tsx)
+// so the "recommended doctors" button actually filters, instead of landing on
+// unfiltered /search regardless of what was answered.
+const AREAS = [
+  { label: "الوجه والأنف", slug: "face-neck" },
+  { label: "نحت وتنسيق القوام", slug: "body" },
+  { label: "العناية بالبشرة والحقن", slug: "skin" },
+  { label: "زراعة وعلاج الشعر", slug: "hair" },
+] as const
+
 export function AdvisorQuiz() {
   const [step, setStep] = useState<Step>(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [labels, setLabels] = useState<Record<string, string>>({})
 
-  const handleAnswer = (key: string, value: string) => {
+  const handleAnswer = (key: string, value: string, label: string) => {
     setAnswers({ ...answers, [key]: value })
+    setLabels({ ...labels, [key]: label })
     if (step < 3) setStep((s) => (s + 1) as Step)
   }
+
+  const resultsHref = `/search?category=${answers.area ?? ""}&surgical=${answers.type ?? ""}`
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center">
@@ -45,13 +59,13 @@ export function AdvisorQuiz() {
             <span className="text-sm font-bold text-muted-foreground">الخطوة 1 من 3</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {["الوجه والأنف", "نحت وتنسيق القوام", "العناية بالبشرة والحقن", "زراعة وعلاج الشعر"].map((option) => (
+            {AREAS.map((option) => (
               <Card
-                key={option}
+                key={option.slug}
                 className="p-6 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all rounded-2xl border-border/80 text-center"
-                onClick={() => handleAnswer("area", option)}
+                onClick={() => handleAnswer("area", option.slug, option.label)}
               >
-                <h3 className="font-bold text-lg">{option}</h3>
+                <h3 className="font-bold text-lg">{option.label}</h3>
               </Card>
             ))}
           </div>
@@ -67,7 +81,7 @@ export function AdvisorQuiz() {
           <div className="grid grid-cols-1 gap-4">
             <Card
               className="p-6 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all rounded-2xl border-border/80 flex items-center justify-between"
-              onClick={() => handleAnswer("type", "جراحي")}
+              onClick={() => handleAnswer("type", "true", "جراحي")}
             >
               <div>
                 <h3 className="font-bold text-lg mb-1">تدخل جراحي (نتائج جذرية)</h3>
@@ -77,7 +91,7 @@ export function AdvisorQuiz() {
             </Card>
             <Card
               className="p-6 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all rounded-2xl border-border/80 flex items-center justify-between"
-              onClick={() => handleAnswer("type", "غير جراحي")}
+              onClick={() => handleAnswer("type", "false", "غير جراحي")}
             >
               <div>
                 <h3 className="font-bold text-lg mb-1">إجراء غير جراحي (نتائج سريعة)</h3>
@@ -96,7 +110,7 @@ export function AdvisorQuiz() {
           </div>
           <h2 className="font-heading text-2xl font-bold mb-3">لقد وجدنا الخيارات الأنسب لكِ!</h2>
           <p className="text-muted-foreground mb-8">
-            بناءً على اختياركِ ({answers.area} - {answers.type})، قمنا بتجهيز قائمة بأفضل الأطباء المتخصصين.
+            بناءً على اختياركِ ({labels.area} - {labels.type})، قمنا بتجهيز قائمة بأفضل الأطباء المتخصصين.
           </p>
 
           <div className="bg-card border border-border/80 rounded-3xl p-8 shadow-sm mb-8 text-right">
@@ -105,13 +119,13 @@ export function AdvisorQuiz() {
               الإجراءات المقترحة:
             </h3>
             <ul className="space-y-3 mb-6">
-              <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="size-4 text-success" /> مراجعة خيارات {answers.area} ({answers.type})</li>
+              <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="size-4 text-success" /> مراجعة خيارات {labels.area} ({labels.type})</li>
               <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="size-4 text-success" /> استشارة أولية مع استشاري متخصص</li>
             </ul>
-            <Button className="w-full rounded-xl" size="lg" render={<Link href="/search">تصفح الأطباء المقترحين</Link>} />
+            <Button className="w-full rounded-xl" size="lg" render={<Link href={resultsHref}>تصفح الأطباء المقترحين</Link>} />
           </div>
 
-          <Button variant="ghost" onClick={() => { setStep(0); setAnswers({}) }}>
+          <Button variant="ghost" onClick={() => { setStep(0); setAnswers({}); setLabels({}) }}>
             إعادة التقييم
           </Button>
         </Reveal>
