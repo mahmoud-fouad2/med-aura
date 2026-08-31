@@ -8,18 +8,25 @@ import {
   ChevronLeft,
   ShieldCheck,
   UserCog,
+  Wallet,
 } from "lucide-react"
+import { eq } from "drizzle-orm"
 import { getCurrentUser, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
+import { db } from "@/lib/db"
+import { doctorProfile } from "@/lib/db/schema"
 import { listDoctorAppointments } from "@/lib/data/appointments"
 import { listDoctorAssignedCases } from "@/lib/data/cases"
+import { getDoctorEarningsSummary } from "@/lib/data/earnings"
 import { AppointmentList } from "@/components/appointments/appointment-list"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { DashboardHero } from "@/components/dashboard/hero-banner"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { SectionCard } from "@/components/dashboard/section-card"
+import { EarningsSection } from "@/components/dashboard/earnings-section"
 import { caseStatusAr, appointmentTypeAr } from "@/lib/status-labels"
+import { headlineTotal } from "@/lib/money"
 import { firstNameOf } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
@@ -73,9 +80,14 @@ export default async function DoctorDashboardPage() {
   const roles = await currentUserRoles()
   if (!roles.includes(ROLES.DOCTOR)) redirect("/dashboard")
 
-  const [appointments, cases] = await Promise.all([
+  const dp = (
+    await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.userId, user.id)).limit(1)
+  )[0]
+
+  const [appointments, cases, earnings] = await Promise.all([
     listDoctorAppointments(user.id),
     listDoctorAssignedCases(user.id),
+    dp ? getDoctorEarningsSummary(dp.id) : Promise.resolve({ collected: [], pending: [], invoiceCount: 0, recent: [] }),
   ])
 
   const now = new Date()
@@ -167,7 +179,19 @@ export default async function DoctorDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <MetricCard
+          icon={Wallet}
+          label="صافي محصّل"
+          value={headlineTotal(earnings.collected).value}
+          hint={
+            earnings.pending.length > 0
+              ? `${headlineTotal(earnings.pending).value} معلّق`
+              : "لا مستحقات معلّقة"
+          }
+          tone="success"
+          emphasis
+        />
         <MetricCard
           icon={CalendarClock}
           label="مواعيد اليوم"
@@ -284,6 +308,8 @@ export default async function DoctorDashboardPage() {
               </ul>
             )}
           </SectionCard>
+
+          <EarningsSection earnings={earnings} />
 
           <SectionCard
             icon={UserCog}

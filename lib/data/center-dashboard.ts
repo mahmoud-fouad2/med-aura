@@ -90,11 +90,27 @@ export async function listCenterBookings(centerIds: string[], limit = 30): Promi
     .limit(limit)
 }
 
-export type CenterInvoiceRow = { id: string; invoiceNumber: string; status: string; total: string; remainingAmount: string; currency: string }
+export type CenterInvoiceRow = {
+  id: string
+  invoiceNumber: string
+  status: string
+  total: string
+  remainingAmount: string
+  currency: string
+  providerNetAmount: string
+}
 export async function listCenterInvoices(centerIds: string[], limit = 30): Promise<CenterInvoiceRow[]> {
   if (!isDbConfigured || centerIds.length === 0) return []
   return db
-    .select({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, status: invoice.status, total: invoice.total, remainingAmount: invoice.remainingAmount, currency: invoice.currency })
+    .select({
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      status: invoice.status,
+      total: invoice.total,
+      remainingAmount: invoice.remainingAmount,
+      currency: invoice.currency,
+      providerNetAmount: invoice.providerNetAmount,
+    })
     .from(invoice)
     .where(inArray(invoice.centerId, centerIds))
     .orderBy(desc(invoice.createdAt))

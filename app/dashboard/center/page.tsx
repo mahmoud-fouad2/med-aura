@@ -16,6 +16,7 @@ import { resolveUserCenterIds, PERMISSIONS } from "@/lib/rbac"
 import { getMyCenterAction } from "@/lib/actions/center"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { getI18n } from "@/lib/i18n"
+import { getCenterEarningsSummary } from "@/lib/data/earnings"
 import {
   listCenterCases,
   listCenterPeople,
@@ -86,6 +87,7 @@ export default async function CenterDashboardPage() {
     reviews,
     myCenter,
     { locale },
+    earnings,
   ] = await Promise.all([
     listCenterCases(centerIds),
     listCenterPeople(centerIds),
@@ -97,6 +99,7 @@ export default async function CenterDashboardPage() {
     listCenterReviews(centerIds),
     getMyCenterAction(),
     getI18n(),
+    getCenterEarningsSummary(centerIds),
   ])
 
   const centerProfileInitial: CenterProfileInitial | null =
@@ -152,7 +155,19 @@ export default async function CenterDashboardPage() {
         description="نظرة شاملة على الحالات، الفريق، عروض الأسعار، والمستحقات."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <MetricCard
+          icon={Wallet}
+          label="صافي محصّل"
+          value={headlineTotal(earnings.collected).value}
+          hint={
+            earnings.pending.length > 0
+              ? `${headlineTotal(earnings.pending).value} معلّق`
+              : "لا مستحقات معلّقة"
+          }
+          tone="success"
+          emphasis
+        />
         <MetricCard
           icon={FileText}
           label="حالات نشطة"
@@ -435,9 +450,14 @@ export default async function CenterDashboardPage() {
                         {currencyAr(i.currency)}
                       </p>
                     </div>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                      {invoiceStatusAr(i.status)}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        {invoiceStatusAr(i.status)}
+                      </span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        صافي {Number(i.providerNetAmount).toLocaleString("ar-SA-u-nu-latn")} {currencyAr(i.currency)}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>
