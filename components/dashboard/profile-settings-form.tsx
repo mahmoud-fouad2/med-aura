@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Loader2, Save, Ruler, Weight } from "lucide-react"
 import { updateOwnProfile } from "@/lib/actions/patient-profile"
 import { COUNTRY_CODES, countryNameAr, countryNameEn } from "@/lib/status-labels"
+import { AvatarUploader } from "@/components/dashboard/avatar-uploader"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils"
 import type { Locale } from "@/lib/i18n"
 
 export type OwnProfileData = {
+  photoUrl: string | null
   phone: string | null
   residenceCountry: string | null
   city: string | null
@@ -27,6 +29,7 @@ export type OwnProfileData = {
 
 const COPY = {
   ar: {
+    photoTitle: "الصورة الشخصية",
     contactTitle: "معلومات التواصل",
     phone: "رقم الجوال",
     residenceCountry: "دولة الإقامة",
@@ -49,6 +52,7 @@ const COPY = {
     saved: "تم حفظ بياناتك.",
   },
   en: {
+    photoTitle: "Profile photo",
     contactTitle: "Contact info",
     phone: "Phone number",
     residenceCountry: "Country of residence",
@@ -80,6 +84,7 @@ export function ProfileSettingsForm({ initial, locale }: { initial: OwnProfileDa
   const router = useRouter()
   const countryName = locale === "ar" ? countryNameAr : countryNameEn
 
+  const [photoUrl, setPhotoUrl] = useState(initial.photoUrl)
   const [phone, setPhone] = useState(initial.phone ?? "")
   const [country, setCountry] = useState(initial.residenceCountry ?? "")
   const [city, setCity] = useState(initial.city ?? "")
@@ -123,7 +128,13 @@ export function ProfileSettingsForm({ initial, locale }: { initial: OwnProfileDa
   }
 
   return (
-    <form onSubmit={onSave} className="space-y-6">
+    <div className="space-y-6">
+      <Card className="space-y-4 p-5">
+        <h2 className="font-heading text-base font-semibold text-foreground">{t.photoTitle}</h2>
+        <AvatarUploader photoUrl={photoUrl} onChange={setPhotoUrl} locale={locale} />
+      </Card>
+
+      <form onSubmit={onSave} className="space-y-6">
       <Card className="space-y-4 p-5">
         <h2 className="font-heading text-base font-semibold text-foreground">{t.contactTitle}</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -290,6 +301,7 @@ export function ProfileSettingsForm({ initial, locale }: { initial: OwnProfileDa
         </Button>
         {saved && !busy && <span className="text-sm text-muted-foreground">{t.saved}</span>}
       </div>
-    </form>
+      </form>
+    </div>
   )
 }

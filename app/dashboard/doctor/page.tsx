@@ -7,6 +7,7 @@ import {
   Activity,
   ChevronLeft,
   ShieldCheck,
+  UserCog,
 } from "lucide-react"
 import { getCurrentUser, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
@@ -282,6 +283,21 @@ export default async function DoctorDashboardPage() {
                 ))}
               </ul>
             )}
+          </SectionCard>
+
+          <SectionCard
+            icon={UserCog}
+            title="ملفي المهني"
+            description="صورتك، نبذتك، سعرك، والإجراءات التي تقدّمها."
+          >
+            <div className="p-5">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                render={<Link href="/dashboard/doctor/practice">إدارة ملفي المهني</Link>}
+              />
+            </div>
           </SectionCard>
         </div>
       </div>

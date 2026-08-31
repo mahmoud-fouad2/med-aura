@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { patientProfile } from "@/lib/db/schema"
 import { requireAuthPage } from "@/lib/session"
 import { getI18n } from "@/lib/i18n"
+import { getPublicUrl } from "@/lib/storage/r2"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { ProfileSettingsForm, type OwnProfileData } from "@/components/dashboard/profile-settings-form"
 
@@ -33,7 +34,17 @@ export default async function ProfilePage() {
       .limit(1)
   )[0]
 
+  // user.image is either an R2 object key we wrote (avatars/<id>/<file>) or,
+  // for a Google sign-up that never uploaded its own photo, the full Google
+  // URL Better Auth stored directly — only the former needs resolving.
+  const photoUrl = user.image
+    ? user.image.startsWith("http")
+      ? user.image
+      : getPublicUrl(user.image)
+    : null
+
   const initial: OwnProfileData = {
+    photoUrl,
     phone: row?.phone ?? null,
     residenceCountry: row?.residenceCountry ?? null,
     city: row?.city ?? null,
