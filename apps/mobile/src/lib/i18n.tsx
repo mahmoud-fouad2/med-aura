@@ -362,6 +362,10 @@ const ar = {
     center: "المركز",
     book: "احجزي استشارة",
     bookNote: "اختاري الموعد المناسب وأكملي الحجز من داخل التطبيق.",
+    gallery: "قبل وبعد",
+    reviews: "تقييمات المرضى",
+    reply: "رد الطبيب",
+    anonymousPatient: "مريضة",
   },
   booking: {
     title: "حجز استشارة",
@@ -1094,6 +1098,10 @@ const en: typeof ar = {
     center: "Center",
     book: "Book a consultation",
     bookNote: "Pick a time and complete your booking inside the app.",
+    gallery: "Before & After",
+    reviews: "Patient Reviews",
+    reply: "Doctor's reply",
+    anonymousPatient: "Patient",
   },
   booking: {
     title: "Book a consultation",

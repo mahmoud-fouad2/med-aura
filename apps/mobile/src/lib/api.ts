@@ -57,6 +57,24 @@ export type Doctor = {
   distanceKm: number | null
 }
 
+export type DoctorGalleryItem = {
+  id: string
+  titleAr: string
+  procedureNameAr: string
+  beforeUrl: string | null
+  afterUrl: string | null
+}
+
+export type DoctorReview = {
+  id: string
+  rating: number
+  comment: string
+  authorName: string | null
+  anonymous: boolean
+  providerResponse: string | null
+  createdAt: string
+}
+
 export type DoctorDetail = Doctor & {
   bio: string | null
   languages: string[]
@@ -69,6 +87,8 @@ export type DoctorDetail = Doctor & {
   licenseAuthority: string | null
   licenseLast4: string | null
   lastVerifiedAt: string | null
+  gallery: DoctorGalleryItem[]
+  reviews: DoctorReview[]
 }
 
 export type FavoriteDoctor = {

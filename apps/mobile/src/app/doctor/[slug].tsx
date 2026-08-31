@@ -2,6 +2,8 @@ import { Pressable, ScrollView, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
+import { Image } from "expo-image"
+import type { DoctorGalleryItem, DoctorReview } from "../../lib/api"
 import {
   AppText,
   Avatar,
@@ -196,6 +198,26 @@ export default function DoctorProfile() {
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
                   {doctor.data.procedures.map((p) => (
                     <Tag key={p} label={p} />
+                  ))}
+                </View>
+              </Section>
+            ) : null}
+
+            {doctor.data.gallery.length ? (
+              <Section title={t.doctor.gallery} icon="images-outline">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
+                  {doctor.data.gallery.map((item) => (
+                    <GalleryPair key={item.id} item={item} />
+                  ))}
+                </ScrollView>
+              </Section>
+            ) : null}
+
+            {doctor.data.reviews.length ? (
+              <Section title={t.doctor.reviews} icon="star-outline">
+                <View style={{ gap: spacing.lg }}>
+                  {doctor.data.reviews.map((rev) => (
+                    <ReviewRow key={rev.id} review={rev} anonymousLabel={t.doctor.anonymousPatient} replyLabel={t.doctor.reply} />
                   ))}
                 </View>
               </Section>
@@ -421,6 +443,81 @@ function CredentialGroup({ label, items }: { label: string; items: string[] }) {
           </View>
         ))}
       </View>
+    </View>
+  )
+}
+
+function GalleryPair({ item }: { item: DoctorGalleryItem }) {
+  return (
+    <View style={{ width: 220, gap: spacing.xs }}>
+      <View style={{ flexDirection: "row", gap: 3, borderRadius: radius.lg, overflow: "hidden" }}>
+        <Image
+          source={{ uri: item.beforeUrl ?? undefined }}
+          style={{ width: 108, height: 135, backgroundColor: colors.border }}
+          contentFit="cover"
+        />
+        <Image
+          source={{ uri: item.afterUrl ?? undefined }}
+          style={{ width: 108, height: 135, backgroundColor: colors.border }}
+          contentFit="cover"
+        />
+      </View>
+      <AppText variant="caption" weight="bold" numberOfLines={1}>
+        {item.titleAr}
+      </AppText>
+      <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
+        {item.procedureNameAr}
+      </AppText>
+    </View>
+  )
+}
+
+function ReviewRow({
+  review,
+  anonymousLabel,
+  replyLabel,
+}: {
+  review: DoctorReview
+  anonymousLabel: string
+  replyLabel: string
+}) {
+  return (
+    <View style={{ gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View style={{ flexDirection: "row", gap: 2 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Ionicons
+              key={i}
+              name={i < review.rating ? "star" : "star-outline"}
+              size={13}
+              color={colors.gold}
+            />
+          ))}
+        </View>
+        <AppText variant="caption" color={colors.textFaint}>
+          {review.anonymous ? anonymousLabel : review.authorName}
+        </AppText>
+      </View>
+      <AppText variant="sub" color={colors.textMuted}>
+        {review.comment}
+      </AppText>
+      {review.providerResponse ? (
+        <View
+          style={{
+            backgroundColor: colors.primarySoft,
+            borderRadius: radius.md,
+            padding: spacing.sm,
+            marginTop: 4,
+          }}
+        >
+          <AppText variant="caption" weight="bold" color={colors.primary}>
+            {replyLabel}
+          </AppText>
+          <AppText variant="caption" color={colors.textMuted}>
+            {review.providerResponse}
+          </AppText>
+        </View>
+      ) : null}
     </View>
   )
 }

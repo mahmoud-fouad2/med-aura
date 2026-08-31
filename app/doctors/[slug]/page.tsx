@@ -20,6 +20,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { DataState } from "@/components/ui/data-state"
 import { getPublicDoctorBySlug } from "@/lib/data/doctors"
+import { listPublicBeforeAfter } from "@/lib/data/before-after"
+import { listPublicDoctorReviews } from "@/lib/data/reviews"
+import { BeforeAfterGalleryCard } from "@/components/before-after/gallery-card"
 import { query } from "@/lib/db/query"
 import { currencyAr, countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { getI18n } from "@/lib/i18n"
@@ -81,6 +84,11 @@ export default async function DoctorProfilePage({
   }
   const doctor = r.data
   if (!doctor) notFound()
+
+  const [gallery, reviews] = await Promise.all([
+    listPublicBeforeAfter({ doctorSlug: doctor.slug, limit: 6 }),
+    listPublicDoctorReviews(doctor.slug, 8),
+  ])
 
   const initials = doctor.name.replace(/^د\.?\s*/, "").trim().charAt(0) || "د"
 
@@ -260,6 +268,57 @@ export default async function DoctorProfilePage({
                       </Badge>
                     ))}
                   </div>
+                </Card>
+              )}
+
+              {gallery.length > 0 && (
+                <Card className="p-6">
+                  <h2 className="mb-4 font-heading text-lg font-bold text-foreground">
+                    {isAr ? "قبل وبعد" : "Before & After"}
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {gallery.map((item) => (
+                      <BeforeAfterGalleryCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {reviews.length > 0 && (
+                <Card className="p-6">
+                  <h2 className="mb-4 font-heading text-lg font-bold text-foreground">
+                    {isAr ? "تقييمات المرضى" : "Patient Reviews"}
+                  </h2>
+                  <ul className="space-y-5">
+                    {reviews.map((rev) => (
+                      <li key={rev.id} className="border-b border-border/40 pb-5 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="inline-flex items-center gap-0.5 text-warning-foreground">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <span
+                                key={i}
+                                className={"size-2.5 rounded-full " + (i < rev.rating ? "bg-current" : "bg-muted")}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {rev.anonymous
+                              ? (isAr ? "مريض" : "Patient")
+                              : rev.authorName}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm leading-relaxed text-foreground/85">{rev.comment}</p>
+                        {rev.providerResponse && (
+                          <div className="mt-3 rounded-xl bg-primary/5 px-3 py-2.5 text-sm">
+                            <p className="mb-1 text-xs font-semibold text-primary">
+                              {isAr ? "رد الطبيب" : "Doctor's reply"}
+                            </p>
+                            <p className="text-foreground/80">{rev.providerResponse}</p>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </Card>
               )}
 

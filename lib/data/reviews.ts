@@ -1,6 +1,6 @@
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { aestheticCase, patientProfile, procedure, review, user } from "@/lib/db/schema"
+import { aestheticCase, doctorProfile, patientProfile, procedure, review, user } from "@/lib/db/schema"
 
 export type FeaturedReview = {
   id: string
@@ -79,4 +79,51 @@ export async function getFeaturedReviewSummary(limit = 3): Promise<FeaturedRevie
     averageRating: Number(totals?.averageRating ?? 0),
     reviewCount: Number(totals?.reviewCount ?? 0),
   }
+}
+
+export type DoctorPublicReview = {
+  id: string
+  rating: number
+  comment: string
+  authorName: string
+  authorImage: string | null
+  anonymous: boolean
+  providerResponse: string | null
+  createdAt: Date
+}
+
+/**
+ * A single doctor's public review list — same publication rules as the
+ * homepage's featured reviews (verified, published, non-empty comment), just
+ * scoped to one doctor and without the site-wide average.
+ */
+export async function listPublicDoctorReviews(doctorSlug: string, limit = 10): Promise<DoctorPublicReview[]> {
+  const rows = await db
+    .select({
+      id: review.id,
+      rating: review.overallRating,
+      comment: review.comment,
+      authorName: user.name,
+      authorImage: user.image,
+      anonymous: review.anonymousDisplay,
+      providerResponse: review.providerResponse,
+      createdAt: review.createdAt,
+    })
+    .from(review)
+    .innerJoin(user, eq(review.patientUserId, user.id))
+    .innerJoin(doctorProfile, eq(review.doctorId, doctorProfile.id))
+    .where(and(publicReviewFilter, eq(doctorProfile.slug, doctorSlug)))
+    .orderBy(desc(review.createdAt))
+    .limit(Math.max(1, Math.min(limit, 30)))
+
+  return rows.map((row) => ({
+    id: row.id,
+    rating: row.rating,
+    comment: row.comment?.replace(/\s+/g, " ").trim() ?? "",
+    authorName: row.anonymous ? "" : row.authorName,
+    authorImage: row.anonymous ? null : row.authorImage,
+    anonymous: row.anonymous,
+    providerResponse: row.providerResponse,
+    createdAt: row.createdAt,
+  }))
 }
