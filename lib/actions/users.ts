@@ -169,6 +169,9 @@ const UpdateUserSchema = z.object({
   nationality: optionalCountryCode,
   residenceCountry: optionalCountryCode,
   city: optionalText(120),
+  biologicalSex: z.enum(["male", "female"]).optional(),
+  heightCm: z.coerce.number().int().min(30).max(280).optional(),
+  weightKg: z.coerce.number().min(1).max(500).optional(),
   emergencyContactName: optionalText(160),
   emergencyContactPhone: optionalPhone,
 })
@@ -187,6 +190,9 @@ export async function updateUserAction(input: {
   nationality?: string
   residenceCountry?: string
   city?: string
+  biologicalSex?: "male" | "female"
+  heightCm?: number
+  weightKg?: number
   emergencyContactName?: string
   emergencyContactPhone?: string
 }): Promise<ActionResult> {
@@ -204,6 +210,9 @@ export async function updateUserAction(input: {
     nationality,
     residenceCountry,
     city,
+    biologicalSex,
+    heightCm,
+    weightKg,
     emergencyContactName,
     emergencyContactPhone,
   } = parsed.data
@@ -228,6 +237,9 @@ export async function updateUserAction(input: {
       nationality: nationality ?? null,
       residenceCountry: residenceCountry ?? null,
       city: city ?? null,
+      biologicalSex: biologicalSex ?? null,
+      heightCm: heightCm ?? null,
+      weightKg: weightKg != null ? String(weightKg) : null,
       emergencyContactName: emergencyContactName ?? null,
       emergencyContactPhone: emergencyContactPhone ?? null,
       updatedAt: new Date(),
@@ -265,6 +277,9 @@ export type UserEditData = {
   nationality: string | null
   residenceCountry: string | null
   city: string | null
+  biologicalSex: "male" | "female" | null
+  heightCm: number | null
+  weightKg: string | null
   emergencyContactName: string | null
   emergencyContactPhone: string | null
 }
@@ -286,6 +301,9 @@ export async function getUserForEditAction(
         nationality: patientProfile.nationality,
         residenceCountry: patientProfile.residenceCountry,
         city: patientProfile.city,
+        biologicalSex: patientProfile.biologicalSex,
+        heightCm: patientProfile.heightCm,
+        weightKg: patientProfile.weightKg,
         emergencyContactName: patientProfile.emergencyContactName,
         emergencyContactPhone: patientProfile.emergencyContactPhone,
       })
@@ -296,7 +314,10 @@ export async function getUserForEditAction(
   )[0]
   if (!row) return { status: "error", message: "المستخدم غير موجود" }
 
-  return { status: "ok", user: row }
+  return {
+    status: "ok",
+    user: { ...row, biologicalSex: row.biologicalSex as "male" | "female" | null },
+  }
 }
 
 /**

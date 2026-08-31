@@ -15,11 +15,13 @@ import {
   AppText,
   Button,
   Card,
+  Chip,
   ChevronBack,
   SectionHeading,
   Skeleton,
 } from "../components/ui"
 import { CountryPicker } from "../components/country-picker"
+import { DatePicker } from "../components/date-picker"
 import { Field, inputStyle } from "../components/form"
 import { useMe, api, type Me } from "../lib/api"
 import { useI18n } from "../lib/i18n"
@@ -99,6 +101,15 @@ function ProfileForm({ initial }: { initial: Me }) {
     initial.nationality ?? null,
   )
   const [dateOfBirth, setDateOfBirth] = useState(initial.dateOfBirth ?? "")
+  const [biologicalSex, setBiologicalSex] = useState<"male" | "female" | null>(
+    initial.biologicalSex ?? null,
+  )
+  const [heightCm, setHeightCm] = useState(
+    initial.heightCm != null ? String(initial.heightCm) : "",
+  )
+  const [weightKg, setWeightKg] = useState(
+    initial.weightKg != null ? String(initial.weightKg) : "",
+  )
   const [emergencyName, setEmergencyName] = useState(
     initial.emergencyContactName ?? "",
   )
@@ -117,6 +128,8 @@ function ProfileForm({ initial }: { initial: Me }) {
     }
     setSaving(true)
     try {
+      const height = Number(heightCm)
+      const weight = Number(weightKg)
       await api.updateMe({
         name,
         phone,
@@ -124,6 +137,9 @@ function ProfileForm({ initial }: { initial: Me }) {
         city: city || undefined,
         nationality: nationality || undefined,
         dateOfBirth: dateOfBirth || undefined,
+        biologicalSex: biologicalSex || undefined,
+        heightCm: heightCm.trim() && Number.isFinite(height) ? height : undefined,
+        weightKg: weightKg.trim() && Number.isFinite(weight) ? weight : undefined,
         emergencyContactName: emergencyName || undefined,
         emergencyContactPhone: emergencyPhone || undefined,
       })
@@ -181,18 +197,58 @@ function ProfileForm({ initial }: { initial: Me }) {
       <Field label={t.auth.city}>
         <TextInput value={city} onChangeText={setCity} style={inputStyle} />
       </Field>
-      <Field label={t.editProfile.dateOfBirth} hint={t.editProfile.dateOfBirthHint}>
-        <TextInput
+      <Field label={t.editProfile.dateOfBirth}>
+        <DatePicker
           value={dateOfBirth}
-          onChangeText={setDateOfBirth}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="numbers-and-punctuation"
-          maxLength={10}
-          style={inputStyle}
-          textAlign="left"
+          onChange={setDateOfBirth}
+          placeholder={t.editProfile.dateOfBirthHint}
         />
       </Field>
+
+      <SectionHeading
+        icon="body-outline"
+        title={t.editProfile.physicalSectionTitle}
+      />
+      <Field label={t.editProfile.biologicalSex} hint={t.editProfile.physicalSectionHint}>
+        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          <Chip
+            label={t.editProfile.male}
+            active={biologicalSex === "male"}
+            onPress={() => setBiologicalSex("male")}
+          />
+          <Chip
+            label={t.editProfile.female}
+            active={biologicalSex === "female"}
+            onPress={() => setBiologicalSex("female")}
+          />
+        </View>
+      </Field>
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <View style={{ flex: 1 }}>
+          <Field label={t.editProfile.heightCm}>
+            <TextInput
+              value={heightCm}
+              onChangeText={(v) => setHeightCm(v.replace(/[^\d]/g, ""))}
+              keyboardType="number-pad"
+              maxLength={3}
+              style={inputStyle}
+              textAlign="left"
+            />
+          </Field>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label={t.editProfile.weightKg}>
+            <TextInput
+              value={weightKg}
+              onChangeText={(v) => setWeightKg(v.replace(/[^\d.]/g, ""))}
+              keyboardType="decimal-pad"
+              maxLength={5}
+              style={inputStyle}
+              textAlign="left"
+            />
+          </Field>
+        </View>
+      </View>
 
       <SectionHeading
         icon="call-outline"

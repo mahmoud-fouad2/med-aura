@@ -176,10 +176,16 @@ export type Me = {
   city: string | null
   dateOfBirth: string | null
   nationality: string | null
+  biologicalSex: "male" | "female" | null
+  heightCm: number | null
+  weightKg: number | null
   emergencyContactName: string | null
   emergencyContactPhone: string | null
   /** False right after a Google sign-up — it never collects phone/country. */
   profileCompleted: boolean
+  /** False until the "tell us about yourself" wizard step has been shown
+   *  once (submitted or explicitly skipped) — independent of profileCompleted. */
+  profileWizardCompleted: boolean
 }
 
 export type AppNotification = {
@@ -437,6 +443,9 @@ export const api = {
     city?: string
     dateOfBirth?: string
     nationality?: string
+    biologicalSex?: "male" | "female"
+    heightCm?: number
+    weightKg?: number
     emergencyContactName?: string
     emergencyContactPhone?: string
   }) =>
@@ -658,6 +667,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify(input),
     }),
+  saveProfileWizardDetails: (input: {
+    dateOfBirth?: string
+    biologicalSex?: "male" | "female"
+    heightCm?: number
+    weightKg?: number
+  }) =>
+    request<{ saved: boolean }>("/api/mobile/v1/profile-wizard", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  skipProfileWizard: () =>
+    request<{ skipped: boolean }>("/api/mobile/v1/profile-wizard", { method: "DELETE" }),
 }
 
 export const useHome = () =>

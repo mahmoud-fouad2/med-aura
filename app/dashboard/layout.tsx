@@ -34,6 +34,7 @@ export default async function DashboardLayout({
     nav.push({ href: "/dashboard/cases", label: l("حالاتي", "My cases") })
     nav.push({ href: "/dashboard/appointments", label: l("مواعيدي", "Appointments") })
     nav.push({ href: "/dashboard/travel", label: l("السفر والاستقبال", "Travel & Concierge") })
+    nav.push({ href: "/dashboard/profile", label: l("ملفي الشخصي", "My profile") })
   }
   nav.push({ href: "/dashboard/support", label: l("الدعم", "Support") })
   nav.push({ href: "/dashboard/security", label: l("الأمان", "Security") })

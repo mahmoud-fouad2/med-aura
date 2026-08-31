@@ -19,7 +19,7 @@ import {
 import { requireAuthPage, currentUserRoles } from "@/lib/session"
 import { ROLES } from "@/lib/rbac"
 import { db } from "@/lib/db"
-import { providerApplication } from "@/lib/db/schema"
+import { providerApplication, patientProfile } from "@/lib/db/schema"
 import { eq, desc } from "drizzle-orm"
 import { listCasesForPatient } from "@/lib/data/cases"
 import { listPatientAppointments } from "@/lib/data/appointments"
@@ -93,6 +93,24 @@ export default async function DashboardHome() {
 
   if (!isPatient && isDoctor) redirect("/dashboard/doctor")
   if (!isPatient && isAdmin) redirect("/admin")
+
+  if (isPatient) {
+    const profile = (
+      await db
+        .select({
+          onboardingCompleted: patientProfile.onboardingCompleted,
+          profileWizardSeenAt: patientProfile.profileWizardSeenAt,
+        })
+        .from(patientProfile)
+        .where(eq(patientProfile.userId, user.id))
+        .limit(1)
+    )[0]
+    // One-time detour, for brand-new signups and pre-existing patients alike
+    // — never shown again once profileWizardSeenAt is set (submit or skip).
+    if (!profile?.onboardingCompleted || !profile?.profileWizardSeenAt) {
+      redirect("/complete-profile?next=/dashboard")
+    }
+  }
 
   const [cases, appointments, unread, favs, lastApp] = await Promise.all([
     listCasesForPatient(user.id),

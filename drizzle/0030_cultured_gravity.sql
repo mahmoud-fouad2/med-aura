@@ -1,0 +1,1 @@
+ALTER TABLE "patient_profile" ADD COLUMN "profileWizardSeenAt" timestamp with time zone;

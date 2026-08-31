@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
@@ -42,6 +43,16 @@ export default function Home() {
   const accountType = me.data?.accountType ?? null
   const isPatient = accountType === "patient"
   const todaysAppointments = home.data?.todaysAppointments ?? []
+
+  // One-time detour into the "tell us about yourself" wizard — for brand-new
+  // signups and pre-existing patients alike, exactly mirroring the web
+  // dashboard's own redirect. Never shown again once profileWizardCompleted
+  // flips true (submit or explicit skip).
+  useEffect(() => {
+    if (isPatient && me.data && !me.data.profileWizardCompleted) {
+      router.replace("/complete-profile")
+    }
+  }, [isPatient, me.data])
 
   const resolvedName = (
     me.data?.displayName ??

@@ -34,9 +34,13 @@ export async function GET() {
         city: patientProfile.city,
         dateOfBirth: patientProfile.dateOfBirth,
         nationality: patientProfile.nationality,
+        biologicalSex: patientProfile.biologicalSex,
+        heightCm: patientProfile.heightCm,
+        weightKg: patientProfile.weightKg,
         emergencyContactName: patientProfile.emergencyContactName,
         emergencyContactPhone: patientProfile.emergencyContactPhone,
         onboardingCompleted: patientProfile.onboardingCompleted,
+        profileWizardSeenAt: patientProfile.profileWizardSeenAt,
       })
       .from(patientProfile)
       .where(eq(patientProfile.userId, user.id))
@@ -86,9 +90,13 @@ export async function GET() {
     city: profile?.city ?? null,
     dateOfBirth: profile?.dateOfBirth ?? null,
     nationality: profile?.nationality ?? null,
+    biologicalSex: profile?.biologicalSex ?? null,
+    heightCm: profile?.heightCm ?? null,
+    weightKg: profile?.weightKg ? Number(profile.weightKg) : null,
     emergencyContactName: profile?.emergencyContactName ?? null,
     emergencyContactPhone: profile?.emergencyContactPhone ?? null,
     profileCompleted: profile?.onboardingCompleted ?? false,
+    profileWizardCompleted: Boolean(profile?.profileWizardSeenAt),
   })
 }
 
@@ -131,6 +139,9 @@ const UpdateMeSchema = z.object({
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.string().trim().length(2, "اختر الجنسية").optional(),
   ),
+  biologicalSex: z.enum(["male", "female"]).optional(),
+  heightCm: z.number().int().min(30).max(280).optional(),
+  weightKg: z.number().min(1).max(500).optional(),
   emergencyContactName: optionalTrimmed(160),
   emergencyContactPhone: z.preprocess(
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
@@ -163,6 +174,9 @@ export async function PATCH(request: Request) {
     city,
     dateOfBirth,
     nationality,
+    biologicalSex,
+    heightCm,
+    weightKg,
     emergencyContactName,
     emergencyContactPhone,
   } = parsed.data
@@ -176,6 +190,9 @@ export async function PATCH(request: Request) {
       city: city || null,
       dateOfBirth: dateOfBirth ?? null,
       nationality: nationality ?? null,
+      biologicalSex: biologicalSex ?? null,
+      heightCm: heightCm ?? null,
+      weightKg: weightKg != null ? String(weightKg) : null,
       emergencyContactName: emergencyContactName ?? null,
       emergencyContactPhone: emergencyContactPhone ?? null,
     }

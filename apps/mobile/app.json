@@ -3,7 +3,7 @@
     "name": "Med Aura",
     "slug": "med-aura",
     "owner": "medaura12",
-    "version": "1.0.45",
+    "version": "1.0.46",
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "medaura",
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.medaura.app",
-      "versionCode": 46,
+      "versionCode": 47,
       "adaptiveIcon": {
         "backgroundColor": "#FFFCF7",
         "foregroundImage": "./assets/brand/adaptive-foreground.png"
@@ -86,7 +86,9 @@
       ],
       "expo-image",
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-font",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

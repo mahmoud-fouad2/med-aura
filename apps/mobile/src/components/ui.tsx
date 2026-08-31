@@ -45,8 +45,15 @@ export function AppText({
   /** Long-press to copy — for references and other support-facing values. */
   selectable?: boolean
 }) {
-  const fontWeight = (
-    { regular: "400", medium: "600", bold: "700", heavy: "800" } as const
+  // Real loaded weights (see _layout.tsx), not RN's synthesized bold — Readex
+  // Pro tops out at 700, so "heavy" reuses Bold rather than faking an 800.
+  const fontFamily = (
+    {
+      regular: "ReadexPro_400Regular",
+      medium: "ReadexPro_500Medium",
+      bold: "ReadexPro_700Bold",
+      heavy: "ReadexPro_700Bold",
+    } as const
   )[weight]
   return (
     <Text
@@ -57,7 +64,7 @@ export function AppText({
         {
           fontSize: type[variant],
           color,
-          fontWeight,
+          fontFamily,
           lineHeight: type[variant] * 1.5,
           writingDirection: "auto",
         },

@@ -6,6 +6,13 @@ import * as SplashScreen from "expo-splash-screen"
 import * as Notifications from "expo-notifications"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import {
+  useFonts,
+  ReadexPro_400Regular,
+  ReadexPro_500Medium,
+  ReadexPro_600SemiBold,
+  ReadexPro_700Bold,
+} from "@expo-google-fonts/readex-pro"
 import { SessionExpiredError } from "../lib/api"
 import { I18nProvider, useI18n } from "../lib/i18n"
 import { AppLockGate } from "../components/app-lock"
@@ -45,6 +52,18 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const pathname = usePathname()
   const handledNotification = useRef<string | null>(null)
+  // The brand's own typeface (a unified Arabic+Latin design, same family the
+  // web uses) — without this, every screen fell back to the OS default
+  // (Roboto on Android), and its 600/800 weights are just synthesized-bold
+  // 400, not real weights. Static per-weight files, not the variable font:
+  // RN's text renderer selects a loaded font by family name, not by
+  // interpolating a weight axis the way CSS does.
+  const [fontsLoaded] = useFonts({
+    ReadexPro_400Regular,
+    ReadexPro_500Medium,
+    ReadexPro_600SemiBold,
+    ReadexPro_700Bold,
+  })
 
   useEffect(() => {
     // Respect the device/app language. Arabic may use RTL, while English must
@@ -70,6 +89,11 @@ export default function RootLayout() {
     const sub = Notifications.addNotificationResponseReceivedListener(openResponse)
     return () => sub.remove()
   }, [])
+
+  // Keep the native splash up (already held via preventAutoHideAsync above)
+  // instead of rendering a frame in the fallback system font that would
+  // visibly swap the instant fonts finish.
+  if (!fontsLoaded) return null
 
   return (
     <RootErrorBoundary>

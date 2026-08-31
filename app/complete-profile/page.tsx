@@ -3,18 +3,19 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { patientProfile } from "@/lib/db/schema"
 import { requireAuthPage } from "@/lib/session"
-import { CompleteProfileForm } from "@/components/auth/complete-profile-form"
+import { ProfileWizard } from "@/components/auth/profile-wizard"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { getI18n } from "@/lib/i18n"
 
 export const metadata = { title: "أكمل بياناتك" }
 
 /**
- * Landing spot for a first-time Google sign-up (see AuthForm's
- * newUserCallbackURL). Google never collects a phone number or country, so
- * this fills the same two fields the email/password flow gets synchronously
- * right after signUp.email() — via the exact same completeSignupProfile
- * action, just triggered a step later.
+ * Two-step onboarding wizard, reached from three places: a first-time Google
+ * sign-up (AuthForm's newUserCallbackURL — phone/country never collected, so
+ * both steps show), an email/password sign-up that already has phone/country
+ * (only the "about yourself" step shows), and /dashboard's own redirect for
+ * any patient — new or pre-existing — who has never seen the "about
+ * yourself" step (profileWizardSeenAt still null).
  */
 export default async function CompleteProfilePage({
   searchParams,
@@ -27,20 +28,23 @@ export default async function CompleteProfilePage({
 
   const existing = (
     await db
-      .select({ onboardingCompleted: patientProfile.onboardingCompleted })
+      .select({
+        onboardingCompleted: patientProfile.onboardingCompleted,
+        profileWizardSeenAt: patientProfile.profileWizardSeenAt,
+      })
       .from(patientProfile)
       .where(eq(patientProfile.userId, user.id))
       .limit(1)
   )[0]
-  // Already onboarded (a returning Google user, or profile completed some
-  // other way) — nothing to collect, go straight through.
-  if (existing?.onboardingCompleted) redirect(destination)
+  // Both steps already done — nothing left to collect, go straight through.
+  if (existing?.onboardingCompleted && existing?.profileWizardSeenAt) redirect(destination)
 
   const { locale, t } = await getI18n()
+  const startStep = existing?.onboardingCompleted ? "about" : "contact"
 
   return (
     <AuthShell locale={locale} home={t.home} authShell={t.authShell}>
-      <CompleteProfileForm destination={destination} />
+      <ProfileWizard destination={destination} startStep={startStep} locale={locale} />
     </AuthShell>
   )
 }

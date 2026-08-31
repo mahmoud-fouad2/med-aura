@@ -48,6 +48,9 @@ export function UserEditForm({ userId, isPatient }: { userId: string; isPatient:
       nationality: data.nationality ?? undefined,
       residenceCountry: data.residenceCountry ?? undefined,
       city: data.city ?? undefined,
+      biologicalSex: data.biologicalSex ?? undefined,
+      heightCm: data.heightCm ?? undefined,
+      weightKg: data.weightKg ? Number(data.weightKg) : undefined,
       emergencyContactName: data.emergencyContactName ?? undefined,
       emergencyContactPhone: data.emergencyContactPhone ?? undefined,
     })
@@ -108,6 +111,46 @@ export function UserEditForm({ userId, isPatient }: { userId: string; isPatient:
               </Field>
               <Field label="المدينة">
                 <Input value={data.city ?? ""} onChange={(e) => setData({ ...data, city: e.target.value })} />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection title="بيانات جسدية أساسية">
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="الجنس">
+                <select
+                  value={data.biologicalSex ?? ""}
+                  onChange={(e) =>
+                    setData({
+                      ...data,
+                      biologicalSex: (e.target.value || null) as "male" | "female" | null,
+                    })
+                  }
+                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                >
+                  <option value="">—</option>
+                  <option value="male">ذكر</option>
+                  <option value="female">أنثى</option>
+                </select>
+              </Field>
+              <Field label="الطول (سم)">
+                <Input
+                  type="number"
+                  dir="ltr"
+                  value={data.heightCm ?? ""}
+                  onChange={(e) =>
+                    setData({ ...data, heightCm: e.target.value ? Number(e.target.value) : null })
+                  }
+                />
+              </Field>
+              <Field label="الوزن (كجم)">
+                <Input
+                  type="number"
+                  step="0.1"
+                  dir="ltr"
+                  value={data.weightKg ?? ""}
+                  onChange={(e) => setData({ ...data, weightKg: e.target.value || null })}
+                />
               </Field>
             </div>
           </FormSection>
