@@ -1,4 +1,5 @@
-import { and, desc, eq } from "drizzle-orm"
+import { randomInt } from "node:crypto"
+import { and, desc, eq, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { patientProfile, promoCode, referral, referralSettings, user as userT } from "@/lib/db/schema"
 import { notify } from "@/lib/notifications"
@@ -11,8 +12,18 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // no 0/O/1/I — avoid
 
 function randomCode(length: number): string {
   let out = ""
-  for (let i = 0; i < length; i++) out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
+  for (let i = 0; i < length; i++) out += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]
   return out
+}
+
+function databaseErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object") return undefined
+  const direct = "code" in error && typeof error.code === "string" ? error.code : undefined
+  if (direct) return direct
+  const cause = "cause" in error ? error.cause : undefined
+  return cause && typeof cause === "object" && "code" in cause && typeof cause.code === "string"
+    ? cause.code
+    : undefined
 }
 
 /** The current admin-configured settings row, or null if none exists yet
@@ -29,23 +40,36 @@ export async function getActiveReferralSettings(dbc: DbOrTx = db) {
 export async function getOrCreateReferralCode(userId: string): Promise<string> {
   const existing = (
     await db
-      .select({ referralCode: patientProfile.referralCode })
+      .select({ id: patientProfile.id, referralCode: patientProfile.referralCode })
       .from(patientProfile)
       .where(eq(patientProfile.userId, userId))
       .limit(1)
   )[0]
+  if (!existing) throw new Error("Patient profile is required for referrals")
   if (existing?.referralCode) return existing.referralCode
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = randomCode(6)
     try {
-      await db.insert(patientProfile).values({ userId, referralCode: code }).onConflictDoUpdate({
-        target: patientProfile.userId,
-        set: { referralCode: code },
-      })
-      return code
-    } catch {
-      // unique collision on referralCode itself — retry with a fresh one
+      const updated = await db
+        .update(patientProfile)
+        .set({ referralCode: code, updatedAt: new Date() })
+        .where(and(eq(patientProfile.id, existing.id), isNull(patientProfile.referralCode)))
+        .returning({ referralCode: patientProfile.referralCode })
+      if (updated[0]?.referralCode) return updated[0].referralCode
+
+      // Another request may have assigned the code while this one waited.
+      const winner = (
+        await db
+          .select({ referralCode: patientProfile.referralCode })
+          .from(patientProfile)
+          .where(eq(patientProfile.id, existing.id))
+          .limit(1)
+      )[0]?.referralCode
+      if (winner) return winner
+    } catch (error) {
+      if (databaseErrorCode(error) !== "23505") throw error
+      // Unique collision on referralCode itself — retry with a fresh code.
       continue
     }
   }
@@ -76,8 +100,9 @@ export async function linkReferral(dbc: DbOrTx, refereeUserId: string, rawCode: 
 
   try {
     await dbc.insert(referral).values({ referrerUserId: referrer.userId, refereeUserId })
-  } catch {
-    // referee already has a referral row (unique index) — first code wins, ignore.
+  } catch (error) {
+    // Referee already has a referral row (unique index) — first code wins.
+    if (databaseErrorCode(error) !== "23505") throw error
   }
 }
 
@@ -90,75 +115,93 @@ export async function linkReferral(dbc: DbOrTx, refereeUserId: string, rawCode: 
  */
 export async function qualifyReferralIfApplicable(refereeUserId: string, appointmentId: string): Promise<void> {
   try {
-    const settings = await getActiveReferralSettings()
-    if (!settings) return
+    const reward = await db.transaction(async (tx) => {
+      const settings = await getActiveReferralSettings(tx)
+      if (!settings) return null
 
-    const pending = (
-      await db
-        .select()
-        .from(referral)
-        .where(and(eq(referral.refereeUserId, refereeUserId), eq(referral.status, "PENDING")))
+      // This conditional update is the concurrency gate. Exactly one webhook
+      // delivery can claim a pending referral; all others receive no row.
+      const claimed = (
+        await tx
+          .update(referral)
+          .set({ status: "QUALIFIED", qualifyingAppointmentId: appointmentId })
+          .where(and(eq(referral.refereeUserId, refereeUserId), eq(referral.status, "PENDING")))
+          .returning()
+      )[0]
+      if (!claimed) return null
+
+      const referrerRow = await tx
+        .select({ name: userT.name })
+        .from(userT)
+        .where(eq(userT.id, claimed.referrerUserId))
         .limit(1)
-    )[0]
-    if (!pending) return
+      const refereeRow = await tx
+        .select({ name: userT.name })
+        .from(userT)
+        .where(eq(userT.id, refereeUserId))
+        .limit(1)
+      const validUntil = new Date(Date.now() + settings.rewardValidDays * 24 * 60 * 60 * 1000)
 
-    const [referrerRow, refereeRow] = await Promise.all([
-      db.select({ name: userT.name }).from(userT).where(eq(userT.id, pending.referrerUserId)).limit(1),
-      db.select({ name: userT.name }).from(userT).where(eq(userT.id, refereeUserId)).limit(1),
-    ])
-
-    const validUntil = new Date(Date.now() + settings.rewardValidDays * 24 * 60 * 60 * 1000)
-
-    const referrerPromo = await createRewardPromoCode({
-      userId: pending.referrerUserId,
-      type: settings.referrerRewardType,
-      value: settings.referrerRewardValue,
-      currency: settings.currency,
-      validUntil,
-      description: `مكافأة دعوة صديق — ${refereeRow[0]?.name ?? "مستخدم جديد"}`,
-    })
-    const refereePromo = await createRewardPromoCode({
-      userId: refereeUserId,
-      type: settings.refereeRewardType,
-      value: settings.refereeRewardValue,
-      currency: settings.currency,
-      validUntil,
-      description: `مكافأة الترحيب بالدعوة — ${referrerRow[0]?.name ?? ""}`,
-    })
-
-    await db
-      .update(referral)
-      .set({
-        status: "REWARDED",
-        qualifyingAppointmentId: appointmentId,
-        referrerRewardPromoCodeId: referrerPromo.id,
-        refereeRewardPromoCodeId: refereePromo.id,
-        qualifiedAt: new Date(),
+      const referrerPromo = await createRewardPromoCode(tx, {
+        userId: claimed.referrerUserId,
+        type: settings.referrerRewardType,
+        value: settings.referrerRewardValue,
+        currency: settings.currency,
+        validUntil,
+        description: `مكافأة دعوة صديق — ${refereeRow[0]?.name ?? "مستخدم جديد"}`,
       })
-      .where(eq(referral.id, pending.id))
+      const refereePromo = await createRewardPromoCode(tx, {
+        userId: refereeUserId,
+        type: settings.refereeRewardType,
+        value: settings.refereeRewardValue,
+        currency: settings.currency,
+        validUntil,
+        description: `مكافأة الترحيب بالدعوة — ${referrerRow[0]?.name ?? ""}`,
+      })
 
-    await Promise.all([
+      await tx
+        .update(referral)
+        .set({
+          status: "REWARDED",
+          referrerRewardPromoCodeId: referrerPromo.id,
+          refereeRewardPromoCodeId: refereePromo.id,
+          qualifiedAt: new Date(),
+        })
+        .where(and(eq(referral.id, claimed.id), eq(referral.status, "QUALIFIED")))
+
+      return {
+        referrerUserId: claimed.referrerUserId,
+        referrerPromoCode: referrerPromo.code,
+        refereePromoCode: refereePromo.code,
+      }
+    })
+    if (!reward) return
+
+    const notifications = await Promise.allSettled([
       notify({
-        userId: pending.referrerUserId,
+        userId: reward.referrerUserId,
         type: "referral.rewarded",
         title: "حصلتِ على مكافأة دعوة صديقة",
-        body: `استخدم صديقك المدعو كود الدعوة وأتم أول استشارة — كود المكافأة: ${referrerPromo.code}`,
+        body: `استخدم صديقك المدعو كود الدعوة وأتم أول استشارة — كود المكافأة: ${reward.referrerPromoCode}`,
         href: "/dashboard/referral",
       }),
       notify({
         userId: refereeUserId,
         type: "referral.rewarded",
         title: "مكافأة ترحيبية بانتظارك",
-        body: `شكرًا لاستخدام كود الدعوة — كود المكافأة: ${refereePromo.code}`,
+        body: `شكرًا لاستخدام كود الدعوة — كود المكافأة: ${reward.refereePromoCode}`,
         href: "/dashboard/referral",
       }),
     ])
+    if (notifications.some((result) => result.status === "rejected")) {
+      logger.warn("referral.reward notification failed", { refereeUserId })
+    }
   } catch (err) {
     logger.error("referral.qualify failed", { err: err instanceof Error ? err.message : String(err) })
   }
 }
 
-async function createRewardPromoCode(input: {
+async function createRewardPromoCode(dbc: DbOrTx, input: {
   userId: string
   type: "PERCENTAGE" | "FIXED"
   value: string
@@ -170,7 +213,7 @@ async function createRewardPromoCode(input: {
     const code = `REF-${randomCode(8)}`
     try {
       const row = (
-        await db
+        await dbc
           .insert(promoCode)
           .values({
             code,
@@ -187,8 +230,9 @@ async function createRewardPromoCode(input: {
           .returning({ id: promoCode.id, code: promoCode.code })
       )[0]
       if (row) return row
-    } catch {
-      continue // unique collision on code — retry with a fresh one
+    } catch (error) {
+      if (databaseErrorCode(error) !== "23505") throw error
+      continue // Unique collision on code — retry with a fresh one.
     }
   }
   throw new Error("تعذر إنشاء كود المكافأة.")

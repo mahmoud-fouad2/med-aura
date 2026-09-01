@@ -11,6 +11,7 @@ import { DatePicker } from "../components/date-picker"
 import { api, useMe } from "../lib/api"
 import { localizedApiError } from "../lib/request-errors"
 import { useI18n } from "../lib/i18n"
+import { clearPendingReferralCode, getPendingReferralCode } from "../lib/pending-referral"
 import { colors, radius, spacing } from "../theme"
 
 type Step = "contact" | "about"
@@ -108,7 +109,14 @@ function ContactStep({ onDone }: { onDone: () => void }) {
     setLoading(true)
     setError(null)
     try {
-      await api.completeSignupProfile({ accountType: "patient", phone, residenceCountry: country })
+      const referralCode = await getPendingReferralCode().catch(() => undefined)
+      await api.completeSignupProfile({
+        accountType: "patient",
+        phone,
+        residenceCountry: country,
+        referralCode,
+      })
+      await clearPendingReferralCode().catch(() => undefined)
       onDone()
     } catch (err) {
       setError(localizedApiError(err, locale, {

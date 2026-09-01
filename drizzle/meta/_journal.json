@@ -232,6 +232,20 @@
       "when": 1788210171886,
       "tag": "0032_odd_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1788254124054,
+      "tag": "0033_cynical_nomad",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1788254379220,
+      "tag": "0034_spicy_zemo",
+      "breakpoints": true
     }
   ]
 }

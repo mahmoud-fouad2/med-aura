@@ -26,6 +26,8 @@ import {
   Megaphone,
   ChartNoAxesCombined,
   MessageSquareText,
+  Gift,
+  Ticket,
   Circle,
   type LucideIcon,
 } from "lucide-react"
@@ -58,6 +60,8 @@ const ICONS: Record<string, LucideIcon> = {
   Megaphone,
   ChartNoAxesCombined,
   MessageSquareText,
+  Gift,
+  Ticket,
 }
 
 export function AdminIcon({ name, className }: { name: string; className?: string }) {

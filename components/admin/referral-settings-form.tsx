@@ -65,6 +65,7 @@ export function ReferralSettingsForm({ initial }: { initial: ReferralSettingsRow
           <Input
             type="number"
             min={1}
+            max={3650}
             value={rewardValidDays}
             onChange={(e) => setRewardValidDays(e.target.value)}
           />

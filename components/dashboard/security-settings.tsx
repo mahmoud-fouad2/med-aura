@@ -600,6 +600,7 @@ function TotpSetup({
         {qrDataUrl ? (
           // TOTP QR encodes the shared secret — rendered fully client-side
           // (the `qrcode` package), never sent to a third-party image API.
+          // eslint-disable-next-line @next/next/no-img-element -- a secret-bearing data URI must not pass through an image optimizer
           <img src={qrDataUrl} alt="QR" width={220} height={220} className="rounded-xl border border-border" />
         ) : (
           <div className="flex size-[220px] items-center justify-center rounded-xl border border-border bg-muted/40">

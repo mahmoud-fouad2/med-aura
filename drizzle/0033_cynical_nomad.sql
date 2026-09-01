@@ -1,0 +1,1 @@
+ALTER TABLE "referral" ADD CONSTRAINT "referral_distinct_users_check" CHECK ("referral"."referrerUserId" <> "referral"."refereeUserId");

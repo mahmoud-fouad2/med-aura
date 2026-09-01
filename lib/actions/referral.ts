@@ -6,9 +6,9 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { referral, referralSettings } from "@/lib/db/schema"
 import { requirePermissionOrThrow, requireUser } from "@/lib/session"
-import { PERMISSIONS } from "@/lib/rbac"
+import { getUserRoles, PERMISSIONS, ROLES } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
-import { toSafeError, validation } from "@/lib/errors"
+import { forbidden, toSafeError, validation } from "@/lib/errors"
 import { getOrCreateReferralCode } from "@/lib/referral"
 import { appUrl } from "@/lib/env"
 import { localizedPath } from "@/lib/i18n/config"
@@ -58,8 +58,15 @@ const settingsSchema = z.object({
   referrerRewardValue: z.coerce.number().positive("قيمة مكافأة الداعي يجب أن تكون أكبر من صفر"),
   refereeRewardType: z.enum(["PERCENTAGE", "FIXED"]),
   refereeRewardValue: z.coerce.number().positive("قيمة مكافأة المدعو يجب أن تكون أكبر من صفر"),
-  currency: z.string().trim().length(3, "رمز العملة يجب أن يكون 3 أحرف"),
-  rewardValidDays: z.coerce.number().int().positive("عدد الأيام يجب أن يكون أكبر من صفر"),
+  currency: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{3}$/, "رمز العملة يجب أن يتكون من 3 أحرف"),
+  rewardValidDays: z.coerce
+    .number()
+    .int()
+    .min(1, "عدد الأيام يجب أن يكون أكبر من صفر")
+    .max(3650, "مدة الصلاحية لا يمكن أن تتجاوز 10 سنوات"),
 })
 
 function validateRewardRange(data: z.infer<typeof settingsSchema>) {
@@ -139,6 +146,8 @@ export async function getMyReferralAction(): Promise<
 > {
   try {
     const me = await requireUser()
+    const roles = await getUserRoles(me.id)
+    if (!roles.includes(ROLES.PATIENT)) throw forbidden()
     const code = await getOrCreateReferralCode(me.id)
     const settings = (
       await db.select().from(referralSettings).orderBy(desc(referralSettings.updatedAt)).limit(1)

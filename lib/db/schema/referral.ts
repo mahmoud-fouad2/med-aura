@@ -40,7 +40,8 @@ export const referralSettings = pgTable(
       "referral_referee_percentage_range",
       sql`${t.refereeRewardType} <> 'PERCENTAGE' OR ${t.refereeRewardValue} <= 100`,
     ),
-    check("referral_valid_days_positive", sql`${t.rewardValidDays} > 0`),
+    check("referral_currency_format", sql`${t.currency} ~ '^[A-Z]{3}$'`),
+    check("referral_valid_days_range", sql`${t.rewardValidDays} between 1 and 3650`),
   ],
 )
 
@@ -77,5 +78,6 @@ export const referral = pgTable(
     uniqueIndex("referral_referee_unique").on(t.refereeUserId),
     index("referral_referrer_idx").on(t.referrerUserId),
     index("referral_status_idx").on(t.status),
+    check("referral_distinct_users_check", sql`${t.referrerUserId} <> ${t.refereeUserId}`),
   ],
 )

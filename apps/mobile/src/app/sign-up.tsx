@@ -29,6 +29,7 @@ import { authClient } from "../lib/auth-client"
 import { api } from "../lib/api"
 import { localizedApiError } from "../lib/request-errors"
 import { registerForPushNotifications } from "../lib/push-notifications"
+import { clearPendingReferralCode, savePendingReferralCode } from "../lib/pending-referral"
 import { API_URL } from "../lib/config"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, shadows, spacing } from "../theme"
@@ -57,6 +58,7 @@ export default function SignUp() {
     if (googleLoading) return
     setError(null)
     setGoogleLoading(true)
+    await savePendingReferralCode(referralCode).catch(() => undefined)
     // Public sign-up always creates a patient — the same invariant the
     // email/password form enforces. A doctor account still needs the full
     // accreditation application, which Google's profile can't supply.
@@ -73,6 +75,7 @@ export default function SignUp() {
     const me = await api.me().catch(() => null)
     setGoogleLoading(false)
     void registerForPushNotifications()
+    if (me?.profileCompleted) void clearPendingReferralCode()
     router.replace(me && !me.profileCompleted ? "/complete-profile" : "/(tabs)")
   }
 
