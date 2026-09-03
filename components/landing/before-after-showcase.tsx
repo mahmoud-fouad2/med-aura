@@ -6,7 +6,7 @@ import { BeforeAfterGalleryCard } from "@/components/before-after/gallery-card"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { listPublicBeforeAfter } from "@/lib/data/before-after"
 import { query } from "@/lib/db/query"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 
 /**
  * Homepage showcase of real, moderation-approved before/after cases. Renders
@@ -41,7 +41,7 @@ export async function BeforeAfterShowcase() {
             variant="outline"
             className="rounded-xl"
             render={
-              <Link href="/before-after">
+              <Link href={localizedPath("/before-after", locale)}>
                 {isAr ? "استكشفي كل النتائج" : "View all results"}
                 <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />
               </Link>

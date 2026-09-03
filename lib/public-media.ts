@@ -55,7 +55,7 @@ const demoDoctorPhotos: Record<string, string> = {
 }
 
 export const PUBLIC_MEDIA = {
-  home: "/hero-medaura-consultation.png",
+  home: "/hero-medaura-consultation.webp",
   centers: "/demo-services/aesthetic-clinic-lounge.png",
   destinations: "/demo-services/service-body-contouring.png",
   faq: "/demo-services/service-skin-nonsurgical.png",

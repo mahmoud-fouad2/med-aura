@@ -22,7 +22,7 @@ import {
   localizedUrl,
   serviceImageForProcedure,
 } from "@/lib/seo"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { SeoEditorialBand } from "@/components/marketing/seo-editorial-band"
 import { firstParam } from "@/lib/utils"
 import { formatRecoveryDays } from "@/lib/format"
@@ -122,17 +122,17 @@ export default async function ProceduresPage({
                 <span className="hidden sm:inline">{isAr ? "بحث" : "Search"}</span>
               </Button>
               {(q || selectedCategory) && (
-                <Button variant="ghost" className="rounded-lg" render={<Link href="/procedures" aria-label={isAr ? "مسح البحث" : "Clear search"}><X className="size-4" /></Link>} />
+                <Button variant="ghost" className="rounded-lg" render={<Link href={localizedPath("/procedures", locale)} aria-label={isAr ? "مسح البحث" : "Clear search"}><X className="size-4" /></Link>} />
               )}
             </form>
             <nav aria-label={isAr ? "فئات الإجراءات" : "Procedure categories"} className="flex gap-2 overflow-x-auto pb-1">
-              <Link href="/procedures" className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${!selectedCategory ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`}>
+              <Link href={localizedPath("/procedures", locale)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${!selectedCategory ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`}>
                 {isAr ? "الكل" : "All"}
               </Link>
               {allVisibleGroups.map((group) => (
                 <Link
                   key={group.slug}
-                  href={`/procedures?category=${group.slug}#group-${group.slug}`}
+                  href={localizedPath(`/procedures?category=${group.slug}#group-${group.slug}`, locale)}
                   className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${selectedCategory === group.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`}
                 >
                   {isAr ? group.nameAr : group.nameEn}
@@ -152,6 +152,7 @@ export default async function ProceduresPage({
               <DataState
                 status={res.status}
                 requestId={res.status === "error" ? res.requestId : undefined}
+                locale={locale}
               />
             ) : total === 0 ? (
               <EmptyState
@@ -178,7 +179,7 @@ export default async function ProceduresPage({
                       {g.procedures.map((p) => (
                         <StaggerItem key={p.slug}>
                           <Link
-                            href={`/procedures/${p.slug}`}
+                            href={localizedPath(`/procedures/${p.slug}`, locale)}
                             className="group flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-card transition-colors hover:border-primary/40"
                           >
                             <div className="relative h-32 overflow-hidden bg-muted">

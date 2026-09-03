@@ -8,18 +8,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { bookConsultation } from "@/lib/actions/booking"
 import type { Slot } from "@/lib/data/availability"
+import { trackClientEvent } from "@/components/analytics/event-tracker"
 
 export function BookingClient({
   doctorId,
   slots,
   caseId,
   feeLabel,
+  locale,
 }: {
   doctorId: string
   slots: Slot[]
   caseId?: string
   feeLabel: string
+  locale: "ar" | "en"
 }) {
+  const isAr = locale === "ar"
   const [selected, setSelected] = useState<string | null>(null)
   const [promoCode, setPromoCode] = useState("")
   const [loading, setLoading] = useState(false)
@@ -43,6 +47,12 @@ export function BookingClient({
     }
     // Payments are always required to confirm — bookConsultation() only ever
     // succeeds with a checkout URL to send the patient to.
+    trackClientEvent({
+      name: "checkout_opened",
+      locale,
+      path: window.location.pathname,
+      properties: { purpose: "consultation" },
+    })
     window.location.href = res.data!.checkoutUrl!
   }
 
@@ -51,7 +61,7 @@ export function BookingClient({
       <Card className="p-4">
         <h2 className="mb-3 flex items-center gap-2 font-heading font-semibold text-foreground">
           <CalendarClock className="size-5 text-primary" />
-          اختر موعدًا متاحًا
+          {isAr ? "اختر موعدًا متاحًا" : "Choose an available time"}
         </h2>
         <div className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
           {slots.map((s) => (
@@ -59,7 +69,8 @@ export function BookingClient({
               key={s.startsAt}
               type="button"
               onClick={() => setSelected(s.startsAt)}
-              className={`rounded-lg border px-3 py-2.5 text-right text-sm transition-colors ${
+              aria-pressed={selected === s.startsAt}
+              className={`min-h-11 rounded-lg border px-3 py-2.5 text-start text-sm transition-colors ${
                 selected === s.startsAt
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border hover:bg-muted"
@@ -74,7 +85,10 @@ export function BookingClient({
       <Card className="p-4">
         <Label htmlFor="promo-code" className="mb-2 flex items-center gap-2">
           <Ticket className="size-4 text-primary" />
-          كود خصم <span className="font-normal text-muted-foreground">(اختياري)</span>
+          {isAr ? "كود خصم" : "Promo code"}{" "}
+          <span className="font-normal text-muted-foreground">
+            {isAr ? "(اختياري)" : "(optional)"}
+          </span>
         </Label>
         <Input
           id="promo-code"
@@ -94,10 +108,13 @@ export function BookingClient({
 
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          رسوم الاستشارة: <strong className="text-foreground">{feeLabel}</strong>
+          {isAr ? "رسوم الاستشارة" : "Consultation fee"}:{" "}
+          <strong className="text-foreground">{feeLabel}</strong>
         </span>
         <Button disabled={!selected || loading} onClick={confirm}>
-          {loading ? "جارٍ المتابعة…" : "المتابعة إلى الدفع"}
+          {loading
+            ? isAr ? "جارٍ المتابعة…" : "Continuing…"
+            : isAr ? "المتابعة إلى الدفع" : "Continue to payment"}
         </Button>
       </div>
     </div>

@@ -107,7 +107,7 @@ export async function setCenterStatusAction(input: unknown): Promise<ActionResul
     const { centerId, status } = parsed.data
 
     const existing = (
-      await db.select({ id: center.id, status: center.status }).from(center).where(eq(center.id, centerId)).limit(1)
+      await db.select({ id: center.id, status: center.status, verified: center.verified }).from(center).where(eq(center.id, centerId)).limit(1)
     )[0]
     if (!existing) throw new AppError("NOT_FOUND")
     if (!["approved", "suspended"].includes(existing.status)) {
@@ -156,11 +156,18 @@ export async function setCenterPublishedAction(input: unknown): Promise<ActionRe
     const { centerId, published } = parsed.data
 
     const existing = (
-      await db.select({ id: center.id, status: center.status }).from(center).where(eq(center.id, centerId)).limit(1)
+      await db
+        .select({ id: center.id, status: center.status, verified: center.verified })
+        .from(center)
+        .where(eq(center.id, centerId))
+        .limit(1)
     )[0]
     if (!existing) throw new AppError("NOT_FOUND")
     if (published && existing.status !== "approved") {
       throw new AppError("CONFLICT", { userMessage: "لا يمكن إظهار مركز غير معتمد." })
+    }
+    if (published && !existing.verified) {
+      throw new AppError("CONFLICT", { userMessage: "أكمل التحقق من بيانات المركز قبل نشره." })
     }
 
     await db

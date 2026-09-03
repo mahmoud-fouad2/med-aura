@@ -350,3 +350,16 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Dashboard and admin controls keep a compact desktop rhythm, while mobile
+   touch targets meet the 44px interaction target without changing semantics. */
+@media (max-width: 767px) {
+  .operations-surface :is(button, [role="button"], input:not([type="checkbox"]):not([type="radio"]), select) {
+    min-block-size: 44px;
+  }
+
+  .operations-surface :is(input[type="checkbox"], input[type="radio"]) {
+    min-inline-size: 20px;
+    min-block-size: 20px;
+  }
+}

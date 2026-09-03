@@ -54,6 +54,8 @@ describe("assistant native stream", () => {
         headers: expect.objectContaining({ Cookie: "session=test" }),
       }),
     )
+    const request = mocks.fetch.mock.calls[0]?.[1]
+    expect(JSON.parse(String(request?.body))).toMatchObject({ locale: "ar" })
   })
 
   it("uses offline only when the request cannot reach the server", async () => {

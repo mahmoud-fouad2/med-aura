@@ -66,7 +66,9 @@ export default function Assistant() {
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const [stage, setStage] = useState<AssistantStage | null>(null)
+  const [lastFailedInput, setLastFailedInput] = useState<string | null>(null)
   const scrollRef = useRef<ScrollView>(null)
+  const requestControllerRef = useRef<AbortController | null>(null)
 
   // Only auto-scroll once a conversation exists. Firing this on the empty
   // state scrolled the hero off the top of the screen on first open.
@@ -87,13 +89,16 @@ export default function Assistant() {
       setInput("")
       setSending(true)
       setStage("understanding")
+      setLastFailedInput(null)
       scrollToEnd()
+      const requestController = new AbortController()
+      requestControllerRef.current = requestController
       try {
         const turns = keepRecentItems<AssistantTurn>(
           history.map((m) => ({ role: m.role, content: m.content })),
           ASSISTANT_CONTEXT_LIMIT,
         )
-        const res = await streamAssistant(turns, setStage)
+        const res = await streamAssistant(turns, setStage, locale, requestController.signal)
         setMessages((prev) => keepRecentItems([
           ...prev, {
             id: nextId(),
@@ -110,6 +115,8 @@ export default function Assistant() {
         // check their connection. TimeoutError extends NetworkError, so it
         // must be tested first. A rate limit isn't a failure at all — it's
         // the provider's own quota, so it gets its own honest message.
+        if (err instanceof ApiError && err.code === "ASSISTANT_CANCELLED") return
+        setLastFailedInput(trimmed)
         let msg = t.assistant.error
         if (err instanceof RateLimitedError) msg = t.assistant.rateLimited
         else if (err instanceof TimeoutError) msg = t.assistant.slow
@@ -123,12 +130,13 @@ export default function Assistant() {
           { id: nextId(), role: "assistant", content: msg, sentAt: Date.now() },
         ], ASSISTANT_VISIBLE_LIMIT))
       } finally {
+        if (requestControllerRef.current === requestController) requestControllerRef.current = null
         setSending(false)
         setStage(null)
         scrollToEnd()
       }
     },
-    [messages, sending, scrollToEnd, t],
+    [locale, messages, sending, scrollToEnd, t],
   )
 
   const lastAssistant = useMemo(
@@ -244,6 +252,46 @@ export default function Assistant() {
             <SuggestionChip key={`${chip}-${i}`} label={chip} onPress={() => void send(chip)} />
           ))}
         </ScrollView>
+      ) : null}
+
+      {sending ? (
+        <View style={{ alignItems: "center", paddingBottom: spacing.xs }}>
+          <Pressable
+            onPress={() => requestControllerRef.current?.abort()}
+            accessibilityRole="button"
+            accessibilityLabel={t.assistant.stop}
+            style={({ pressed }) => ({
+              minHeight: 44,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.xs,
+              paddingHorizontal: spacing.md,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="stop-circle-outline" size={18} color={colors.textMuted} />
+            <AppText variant="caption" color={colors.textMuted}>{t.assistant.stop}</AppText>
+          </Pressable>
+        </View>
+      ) : lastFailedInput ? (
+        <View style={{ alignItems: "center", paddingBottom: spacing.xs }}>
+          <Pressable
+            onPress={() => void send(lastFailedInput)}
+            accessibilityRole="button"
+            accessibilityLabel={t.assistant.retry}
+            style={({ pressed }) => ({
+              minHeight: 44,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.xs,
+              paddingHorizontal: spacing.md,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="refresh-outline" size={18} color={colors.primary} />
+            <AppText variant="caption" weight="semibold" color={colors.primary}>{t.assistant.retry}</AppText>
+          </Pressable>
+        </View>
       ) : null}
 
       {/* Input bar — cleaner floating shape, single circular send. */}

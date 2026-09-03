@@ -113,7 +113,7 @@ export async function generateMetadata(): Promise<Metadata> {
     type: "website",
     images: [
       {
-        url: absoluteUrl("/hero-medaura-consultation.png"),
+        url: absoluteUrl("/hero-medaura-consultation.webp"),
         width: 1600,
         height: 900,
         alt: title,
@@ -124,7 +124,7 @@ export async function generateMetadata(): Promise<Metadata> {
     card: "summary_large_image",
     title,
     description,
-    images: [absoluteUrl("/hero-medaura-consultation.png")],
+    images: [absoluteUrl("/hero-medaura-consultation.webp")],
   },
   icons: {
     // All derived from the same brand mark as the mobile app icon (the

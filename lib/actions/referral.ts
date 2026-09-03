@@ -11,7 +11,7 @@ import { writeAudit, requestMeta } from "@/lib/audit"
 import { forbidden, toSafeError, validation } from "@/lib/errors"
 import { getOrCreateReferralCode } from "@/lib/referral"
 import { appUrl } from "@/lib/env"
-import { localizedPath } from "@/lib/i18n/config"
+import { isLocale, localizedPath } from "@/lib/i18n/config"
 
 export type ActionResult = { status: "ok"; message?: string } | { status: "error"; message: string }
 
@@ -162,12 +162,13 @@ export async function getMyReferralAction(): Promise<
     ])
 
     const active = settings?.active ?? false
+    const locale = isLocale(me.locale) ? me.locale : "ar"
 
     return {
       status: "ok",
       data: {
         code,
-        shareUrl: `${appUrl().replace(/\/$/, "")}${localizedPath("/sign-up", "ar")}?ref=${code}`,
+        shareUrl: `${appUrl().replace(/\/$/, "")}${localizedPath("/sign-up", locale)}?ref=${code}`,
         invitedCount: invited[0]?.n ?? 0,
         rewardedCount: rewarded[0]?.n ?? 0,
         programActive: active,

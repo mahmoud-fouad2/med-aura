@@ -14,6 +14,7 @@ export function publicCenterConditions(): SQL[] {
 
   return [
     eq(center.status, "approved"),
+    eq(center.verified, true),
     eq(center.published, true),
     isNull(center.deletedAt),
     or(isNull(center.ownerId), inArray(center.ownerId, realUserIds))!,
@@ -41,6 +42,7 @@ export function publicDoctorConditions(): SQL[] {
 
   return [
     eq(doctorProfile.published, true),
+    eq(doctorProfile.verified, true),
     eq(doctorProfile.status, "approved"),
     isNull(doctorProfile.deletedAt),
     inArray(doctorProfile.userId, realUserIds),

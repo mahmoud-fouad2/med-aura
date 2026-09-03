@@ -489,7 +489,7 @@ export const api = {
     }),
   favorites: () => request<{ doctors: FavoriteDoctor[] }>("/api/mobile/v1/favorites"),
   security: () =>
-    request<{ enabled: boolean; totpVerified: boolean; otpAvailable: boolean }>(
+    request<{ enabled: boolean; totpVerified: boolean; otpAvailable: boolean; hasCredential: boolean }>(
       "/api/mobile/v1/security",
     ),
   toggleFavorite: (kind: "doctor" | "center" | "procedure", refId: string) =>

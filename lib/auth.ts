@@ -3,7 +3,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api"
 import { twoFactor } from "better-auth/plugins"
 import { expo } from "@better-auth/expo"
 import { pool } from "@/lib/db"
-import { betterAuthUrl, env, isGoogleAuthConfigured, trustedAuthOrigins } from "@/lib/env"
+import { betterAuthUrl, env, isEmailConfigured, isGoogleAuthConfigured, trustedAuthOrigins } from "@/lib/env"
 import { ROLES } from "@/lib/rbac"
 import { logger } from "@/lib/logger"
 import { writeAudit } from "@/lib/audit"
@@ -62,9 +62,10 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
     minPasswordLength: 8,
-    // Enable strict email verification in production by setting this true once
-    // an email provider is configured. Kept false so dev flows work without keys.
-    requireEmailVerification: false,
+    // Never lock local/test accounts behind an email provider that does not
+    // exist. Production automatically requires verification once Resend and
+    // a sender are both configured.
+    requireEmailVerification: isEmailConfigured(),
     async sendResetPassword({ user, url }) {
       const { subject, html } = resetPasswordEmailTemplate({ locale: userLocale(user), url })
       await sendEmail({ to: user.email, subject, html })
@@ -73,6 +74,7 @@ export const auth = betterAuth({
 
   emailVerification: {
     sendOnSignUp: true,
+    sendOnSignIn: true,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url }) {
       const { subject, html } = verifyEmailTemplate({ locale: userLocale(user), url })
@@ -178,6 +180,11 @@ export const auth = betterAuth({
     // issued alongside enablement as the account-recovery fallback.
     twoFactor({
       issuer: "Med Aura",
+      // Social-only accounts do not have a credential password. Better Auth
+      // still requires the password whenever a credential account exists,
+      // while a fresh authenticated session is sufficient for Google-only
+      // accounts.
+      allowPasswordless: true,
       otpOptions: {
         period: 3, // minutes — matches the copy in twoFactorOtpEmail
         digits: 6,
@@ -232,4 +239,3 @@ export const auth = betterAuth({
     },
   },
 })
-

@@ -18,6 +18,8 @@ export type SessionUser = {
   image?: string | null
   role: string
   status?: string
+  phone?: string | null
+  country?: string | null
   locale?: string
   twoFactorEnabled?: boolean
 }

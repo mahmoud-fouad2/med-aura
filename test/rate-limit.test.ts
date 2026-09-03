@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
-import { consumeRateLimit, resetRateLimits } from "@/lib/rate-limit"
+import { consumeLocalRateLimit, resetRateLimits } from "@/lib/rate-limit"
 
 /**
  * Guards the throttle in front of the AI concierge — the one route where an
@@ -13,38 +13,38 @@ describe("consumeRateLimit", () => {
 
   it("allows up to the limit, then rejects", () => {
     for (let i = 0; i < 3; i++) {
-      expect(consumeRateLimit("user:a", opts).ok).toBe(true)
+      expect(consumeLocalRateLimit("user:a", opts).ok).toBe(true)
     }
-    const blocked = consumeRateLimit("user:a", opts)
+    const blocked = consumeLocalRateLimit("user:a", opts)
     expect(blocked.ok).toBe(false)
     expect(blocked.retryAfterSeconds).toBeGreaterThan(0)
   })
 
   it("keys separately per user, so one client can't throttle another", () => {
-    for (let i = 0; i < 3; i++) consumeRateLimit("user:a", opts)
-    expect(consumeRateLimit("user:a", opts).ok).toBe(false)
+    for (let i = 0; i < 3; i++) consumeLocalRateLimit("user:a", opts)
+    expect(consumeLocalRateLimit("user:a", opts).ok).toBe(false)
     // A different user is unaffected.
-    expect(consumeRateLimit("user:b", opts).ok).toBe(true)
+    expect(consumeLocalRateLimit("user:b", opts).ok).toBe(true)
   })
 
   it("recovers once the window elapses", () => {
     vi.useFakeTimers()
-    for (let i = 0; i < 3; i++) consumeRateLimit("user:c", opts)
-    expect(consumeRateLimit("user:c", opts).ok).toBe(false)
+    for (let i = 0; i < 3; i++) consumeLocalRateLimit("user:c", opts)
+    expect(consumeLocalRateLimit("user:c", opts).ok).toBe(false)
 
     vi.advanceTimersByTime(60_001)
-    expect(consumeRateLimit("user:c", opts).ok).toBe(true)
+    expect(consumeLocalRateLimit("user:c", opts).ok).toBe(true)
   })
 
   it("does not leak buckets for keys whose window has passed", () => {
     vi.useFakeTimers()
     // Many one-off keys, as a burst of distinct users would produce.
-    for (let i = 0; i < 500; i++) consumeRateLimit(`ephemeral:${i}`, opts)
+    for (let i = 0; i < 500; i++) consumeLocalRateLimit(`ephemeral:${i}`, opts)
     // Past the window and the sweep interval, a new call prunes the expired
     // entries rather than growing the map forever.
     vi.advanceTimersByTime(120_000)
-    expect(consumeRateLimit("trigger:sweep", opts).ok).toBe(true)
+    expect(consumeLocalRateLimit("trigger:sweep", opts).ok).toBe(true)
     // The previously-seen keys start fresh, proving they were dropped.
-    expect(consumeRateLimit("ephemeral:0", opts).ok).toBe(true)
+    expect(consumeLocalRateLimit("ephemeral:0", opts).ok).toBe(true)
   })
 })

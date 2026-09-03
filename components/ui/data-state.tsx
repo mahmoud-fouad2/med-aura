@@ -9,15 +9,19 @@ import { RetryButton } from "@/components/ui/retry-button"
 export function DataState({
   status,
   requestId,
+  locale = "ar",
   className,
 }: {
   status: "unavailable" | "error"
   requestId?: string
+  locale?: "ar" | "en"
   className?: string
 }) {
   const isUnavailable = status === "unavailable"
+  const isAr = locale === "ar"
   return (
     <div
+      role="status"
       className={
         "flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center " +
         (className ?? "")
@@ -28,18 +32,26 @@ export function DataState({
       </span>
       <div className="space-y-1">
         <h3 className="font-heading text-lg font-bold text-foreground">
-          {isUnavailable ? "تعذّر تحميل النتائج مؤقتًا" : "حدث خطأ غير متوقع"}
+          {isUnavailable
+            ? isAr ? "تعذّر تحميل النتائج مؤقتًا" : "Results are temporarily unavailable"
+            : isAr ? "حدث خطأ غير متوقع" : "Something went wrong"}
         </h3>
         <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
           {isUnavailable
-            ? "يرجى المحاولة لاحقًا. نعمل على عودة الخدمة في أسرع وقت."
-            : "نعتذر عن ذلك، يمكنك إعادة المحاولة الآن."}
+            ? isAr
+              ? "يرجى المحاولة بعد قليل."
+              : "Please try again in a moment."
+            : isAr
+              ? "نعتذر عن ذلك، يمكنك إعادة المحاولة الآن."
+              : "Sorry about that. You can try again now."}
         </p>
         {requestId && (
-          <p className="text-xs text-muted-foreground/70">رمز المرجع: {requestId}</p>
+          <p className="text-xs text-muted-foreground/70">
+            {isAr ? "رمز المرجع" : "Reference"}: {requestId}
+          </p>
         )}
       </div>
-      <RetryButton />
+      <RetryButton label={isAr ? "إعادة المحاولة" : "Try again"} />
     </div>
   )
 }

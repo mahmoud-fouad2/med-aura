@@ -30,7 +30,11 @@ export function ReferralSection({ data }: { data: MyReferralData }) {
   }
 
   async function shareNative() {
-    if (typeof navigator === "undefined" || !navigator.share) return
+    if (typeof navigator === "undefined") return
+    if (!navigator.share) {
+      await copy(data.shareUrl, "link")
+      return
+    }
     try {
       await navigator.share({
         title: "Med Aura",
@@ -101,7 +105,7 @@ export function ReferralSection({ data }: { data: MyReferralData }) {
         <div className="flex flex-1 items-center justify-around gap-4 text-center">
           <div>
             <p className="font-heading text-xl font-bold text-foreground">{data.invitedCount.toLocaleString("ar-SA-u-nu-latn")}</p>
-            <p className="text-xs text-muted-foreground">دعوات أُرسلت</p>
+            <p className="text-xs text-muted-foreground">أصدقاء انضموا</p>
           </div>
           <div className="h-8 w-px bg-border" />
           <div>

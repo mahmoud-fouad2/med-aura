@@ -12,7 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Stagger, StaggerItem } from "@/components/motion"
-import type { Dictionary, Locale } from "@/lib/i18n"
+import { localizedPath, type Dictionary, type Locale } from "@/lib/i18n"
 import { serviceImageForCategory } from "@/lib/seo"
 
 type Area = { slug: string; label: string; labelEn: string; icon: LucideIcon }
@@ -47,7 +47,7 @@ export function CosmeticAreas({
           {areas.map((a) => (
             <StaggerItem key={a.slug}>
               <Link
-                href={`/search?category=${a.slug}`}
+                href={localizedPath(`/search?category=${a.slug}`, locale)}
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-center shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/45 hover:shadow-elegant-lg"
               >
                 <span className="relative block h-24 overflow-hidden bg-muted">

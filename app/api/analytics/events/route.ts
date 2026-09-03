@@ -10,7 +10,7 @@ const COOKIE_NAME = "medaura_anon"
 export async function POST(request: Request) {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
   const ip = forwarded || request.headers.get("x-real-ip") || "unknown"
-  const limit = consumeRateLimit(`analytics:${ip}`, { limit: 120, windowMs: 60_000 })
+  const limit = await consumeRateLimit(`analytics:${ip}`, { limit: 120, windowMs: 60_000 })
   if (!limit.ok) return new NextResponse(null, { status: 429 })
 
   const event = sanitizeAnalyticsEvent(await request.json().catch(() => null))

@@ -26,7 +26,7 @@ import {
   localizedUrl,
 } from "@/lib/seo"
 import { destinationImage, PUBLIC_MEDIA } from "@/lib/public-media"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { formatDoctorCount, formatExperience } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
@@ -126,11 +126,11 @@ export default async function DestinationDetailPage({
               className="mb-4 flex items-center gap-1.5 text-xs text-muted-foreground"
               aria-label={l("مسار التنقل", "Breadcrumb")}
             >
-              <Link href="/" className="hover:text-foreground">
+              <Link href={localizedPath("/", locale)} className="hover:text-foreground">
                 {l("الرئيسية", "Home")}
               </Link>
               <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
-              <Link href="/destinations" className="hover:text-foreground">
+              <Link href={localizedPath("/destinations", locale)} className="hover:text-foreground">
                 {l("الوجهات", "Destinations")}
               </Link>
               <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
@@ -155,7 +155,7 @@ export default async function DestinationDetailPage({
                   )}
                 </p>
               </div>
-              <Button render={<Link href={`/search?country=${d.code}`}>
+              <Button render={<Link href={localizedPath(`/search?country=${d.code}`, locale)}>
                 <Search className="size-4" />
                 {l(`ابحث في ${d.nameAr}`, `Search in ${d.nameEn}`)}
               </Link>} />
@@ -184,7 +184,7 @@ export default async function DestinationDetailPage({
                 <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {d.centers.map((c) => (
                     <StaggerItem key={c.id}>
-                      <Link href={`/centers/${c.slug}`}>
+                      <Link href={localizedPath(`/centers/${c.slug}`, locale)}>
                         <Card className="h-full overflow-hidden p-0 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant">
                           <div className="relative h-28 bg-muted">
                             <Image
@@ -240,7 +240,7 @@ export default async function DestinationDetailPage({
                 <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {d.doctors.map((doc) => (
                     <StaggerItem key={doc.id}>
-                      <Link href={`/doctors/${doc.slug}`}>
+                      <Link href={localizedPath(`/doctors/${doc.slug}`, locale)}>
                         <Card className="flex h-full items-start gap-3 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant">
                           <Avatar className="size-14 shrink-0 ring-2 ring-background">
                             {doc.photoUrl && <AvatarImage src={doc.photoUrl} alt={doc.name} />}
@@ -282,7 +282,7 @@ export default async function DestinationDetailPage({
                   {d.cities.map((c) => (
                     <Link
                       key={c.id}
-                      href={`/search?country=${d.code}&city=${encodeURIComponent(c.nameAr)}`}
+                      href={localizedPath(`/search?country=${d.code}&city=${encodeURIComponent(c.nameAr)}`, locale)}
                       className="rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
                     >
                       {c.nameAr}

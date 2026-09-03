@@ -43,7 +43,7 @@ export function AdvisorQuiz() {
             المستشار التجميلي الذكي
           </h1>
           <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-            لا تعرفين من أين تبدئين؟ أجيبي عن 3 أسئلة بسيطة، وسنقوم بتوجيهكِ للإجراء الأنسب وترشيح أفضل الأطباء والمراكز لحالتكِ.
+            لا تعرفين من أين تبدئين؟ أجيبي عن 3 أسئلة بسيطة لنرتّب لكِ خيارات البحث المناسبة حسب المنطقة ونوع الإجراء.
           </p>
           <Button size="lg" className="rounded-xl shadow-md text-base h-14 px-8" onClick={() => setStep(1)}>
             ابدئي التقييم الآن
@@ -110,7 +110,7 @@ export function AdvisorQuiz() {
           </div>
           <h2 className="font-heading text-2xl font-bold mb-3">لقد وجدنا الخيارات الأنسب لكِ!</h2>
           <p className="text-muted-foreground mb-8">
-            بناءً على اختياركِ ({labels.area} - {labels.type})، قمنا بتجهيز قائمة بأفضل الأطباء المتخصصين.
+            بناءً على اختياركِ ({labels.area} - {labels.type})، جهّزنا نتائج البحث المطابقة لتراجعي الملفات المتاحة بنفسكِ.
           </p>
 
           <div className="bg-card border border-border/80 rounded-3xl p-8 shadow-sm mb-8 text-right">
@@ -122,7 +122,7 @@ export function AdvisorQuiz() {
               <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="size-4 text-success" /> مراجعة خيارات {labels.area} ({labels.type})</li>
               <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="size-4 text-success" /> استشارة أولية مع استشاري متخصص</li>
             </ul>
-            <Button className="w-full rounded-xl" size="lg" render={<Link href={resultsHref}>تصفح الأطباء المقترحين</Link>} />
+            <Button className="w-full rounded-xl" size="lg" render={<Link href={resultsHref}>تصفّح النتائج المطابقة</Link>} />
           </div>
 
           <Button variant="ghost" onClick={() => { setStep(0); setAnswers({}); setLabels({}) }}>

@@ -71,6 +71,8 @@ export function ProfileWizard({
   destination,
   startStep,
   locale = "ar",
+  defaultPhone = "",
+  defaultCountry = "",
 }: {
   destination: string
   /** "contact" for a fresh Google sign-up (nothing collected yet); "about"
@@ -78,6 +80,8 @@ export function ProfileWizard({
    *  returning patient who's never seen this step). */
   startStep: Step
   locale?: Locale
+  defaultPhone?: string
+  defaultCountry?: string
 }) {
   const t = COPY[locale]
   const steps: Step[] = startStep === "contact" ? ["contact", "about"] : ["about"]
@@ -86,8 +90,8 @@ export function ProfileWizard({
   const [direction, setDirection] = useState(1)
   const reduce = useReducedMotion()
 
-  const [phone, setPhone] = useState("")
-  const [country, setCountry] = useState("")
+  const [phone, setPhone] = useState(defaultPhone)
+  const [country, setCountry] = useState(defaultCountry)
   const [city, setCity] = useState("")
   const [dob, setDob] = useState("")
   const [sex, setSex] = useState<"male" | "female" | null>(null)

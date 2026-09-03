@@ -59,4 +59,48 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   await expect(page.getByText(/أهلاً|أهلًا/).first()).toBeVisible()
   // fresh patient sees the humane empty states, not errors
   await expect(page.getByText("لا مواعيد قادمة حاليًا").first()).toBeVisible()
+
+  // Reuse the authenticated journey to verify the densest patient form on a
+  // real mobile viewport; do not create a second account just for a11y checks.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/dashboard/profile")
+  await expect(page.locator("main")).toBeVisible()
+
+  const unnamedControls = await page.locator(".operations-surface").evaluate((surface) =>
+    Array.from(surface.querySelectorAll<HTMLElement>("button,input,select,textarea"))
+      .filter((control) => {
+        if (control instanceof HTMLInputElement && control.type === "hidden") return false
+        const style = getComputedStyle(control)
+        return style.display !== "none" && style.visibility !== "hidden"
+      })
+      .filter((control) => {
+        const ariaName = control.getAttribute("aria-label")?.trim()
+        const labelledBy = control.getAttribute("aria-labelledby")?.trim()
+        const title = control.getAttribute("title")?.trim()
+        const text = control.textContent?.trim()
+        const labels = "labels" in control ? (control as HTMLInputElement).labels?.length ?? 0 : 0
+        return !ariaName && !labelledBy && !title && !text && labels === 0
+      })
+      .map((control) => control.outerHTML.slice(0, 160)),
+  )
+  expect(unnamedControls).toEqual([])
+
+  const undersizedControls = await page.locator(".operations-surface").evaluate((surface) =>
+    Array.from(surface.querySelectorAll<HTMLElement>("button,[role=button],input,select"))
+      .filter((control) => {
+        if (control instanceof HTMLInputElement && ["hidden", "checkbox", "radio"].includes(control.type)) {
+          return false
+        }
+        const rect = control.getBoundingClientRect()
+        const style = getComputedStyle(control)
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0 && rect.height < 44
+      })
+      .map((control) => ({ tag: control.tagName, height: control.getBoundingClientRect().height })),
+  )
+  expect(undersizedControls).toEqual([])
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  expect(overflow).toBeLessThanOrEqual(1)
 })

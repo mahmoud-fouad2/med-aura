@@ -6,6 +6,7 @@ import { requireAuthPage } from "@/lib/session"
 import { ProfileWizard } from "@/components/auth/profile-wizard"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { getI18n } from "@/lib/i18n"
+import { safeRelativePath } from "@/lib/navigation"
 
 export const metadata = { title: "أكمل بياناتك" }
 
@@ -23,7 +24,7 @@ export default async function CompleteProfilePage({
   searchParams: Promise<{ next?: string }>
 }) {
   const { next } = await searchParams
-  const destination = next || "/dashboard"
+  const destination = safeRelativePath(next)
   const user = await requireAuthPage(`/complete-profile?next=${encodeURIComponent(destination)}`)
 
   const existing = (
@@ -44,7 +45,13 @@ export default async function CompleteProfilePage({
 
   return (
     <AuthShell locale={locale} home={t.home} authShell={t.authShell}>
-      <ProfileWizard destination={destination} startStep={startStep} locale={locale} />
+      <ProfileWizard
+        destination={destination}
+        startStep={startStep}
+        locale={locale}
+        defaultPhone={user.phone ?? ""}
+        defaultCountry={user.country ?? ""}
+      />
     </AuthShell>
   )
 }

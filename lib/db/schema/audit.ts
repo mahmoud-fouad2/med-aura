@@ -1,4 +1,4 @@
-import { pgTable, text, jsonb, timestamp, index } from "drizzle-orm/pg-core"
+import { pgTable, text, jsonb, timestamp, index, integer } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 
 /**
@@ -56,3 +56,11 @@ export const analyticsEvent = pgTable(
     index("analytics_user_idx").on(t.userId, t.createdAt),
   ],
 )
+
+/** Shared fixed-window counters for costly/public endpoints across all instances. */
+export const apiRateLimit = pgTable("api_rate_limit", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  resetAt: timestamp("resetAt", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+})

@@ -82,9 +82,9 @@ function parseTime(t: string): { h: number; m: number } {
 export function generateSlots(
   rules: RuleLite[],
   takenMs: Set<number>,
-  opts: { now: Date; days: number; limit: number; timeZone?: string },
+  opts: { now: Date; days: number; limit: number; timeZone?: string; locale?: "ar" | "en" },
 ): Slot[] {
-  const { now, days, limit, timeZone = "Asia/Riyadh" } = opts
+  const { now, days, limit, timeZone = "Asia/Riyadh", locale = "ar" } = opts
   const slots: Slot[] = []
   if (rules.length === 0) return slots
   const localToday = formatInTimeZone(now, timeZone, "yyyy-MM-dd")
@@ -115,7 +115,7 @@ export function generateSlots(
         slots.push({
           startsAt: t.toISOString(),
           endsAt: endsAt.toISOString(),
-          label: formatSlot(t, timeZone),
+          label: formatSlot(t, timeZone, locale),
         })
         if (slots.length >= limit) break
       }
@@ -130,7 +130,7 @@ export function generateSlots(
 /** Compute bookable slots for a doctor from the database. */
 export async function getAvailableSlots(
   doctorId: string,
-  opts: { days?: number; type?: string; limit?: number } = {},
+  opts: { days?: number; type?: string; limit?: number; locale?: "ar" | "en" } = {},
 ): Promise<Slot[]> {
   const days = opts.days ?? 21
   const limit = opts.limit ?? 40
@@ -178,7 +178,7 @@ export async function getAvailableSlots(
       slotMinutes: r.slotMinutes,
     })),
     takenSet,
-    { now, days, limit, timeZone },
+    { now, days, limit, timeZone, locale: opts.locale },
   )
 }
 
@@ -191,8 +191,8 @@ export async function isSlotAvailable(
   return slots.some((s) => s.startsAt === startsAtIso)
 }
 
-function formatSlot(d: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
+function formatSlot(d: Date, timeZone: string, locale: "ar" | "en" = "ar"): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-SA-u-nu-latn" : "en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",

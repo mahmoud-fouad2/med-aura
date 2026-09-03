@@ -24,6 +24,7 @@ export function VerifyEmailNotice({
   home: Dictionary["home"]
   authShell: Dictionary["authShell"]
 }) {
+  const copy = COPY[locale]
   const [email, setEmail] = useState(defaultEmail ?? "")
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -35,11 +36,11 @@ export function VerifyEmailNotice({
     setLoading(true)
     const { error } = await authClient.sendVerificationEmail({
       email,
-      callbackURL: localizedPath("/dashboard", locale),
+      callbackURL: localizedPath("/complete-profile", locale),
     })
     setLoading(false)
     if (error) {
-      setError("تعذّر إرسال الرسالة. تأكد من البريد وحاول مجددًا.")
+      setError(copy.sendError)
       return
     }
     setDone(true)
@@ -54,22 +55,21 @@ export function VerifyEmailNotice({
               <MailCheck className="size-7" />
             </span>
             <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-              تأكيد وتفعيل بريدكِ الإلكتروني
+              {copy.title}
             </h1>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              أرسلنا رابط تفعيل آمن إلى بريدكِ. افتحي الرسالة واضغطي الرابط للتحقق من ملكية الحساب.
-              لم تصلكِ الرسالة؟ يمكنكِ طلب إعادة إرسالها فوراً.
+              {copy.body}
             </p>
           </div>
 
           {done ? (
             <p className="mt-6 rounded-lg bg-success/10 px-3 py-2 text-center text-sm text-success">
-              تم إرسال رابط التفعيل مجددًا.
+              {copy.sent}
             </p>
           ) : (
             <form onSubmit={resend} className="mt-6 flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
+                <Label htmlFor="email">{copy.email}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -87,14 +87,14 @@ export function VerifyEmailNotice({
                 </p>
               )}
               <Button type="submit" disabled={loading} className="w-full" size="lg">
-                {loading ? "جارٍ الإرسال…" : "إعادة إرسال رابط التفعيل"}
+                {loading ? copy.sending : copy.resend}
               </Button>
             </form>
           )}
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link href="/dashboard" className="font-medium text-primary hover:underline">
-              المتابعة إلى لوحة التحكم
+            <Link href={localizedPath("/sign-in", locale)} className="font-medium text-primary hover:underline">
+              {copy.signIn}
             </Link>
           </p>
         </Card>
@@ -102,3 +102,26 @@ export function VerifyEmailNotice({
     </AuthShell>
   )
 }
+
+const COPY = {
+  ar: {
+    title: "تحققي من بريدكِ الإلكتروني",
+    body: "أرسلنا رابط التحقق إلى بريدكِ. افتحي الرسالة واضغطي الرابط، ثم عودي لتسجيل الدخول وإكمال بيانات الحساب.",
+    email: "البريد الإلكتروني",
+    resend: "إعادة إرسال رابط التحقق",
+    sending: "جارٍ الإرسال…",
+    sent: "أرسلنا رابط تحقق جديدًا. راجعي صندوق الوارد والرسائل غير المرغوبة.",
+    sendError: "تعذّر إرسال الرابط الآن. تحققي من البريد ثم حاولي مرة أخرى.",
+    signIn: "العودة إلى تسجيل الدخول",
+  },
+  en: {
+    title: "Verify your email",
+    body: "We sent a verification link to your email. Open it, then return to sign in and finish your account details.",
+    email: "Email address",
+    resend: "Resend verification link",
+    sending: "Sending…",
+    sent: "A new verification link was sent. Check your inbox and spam folder.",
+    sendError: "We could not send the link. Check the address and try again.",
+    signIn: "Back to sign in",
+  },
+} as const

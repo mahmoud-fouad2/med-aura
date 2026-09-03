@@ -25,8 +25,9 @@ import { listPublicDoctorReviews } from "@/lib/data/reviews"
 import { BeforeAfterGalleryCard } from "@/components/before-after/gallery-card"
 import { query } from "@/lib/db/query"
 import { currencyAr, countryNameAr, countryNameEn } from "@/lib/status-labels"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript, localizedUrl } from "@/lib/seo"
+import { EventTracker } from "@/components/analytics/event-tracker"
 
 export const dynamic = "force-dynamic"
 
@@ -51,7 +52,7 @@ export async function generateMetadata({
         ? `${doctor.name} على Med Aura: بيانات واضحة، تراخيص موثقة، واستشارة تجميلية مناسبة.`
         : `${doctor.name} on Med Aura: verified profile, clear services, and aesthetic consultation options.`),
     path: `/doctors/${doctor.slug}`,
-    image: doctor.photoUrl ?? "/hero-medaura-consultation.png",
+    image: doctor.photoUrl ?? "/hero-medaura-consultation.webp",
     locale: isAr ? "ar" : "en",
   })
 }
@@ -76,6 +77,7 @@ export default async function DoctorProfilePage({
           <DataState
             status={r.status}
             requestId={r.status === "error" ? r.requestId : undefined}
+            locale={locale}
           />
         </main>
         <SiteFooter />
@@ -149,6 +151,7 @@ export default async function DoctorProfilePage({
         dangerouslySetInnerHTML={{ __html: jsonLdScript([jsonLd, breadcrumb]) }}
       />
       <main className="relative flex-1 overflow-hidden bg-section-soft">
+        <EventTracker name="doctor_viewed" locale={locale} properties={{ doctorId: doctor.id }} />
         <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-6">
@@ -400,7 +403,7 @@ export default async function DoctorProfilePage({
                     <Button
                       className="w-full h-12 text-base font-bold shadow-elegant hover:scale-[1.01] transition-transform"
                       render={
-                        <Link href={`/doctors/${doctor.slug}/book`}>
+                        <Link href={localizedPath(`/doctors/${doctor.slug}/book`, locale)}>
                           {isAr ? "احجز استشارتك" : "Book Consultation"}
                         </Link>
                       }

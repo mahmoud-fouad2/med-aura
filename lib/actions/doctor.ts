@@ -1,10 +1,10 @@
 "use server"
 
 import { z } from "zod"
-import { and, eq } from "drizzle-orm"
+import { and, eq, gte } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
-import { doctorProfile, doctorProcedure, availabilityRule } from "@/lib/db/schema"
+import { doctorProfile, doctorProcedure, availabilityRule, doctorLicense } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
@@ -109,7 +109,7 @@ export async function setDoctorStatusAction(input: unknown): Promise<ActionResul
     const { doctorId, status } = parsed.data
 
     const existing = (
-      await db.select({ id: doctorProfile.id, status: doctorProfile.status }).from(doctorProfile).where(eq(doctorProfile.id, doctorId)).limit(1)
+      await db.select({ id: doctorProfile.id, status: doctorProfile.status, verified: doctorProfile.verified }).from(doctorProfile).where(eq(doctorProfile.id, doctorId)).limit(1)
     )[0]
     if (!existing) throw new AppError("NOT_FOUND")
     if (!["approved", "suspended"].includes(existing.status)) {
@@ -158,11 +158,40 @@ export async function setDoctorPublishedAction(input: unknown): Promise<ActionRe
     const { doctorId, published } = parsed.data
 
     const existing = (
-      await db.select({ id: doctorProfile.id, status: doctorProfile.status }).from(doctorProfile).where(eq(doctorProfile.id, doctorId)).limit(1)
+      await db
+        .select({
+          id: doctorProfile.id,
+          status: doctorProfile.status,
+          verified: doctorProfile.verified,
+        })
+        .from(doctorProfile)
+        .where(eq(doctorProfile.id, doctorId))
+        .limit(1)
     )[0]
     if (!existing) throw new AppError("NOT_FOUND")
     if (published && existing.status !== "approved") {
       throw new AppError("CONFLICT", { userMessage: "لا يمكن إظهار طبيب غير معتمد." })
+    }
+    if (published && !existing.verified) {
+      throw new AppError("CONFLICT", { userMessage: "أكمل التحقق من ملف الطبيب قبل نشره." })
+    }
+    if (published) {
+      const validLicense = (
+        await db
+          .select({ id: doctorLicense.id })
+          .from(doctorLicense)
+          .where(
+            and(
+              eq(doctorLicense.doctorId, doctorId),
+              eq(doctorLicense.status, "VALID"),
+              gte(doctorLicense.expiryDate, new Date().toISOString().slice(0, 10)),
+            ),
+          )
+          .limit(1)
+      )[0]
+      if (!validLicense) {
+        throw new AppError("CONFLICT", { userMessage: "يلزم ترخيص صالح وغير منتهي قبل نشر الطبيب." })
+      }
     }
 
     await db

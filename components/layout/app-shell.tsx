@@ -35,7 +35,7 @@ export async function AppShell({
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard/notifications"
-              aria-label="الإشعارات"
+              aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}
               className="relative flex size-10 items-center justify-center rounded-full border border-border/60 bg-background/70 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
             >
               <Bell className="size-5" />
@@ -57,7 +57,7 @@ export async function AppShell({
           />
         </div>
       </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <main className="operations-surface mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

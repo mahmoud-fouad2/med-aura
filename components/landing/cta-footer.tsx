@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { AvatarCluster } from "@/components/ui/avatar-cluster"
 import { Reveal } from "@/components/motion"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { searchDoctors } from "@/lib/data/doctors"
 import { query } from "@/lib/db/query"
 
@@ -24,7 +24,7 @@ export async function CtaFooter() {
         <Reveal>
           <div className="relative isolate overflow-hidden border-y border-primary/20 bg-primary text-primary-foreground">
             <Image
-              src="/hero-medaura-consultation.png"
+              src="/hero-medaura-consultation.webp"
               alt=""
               fill
               className="absolute inset-0 -z-20 object-cover object-left opacity-28"
@@ -46,7 +46,7 @@ export async function CtaFooter() {
                     size="lg"
                     variant="secondary"
                     render={
-                      <Link href="/for-doctors">
+                      <Link href={localizedPath("/for-doctors", locale)}>
                         <Stethoscope className="size-5" />
                         {isAr ? "انضم كطبيب" : "Join as a doctor"}
                       </Link>
@@ -57,7 +57,7 @@ export async function CtaFooter() {
                     variant="outline"
                     className="border-white/30 bg-white/10 text-primary-foreground hover:bg-white/20"
                     render={
-                      <Link href="/for-centers">
+                      <Link href={localizedPath("/for-centers", locale)}>
                         <Building2 className="size-5" />
                         {isAr ? "سجّل مركزك" : "Register your center"}
                         <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />

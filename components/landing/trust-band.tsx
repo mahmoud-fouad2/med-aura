@@ -12,30 +12,30 @@ import type { Locale } from "@/lib/i18n"
 const pillars: { icon: LucideIcon; title: string; titleEn: string; desc: string; descEn: string }[] = [
   {
     icon: Star,
-    title: "تجارب وتقييمات موثوقة",
-    titleEn: "Verified reviews",
-    desc: "آراء وتجارب واقعية من مراجعين أكملوا استشاراتهم وإجراءاتهم التجميلية فعلياً.",
-    descEn: "Reviews from patients who completed their journey on the platform.",
+    title: "تقييمات مرتبطة بتجارب فعلية",
+    titleEn: "Experience-based reviews",
+    desc: "نربط التقييمات المؤهلة بتجربة موثقة على المنصة لتقديم سياق أوضح عند المقارنة.",
+    descEn: "Eligible reviews are linked to a recorded platform experience to make comparison more useful.",
   },
   {
     icon: CreditCard,
     title: "مدفوعات آمنة ومحمية",
     titleEn: "Secure payments",
-    desc: "بوابات دفع مشفرة بالكامل تضمن حماية بياناتكِ مع وضوح مالي وشفافية في كل خطوة.",
-    descEn: "Clear, protected payment options before confirming an appointment.",
+    desc: "تظهر الرسوم المتاحة بوضوح قبل التأكيد، وتتم معالجة الدفع عبر مزوّد الدفع عند تفعيل الخدمة.",
+    descEn: "Available fees are shown before confirmation, with payments handled by the configured payment provider.",
   },
   {
     icon: FileLock2,
-    title: "خصوصية وتشفير الملفات",
+    title: "خصوصية مشاركة الملفات",
     titleEn: "Private files",
-    desc: "صوركِ وتقاريركِ الطبية مشفرة بأعلى المعايير، ولا يطّلع عليها أحد إلا بموافقتكِ الصريحة.",
+    desc: "تُشارك الصور والتقارير ضمن رحلة الرعاية ومع الأطراف المخوّلة فقط، وفق إعدادات الحساب والموافقة.",
     descEn: "Your photos and reports stay private and are shared only for your care.",
   },
   {
     icon: BadgeCheck,
-    title: "اعتماد طبي وتراخيص موثّقة",
+    title: "مراجعة البيانات المهنية",
     titleEn: "License checks",
-    desc: "ندقق التراخيص والمؤهلات الطبية لكل طبيب ومركز قبل إدراجه لضمان أعلى مستويات الأمان.",
+    desc: "نراجع بيانات الترخيص والمؤهلات المقدمة قبل نشر ملف الطبيب أو المركز على المنصة.",
     descEn: "Provider credentials are reviewed before profiles are published.",
   },
 ]
@@ -48,8 +48,8 @@ export function TrustBand({ locale }: { locale: Locale }) {
         <SectionHeading
           align="start"
           eyebrow={isAr ? "الثقة والأمان" : "Trust & safety"}
-          title={isAr ? "لماذا يثق بنا الآلاف في رحلتهم التجميلية" : "Why Med Aura"}
-          subtitle={isAr ? "قرارات واثقة، بيانات محمية، وتجربة تجميلية راقية تضع راحتكِ وسلامتكِ أولاً." : "Clearer decisions, protected data, and a more reassuring experience."}
+          title={isAr ? "ثقة مبنية على خطوات واضحة" : "Trust built on clear steps"}
+          subtitle={isAr ? "معلومات قابلة للمراجعة، مشاركة خاصة، وخطوات مفهومة من البحث حتى المتابعة." : "Reviewable information, private sharing, and understandable steps from search to follow-up."}
         />
         <Stagger className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map((p) => (

@@ -31,10 +31,10 @@ export default async function OnlineConsultationPage() {
   const isAr = locale === "ar"
   const l = (ar: string, en: string) => (isAr ? ar : en)
   const features = [
-    { icon: Video, title: l("استشارة مرئية براحة تامة من مكانكِ", "Meet from wherever you are"), desc: l("تواصلي مباشرة مع طبيبكِ المفضل في موعد يناسبكِ لمناقشة تطلعاتكِ بكل خصوصية قبل السفر أو زيارة المركز.", "Speak with your doctor before travelling or visiting a center.") },
-    { icon: FileLock2, title: l("مشاركة آمنة ومشفرة لملفكِ", "Private sharing"), desc: l("ارفعي صوركِ وتقاريركِ الطبية بأمان تام، مع تحكمكِ الكامل فيمن يطلع عليها وإمكانية سحب الإذن بأي وقت.", "Share the requested photos and reports and control who can view them.") },
-    { icon: ClipboardList, title: l("خطة علاجية دقيقة وتكلفة واضحة", "A clear plan"), desc: l("تحصلين بعد الاستشارة على تقرير طبي شامل يوضح الخطوات المقترحة، البدائل، والتقدير المالي الدقيق.", "Understand suitable options and expected costs after your consultation.") },
-    { icon: ShieldCheck, title: l("نخبة من كبار أطباء التجميل", "Carefully selected doctors"), desc: l("أطباء مرخصون واستشاريون ذوو خبرة دولية تم التحقق من مؤهلاتهم وتراخيصهم المهنية بعناية فائقة.", "Doctors appear only after their credentials and license are reviewed.") },
+    { icon: Video, title: l("استشارة مرئية من مكانكِ", "Meet from wherever you are"), desc: l("تحدثي مع الطبيب في موعد متاح لمناقشة الحالة قبل السفر أو زيارة المركز.", "Speak with your doctor before travelling or visiting a center.") },
+    { icon: FileLock2, title: l("مشاركة خاصة لملف الحالة", "Private sharing"), desc: l("ارفعي الصور والتقارير المطلوبة، وحددي للطبيب صلاحية الاطلاع عليها ضمن الحالة.", "Share the requested photos and reports and control who can view them.") },
+    { icon: ClipboardList, title: l("تفاصيل قابلة للمراجعة", "A reviewable plan"), desc: l("راجعي ما يضيفه الطبيب من خطوات مقترحة وبدائل وتقدير مالي بعد الاستشارة.", "Review proposed options and expected costs after your consultation.") },
+    { icon: ShieldCheck, title: l("طبيب بملف مهني مُراجع", "Reviewed professional profiles"), desc: l("يظهر الطبيب في البحث بعد قبول ملفه ومراجعة بيانات الترخيص المقدمة.", "Doctors appear only after their profile and submitted license details are reviewed.") },
   ]
   const steps = isAr
     ? ["استكشفي الأطباء المعتمدين واختاري الطبيب الأنسب لاحتياجكِ.", "أنشئي ملف حالتكِ وارفعي الصور والتقارير الطبية المطلوبة بسرية.", "امنحي الطبيب إذن استعراض حالتكِ لبدء دراستها قبل اللقاء.", "حددي موعد الاستشارة المرئية المناسب لكِ وأتمي الدفع الآمن.", "التقي بطبيبكِ عبر اتصال فيديو مشفر، واستلمي خطتكِ العلاجية وعرض السعر."]

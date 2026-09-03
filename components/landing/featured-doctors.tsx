@@ -8,7 +8,7 @@ import { DataState } from "@/components/ui/data-state"
 import { Button } from "@/components/ui/button"
 import { DoctorCard } from "@/components/search/doctor-card"
 import { Stagger, StaggerItem } from "@/components/motion"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 
 export async function FeaturedDoctors() {
   const [res, { locale, t }] = await Promise.all([
@@ -24,16 +24,16 @@ export async function FeaturedDoctors() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             align="start"
-            eyebrow={isAr ? "اختيارات موثوقة" : "Verified Selection"}
+            eyebrow={isAr ? "ابدئي المقارنة" : "Start comparing"}
             title={t.home.verifiedDoctors}
-            subtitle={isAr ? "نخبة من كبار استشاريي وجراحي التجميل المرخصين، لمساعدتكِ على اتخاذ قراركِ بثقة واطمئنان." : "Start with a trusted expert before making your treatment decision."}
+            subtitle={isAr ? "تعرّفي على الملفات المنشورة بعد مراجعة بياناتها المهنية، ثم قارني الخبرات والخدمات قبل القرار." : "Explore profiles published after professional details are reviewed, then compare experience and services."}
           />
           {results.length > 0 && (
             <Button
               variant="outline"
               className="rounded-xl"
               render={
-                <Link href="/search">
+                <Link href={localizedPath("/search", locale)}>
                   {isAr ? "استكشفي جميع الأطباء" : "View all doctors"}
                   <ArrowLeft className="size-4 transition-transform duration-300 rtl:rotate-0 ltr:rotate-180 rtl:group-hover/button:-translate-x-1 ltr:group-hover/button:translate-x-1" />
                 </Link>
@@ -47,16 +47,17 @@ export async function FeaturedDoctors() {
             <DataState
               status={res.status}
               requestId={res.status === "error" ? res.requestId : undefined}
+              locale={locale}
             />
           </div>
         ) : results.length === 0 ? (
           <div className="mt-12">
             <EmptyState
               icon={Stethoscope}
-              title={isAr ? "نرحّب بأطباء التجميل المعتمدين" : "Welcome Accredited Aesthetic Doctors"}
-              description={isAr ? "لا يظهر أي طبيب قبل التحقق من ترخيصه. هل أنت طبيب؟ انضم إلى المنصة." : "No doctor appears prior to verified licensing. Are you a doctor? Join the platform."}
+              title={isAr ? "لم تُنشر ملفات أطباء بعد" : "No doctor profiles are published yet"}
+              description={isAr ? "ننشر الملفات بعد مراجعة بياناتها المهنية. يمكن للأطباء والمراكز تقديم طلب الانضمام الآن." : "Profiles are published after their professional details are reviewed. Providers can apply now."}
               action={
-                <Button render={<Link href="/for-doctors">{isAr ? "انضم كطبيب" : "Join as a doctor"}</Link>} />
+                <Button render={<Link href={localizedPath("/for-doctors", locale)}>{isAr ? "قدّم طلب الانضمام" : "Apply to join"}</Link>} />
               }
             />
           </div>

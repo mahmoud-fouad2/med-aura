@@ -12,7 +12,7 @@ import { listDestinations } from "@/lib/data/destinations"
 import { query } from "@/lib/db/query"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript, localizedUrl } from "@/lib/seo"
 import { destinationImage, PUBLIC_MEDIA } from "@/lib/public-media"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { SeoEditorialBand } from "@/components/marketing/seo-editorial-band"
 
 export const dynamic = "force-dynamic"
@@ -39,8 +39,11 @@ export default async function DestinationsPage() {
   const isAr = locale === "ar"
   const l = (ar: string, en: string) => (isAr ? ar : en)
   const destinations = res.status === "ok" ? res.data : []
-  const doctorsTotal = destinations.reduce((sum, d) => sum + d.approvedDoctors, 0)
-  const centersTotal = destinations.reduce((sum, d) => sum + d.approvedCenters, 0)
+  const activeDestinations = destinations.filter(
+    (destination) => destination.approvedDoctors + destination.approvedCenters > 0,
+  )
+  const doctorsTotal = activeDestinations.reduce((sum, d) => sum + d.approvedDoctors, 0)
+  const centersTotal = activeDestinations.reduce((sum, d) => sum + d.approvedCenters, 0)
   const structuredData = [
     breadcrumbJsonLd([
       { name: l("الرئيسية", "Home"), url: localizedUrl("/", locale) },
@@ -48,7 +51,7 @@ export default async function DestinationsPage() {
     ]),
     itemListJsonLd({
       name: l("الوجهات التجميلية على Med Aura", "Aesthetic destinations on Med Aura"),
-      items: destinations.map((d) => ({
+      items: activeDestinations.map((d) => ({
         name: isAr ? d.nameAr : d.nameEn,
         url: localizedUrl(`/destinations/${d.code.toLowerCase()}`, locale),
         image: absoluteUrl(destinationImage(d.code)),
@@ -66,12 +69,12 @@ export default async function DestinationsPage() {
       <main className="flex-1">
         <PageHero
           eyebrow={l("الوجهات العلاجية", "Destinations")}
-          title={l("وجهتكِ التجميلية المثالية بأعلى معايير الرعاية", "Compare aesthetic destinations clearly")}
-          subtitle={l("استكشفي نخبة أطباء ومراكز التجميل المعتمدة عبر أبرز الوجهات في المملكة والخليج وتركيا، مع مقارنة شفافة للخبرات والأسعار.", "Compare destinations by available doctors, centers, and languages before choosing your next step.")}
+          title={l("قارني وجهات التجميل بخطوات أوضح", "Compare aesthetic destinations clearly")}
+          subtitle={l("تظهر هنا الوجهات التي تضم أطباء أو مراكز منشورة، مع معلومات تساعدكِ على مقارنة الموقع والخدمات واللغات المتاحة.", "Only destinations with published doctors or centers appear here, with details to compare location, services, and languages.")}
           imageSrc={PUBLIC_MEDIA.destinations}
           imageAlt={l("عيادة تجميل حديثة", "Modern aesthetic clinic")}
           stats={[
-            { label: l("وجهات معتمدة", "Destinations"), value: destinations.length.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
+            { label: l("وجهات متاحة", "Available destinations"), value: activeDestinations.length.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
             { label: l("أطباء استشاريون", "Doctors"), value: doctorsTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
             { label: l("مراكز ومستشفيات", "Centers"), value: centersTotal.toLocaleString(isAr ? "ar-SA-u-nu-latn" : "en-US") },
           ]}
@@ -83,31 +86,24 @@ export default async function DestinationsPage() {
               <DataState
                 status={res.status}
                 requestId={res.status === "error" ? res.requestId : undefined}
+                locale={locale}
               />
-            ) : destinations.length === 0 ? (
+            ) : activeDestinations.length === 0 ? (
               <EmptyState
                 icon={Globe2}
-                title={l("لا توجد وجهات منشورة بعد", "No destinations are available yet")}
-                description={l("ستظهر الوجهات هنا فور اعتماد أطباء ومراكز فيها.", "Destinations appear after doctors and centers are approved there.")}
+                title={l("نعمل على إطلاق أولى الوجهات", "The first destinations are being prepared")}
+                description={l("ستظهر الوجهة عندما يُنشر فيها طبيب أو مركز بعد مراجعة بياناته المهنية.", "A destination appears when a doctor or center there is published after professional review.")}
               />
             ) : (
               <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {destinations.map((d) => {
-                  const inactive = d.approvedDoctors + d.approvedCenters === 0
+                {activeDestinations.map((d) => {
                   return (
                     <StaggerItem key={d.code}>
                       <Link
-                        href={`/destinations/${d.code.toLowerCase()}`}
-                        aria-disabled={inactive}
-                        className={inactive ? "pointer-events-none" : ""}
+                        href={localizedPath(`/destinations/${d.code.toLowerCase()}`, locale)}
                       >
                         <Card
-                          className={
-                            "h-full overflow-hidden p-0 rounded-2xl border border-border/80 bg-card transition-all duration-300 " +
-                            (inactive
-                              ? "opacity-60"
-                              : "hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant")
-                          }
+                          className="h-full overflow-hidden p-0 rounded-2xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
                         >
                           <div className="relative h-36 bg-muted">
                             <Image
@@ -151,11 +147,6 @@ export default async function DestinationsPage() {
                                     {l}
                                   </span>
                                 ))}
-                              </p>
-                            )}
-                            {inactive && (
-                              <p className="mt-4 text-xs text-muted-foreground">
-                                {l("لا يوجد مقدّم خدمة معتمد بعد", "No approved provider yet")}
                               </p>
                             )}
                           </div>

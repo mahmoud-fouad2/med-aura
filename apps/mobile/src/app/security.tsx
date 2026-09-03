@@ -11,7 +11,7 @@ import { api } from "../lib/api"
 import { useI18n } from "../lib/i18n"
 import { colors, radius, spacing } from "../theme"
 
-type Status = { enabled: boolean; totpVerified: boolean; otpAvailable: boolean }
+type Status = { enabled: boolean; totpVerified: boolean; otpAvailable: boolean; hasCredential: boolean }
 type Step =
   | { name: "idle" }
   | { name: "enable-password" }
@@ -20,6 +20,7 @@ type Step =
   | { name: "totp-setup"; totpURI: string }
   | { name: "disable-confirm" }
   | { name: "regenerate-password" }
+  | { name: "social-confirm"; action: "enable" | "disable" | "totp" | "regenerate" }
   | { name: "regenerate-codes"; codes: string[] }
 
 function keyFromURI(uri: string): string {
@@ -46,7 +47,7 @@ export default function Security() {
     api
       .security()
       .then(setStatus)
-      .catch(() => setStatus({ enabled: false, totpVerified: false, otpAvailable: false }))
+      .catch(() => setStatus({ enabled: false, totpVerified: false, otpAvailable: false, hasCredential: true }))
       .finally(() => setLoading(false))
   }, [])
 
@@ -64,10 +65,12 @@ export default function Security() {
   }
 
   async function handleEnable() {
-    if (!password) return
+    if (status?.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { data, error: err } = await authClient.twoFactor.enable({ password })
+    const { data, error: err } = await authClient.twoFactor.enable({
+      password: status?.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err || !data) {
       setError(err?.status === 401 ? t.security.wrongPassword : t.security.error)
@@ -81,21 +84,30 @@ export default function Security() {
   async function handleDisable() {
     setBusy(true)
     setError(null)
-    const { error: err } = await authClient.twoFactor.disable({ password })
+    const { error: err } = await authClient.twoFactor.disable({
+      password: status?.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err) {
       setError(err.status === 401 ? t.security.wrongPassword : t.security.error)
       return
     }
-    setStatus({ enabled: false, totpVerified: false, otpAvailable: false })
+    setStatus((current) => ({
+      enabled: false,
+      totpVerified: false,
+      otpAvailable: false,
+      hasCredential: current?.hasCredential ?? true,
+    }))
     closeStep()
   }
 
   async function handleGetTotpUri() {
-    if (!password) return
+    if (status?.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { data, error: err } = await authClient.twoFactor.getTotpUri({ password })
+    const { data, error: err } = await authClient.twoFactor.getTotpUri({
+      password: status?.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err || !data) {
       setError(err?.status === 401 ? t.security.wrongPassword : t.security.error)
@@ -120,10 +132,12 @@ export default function Security() {
   }
 
   async function handleRegenerate() {
-    if (!password) return
+    if (status?.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { data, error: err } = await authClient.twoFactor.generateBackupCodes({ password })
+    const { data, error: err } = await authClient.twoFactor.generateBackupCodes({
+      password: status?.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err || !data) {
       setError(err?.status === 401 ? t.security.wrongPassword : t.security.error)
@@ -199,7 +213,9 @@ export default function Security() {
                 label={status.enabled ? t.security.disable : t.security.enable}
                 variant={status.enabled ? "secondary" : "primary"}
                 onPress={() =>
-                  status.enabled ? setStep({ name: "disable-confirm" }) : setStep({ name: "enable-password" })
+                  status.enabled
+                    ? setStep(status.hasCredential ? { name: "disable-confirm" } : { name: "social-confirm", action: "disable" })
+                    : setStep(status.hasCredential ? { name: "enable-password" } : { name: "social-confirm", action: "enable" })
                 }
               />
             </Card>
@@ -223,7 +239,7 @@ export default function Security() {
                   <Button
                     label={status.totpVerified ? t.security.reSetup : t.security.setup}
                     variant="secondary"
-                    onPress={() => setStep({ name: "totp-setup-password" })}
+                    onPress={() => setStep(status.hasCredential ? { name: "totp-setup-password" } : { name: "social-confirm", action: "totp" })}
                   />
                 </Card>
 
@@ -232,12 +248,36 @@ export default function Security() {
                   <Button
                     label={t.security.viewBackupCodes}
                     variant="secondary"
-                    onPress={() => setStep({ name: "regenerate-password" })}
+                    onPress={() => setStep(status.hasCredential ? { name: "regenerate-password" } : { name: "social-confirm", action: "regenerate" })}
                   />
                 </Card>
               </>
             )}
           </>
+        ) : step.name === "social-confirm" ? (
+          <Card style={{ gap: spacing.lg }}>
+            <SectionHeading icon="shield-checkmark-outline" title={t.security.sessionConfirmTitle} />
+            <AppText variant="sub" color={colors.textMuted}>
+              {step.action === "disable" ? t.security.disableConfirmBody : t.security.sessionConfirmBody}
+            </AppText>
+            {error ? <FormError message={error} /> : null}
+            <View style={{ gap: spacing.sm }}>
+              <Button
+                label={t.security.confirm}
+                loading={busy}
+                onPress={() =>
+                  void (step.action === "enable"
+                    ? handleEnable()
+                    : step.action === "disable"
+                      ? handleDisable()
+                      : step.action === "totp"
+                        ? handleGetTotpUri()
+                        : handleRegenerate())
+                }
+              />
+              <Button label={t.security.cancel} variant="ghost" onPress={closeStep} />
+            </View>
+          </Card>
         ) : step.name === "enable-password" || step.name === "regenerate-password" || step.name === "totp-setup-password" ? (
           <Card style={{ gap: spacing.lg }}>
             <SectionHeading icon="lock-closed-outline" title={t.security.passwordLabel} />

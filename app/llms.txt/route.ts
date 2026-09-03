@@ -34,7 +34,7 @@ function llmsContent(): string {
 - Robots: ${base}/robots.txt
 - Contact: ${base}/ar/contact | ${base}/en/contact
 
-Last content review: 2026-08-27
+Last content review: 2026-09-01
 `
 }
 

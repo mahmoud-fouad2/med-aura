@@ -87,9 +87,11 @@ async function responseError(response: Response): Promise<Error> {
 export async function streamAssistant(
   messages: AssistantTurn[],
   onStage: (stage: AssistantStage) => void,
+  locale: "ar" | "en" = "ar",
+  externalSignal?: AbortSignal,
 ): Promise<AssistantResponse> {
   const controller = new AbortController()
-  let abortReason: "inactivity" | "hard" | null = null
+  let abortReason: "inactivity" | "hard" | "cancelled" | null = null
   let responseStarted = false
   let inactivityTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -105,6 +107,12 @@ export async function streamAssistant(
     abortReason = "hard"
     controller.abort()
   }, AI_HARD_TIMEOUT_MS)
+  const cancelFromCaller = () => {
+    abortReason = "cancelled"
+    controller.abort()
+  }
+  externalSignal?.addEventListener("abort", cancelFromCaller, { once: true })
+  if (externalSignal?.aborted) cancelFromCaller()
 
   try {
     const headers: Record<string, string> = {
@@ -119,7 +127,7 @@ export async function streamAssistant(
     const response = await expoFetch(`${API_URL}/api/mobile/v1/assistant`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, locale }),
       signal: controller.signal,
       ...(Platform.OS === "web" ? { credentials: "include" as const } : {}),
     })
@@ -178,6 +186,9 @@ export async function streamAssistant(
     ) {
       throw cause
     }
+    if (abortReason === "cancelled") {
+      throw new ApiError("Assistant request cancelled", 499, "ASSISTANT_CANCELLED", { cause })
+    }
     if (abortReason) throw new TimeoutError(abortReason, { cause })
     if (responseStarted) {
       throw new ApiError("انقطع رد المساعد قبل اكتماله.", 502, "ASSISTANT_INTERRUPTED", {
@@ -188,5 +199,6 @@ export async function streamAssistant(
   } finally {
     if (inactivityTimer) clearTimeout(inactivityTimer)
     clearTimeout(hardTimer)
+    externalSignal?.removeEventListener("abort", cancelFromCaller)
   }
 }

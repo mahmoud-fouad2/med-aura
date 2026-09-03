@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Reveal } from "@/components/motion"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, faqPageJsonLd, jsonLdScript } from "@/lib/seo"
 import { PUBLIC_MEDIA } from "@/lib/public-media"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -88,6 +88,7 @@ export default async function FaqPage() {
               <DataState
                 status={res.status}
                 requestId={res.status === "error" ? res.requestId : undefined}
+                locale={locale}
               />
             ) : items.length === 0 ? (
               <EmptyState
@@ -126,7 +127,7 @@ export default async function FaqPage() {
                 <p className="text-muted-foreground mb-4">
                   {l("نحن هنا لمساعدتك والإجابة على أي استفسارات إضافية لديك.", "We are here to help and answer any additional questions you may have.")}
                 </p>
-                <Button render={<Link href="/contact">{l("تواصل معنا", "Contact us")}</Link>} size="lg" className="rounded-full px-8" />
+                <Button render={<Link href={localizedPath("/contact", locale)}>{l("تواصل معنا", "Contact us")}</Link>} size="lg" className="rounded-full px-8" />
               </div>
             </Reveal>
           </div>

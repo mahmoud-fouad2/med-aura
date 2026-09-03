@@ -95,7 +95,6 @@ describe("runAssistant empty-.text fallback", () => {
     }
     generateContent
       .mockResolvedValueOnce(toolTurn)
-      .mockResolvedValueOnce(toolTurn)
       .mockResolvedValueOnce({
         functionCalls: [],
         text: "",

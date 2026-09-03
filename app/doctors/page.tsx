@@ -10,7 +10,7 @@ export async function generateMetadata() {
       ? "قارن أطباء التجميل حسب مجال الخبرة والإجراء والمدينة ونوع الاستشارة والتقييمات المنشورة، واختر الطبيب الأنسب لاحتياجك."
       : "Compare aesthetic doctors by experience area, procedure, location, consultation type, and published reviews to find the right fit for your needs.",
     path: "/doctors",
-    image: "/hero-medaura-consultation.png",
+    image: "/hero-medaura-consultation.webp",
     locale,
     keywords: locale === "ar"
       ? ["أطباء تجميل", "أفضل طبيب تجميل لاحتياجك", "طبيب تجميل معتمد", "استشارة تجميل أونلاين"]

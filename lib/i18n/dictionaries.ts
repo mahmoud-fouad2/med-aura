@@ -9,7 +9,7 @@ const ar = {
   nav: {
     procedures: "الإجراءات التجميلية",
     doctors: "نخبة الأطباء",
-    centers: "المراكز المعتمدة",
+    centers: "المراكز",
     destinations: "الوجهات العلاجية",
     onlineConsultation: "الاستشارة المرئية",
     howItWorks: "كيف تعمل المنصة",
@@ -34,18 +34,18 @@ const ar = {
   home: {
     heroTitle: "رحلتكِ التجميلية تبدأ بقرارٍ موثوق ووضوحٍ تام",
     heroSubtitle:
-      "استشيري نخبة من أمهر أطباء ومراكز التجميل المعتمدين، شاركي تفاصيل حالتكِ بخصوصية تامة، واحصلي على خطة علاجية مخصصة وتكلفة شفافة قبل أي التزام.",
+      "قارني بين خيارات التجميل، وشاركي تفاصيل حالتكِ بخصوصية، وابدئي استشارة واضحة مع طبيب أو مركز تُراجع المنصة بياناته المهنية قبل النشر.",
     searchPlaceholder: "ابحثي عن إجراء تجميلي، طبيب، أو مركز معتمد…",
     exploreByArea: "استكشفي حسب المنطقة التجميلية",
     popularProcedures: "الإجراءات التجميلية الأكثر طلباً",
-    verifiedDoctors: "نخبة أطباء التجميل المعتمدين",
-    verifiedCenters: "أرقى مراكز ومستشفيات التجميل",
+    verifiedDoctors: "أطباء تجميل بعد مراجعة التراخيص",
+    verifiedCenters: "مراكز تجميل بعد مراجعة البيانات",
     howItWorks: "كيف نرافقكِ في Med Aura",
     noDataYet: "لا يوجد محتوى منشور بعد في هذا القسم.",
   },
   authShell: {
     licenseCheck: "أطباء ومراكز استوفت أعلى معايير الفحص والترخيص",
-    fileProtection: "خصوصية تامة وتشفير كامل لملفاتكِ وصوركِ الطبية",
+    fileProtection: "مشاركة خاصة لملفات الحالة مع الأطراف المخوّلة",
     verifiedReviews: "تجارب وتقييمات حقيقية من مراجعين موثقين",
     backHome: "العودة إلى الرئيسية",
   },
@@ -111,7 +111,7 @@ const en: Dictionary = {
   home: {
     heroTitle: "Your aesthetic journey starts with a trusted decision",
     heroSubtitle:
-      "Consult accredited aesthetic doctors and centers, share your case securely, and receive a clear plan and price before you decide.",
+      "Compare aesthetic-care options, share your case privately, and start a clear consultation with providers whose professional details are reviewed before publication.",
     searchPlaceholder: "Search a procedure, doctor or center…",
     exploreByArea: "Explore by area",
     popularProcedures: "Most requested procedures",

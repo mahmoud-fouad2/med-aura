@@ -55,7 +55,7 @@ async function ensureRealUser(email: string, name: string, roleKey: RoleKey): Pr
     await auth.api.signUpEmail({ body: { email, password: randomPassword, name } })
     row = (await db.select().from(userT).where(eq(userT.email, email)).limit(1))[0]
   }
-  if (!row) throw new Error(`failed to create user ${email}`)
+  if (!row) throw new Error("Failed to create a Rejuvera provider account")
 
   await db
     .update(userT)
@@ -81,7 +81,9 @@ async function mirrorPhoto(url: string, key: string): Promise<string | null> {
     await putObjectBuffer(key, buffer, contentType)
     return key
   } catch (err) {
-    console.warn(`  ⚠ could not mirror photo ${url}:`, (err as Error).message)
+    console.warn("  Could not mirror a Rejuvera provider photo", {
+      errorName: err instanceof Error ? err.name : "UnknownError",
+    })
     return null
   }
 }
@@ -315,7 +317,9 @@ main()
     process.exit(0)
   })
   .catch(async (err) => {
-    console.error(err)
+    console.error("Rejuvera onboarding failed", {
+      errorName: err instanceof Error ? err.name : "UnknownError",
+    })
     await pool.end()
     process.exit(1)
   })

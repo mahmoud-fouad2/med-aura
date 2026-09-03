@@ -14,7 +14,7 @@ Create a **Web Service** from the repo.
 |---|---|
 | Root Directory | `.` (repo root — `package.json` and `next.config.mjs` live here) |
 | Runtime | Node |
-| Node version | `20` (pinned via `.node-version`; matches CI in `.github/workflows/ci.yml`) |
+| Node version | `24` (pinned via `.node-version`; matches CI in `.github/workflows/ci.yml`) |
 | Build Command | `corepack enable && pnpm install --frozen-lockfile && pnpm run build` |
 | Pre-Deploy Command | `pnpm run db:migrate` (paid plans only — see below) |
 | Start Command | `pnpm run start` |
@@ -23,18 +23,21 @@ Create a **Web Service** from the repo.
 Notes:
 - `pnpm run build` → `next build`. **Tested in this repo: exit 0** (all routes
   compiled, incl. `/api/health`, `/api/readiness`).
-- `pnpm run start` → `next start`. `next start` binds to the `PORT` Render
-  injects — do **not** hardcode a port. **Tested here:** `PORT=10000 npm run start`
-  served `GET /api/health` → `200`.
-- `pnpm install --frozen-lockfile` is the correct install for the committed
-  `pnpm-lock.yaml` (not re-run this session — dependencies were already present).
-- `db:migrate` (`tsx scripts/migrate.ts`) requires `DATABASE_URL`. It applies the
-  four migrations in `drizzle/` (`0000_init` … `0003_c7_ops_followup_safety_refund_closure`).
-  Executed on a real Postgres in CI, **not** in this session (no local database).
-- **Migrations now apply automatically at server boot** (`instrumentation.ts`):
+- `pnpm run start` runs the generated standalone server with `.env.local`
+  support. The server binds to the `PORT` Render injects — do **not** hardcode
+  a port. The standalone output and required static assets are assembled by
+  `scripts/prepare-standalone.mjs` after every build.
+- `pnpm install --frozen-lockfile` is the required install for the committed
+  `pnpm-lock.yaml`; CI and the final local release gate both run it.
+- `db:migrate` (`tsx scripts/migrate.ts`) requires `DATABASE_URL`. The current
+  journal defines 36 migrations (`0000` through `0035`). CI applies all of them
+  to a clean PostgreSQL service before tests and the production build.
+- **Migrations apply automatically at server boot** (`instrumentation.ts`):
   Render's free tier has no Pre-Deploy Command field, so the server itself
   runs the drizzle migrator on every start — idempotent, one lookup when the
-  schema is already current, and race-free on a single instance. On paid
+  schema is already current, and race-free on a single instance. A migration
+  failure stops production startup and logs only the error class/code, never a
+  connection string or secret. On paid
   plans you may additionally set Pre-Deploy Command to `pnpm run db:migrate`
   (migrations then apply before the new build serves traffic instead of
   during its first boot), but nothing breaks without it.
@@ -48,6 +51,11 @@ Notes:
   migrations are applied, else `503`. **Tested:** `503` when DB is unreachable
   (`{"status":"not_ready","checks":{"databaseConnected":false,"migrationsPending":3,...}}`).
   The body contains booleans/counts only — no `DATABASE_URL`, SQL, or secrets.
+
+Render should keep `/api/health` as its platform health check. Use
+`/api/readiness` in deployment verification and external monitoring so a
+reachable process with an unavailable/stale database is still reported as an
+incident.
 
 ## Database & seeding
 
@@ -172,7 +180,13 @@ Stripe success/cancel URLs), then update the Stripe webhook URL to match.
 
 ## Rollback
 
-- Migrations are additive and are **not** auto-reverted. Roll back the service to
-  the previous deploy in Render; if a migration must be undone, write a new
-  forward migration (do not edit an applied one).
-- `pnpm run db:status` reports whether the live schema matches the repo.
+1. Pause a rollout when `/api/readiness` is not `200` or auth smoke checks fail.
+2. In Render, redeploy the last known-good commit. Do not edit or delete an
+   already-applied migration.
+3. Migrations are additive and are **not** auto-reverted. If schema behavior
+   needs correction, ship a new forward migration that remains compatible with
+   the last application release.
+4. Run `pnpm run db:status`, then verify `/api/health`, `/api/readiness`,
+   `/sign-in`, session creation, and logout before reopening traffic.
+5. Record the commit, operator, start/end time, impact, and follow-up owner in
+   the incident log described in `docs/incident-response.md`.

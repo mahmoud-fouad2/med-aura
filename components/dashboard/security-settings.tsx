@@ -26,11 +26,15 @@ import type { Locale } from "@/lib/i18n"
 type Step =
   | { name: "idle" }
   | { name: "enable-password" }
+  | { name: "enable-confirm" }
   | { name: "backup-codes"; codes: string[]; totpURI: string; offerTotpSetup: boolean }
   | { name: "totp-setup-password" }
   | { name: "totp-setup"; totpURI: string }
   | { name: "disable-password" }
+  | { name: "disable-confirm" }
   | { name: "regenerate-password" }
+  | { name: "regenerate-confirm" }
+  | { name: "totp-setup-confirm" }
   | { name: "regenerate-codes"; codes: string[] }
 
 const COPY = {
@@ -54,6 +58,7 @@ const COPY = {
     reSetup: "إعادة الإعداد",
     passwordLabel: "كلمة المرور",
     passwordPlaceholder: "أدخلي كلمة المرور للمتابعة",
+    socialConfirm: "حسابك مرتبط بمزوّد تسجيل الدخول ولا يملك كلمة مرور منفصلة. سنستخدم جلستك الحالية للتحقق.",
     confirm: "تأكيد",
     cancel: "إلغاء",
     continue: "متابعة",
@@ -98,6 +103,7 @@ const COPY = {
     reSetup: "Set up again",
     passwordLabel: "Password",
     passwordPlaceholder: "Enter your password to continue",
+    socialConfirm: "Your account uses a sign-in provider and has no separate password. Your current session will be used for verification.",
     confirm: "Confirm",
     cancel: "Cancel",
     continue: "Continue",
@@ -166,10 +172,12 @@ export function SecuritySettings({
   }
 
   async function handleEnable() {
-    if (!password) return
+    if (status.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { data, error: err } = await authClient.twoFactor.enable({ password })
+    const { data, error: err } = await authClient.twoFactor.enable({
+      password: status.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err || !data) {
       setError(err?.status === 401 ? t.wrongPassword : t.error)
@@ -181,16 +189,23 @@ export function SecuritySettings({
   }
 
   async function handleDisable() {
-    if (!password) return
+    if (status.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { error: err } = await authClient.twoFactor.disable({ password })
+    const { error: err } = await authClient.twoFactor.disable({
+      password: status.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err) {
       setError(err.status === 401 ? t.wrongPassword : t.error)
       return
     }
-    setStatus({ enabled: false, totpVerified: false, otpAvailable: false })
+    setStatus((current) => ({
+      enabled: false,
+      totpVerified: false,
+      otpAvailable: false,
+      hasCredential: current.hasCredential,
+    }))
     closeDialog()
   }
 
@@ -209,10 +224,12 @@ export function SecuritySettings({
   }
 
   async function handleGetTotpUri() {
-    if (!password) return
+    if (status.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { data, error: err } = await authClient.twoFactor.getTotpUri({ password })
+    const { data, error: err } = await authClient.twoFactor.getTotpUri({
+      password: status.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err || !data) {
       setError(err?.status === 401 ? t.wrongPassword : t.error)
@@ -223,10 +240,12 @@ export function SecuritySettings({
   }
 
   async function handleRegenerate() {
-    if (!password) return
+    if (status.hasCredential && !password) return
     setBusy(true)
     setError(null)
-    const { data, error: err } = await authClient.twoFactor.generateBackupCodes({ password })
+    const { data, error: err } = await authClient.twoFactor.generateBackupCodes({
+      password: status.hasCredential ? password : undefined,
+    })
     setBusy(false)
     if (err || !data) {
       setError(err?.status === 401 ? t.wrongPassword : t.error)
@@ -266,12 +285,24 @@ export function SecuritySettings({
             </div>
           </div>
           {!status.enabled ? (
-            <Button onClick={() => setStep({ name: "enable-password" })}>{t.enable}</Button>
+            <Button
+              onClick={() =>
+                status.hasCredential
+                  ? setStep({ name: "enable-password" })
+                  : setStep({ name: "enable-confirm" })
+              }
+            >
+              {t.enable}
+            </Button>
           ) : (
             <Button
               variant="outline"
               className="text-destructive hover:bg-destructive/10"
-              onClick={() => setStep({ name: "disable-password" })}
+              onClick={() =>
+                status.hasCredential
+                  ? setStep({ name: "disable-password" })
+                  : setStep({ name: "disable-confirm" })
+              }
             >
               {t.disable}
             </Button>
@@ -317,7 +348,11 @@ export function SecuritySettings({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setStep({ name: "totp-setup-password" })}
+                onClick={() =>
+                  status.hasCredential
+                    ? setStep({ name: "totp-setup-password" })
+                    : setStep({ name: "totp-setup-confirm" })
+                }
               >
                 {status.totpVerified ? t.reSetup : t.setup}
               </Button>
@@ -335,7 +370,11 @@ export function SecuritySettings({
               size="sm"
               variant="outline"
               className="w-fit"
-              onClick={() => setStep({ name: "regenerate-password" })}
+              onClick={() =>
+                status.hasCredential
+                  ? setStep({ name: "regenerate-password" })
+                  : setStep({ name: "regenerate-confirm" })
+              }
             >
               {t.viewBackupCodes}
             </Button>
@@ -361,18 +400,53 @@ export function SecuritySettings({
         />
       </FormDialog>
 
-      {/* Disable: password confirmation */}
-      <ConfirmDialog
+      {/* Disable: credential accounts confirm their password. */}
+      <FormDialog
         open={step.name === "disable-password"}
         onOpenChange={(open) => !open && closeDialog()}
         title={t.disable}
         description={t.disableDesc}
+      >
+        <PasswordStep
+          t={t}
+          password={password}
+          setPassword={setPassword}
+          error={error}
+          busy={busy}
+          onCancel={closeDialog}
+          onConfirm={handleDisable}
+        />
+      </FormDialog>
+
+      {/* Social-only accounts have no password; Better Auth validates the
+          authenticated session and allows passwordless 2FA management. */}
+      <ConfirmDialog
+        open={
+          step.name === "enable-confirm" ||
+          step.name === "disable-confirm" ||
+          step.name === "regenerate-confirm" ||
+          step.name === "totp-setup-confirm"
+        }
+        onOpenChange={(open) => !open && closeDialog()}
+        title={
+          step.name === "disable-confirm"
+            ? t.disable
+            : step.name === "regenerate-confirm"
+              ? t.viewBackupCodes
+              : step.name === "totp-setup-confirm"
+                ? t.setup
+                : t.enable
+        }
+        description={step.name === "disable-confirm" ? t.disableDesc : t.socialConfirm}
         confirmLabel={t.confirm}
         cancelLabel={t.cancel}
-        tone="destructive"
+        tone={step.name === "disable-confirm" ? "destructive" : "default"}
         onConfirm={async () => {
-          await handleDisable()
-          return true
+          if (step.name === "disable-confirm") await handleDisable()
+          else if (step.name === "regenerate-confirm") await handleRegenerate()
+          else if (step.name === "totp-setup-confirm") await handleGetTotpUri()
+          else await handleEnable()
+          return false
         }}
       />
 

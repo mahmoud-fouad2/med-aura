@@ -21,6 +21,7 @@ import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recapt
 import { cn } from "@/lib/utils"
 import { localizedPath } from "@/lib/i18n/config"
 import type { Dictionary, Locale } from "@/lib/i18n"
+import { safeRelativePath } from "@/lib/navigation"
 
 // zxcvbn's dictionaries make this ~800KB — split into its own chunk so the
 // sign-in page (which never renders it) doesn't pay for it. Only sign-up
@@ -112,7 +113,7 @@ function AuthFormInner({
   const [twoFactorMethods, setTwoFactorMethods] = useState<string[] | null>(null)
 
   const isSignUp = mode === "sign-up"
-  const destination = nextPath || "/dashboard"
+  const destination = safeRelativePath(nextPath)
 
   const handleGoogle = async () => {
     setError(null)
@@ -208,10 +209,23 @@ function AuthFormInner({
     // No `role` is ever sent — public signup always creates a PATIENT.
     // Choosing "doctor" only routes into the accreditation application.
     if (!accountCreated) {
-      const { error } = await authClient.signUp.email({
+      if (referralCode.trim()) {
+        document.cookie = `mx_ref=${encodeURIComponent(referralCode.trim())}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`
+      }
+      const profileDestination =
+        accountType === "doctor" ? "/dashboard/provider/apply" : destination
+      const verificationCallback = localizedPath(
+        `/complete-profile?next=${encodeURIComponent(profileDestination)}`,
+        locale,
+      )
+      const { data, error } = await authClient.signUp.email({
         email,
         password,
         name,
+        phone,
+        country,
+        locale,
+        callbackURL: verificationCallback,
         // @ts-expect-error — extra field read by lib/auth.ts's hooks.before.
         recaptchaToken,
       })
@@ -221,6 +235,13 @@ function AuthFormInner({
         return
       }
       setAccountCreated(true)
+      const signupData = data as { token?: string | null } | null
+      if (signupData?.token === null) {
+        window.location.assign(
+          `${localizedPath("/verify-email", locale)}?email=${encodeURIComponent(email)}`,
+        )
+        return
+      }
     }
 
     const profile = await completeSignupProfile({
@@ -244,7 +265,7 @@ function AuthFormInner({
     // current route and cancels the pending push, leaving the user stuck on
     // /sign-up). A full document load also picks up the fresh session
     // server-side in one step. Loading stays on until the page unloads.
-    window.location.assign(nextPath || profile.next)
+    window.location.assign(nextPath ? destination : profile.next)
   }
 
   // Sign-up starts by choosing the account type (unless preselected via URL).
@@ -391,7 +412,7 @@ function AuthFormInner({
                       <Label htmlFor="password">{dict.password}</Label>
                       {!isSignUp && (
                         <Link
-                          href="/forgot-password"
+                          href={localizedPath("/forgot-password", locale)}
                           className="text-primary text-xs font-medium underline-offset-4 hover:underline"
                         >
                           {copy.forgotPassword}
@@ -413,6 +434,7 @@ function AuthFormInner({
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? copy.hidePassword : copy.showPassword}
                         className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors focus:outline-none"
                       >
                         {showPassword ? (
@@ -557,7 +579,7 @@ function AuthFormInner({
           <p className="text-muted-foreground mt-6 text-center text-sm">
             {isSignUp ? dict.haveAccount : dict.noAccount}{" "}
             <Link
-              href={isSignUp ? "/sign-in" : "/sign-up"}
+              href={localizedPath(isSignUp ? "/sign-in" : "/sign-up", locale)}
               className="text-primary font-medium underline-offset-4 hover:underline"
             >
               {isSignUp ? dict.signInTitle : dict.signUpTitle}
@@ -649,6 +671,8 @@ const AUTH_COPY = {
     doctorApplication: "طلب اعتماد وتوثيق الطبيب",
     doctorNextSuffix: "(الترخيص، التخصص، وسنوات الخبرة) لمراجعته من فريق الامتثال الطبي.",
     forgotPassword: "نسيتِ كلمة المرور؟",
+    showPassword: "إظهار كلمة المرور",
+    hidePassword: "إخفاء كلمة المرور",
     phone: "رقم الجوال",
     country: "دولة الإقامة",
     chooseCountry: "اختر الدولة",
@@ -671,6 +695,7 @@ const AUTH_COPY = {
     invalidEmail: "يرجى إدخال بريد إلكتروني صحيح.",
     invalidOrigin: "تعذّر التحقق من الجلسة. حدّث الصفحة وحاول مرة أخرى.",
     rateLimited: "عدد المحاولات كبير. انتظر قليلًا ثم حاول مرة أخرى.",
+    emailNotVerified: "فعّل بريدك الإلكتروني أولًا. أرسلنا لك رابط تحقق جديدًا.",
     invalidPhone: "تحقّق من رقم الجوال وأعد المحاولة.",
     invalidCountry: "اختر دولة الإقامة للمتابعة.",
   },
@@ -698,6 +723,8 @@ const AUTH_COPY = {
     doctorApplication: "doctor accreditation application",
     doctorNextSuffix: "with your license, specialty, and experience for compliance review.",
     forgotPassword: "Forgot password?",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     phone: "Mobile number",
     country: "Country of residence",
     chooseCountry: "Choose a country",
@@ -720,6 +747,7 @@ const AUTH_COPY = {
     invalidEmail: "Enter a valid email address.",
     invalidOrigin: "We couldn't verify this session. Refresh the page and try again.",
     rateLimited: "Too many attempts. Wait a moment and try again.",
+    emailNotVerified: "Verify your email first. We sent you a new verification link.",
     invalidPhone: "Check your mobile number and try again.",
     invalidCountry: "Choose your country of residence to continue.",
   },
@@ -734,6 +762,7 @@ function translateAuthError(message: string | undefined, locale: Locale): string
     return copy.shortPassword
   if (m.includes("credential")) return copy.invalidCredentials
   if (m.includes("exist") || m.includes("already")) return copy.emailExists
+  if (m.includes("email") && m.includes("verif")) return copy.emailNotVerified
   if (m.includes("email")) return copy.invalidEmail
   if (m.includes("origin") || m.includes("csrf") || m.includes("cors")) return copy.invalidOrigin
   if (m.includes("rate")) return copy.rateLimited

@@ -75,7 +75,7 @@ describe("runAssistant onStage", () => {
   })
 
   it("fires finalizing before the closing call once the tool-round budget is exhausted", async () => {
-    // Every round keeps calling a tool, so the loop runs out of rounds (2)
+    // The single tool round is followed by a no-tools closing call.
     // and falls through to the no-tools closing call.
     const toolTurn = {
       functionCalls: [{ name: "list_procedures", args: {} }],
@@ -85,19 +85,16 @@ describe("runAssistant onStage", () => {
     }
     generateContent
       .mockResolvedValueOnce(toolTurn)
-      .mockResolvedValueOnce(toolTurn)
       .mockResolvedValueOnce({ functionCalls: [], text: "تم أخيراً" })
 
     const stages: string[] = []
     const result = await runAssistant([{ role: "user", content: "..." }], {}, (s) => stages.push(s))
 
     expect(result.reply).toBe("تم أخيراً")
-    // understanding once at the start, reviewing_procedures re-fired each
-    // round a tool call comes back, then one final "finalizing" before the
-    // closing call outside the loop.
+    // One tool call, then one finalizing stage before the closing call.
     expect(stages[0]).toBe("understanding")
     expect(stages.at(-1)).toBe("finalizing")
-    expect(stages.filter((s) => s === "reviewing_procedures")).toHaveLength(2)
+    expect(stages.filter((s) => s === "reviewing_procedures")).toHaveLength(1)
   })
 
   it("works with no onStage callback provided", async () => {

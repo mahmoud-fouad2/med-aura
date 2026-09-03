@@ -62,6 +62,15 @@ export const type = {
   caption: 11,
 } as const
 
+export const lineHeight = {
+  hero: 38,
+  title: 30,
+  heading: 26,
+  body: 22,
+  sub: 19,
+  caption: 16,
+} as const
+
 /** Soft purple-tinted elevation matching the web's "elegant" shadows. */
 export const shadows = {
   card: {

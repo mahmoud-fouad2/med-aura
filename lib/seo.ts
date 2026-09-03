@@ -92,7 +92,7 @@ export function buildPageMetadata({
   title,
   description,
   path,
-  image = "/hero-medaura-consultation.png",
+  image = "/hero-medaura-consultation.webp",
   locale = "ar",
   type = "website",
   keywords,

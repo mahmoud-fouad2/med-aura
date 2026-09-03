@@ -177,14 +177,16 @@ function CenterDetailDrawer({ center }: { center: AdminCenterRow }) {
                 size="sm"
                 variant="outline"
                 loading={publishPending}
-                disabled={!center.published && center.status !== "approved"}
+                disabled={!center.published && (center.status !== "approved" || !center.verified)}
                 onClick={onTogglePublished}
               >
                 {center.published ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 {center.published ? "إخفاء المركز" : "إظهار المركز"}
               </Button>
-              {!center.published && center.status !== "approved" && (
-                <p className="text-[11px] text-muted-foreground">لا يمكن الإظهار إلا لمركز معتمد.</p>
+              {!center.published && (center.status !== "approved" || !center.verified) && (
+                <p className="text-[11px] text-muted-foreground">
+                  يلزم اعتماد المركز وإكمال التحقق من بياناته قبل الإظهار.
+                </p>
               )}
             </div>
 

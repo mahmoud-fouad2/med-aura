@@ -19,7 +19,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated"
-import { colors, radius, shadows, spacing, type } from "../theme"
+import { colors, lineHeight, radius, shadows, spacing, type } from "../theme"
 import { useI18n } from "../lib/i18n"
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
@@ -38,20 +38,21 @@ export function AppText({
   children: ReactNode
   variant?: keyof typeof type
   color?: string
-  weight?: "regular" | "medium" | "bold" | "heavy"
+  weight?: "regular" | "medium" | "semibold" | "bold" | "heavy"
   style?: StyleProp<TextStyle>
   numberOfLines?: number
   onPress?: () => void
   /** Long-press to copy — for references and other support-facing values. */
   selectable?: boolean
 }) {
-  // Real loaded weights (see _layout.tsx), not RN's synthesized bold — Readex
-  // Pro tops out at 700, so "heavy" reuses Bold rather than faking an 800.
+  // Use 600 for everyday emphasis and reserve 700 for display moments. This
+  // keeps compact labels and controls from competing visually with headings.
   const fontFamily = (
     {
       regular: "ReadexPro_400Regular",
       medium: "ReadexPro_500Medium",
-      bold: "ReadexPro_700Bold",
+      semibold: "ReadexPro_600SemiBold",
+      bold: "ReadexPro_600SemiBold",
       heavy: "ReadexPro_700Bold",
     } as const
   )[weight]
@@ -65,7 +66,7 @@ export function AppText({
           fontSize: type[variant],
           color,
           fontFamily,
-          lineHeight: type[variant] * 1.5,
+          lineHeight: lineHeight[variant],
           writingDirection: "auto",
         },
         style,

@@ -7,13 +7,14 @@ import {
   HeartHandshake,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import Link from "next/link"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { PageHero } from "@/components/marketing/page-hero"
 import { Stagger, StaggerItem } from "@/components/motion"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, jsonLdScript } from "@/lib/seo"
 import { PUBLIC_MEDIA } from "@/lib/public-media"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 
 export async function generateMetadata() {
   const { locale } = await getI18n()
@@ -29,9 +30,9 @@ export async function generateMetadata() {
 }
 
 const stepsAr: { icon: LucideIcon; title: string; desc: string }[] = [
-  { icon: Search, title: "استكشاف واختيار واثق", desc: "استكشفي الإجراء التجميلي المناسب وقارني بين نخبة الأطباء والمراكز المعتمدة حسب الخبرة والتقييمات ونوع الاستشارة." },
-  { icon: FileLock2, title: "مشاركة سرية لحالتكِ", desc: "أضيفي تفاصيل تطلعاتكِ والصور المطلوبة في ملف رقمي مشفر وآمن يمنح الطبيب فهماً دقيقاً لاحتياجكِ." },
-  { icon: ShieldCheck, title: "تحكم مطلق بخصوصيتكِ", desc: "أنتِ صاحبة القرار في تحديد الأطباء المصرح لهم بالاطلاع على ملفكِ، مع إمكانية إلغاء الوصول في أي وقت." },
+  { icon: Search, title: "استكشاف ومقارنة أوضح", desc: "استكشفي الإجراءات وقارني الملفات المنشورة حسب الخبرة والتقييمات المتاحة ونوع الاستشارة." },
+  { icon: FileLock2, title: "مشاركة خاصة لحالتكِ", desc: "أضيفي تفاصيل الحالة والصور المطلوبة داخل ملف الحالة لتصل إلى الأطراف المخوّلة ضمن رحلة الرعاية." },
+  { icon: ShieldCheck, title: "تحكم في الوصول", desc: "تحددين من يمكنه الاطلاع على ملف حالتكِ، ويمكنكِ مراجعة صلاحيات الوصول من حسابكِ." },
   { icon: CalendarCheck, title: "استشارة مرئية مريحة", desc: "احجزي موعد استشارة فيديو يناسب جدولكِ وتحدثي مباشرة مع استشاري التجميل للإجابة عن كافة تساؤلاتكِ." },
   { icon: ClipboardList, title: "خطة مخصصة وتكلفة شفافة", desc: "استلمي تقريراً طبياً مفصلاً يحدد الخطوات العلاجية الدقيقة والتكلفة المتوقعة بكل وضوح قبل أي التزام." },
   { icon: HeartHandshake, title: "رعاية مستمرة ومتابعة بعد الإجراء", desc: "نرافقكِ في جميع مراحل التعافي بتنبيهات دورية وإرشادات مخصصة لضمان أفضل النتائج وسلامتكِ الدائمة." },
@@ -142,9 +143,9 @@ export default async function HowItWorksPage() {
               <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
                 {l("ابدئي بإنشاء حسابك مجاناً اليوم، وارفعي صورك بأمان تام لبدء استشارة أفضل أطباء التجميل.", "Start by creating your free account today and upload your photos securely.")}
               </p>
-              <a href="/sign-up" className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
+              <Link href={localizedPath("/sign-up", locale)} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
                 {l("أنشئي حسابك الآن", "Create your account now")}
-              </a>
+              </Link>
             </div>
           </div>
         </section>

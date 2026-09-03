@@ -13,7 +13,7 @@ import { Stagger, StaggerItem } from "@/components/motion"
 import { CategoryIconBadge } from "@/components/marketing/category-icon"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { serviceImageForProcedure } from "@/lib/seo"
-import type { Locale } from "@/lib/i18n"
+import { localizedPath, type Locale } from "@/lib/i18n"
 import { formatRecoveryDays } from "@/lib/format"
 
 export async function PopularProcedures({ locale }: { locale: Locale }) {
@@ -54,6 +54,7 @@ export async function PopularProcedures({ locale }: { locale: Locale }) {
             <DataState
               status={res.status}
               requestId={res.status === "error" ? res.requestId : undefined}
+              locale={locale}
             />
           </div>
         ) : rows.length === 0 ? (
@@ -69,7 +70,7 @@ export async function PopularProcedures({ locale }: { locale: Locale }) {
             {rows.map((p) => (
               <StaggerItem key={p.slug}>
                 <Link
-                  href={`/search?procedure=${p.slug}`}
+                  href={localizedPath(`/search?procedure=${p.slug}`, locale)}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-elegant"
                 >
                   <div className="relative h-36 overflow-hidden bg-muted">

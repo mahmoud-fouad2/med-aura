@@ -26,6 +26,8 @@
     "db:bootstrap-admin": "tsx scripts/bootstrap-admin.ts",
     "db:health": "tsx scripts/db-health.ts",
     "db:status": "tsx scripts/check-database.ts",
+    "db:rejuvera:status": "tsx scripts/rejuvera-status.ts",
+    "db:rejuvera:onboard": "tsx scripts/onboard-rejuvera.ts",
     "r2:setup-cors": "tsx scripts/setup-r2-cors.ts",
     "test": "vitest run",
     "test:watch": "vitest",

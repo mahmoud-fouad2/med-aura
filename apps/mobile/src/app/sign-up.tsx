@@ -105,7 +105,17 @@ export default function SignUp() {
     setLoading(true)
 
     if (!accountCreated) {
-      const { error } = await authClient.signUp.email({ email, password, name })
+      await savePendingReferralCode(referralCode).catch(() => undefined)
+      const signupInput = {
+        email,
+        password,
+        name,
+        phone,
+        country,
+        locale,
+        callbackURL: "medaura://sign-in?verified=1",
+      } as Parameters<typeof authClient.signUp.email>[0]
+      const { data, error } = await authClient.signUp.email(signupInput)
       if (error) {
         setLoading(false)
         const m = (error.message ?? "").toLowerCase()
@@ -113,6 +123,12 @@ export default function SignUp() {
         return
       }
       setAccountCreated(true)
+      const signupData = data as { token?: string | null } | null
+      if (signupData?.token === null) {
+        setLoading(false)
+        router.replace({ pathname: "/verify-email", params: { email } })
+        return
+      }
     }
 
     try {

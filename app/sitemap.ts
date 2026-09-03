@@ -7,7 +7,7 @@ import { publicCenterConditions, publicDoctorConditions } from "@/lib/data/publi
 import { listDestinations } from "@/lib/data/destinations"
 import { BLOG_SLUGS } from "@/lib/content/blog"
 
-const CONTENT_UPDATED_AT = new Date("2026-08-27T00:00:00.000Z")
+const CONTENT_UPDATED_AT = new Date("2026-09-01T00:00:00.000Z")
 
 const PUBLIC_ROUTES = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },

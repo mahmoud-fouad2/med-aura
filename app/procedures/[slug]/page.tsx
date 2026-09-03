@@ -24,7 +24,7 @@ import {
   serviceImageForProcedure,
 } from "@/lib/seo"
 
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { formatRecoveryDays } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
@@ -72,6 +72,7 @@ export default async function ProcedureDetailPage({
           <DataState
             status={procRes.status}
             requestId={procRes.status === "error" ? procRes.requestId : undefined}
+            locale={locale}
           />
         </main>
         <SiteFooter />
@@ -133,7 +134,7 @@ export default async function ProcedureDetailPage({
           </div>
           <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
             <nav className="mb-4 flex items-center gap-1 text-sm text-muted-foreground">
-              <Link href="/procedures" className="hover:text-primary">
+              <Link href={localizedPath("/procedures", locale)} className="hover:text-primary">
                 {t.nav.procedures}
               </Link>
               <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
@@ -167,7 +168,7 @@ export default async function ProcedureDetailPage({
                 <Button
                   size="lg"
                   render={
-                    <Link href={`/search?procedure=${procedure.slug}`}>
+                    <Link href={localizedPath(`/search?procedure=${procedure.slug}`, locale)}>
                       {isAr ? "ابحث عن طبيب لهذا الإجراء" : "Find a Doctor for This Procedure"}
                     </Link>
                   }
@@ -215,13 +216,14 @@ export default async function ProcedureDetailPage({
               <DataState
                 status={doctorsRes.status}
                 requestId={doctorsRes.status === "error" ? doctorsRes.requestId : undefined}
+                locale={locale}
               />
             ) : results.length === 0 ? (
               <EmptyState
                 icon={Stethoscope}
                 title={isAr ? "لا يوجد أطباء معتمدون لهذا الإجراء بعد" : "No accredited doctors for this procedure yet"}
                 description={isAr ? "نضيف الأطباء بعد التحقق من تراخيصهم. تحقّق لاحقًا أو تصفّح إجراءات أخرى." : "Doctors are listed after strict license checks. Check back soon or browse other procedures."}
-                action={<Button render={<Link href="/procedures">{isAr ? "كل الإجراءات" : "All Procedures"}</Link>} />}
+                action={<Button render={<Link href={localizedPath("/procedures", locale)}>{isAr ? "كل الإجراءات" : "All Procedures"}</Link>} />}
               />
             ) : (
               <Stagger className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

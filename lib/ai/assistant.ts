@@ -51,10 +51,10 @@ export const MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash"] as const
  * quota is tight enough that a 3rd speculative round routinely tips a turn
  * over budget for no benefit.
  */
-const MAX_TOOL_ROUNDS = 2
+const MAX_TOOL_ROUNDS = 1
 /** One bounded attempt per model; fallback is faster than retrying one busy pool. */
 export const ATTEMPTS_PER_MODEL = 1
-export const MODEL_REQUEST_TIMEOUT_MS = 10_000
+export const MODEL_REQUEST_TIMEOUT_MS = 7_000
 
 /**
  * Transient failures worth trying on the next model pool: provider 5xx,
@@ -161,7 +161,7 @@ export type AssistantUserContext = {
   country?: string | null
 }
 
-function buildSystemPrompt(user: AssistantUserContext): string {
+function buildSystemPrompt(user: AssistantUserContext, locale: "ar" | "en"): string {
   const known: string[] = []
   if (user.name) known.push(`الاسم: ${user.name}`)
   if (user.city) known.push(`المدينة: ${user.city}`)
@@ -173,6 +173,14 @@ ${known.map((k) => `- ${k}`).join("\n")}
 
 استخدم هذه المعلومات مباشرة. مثلاً إن كانت مدينته معروفة فابحث فيها تلقائياً بدل أن تسأله "في أي مدينة؟". لا تسأل إلا عن المعلومة الناقصة فعلاً (نوع الإجراء أو ما يزعجه).`
     : `لا تتوفر معلومات مسجّلة عن المريض، فاسأله عن مدينته وما يبحث عنه.`
+
+  if (locale === "en") {
+    return `You are the Med Aura guide inside an aesthetic-care platform. Help patients understand their options and find doctors and procedures from the platform's real catalog only.
+
+Known profile details: ${known.length ? known.join(", ") : "none"}. Use known details and only ask for information that is missing.
+
+Keep each answer concise, warm, and direct for a phone screen. Use plain text without Markdown. Never diagnose, prescribe, or promise an outcome. Use search_doctors before recommending a doctor and list_procedures before claiming an option is available. Doctor cards appear below your reply, so do not repeat their names or prices. Never book or charge the patient.`
+  }
 
   return `أنت "مستشار Med Aura"، مساعد ذكي داخل تطبيق طبي للتجميل. مهمتك مساعدة المريض على فهم خياراته وترشيح الأطباء والإجراءات المناسبة له من كتالوج المنصة الحقيقي فقط.
 
@@ -292,11 +300,16 @@ async function runSearchDoctors(input: {
   }))
 }
 
-async function runListProcedures(): Promise<string> {
+async function runListProcedures(locale: "ar" | "en" = "ar"): Promise<string> {
   const groups = await listProceduresGrouped()
-  // A compact catalog the model can reason over without huge token cost.
   return groups
-    .map((g) => `${g.nameAr}: ${g.procedures.map((p) => p.nameAr).join("، ")}`)
+    .map((group) => {
+      const category = locale === "ar" ? group.nameAr : group.nameEn
+      const procedures = group.procedures.map((procedure) =>
+        locale === "ar" ? procedure.nameAr : procedure.nameEn,
+      )
+      return `${category}: ${procedures.join(locale === "ar" ? "، " : ", ")}`
+    })
     .join("\n")
 }
 
@@ -323,16 +336,83 @@ function textOf(parts: Part[] | undefined): string {
  *    for a genuinely empty reply, which would be actively misleading right
  *    above a list of doctor cards that worked fine.
  */
-function finalizeReply(text: string | undefined, parts: Part[] | undefined, doctors: AssistantDoctor[]): string {
+function finalizeReply(
+  text: string | undefined,
+  parts: Part[] | undefined,
+  doctors: AssistantDoctor[],
+  locale: "ar" | "en",
+): string {
   const sanitized = sanitizeReply(text || textOf(parts))
   if (sanitized) return sanitized
-  return doctors.length > 0 ? "تفضّلي، اخترت لك هؤلاء الأطباء بناءً على طلبك." : ""
+  if (doctors.length === 0) return ""
+  return locale === "ar"
+    ? "تفضّلي، اخترت لك هؤلاء الأطباء بناءً على طلبك."
+    : "Here are doctors from the platform that match your request."
 }
 
-function suggestedFollowups(doctors: AssistantDoctor[]): string[] {
+function suggestedFollowups(doctors: AssistantDoctor[], locale: "ar" | "en"): string[] {
+  if (locale === "en") {
+    return doctors.length > 0
+      ? ["Compare these options", "Is video consultation available?", "What are the consultation fees?"]
+      : ["What is the next step?", "What should I ask a doctor?", "Help me find a doctor"]
+  }
   return doctors.length > 0
     ? ["أريد مقارنة الخيارات", "هل تتوفر استشارة فيديو؟", "كم تكلفة الاستشارة؟"]
     : ["ما الخطوة التالية؟", "ما مدة التعافي المتوقعة؟", "رشّح لي طبيباً مناسباً"]
+}
+
+/**
+ * A deterministic catalog guide used when the model provider is not configured
+ * or temporarily unavailable. It searches only published platform data, so a
+ * provider outage still leaves the patient with a useful next step instead of
+ * a dead-end error message.
+ */
+export async function runAssistantFallback(
+  history: AssistantTurn[],
+  userContext: AssistantUserContext = {},
+  locale: "ar" | "en" = "ar",
+): Promise<AssistantResult> {
+  const query = [...history].reverse().find((turn) => turn.role === "user")?.content.trim()
+  const normalizedQuery = query?.toLocaleLowerCase(locale === "ar" ? "ar" : "en") ?? ""
+  const groups = await listProceduresGrouped()
+  const matchedProcedure = groups
+    .flatMap((group) => group.procedures)
+    .find((procedure) => {
+      const names = [procedure.nameAr, procedure.nameEn]
+        .filter(Boolean)
+        .map((name) => name.toLocaleLowerCase(locale === "ar" ? "ar" : "en"))
+      return names.some((name) => normalizedQuery.includes(name))
+    })
+  const { results } = await searchDoctors({
+    q: matchedProcedure ? undefined : query || undefined,
+    procedure: matchedProcedure?.slug,
+    city: userContext.city || undefined,
+    sort: "rating",
+    pageSize: 4,
+    locale,
+  })
+  const doctors = results.map((doctor) => ({
+    id: doctor.id,
+    slug: doctor.slug,
+    name: doctor.name,
+    title: doctor.title,
+    city: doctor.city,
+    consultationFee: doctor.consultationFee,
+    currency: doctor.currency,
+    photoUrl: doctor.photoUrl,
+  }))
+
+  return {
+    reply: doctors.length > 0
+      ? locale === "ar"
+        ? "وجدت لك خيارات منشورة على المنصة مرتبطة بطلبك. افتحي بطاقة الطبيب لمراجعة الخبرة والخدمات قبل الحجز."
+        : "I found published options related to your request. Open a doctor card to review experience and services before booking."
+      : locale === "ar"
+        ? "لم أجد تطابقًا مباشرًا الآن. يمكنك البحث باسم الإجراء أو المدينة، أو بدء استشارة لمساعدتك في تحديد الخيار المناسب."
+        : "I could not find a direct match right now. Search by procedure or city, or start a consultation for help choosing the right option.",
+    doctors,
+    followups: suggestedFollowups(doctors, locale),
+  }
 }
 
 /**
@@ -345,8 +425,9 @@ export async function runAssistant(
   history: AssistantTurn[],
   userContext: AssistantUserContext = {},
   onStage?: OnStage,
+  locale: "ar" | "en" = "ar",
 ): Promise<AssistantResult> {
-  const SYSTEM_PROMPT = buildSystemPrompt(userContext)
+  const SYSTEM_PROMPT = buildSystemPrompt(userContext, locale)
   const ai = new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") })
 
   const contents: Content[] = history.map((m) => ({
@@ -369,7 +450,7 @@ export async function runAssistant(
           // cost here. Routing a patient to a doctor is not a reasoning-heavy
           // task, and the user is waiting on a phone — LOW keeps replies
           // quick while leaving enough headroom for correct tool selection.
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
           maxOutputTokens: 512,
           httpOptions: {
             timeout: MODEL_REQUEST_TIMEOUT_MS,
@@ -384,9 +465,9 @@ export async function runAssistant(
       onStage?.("finalizing")
       const parts = response.candidates?.[0]?.content?.parts
       return {
-        reply: finalizeReply(response.text, parts, doctors),
+        reply: finalizeReply(response.text, parts, doctors, locale),
         doctors,
-        followups: suggestedFollowups(doctors),
+        followups: suggestedFollowups(doctors, locale),
       }
     }
 
@@ -432,7 +513,7 @@ export async function runAssistant(
           note: found.length ? undefined : "لا يوجد أطباء مطابقون حالياً.",
         }
       } else if (call.name === "list_procedures") {
-        output = { catalog: await runListProcedures() }
+        output = { catalog: await runListProcedures(locale) }
       } else {
         output = { error: "أداة غير معروفة." }
       }
@@ -453,7 +534,7 @@ export async function runAssistant(
       contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
         maxOutputTokens: 512,
         httpOptions: {
           timeout: MODEL_REQUEST_TIMEOUT_MS,
@@ -463,8 +544,8 @@ export async function runAssistant(
     }),
   )
   return {
-    reply: finalizeReply(closing.text, closing.candidates?.[0]?.content?.parts, doctors),
+    reply: finalizeReply(closing.text, closing.candidates?.[0]?.content?.parts, doctors, locale),
     doctors,
-    followups: suggestedFollowups(doctors),
+    followups: suggestedFollowups(doctors, locale),
   }
 }

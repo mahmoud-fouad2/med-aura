@@ -247,7 +247,7 @@ export async function bookConsultation(input: {
     await trackAnalyticsEvent({
       name: "booking_created",
       userId: user.id,
-      locale: "ar",
+      locale: user.locale === "en" ? "en" : "ar",
       properties: { doctorId: doc.id, type },
     })
 

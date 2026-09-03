@@ -40,7 +40,7 @@ export function Hero({
   return (
     <section className="relative isolate overflow-hidden border-b border-border bg-background">
       <Image
-        src="/hero-medaura-consultation.png"
+        src="/hero-medaura-consultation.webp"
         alt={isAr ? "استشارة تجميلية في عيادة Med Aura" : "Aesthetic consultation at Med Aura"}
         fill
         priority

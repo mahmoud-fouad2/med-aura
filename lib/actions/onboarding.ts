@@ -94,7 +94,10 @@ export async function completeSignupProfile(
 
       await tx.update(user).set({ phone, country: residenceCountry }).where(eq(user.id, me.id))
 
-      if (!existing[0]) await linkReferral(tx, me.id, parsed.data.referralCode)
+      // The database trigger provisions patient_profile during user creation,
+      // so an existing profile is expected even for a brand-new signup. The
+      // referral table's unique referee key makes this idempotent.
+      await linkReferral(tx, me.id, parsed.data.referralCode)
 
       await writeAudit(
         {
@@ -112,7 +115,7 @@ export async function completeSignupProfile(
     await trackAnalyticsEvent({
       name: "signup_completed",
       userId: me.id,
-      locale: "ar",
+      locale: me.locale === "en" ? "en" : "ar",
       properties: { accountType, country: residenceCountry },
     })
 

@@ -38,6 +38,7 @@ import {
 } from "@/lib/seo"
 import { localizedPath } from "@/lib/i18n/config"
 import { DoctorDirectoryGuide } from "@/components/search/doctor-directory-guide"
+import { EventTracker } from "@/components/analytics/event-tracker"
 
 export const dynamic = "force-dynamic"
 
@@ -49,7 +50,7 @@ export async function generateMetadata() {
       ? "قارن أطباء التجميل حسب الإجراء والمدينة ونوع الاستشارة والتقييمات المتاحة."
       : "Compare aesthetic doctors by procedure, location, consultation type, and available reviews.",
     path: "/search",
-    image: "/hero-medaura-consultation.png",
+    image: "/hero-medaura-consultation.webp",
     locale,
     robots: { index: false, follow: true },
   })
@@ -168,10 +169,20 @@ export default async function SearchPage({
       />
       <SiteHeader />
       <main className="bg-section-soft flex-1">
+        <EventTracker
+          name="search_submitted"
+          locale={locale}
+          properties={{
+            category: params.category ?? "",
+            country: params.country ?? "",
+            hasQuery: Boolean(params.q),
+            resultCount: total,
+          }}
+        />
         <section className="border-border bg-background relative overflow-hidden border-b">
           <div className="absolute inset-0">
             <Image
-              src="/hero-medaura-consultation.png"
+              src="/hero-medaura-consultation.webp"
               alt=""
               fill
               priority
@@ -204,6 +215,7 @@ export default async function SearchPage({
                 <div className="relative min-w-0 flex-1">
                   <Search className="text-primary/70 pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2" />
                   <Input
+                    aria-label={isAr ? "ابحث عن طبيب أو إجراء أو مدينة" : "Search for a doctor, procedure, or city"}
                     name="q"
                     defaultValue={params.q ?? ""}
                     placeholder={
@@ -257,7 +269,7 @@ export default async function SearchPage({
           </div>
 
           <details className="border-border/70 bg-card mb-5 rounded-2xl border p-4 shadow-sm lg:hidden">
-            <summary className="font-heading text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-bold">
+              <summary className="font-heading text-foreground flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-bold">
               <SlidersHorizontal className="text-primary size-4" />
               {isAr ? "عوامل التصفية" : "Filters"}
               {activeFilters > 0 && (
@@ -298,6 +310,7 @@ export default async function SearchPage({
                 <DataState
                   status={doctorsRes.status}
                   requestId={doctorsRes.status === "error" ? doctorsRes.requestId : undefined}
+                  locale={locale}
                 />
               ) : results.length === 0 ? (
                 <Card className="p-10">
@@ -317,8 +330,8 @@ export default async function SearchPage({
                           }
                         />
                         ) : null}
-                        <Button render={<Link href="/online-consultation">{isAr ? "اطلب مساعدة في الاختيار" : "Get help choosing"}</Link>} />
-                        <Button variant="ghost" render={<Link href="/contact">{isAr ? "تواصل معنا" : "Contact us"}</Link>} />
+                        <Button render={<Link href={localizedPath("/online-consultation", locale)}>{isAr ? "اطلب مساعدة في الاختيار" : "Get help choosing"}</Link>} />
+                        <Button variant="ghost" render={<Link href={localizedPath("/contact", locale)}>{isAr ? "تواصل معنا" : "Contact us"}</Link>} />
                       </div>
                     }
                   />
@@ -339,7 +352,10 @@ export default async function SearchPage({
                   </Stagger>
 
                   {totalPages > 1 && (
-                    <nav className="mt-10 flex items-center justify-center gap-3">
+                    <nav
+                      aria-label={isAr ? "صفحات نتائج الأطباء" : "Doctor results pages"}
+                      className="mt-10 flex items-center justify-center gap-3"
+                    >
                       {page > 1 && (
                         <Button
                           variant="outline"
@@ -416,8 +432,8 @@ function FiltersPanel({
         </div>
       )}
       <form method="get" className="flex flex-col gap-4">
-        <FilterField label={isAr ? "الإجراء" : "Procedure"}>
-          <select name="category" defaultValue={params.category ?? ""} className={fieldClassName}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-category`} label={isAr ? "الإجراء" : "Procedure"}>
+          <select id={`${compact ? "mobile" : "desktop"}-category`} name="category" defaultValue={params.category ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "كل الإجراءات" : "All procedures"}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
@@ -427,8 +443,8 @@ function FiltersPanel({
           </select>
         </FilterField>
 
-        <FilterField label={isAr ? "المدينة" : "City"}>
-          <select name="city" defaultValue={params.city ?? ""} className={fieldClassName}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-city`} label={isAr ? "المدينة" : "City"}>
+          <select id={`${compact ? "mobile" : "desktop"}-city`} name="city" defaultValue={params.city ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "كل المدن" : "All cities"}</option>
             {cities.map((city) => (
               <option key={city} value={city}>
@@ -438,8 +454,8 @@ function FiltersPanel({
           </select>
         </FilterField>
 
-        <FilterField label={isAr ? "اللغة" : "Language"}>
-          <select name="language" defaultValue={params.language ?? ""} className={fieldClassName}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-language`} label={isAr ? "اللغة" : "Language"}>
+          <select id={`${compact ? "mobile" : "desktop"}-language`} name="language" defaultValue={params.language ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "كل اللغات" : "All languages"}</option>
             {languages.map((language) => (
               <option key={language} value={language}>
@@ -449,8 +465,8 @@ function FiltersPanel({
           </select>
         </FilterField>
 
-        <FilterField label={isAr ? "الدولة" : "Country"}>
-          <select name="country" defaultValue={params.country ?? ""} className={fieldClassName}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-country`} label={isAr ? "الدولة" : "Country"}>
+          <select id={`${compact ? "mobile" : "desktop"}-country`} name="country" defaultValue={params.country ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "كل الدول" : "All countries"}</option>
             {countries.map((c) => (
               <option key={c.code} value={c.code}>
@@ -460,8 +476,9 @@ function FiltersPanel({
           </select>
         </FilterField>
 
-        <FilterField label={isAr ? "نوع الاستشارة" : "Consultation type"}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-consultation`} label={isAr ? "نوع الاستشارة" : "Consultation type"}>
           <select
+            id={`${compact ? "mobile" : "desktop"}-consultation`}
             name="consultation"
             defaultValue={params.consultation ?? ""}
             className={fieldClassName}
@@ -472,16 +489,17 @@ function FiltersPanel({
           </select>
         </FilterField>
 
-        <FilterField label={isAr ? "نوع الإجراء" : "Procedure type"}>
-          <select name="surgical" defaultValue={params.surgical ?? ""} className={fieldClassName}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-surgical`} label={isAr ? "نوع الإجراء" : "Procedure type"}>
+          <select id={`${compact ? "mobile" : "desktop"}-surgical`} name="surgical" defaultValue={params.surgical ?? ""} className={fieldClassName}>
             <option value="">{isAr ? "الكل" : "All"}</option>
             <option value="true">{isAr ? "جراحي" : "Surgical"}</option>
             <option value="false">{isAr ? "غير جراحي" : "Non-surgical"}</option>
           </select>
         </FilterField>
 
-        <FilterField label={isAr ? "بحث سريع" : "Quick search"}>
+        <FilterField id={`${compact ? "mobile" : "desktop"}-q`} label={isAr ? "بحث سريع" : "Quick search"}>
           <Input
+            id={`${compact ? "mobile" : "desktop"}-q`}
             name="q"
             defaultValue={params.q ?? ""}
             placeholder={isAr ? "اسم، مدينة، أو تخصص" : "Name, city, or specialty"}
@@ -489,8 +507,9 @@ function FiltersPanel({
         </FilterField>
 
         <div className="grid grid-cols-2 gap-2">
-          <FilterField label={isAr ? "السعر من" : "Price from"}>
+          <FilterField id={`${compact ? "mobile" : "desktop"}-price-min`} label={isAr ? "السعر من" : "Price from"}>
             <Input
+              id={`${compact ? "mobile" : "desktop"}-price-min`}
               name="priceMin"
               type="number"
               min="0"
@@ -498,8 +517,9 @@ function FiltersPanel({
               defaultValue={params.priceMin ?? ""}
             />
           </FilterField>
-          <FilterField label={isAr ? "السعر إلى" : "Price to"}>
+          <FilterField id={`${compact ? "mobile" : "desktop"}-price-max`} label={isAr ? "السعر إلى" : "Price to"}>
             <Input
+              id={`${compact ? "mobile" : "desktop"}-price-max`}
               name="priceMax"
               type="number"
               min="0"
@@ -523,12 +543,12 @@ function FiltersPanel({
   )
 }
 const fieldClassName =
-  "h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-primary"
+  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/35"
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterField({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-foreground text-sm font-medium">{label}</label>
+      <label htmlFor={id} className="text-foreground text-sm font-medium">{label}</label>
       {children}
     </div>
   )
@@ -545,7 +565,7 @@ function QuickFilter({
   return (
     <Link
       href={href}
-      className="bg-card/90 text-foreground hover:border-primary/40 hover:text-primary inline-flex items-center gap-1.5 rounded-full border border-border/80 px-3 py-1.5 font-medium shadow-sm transition-colors"
+      className="bg-card/90 text-foreground hover:border-primary/40 hover:text-primary inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/80 px-3 py-2 font-medium shadow-sm transition-colors"
     >
       <Icon className="text-primary size-3.5" />
       {children}

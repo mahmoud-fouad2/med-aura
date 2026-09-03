@@ -24,7 +24,7 @@ export function AuthShell({
       {/* brand panel */}
       <aside className="relative hidden overflow-hidden bg-gradient-to-br from-primary/95 via-primary to-foreground p-12 text-white lg:flex lg:flex-col lg:justify-between shadow-2xl">
         <Image
-          src="/hero-medaura-consultation.png"
+          src="/hero-medaura-consultation.webp"
           alt=""
           fill
           priority

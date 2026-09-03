@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { ShieldCheck, HeartHandshake, Sparkles, Globe, Lock, Stethoscope } from "lucide-react"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -5,12 +6,19 @@ import { PageHero } from "@/components/marketing/page-hero"
 import { FeatureGrid } from "@/components/marketing/feature-grid"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Reveal } from "@/components/motion"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
+import { buildPageMetadata } from "@/lib/seo"
 
-export const metadata = {
-  title: "من نحن",
-  description:
-    "Med Aura منصة متخصصة في التجميل الطبي تربط المرضى بأطباء ومراكز معتمدة وتدير الرحلة التجميلية بثقة وأمان.",
+export async function generateMetadata() {
+  const { locale } = await getI18n()
+  return buildPageMetadata({
+    title: locale === "ar" ? "عن Med Aura" : "About Med Aura",
+    description: locale === "ar"
+      ? "تعرف على Med Aura وكيف تساعدك المنصة على مقارنة خيارات التجميل وإدارة الاستشارة والمتابعة."
+      : "Learn how Med Aura helps people compare aesthetic-care options and manage consultation and follow-up.",
+    path: "/about",
+    locale,
+  })
 }
 
 export const dynamic = "force-dynamic"
@@ -20,12 +28,12 @@ export default async function AboutPage() {
   const isAr = locale === "ar"
   const l = (ar: string, en: string) => (isAr ? ar : en)
   const values = [
-    { icon: ShieldCheck, title: l("نخبة معتمدة وتراخيص موثّقة", "Certified Experts & Verified Licenses"), desc: l("نلتزم بأعلى المعايير الطبية؛ فلا ينضم إلينا إلا أطباء ومراكز استوفت الفحص المهني الدقيق والتراخيص السارية.", "A doctor can appear publicly only with an approved profile and a valid, unexpired license.") },
-    { icon: Lock, title: l("خصوصية مطلقة وأمان لبياناتك", "Absolute Privacy & Data Protection"), desc: l("ملفاتكِ وصوركِ الطبية مشفرة بالكامل، ولا يطلع عليها أي طبيب إلا بعد موافقتكِ الصريحة، مع إمكانية إلغاء الإذن في أي لحظة.", "A doctor can view your case files only after you grant access, and you can withdraw it.") },
-    { icon: Sparkles, title: l("خطة علاجية مخصصة وتكلفة واضحة", "Clear Treatment Plan & Pricing"), desc: l("تحصلين على تصور طبي متكامل يشمل خطوات الإجراء، النتائج المتوقعة، والتكلفة الدقيقة بكل شفافية.", "Keep consultation, planning, pricing, and booking together.") },
-    { icon: HeartHandshake, title: l("رعاية مستمرة ومتابعة بعد الإجراء", "Connected Aftercare & Support"), desc: l("نرافقكِ خطوة بخطوة أثناء فترة التعافي مع إرشادات دورية وتواصل مباشر مع فريق الرعاية.", "Follow-up tasks and communication remain connected to your case.") },
-    { icon: Globe, title: l("أرقى الوجهات التجميلية العالمية", "Top Global Medical Destinations"), desc: l("استكشفي نخبة المراكز التجميلية في المملكة والخليج وتركيا مع مقارنة شفافة للخيارات والأسعار.", "Compare locations, languages, and currencies as offered by each provider.") },
-    { icon: Stethoscope, title: l("تجربة مصممة لراحتكِ التامة", "Crafted for Aesthetic Excellence"), desc: l("صممنا كل تفصيلة في المنصة لتمنحكِ راحة البال والثقة في كل مرحلة من رحلتكِ الجمالية.", "Information and booking journeys are designed around aesthetic care decisions.") },
+    { icon: ShieldCheck, title: l("مراجعة البيانات المهنية", "Professional Detail Review"), desc: l("يظهر الطبيب أو المركز بعد قبول ملفه ومراجعة بيانات الترخيص المقدمة وصلاحيتها.", "A provider appears publicly after profile approval and review of submitted license details and validity.") },
+    { icon: Lock, title: l("خصوصية الوصول إلى حالتكِ", "Private Case Access"), desc: l("تصل ملفات الحالة إلى الأطراف المخوّلة ضمن رحلة الرعاية، ويمكنكِ مراجعة الوصول من حسابكِ.", "Case files are available to authorized participants in your care journey, with access visible in your account.") },
+    { icon: Sparkles, title: l("خطة وتكلفة قابلة للمراجعة", "Reviewable Plan and Pricing"), desc: l("احتفظي بتفاصيل الاستشارة والخطة والأسعار المقدمة داخل رحلة واحدة قبل اتخاذ القرار.", "Keep consultation details, proposed plans, and quoted prices together before deciding.") },
+    { icon: HeartHandshake, title: l("متابعة مرتبطة بالحالة", "Connected Aftercare"), desc: l("تبقى مهام المتابعة والتواصل مرتبطة بملف الحالة لتسهيل الرجوع إليها.", "Follow-up tasks and communication remain connected to your case.") },
+    { icon: Globe, title: l("مقارنة الوجهات المتاحة", "Available Destination Comparison"), desc: l("قارني المواقع واللغات والعملات التي يقدمها كل مزوّد منشور على المنصة.", "Compare locations, languages, and currencies offered by each published provider.") },
+    { icon: Stethoscope, title: l("رحلة منظمة للقرار", "A Structured Decision Journey"), desc: l("تجمع المنصة البحث وملف الحالة والاستشارة والمتابعة في خطوات مترابطة.", "Search, case details, consultation, and follow-up stay connected in one journey.") },
   ]
   return (
     <div className="flex min-h-svh flex-col">
@@ -33,10 +41,10 @@ export default async function AboutPage() {
       <main className="flex-1">
         <PageHero
           eyebrow={l("عن Med Aura", "About Med Aura")}
-          title={l("رحلتكِ نحو الجمال بأعلى معايير الثقة والأمان", "A clearer aesthetic care journey")}
-          subtitle={l("نرافقكِ في اختيار أفضل أطباء ومراكز التجميل المعتمدة، مع استشارات مرئية مريحة وخصوصية تامة لملفاتكِ الطبية.", "Compare providers, share your case privately, and keep consultation and aftercare steps in one place.")}
-          primary={{ href: "/search", label: l("استكشفي الأطباء", "Find a doctor") }}
-          secondary={{ href: "/how-it-works", label: l("كيف نرافقكِ", "How it works") }}
+          title={l("قرار تجميلي أوضح من البداية إلى المتابعة", "A clearer aesthetic care journey")}
+          subtitle={l("قارني الملفات المنشورة، شاركي حالتكِ بخصوصية، واحتفظي بخطوات الاستشارة والمتابعة في مكان واحد.", "Compare providers, share your case privately, and keep consultation and aftercare steps in one place.")}
+          primary={{ href: localizedPath("/search", locale), label: l("استكشفي الأطباء", "Find a doctor") }}
+          secondary={{ href: localizedPath("/how-it-works", locale), label: l("كيف تعمل المنصة", "How it works") }}
         />
 
         <section className="border-b border-border bg-background">
@@ -51,8 +59,8 @@ export default async function AboutPage() {
                 </h2>
                 <p className="text-lg leading-relaxed text-muted-foreground">
                   {l(
-                    "بدأت فكرة Med Aura من حاجة حقيقية لاحظناها في قطاع التجميل: صعوبة العثور على معلومات موثوقة، تشتت المريض بين عيادات متعددة، وانعدام الخصوصية عند مشاركة الصور الطبية. صممنا هذه المنصة لتكون الملاذ الآمن الذي يجمع لكِ نخبة الأطباء المعتمدين في مكان واحد، لتتمكني من المقارنة، الاستشارة المرئية، التخطيط الطبي الدقيق، والرعاية اللاحقة في تجربة واحدة راقية ومطمئنة.",
-                    "Med Aura started from a real need in the aesthetic sector: the difficulty of finding reliable information, patient fragmentation across clinics, and lack of privacy when sharing medical photos. We designed this platform to be a safe haven that brings together top certified doctors in one place."
+                    "بدأت فكرة Med Aura من حاجة واضحة في قطاع التجميل: صعوبة مقارنة المعلومات، وتشتت تفاصيل الحالة بين جهات متعددة، وحساسية مشاركة الصور الطبية. لذلك تجمع المنصة البحث وملف الحالة والاستشارة والمتابعة في رحلة واحدة قابلة للمراجعة.",
+                    "Med Aura began with a clear need in aesthetic care: provider information is difficult to compare, case details become fragmented, and medical photos are sensitive. The platform brings discovery, case sharing, consultation, and follow-up into one reviewable journey."
                   )}
                 </p>
               </div>
@@ -67,8 +75,8 @@ export default async function AboutPage() {
                   <h3 className="font-heading text-xl font-bold text-foreground mb-4">{l("رؤيتنا", "Our Vision")}</h3>
                   <p className="text-muted-foreground leading-relaxed">
                     {l(
-                      "أن نكون الوجهة الرقمية الأولى والأكثر ثقة للرعاية التجميلية في الشرق الأوسط والعالم، حيث ترتبط التكنولوجيا المتطورة بالرعاية الإنسانية الفائقة لتمكين كل فرد من اتخاذ قرارات تجميلية واثقة.",
-                      "To be the first and most trusted digital destination for aesthetic care in the Middle East and the world."
+                      "أن تصبح مقارنة خيارات التجميل وفهم الرحلة الطبية أكثر وضوحًا للمرضى في المنطقة، دون اختصار القرار الطبي أو استبداله.",
+                      "To make aesthetic-care comparison and the patient journey clearer across the region without replacing clinical judgment."
                     )}
                   </p>
                 </div>
@@ -81,8 +89,8 @@ export default async function AboutPage() {
                   <h3 className="font-heading text-xl font-bold text-foreground mb-4">{l("رسالتنا", "Our Mission")}</h3>
                   <p className="text-muted-foreground leading-relaxed">
                     {l(
-                      "الارتقاء بتجربة التجميل من خلال الشفافية المطلقة، حماية الخصوصية، وتوفير أدوات ذكية تسهل التواصل الفعال بين المرضى وأفضل الكفاءات الطبية عالمياً.",
-                      "Elevating the aesthetic experience through absolute transparency, privacy protection, and providing smart tools."
+                      "توفير معلومات منظمة وأدوات تواصل ومتابعة تساعد المرضى ومقدمي الخدمة على إدارة الرحلة بوضوح ومسؤولية.",
+                      "Provide organized information, communication, and follow-up tools that help patients and providers manage the journey responsibly."
                     )}
                   </p>
                 </div>
@@ -91,29 +99,9 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        <section className="border-b border-border bg-primary text-primary-foreground">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 gap-8 md:grid-cols-4 text-center">
-              {[
-                { label: l("أطباء معتمدين", "Certified Doctors"), value: "+50" },
-                { label: l("مركز طبي", "Medical Centers"), value: "+20" },
-                { label: l("استشارة ناجحة", "Consultations"), value: "+10k" },
-                { label: l("دولة حول العالم", "Countries"), value: "15" },
-              ].map((stat, i) => (
-                <Reveal key={i} delay={i * 0.1}>
-                  <div className="flex flex-col gap-2">
-                    <span className="font-heading text-4xl font-bold text-white sm:text-5xl">{stat.value}</span>
-                    <span className="text-sm font-medium text-primary-foreground/80">{stat.label}</span>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section className="border-b border-border bg-background">
           <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-            <SectionHeading eyebrow={l("قيمنا الأساسية", "Our principles")} title={l("ما الذي يوجّه عملنا", "What guides the product")} subtitle={l("نلتزم بمعايير لا مساومة فيها لضمان تجربة مثالية.", "We adhere to uncompromising standards.")} />
+            <SectionHeading eyebrow={l("قيمنا الأساسية", "Our principles")} title={l("ما الذي يوجّه عملنا", "What guides the product")} subtitle={l("وضوح المعلومات، خصوصية الوصول، ومسؤولية القرار الطبي.", "Clear information, private access, and responsible clinical decisions.")} />
             <div className="mt-16">
               <FeatureGrid items={values} />
             </div>
@@ -128,15 +116,15 @@ export default async function AboutPage() {
                 {l("هل أنتِ مستعدة لبدء رحلتكِ؟", "Ready to start your journey?")}
               </h2>
               <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-                {l("انضمي إلى الآلاف ممن وثقوا في منصتنا لاختيار الأفضل لجمالهم وصحتهم.", "Join thousands who trusted our platform to choose the best for their beauty and health.")}
+                {l("ابدئي بالمقارنة الهادئة، ثم اختاري الخطوة المناسبة لكِ بعد تقييم طبي مباشر.", "Start with a clear comparison, then choose your next step after direct clinical assessment.")}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <a href="/search" className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
+                <Link href={localizedPath("/search", locale)} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
                   {l("ابحثي عن طبيبكِ الآن", "Find your doctor now")}
-                </a>
-                <a href="/sign-up" className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-background px-8 text-sm font-medium shadow-sm transition-colors hover:bg-secondary/80">
+                </Link>
+                <Link href={localizedPath("/sign-up", locale)} className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-background px-8 text-sm font-medium shadow-sm transition-colors hover:bg-secondary/80">
                   {l("إنشاء حساب مجاني", "Create free account")}
-                </a>
+                </Link>
               </div>
             </Reveal>
           </div>

@@ -181,14 +181,16 @@ function DoctorDetailDrawer({ doctor, centers }: { doctor: AdminDoctorRow; cente
                 size="sm"
                 variant="outline"
                 loading={publishPending}
-                disabled={!doctor.published && doctor.status !== "approved"}
+                disabled={!doctor.published && (doctor.status !== "approved" || !doctor.verified)}
                 onClick={onTogglePublished}
               >
                 {doctor.published ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 {doctor.published ? "إخفاء الطبيب" : "إظهار الطبيب"}
               </Button>
-              {!doctor.published && doctor.status !== "approved" && (
-                <p className="text-[11px] text-muted-foreground">لا يمكن الإظهار إلا لطبيب معتمد.</p>
+              {!doctor.published && (doctor.status !== "approved" || !doctor.verified) && (
+                <p className="text-[11px] text-muted-foreground">
+                  يلزم اعتماد الملف والتحقق منه قبل الإظهار، ثم يتحقق النظام من صلاحية الترخيص.
+                </p>
               )}
             </div>
 

@@ -85,6 +85,7 @@ export type AdminDoctorRow = {
   slug: string
   email: string | null
   status: string
+  verified: boolean
   published: boolean
   country: string
   city: string | null
@@ -117,6 +118,7 @@ export async function listDoctorsForAdmin(
       slug: doctorProfile.slug,
       email: userT.email,
       status: doctorProfile.status,
+      verified: doctorProfile.verified,
       published: doctorProfile.published,
       country: doctorProfile.country,
       city: doctorProfile.city,
@@ -149,6 +151,7 @@ export type AdminCenterRow = {
   slug: string
   name: string
   status: string
+  verified: boolean
   published: boolean
   country: string
   city: string | null
@@ -181,6 +184,7 @@ export async function listCentersForAdmin(
         slug: centerT.slug,
         name: centerT.name,
         status: centerT.status,
+        verified: centerT.verified,
         published: centerT.published,
         country: centerT.country,
         city: centerT.city,

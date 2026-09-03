@@ -30,11 +30,20 @@ export async function register() {
           await pool.end()
         }
       } catch (err) {
-        // Log loudly but keep serving: public pages don't need the new
-        // tables, and a boot crash-loop would take the whole site down.
+        const errorCode =
+          err && typeof err === "object" && "code" in err && typeof err.code === "string"
+            ? err.code
+            : undefined
         logger.error("[startup] migration failed — schema may be stale", {
-          error: err instanceof Error ? err.message : String(err),
+          errorName: err instanceof Error ? err.name : "UnknownError",
+          ...(errorCode ? { errorCode } : {}),
         })
+        // Serving a new release against a stale schema is more dangerous than
+        // failing the deployment. Development remains available for local
+        // diagnosis, while production fails closed without logging secrets.
+        if (process.env.NODE_ENV === "production") {
+          throw new Error("Database migration failed during startup.")
+        }
       }
     }
   }

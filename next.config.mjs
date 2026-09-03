@@ -2,8 +2,36 @@ import os from "node:os"
 
 /** @type {import('next').NextConfig} */
 
-// Security headers applied to every response. CSP is intentionally strict but
-// allows the inline styles Next/Tailwind need and the Stripe checkout frame.
+const r2ImageOrigin = (() => {
+  try {
+    return process.env.R2_PUBLIC_BASE_URL
+      ? new URL(process.env.R2_PUBLIC_BASE_URL.trim()).origin
+      : null
+  } catch {
+    return null
+  }
+})()
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  `img-src 'self' data: blob: https://images.unsplash.com${r2ImageOrigin ? ` ${r2ImageOrigin}` : ""}`,
+  "connect-src 'self' https://www.google.com https://www.gstatic.com https://*.pusher.com https://sockjs.pusher.com wss://*.pusher.com https://*.daily.co wss://*.daily.co https://*.daily-cloud.net wss://*.daily-cloud.net",
+  "frame-src 'self' https://www.google.com https://recaptcha.google.com https://*.daily.co",
+  "media-src 'self' blob: https://*.daily.co https://*.daily-cloud.net",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "upgrade-insecure-requests",
+].join("; ")
+
+// Security headers applied to every response. CSP is enabled in production;
+// development keeps Turbopack's eval-based HMR available.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -17,6 +45,9 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
+  ...(process.env.NODE_ENV === "production"
+    ? [{ key: "Content-Security-Policy", value: contentSecurityPolicy }]
+    : []),
 ]
 
 const configuredBuildCpus = Number.parseInt(process.env.NEXT_BUILD_CPUS ?? "2", 10)
@@ -26,6 +57,7 @@ const buildCpus =
     : 2
 
 const nextConfig = {
+  poweredByHeader: false,
   // Standalone mode traces only the dependencies each route actually uses
   // into .next/standalone, instead of `next start` loading the full
   // framework + the entire node_modules tree into memory. This is Next's

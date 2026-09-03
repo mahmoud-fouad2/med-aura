@@ -136,7 +136,7 @@ export function AdminShell({
             </div>
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 sm:px-6 xl:px-8">{children}</main>
+        <main className="operations-surface flex-1 px-4 py-6 sm:px-6 xl:px-8">{children}</main>
       </div>
     </div>
   )

@@ -15,7 +15,7 @@ import { getCenterBySlug } from "@/lib/data/centers"
 import { query } from "@/lib/db/query"
 import { countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { Stethoscope } from "lucide-react"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import {
   absoluteUrl,
   breadcrumbJsonLd,
@@ -68,6 +68,7 @@ export default async function CenterDetailPage({
           <DataState
             status={r.status}
             requestId={r.status === "error" ? r.requestId : undefined}
+            locale={locale}
           />
         </main>
         <SiteFooter />
@@ -149,7 +150,7 @@ export default async function CenterDetailPage({
           </div>
           <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
             <nav className="mb-4 flex items-center gap-1 text-sm text-muted-foreground">
-              <Link href="/centers" className="hover:text-primary">
+              <Link href={localizedPath("/centers", locale)} className="hover:text-primary">
                 {t.nav.centers}
               </Link>
               <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
@@ -203,7 +204,7 @@ export default async function CenterDetailPage({
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {c.doctors.map((d) => (
-                  <Link key={d.slug} href={`/doctors/${d.slug}`}>
+                  <Link key={d.slug} href={localizedPath(`/doctors/${d.slug}`, locale)}>
                     <Card className="flex items-center gap-3 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant">
                       <Avatar className="size-14 ring-2 ring-background">
                         {d.photoUrl && <AvatarImage src={d.photoUrl} alt={d.name} />}

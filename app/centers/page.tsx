@@ -25,7 +25,7 @@ import { countryNameAr, countryNameEn } from "@/lib/status-labels"
 import { absoluteUrl, breadcrumbJsonLd, buildPageMetadata, itemListJsonLd, jsonLdScript, localizedUrl } from "@/lib/seo"
 import { PUBLIC_MEDIA } from "@/lib/public-media"
 import { formatDoctorCount } from "@/lib/format"
-import { getI18n } from "@/lib/i18n"
+import { getI18n, localizedPath } from "@/lib/i18n"
 import { SeoEditorialBand } from "@/components/marketing/seo-editorial-band"
 
 export const dynamic = "force-dynamic"
@@ -104,6 +104,7 @@ export default async function CentersPage() {
                 requestId={
                   res.status === "error" ? res.requestId : undefined
                 }
+                locale={locale}
               />
             ) : centers.length === 0 ? (
               <Card className="p-12">
@@ -113,8 +114,8 @@ export default async function CentersPage() {
                   description={l("ستظهر المراكز هنا بعد التحقق من تراخيصها.", "Centers will appear here after their licenses are reviewed.")}
                   action={
                     <div className="flex flex-wrap justify-center gap-2">
-                      <Button render={<Link href="/online-consultation">{l("اطلب مساعدة في الاختيار", "Get help choosing")}</Link>} />
-                      <Button variant="outline" render={<Link href="/for-centers/apply">{l("سجّل مركزك", "Register your center")}<ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" /></Link>} />
+                      <Button render={<Link href={localizedPath("/online-consultation", locale)}>{l("اطلب مساعدة في الاختيار", "Get help choosing")}</Link>} />
+                      <Button variant="outline" render={<Link href={localizedPath("/for-centers/apply", locale)}>{l("سجّل مركزك", "Register your center")}<ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" /></Link>} />
                     </div>
                   }
                 />
@@ -153,7 +154,7 @@ export default async function CentersPage() {
                       <div className="flex flex-1 flex-col p-5">
                         <div className="flex items-start gap-2">
                           <Link
-                            href={`/centers/${c.slug}`}
+                            href={localizedPath(`/centers/${c.slug}`, locale)}
                             className="font-heading font-bold leading-tight text-foreground transition-colors hover:text-primary"
                           >
                             {c.name}
@@ -202,7 +203,7 @@ export default async function CentersPage() {
 
                       <div className="border-t border-border/60 bg-muted/20 px-5 py-3">
                         <Link
-                          href={`/centers/${c.slug}`}
+                          href={localizedPath(`/centers/${c.slug}`, locale)}
                           className="group/link inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                         >
                           {l("استكشف المركز", "View center")}
