@@ -82,7 +82,7 @@ Status: `IN PROGRESS`
 
 - [x] Fail production startup when required migrations fail.
 - [x] Keep migration logs free of connection details and secrets.
-- [ ] Document the exact Render health check and migration behavior.
+- [x] Document the exact Render health check and migration behavior (docs/deployment/render.md: health vs readiness, exact tested response shapes, auto-migration-at-boot behavior).
 
 ### Batch B Verification
 
