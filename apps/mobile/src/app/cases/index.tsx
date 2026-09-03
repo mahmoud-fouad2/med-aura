@@ -100,7 +100,7 @@ function CaseRow({ item }: { item: DoctorCaseItem }) {
               {item.procedureName}
             </AppText>
             <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
-              {item.patientName} · {item.reference}
+              {item.counterpartName} · {item.reference}
             </AppText>
           </View>
           <StatusPill label={t.myCases.pendingConsent} tone="warning" />
@@ -122,7 +122,7 @@ function CaseRow({ item }: { item: DoctorCaseItem }) {
           {item.procedureName}
         </AppText>
         <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
-          {item.patientName} · {item.reference}
+          {item.counterpartName} · {item.reference}
         </AppText>
       </View>
       <StatusPill label={t.caseStatus[item.status] ?? item.status} tone={caseTone(item.status)} />

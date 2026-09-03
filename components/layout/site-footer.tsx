@@ -89,6 +89,7 @@ export async function SiteFooter() {
               { href: "/procedures", label: l("الإجراءات", "Procedures") },
               { href: "/centers", label: l("المراكز", "Centers") },
               { href: "/destinations", label: l("الوجهات", "Destinations") },
+              { href: "/blog", label: l("المدونة والمقالات", "Blog & guides") },
               { href: "/before-after", label: l("قبل وبعد", "Before & after") },
               { href: "/online-consultation", label: l("الاستشارة أونلاين", "Online consultation") },
               { href: "/trust-and-safety", label: l("الثقة والأمان", "Trust & safety") },

@@ -160,8 +160,62 @@ Status: `IN PROGRESS`
 
 - [x] Emit search, doctor-view, booking-start, checkout-open, signup, and booking funnel events.
 - [x] Define conversion, zero-result search, signup, consultation, and assistant-health dimensions without collecting medical query text.
-- [ ] Configure external error monitoring and uptime alerts.
-- [ ] Add a production rollback checklist and incident ownership.
+- [ ] Configure external error monitoring and uptime alerts (needs a provider + credentials — operator decision).
+- [x] Add a production rollback checklist and incident ownership (docs/incident-response.md) and a scheduled production smoke check (.github/workflows/production-smoke.yml, every 30min against the live site).
+
+## Batch H: Content CMS, Mobile Payment-Return Hardening, ASVS Audit
+
+Status: `DONE`
+
+A separate, already-substantially-built pass (blog/articles CMS + a full OWASP
+ASVS v5.0.0 audit) was found sitting entirely uncommitted, with the build
+broken on one prop mismatch. Verified, fixed several real bugs found during
+review, and merged.
+
+- [x] Admin-managed articles CMS: `article` table, `/admin/articles` CRUD
+  (create/edit/publish/feature/delete, all behind `CATALOG_MANAGE`), public
+  `/blog` index with country/category filters backed by the same table.
+- [x] **Fixed:** `/blog/[slug]` was still reading from the old static
+  `lib/content/blog.ts` file — every link from the new DB-backed `/blog`
+  index would have 404'd. Rewired to `getArticleBySlug`/`getRelatedArticles`,
+  added `react-markdown` + `remark-gfm` (seed content uses real Markdown
+  including GFM tables), added the missing `published` gate so a draft can
+  never leak through its direct URL, fixed a doubled "| Med Aura" title
+  suffix, wired the sitemap to the real published articles instead of the
+  static slug list, and removed the now-orphaned `lib/content/blog.ts`.
+  Verified live: 10 seeded articles list and open correctly, including a
+  real rendered comparison table.
+- [x] Added `/blog` to the site footer — it never had a blog link at all.
+- [x] Mobile Stripe checkout return bridge extended to the deposit
+  (`acceptQuote`) and final-payment (`createFinalPayment`) flows — previously
+  only the initial consultation booking had the `medaura://` return fix.
+- [x] Concurrent-booking cap (max 3 unpaid `PENDING_PAYMENT` holds per
+  patient) to prevent slot-starvation abuse.
+- [x] Auto-link an `aestheticCase` when a consultation is booked/completed/
+  paid without one (booking, `completeConsultation`, and the Stripe webhook
+  all had this gap independently). **Fixed:** all three call sites silently
+  fell back to an arbitrary *first procedure in the entire catalog* when the
+  doctor had no procedure assigned — would tag a case with a random,
+  unrelated procedure. Removed the fallback in all three places; they now
+  correctly skip auto-creation (or, for `completeConsultation`, surface the
+  pre-existing "no suitable procedure" error) instead of fabricating one.
+- [x] **Fixed:** `/api/mobile/v1/cases` extended to serve patients (not just
+  doctors), but the patient-branch response stuffed the doctor's name into a
+  field literally called `patientName`. Renamed to `counterpartName`
+  (matching the existing `Appointment.counterpartName` convention) across
+  the route, the mobile `DoctorCaseItem` type, and the one screen consuming
+  it — no screen currently routes a patient there, so this was latent, not
+  yet user-facing.
+- [x] Full OWASP ASVS v5.0.0 audit (`docs/security/ASVS-5.0.0-AUDIT.md`,
+  345 requirements, 300 pass): 2 of 3 recorded findings already resolved
+  with code + tests (mobile payment-return bridge above; the booking
+  concurrency cap); the third (CSP `unsafe-inline`, nonce-based CSP would
+  need real middleware work) is a documented, accepted trade-off, not a gap
+  introduced silently.
+
+Verified: web typecheck/lint clean, full suite 223/223, production build
+clean, and the blog flow (list → article with a rendered Markdown table →
+related articles) checked live in the browser end to end.
 
 ## Deferred: Payments
 

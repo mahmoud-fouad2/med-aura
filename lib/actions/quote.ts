@@ -251,6 +251,7 @@ type AcceptResult = { paymentConfigured: boolean; checkoutUrl?: string }
 /** Patient accepts the quote → QUOTE_ACCEPTED + creates a deposit checkout. */
 export async function acceptQuote(
   quoteId: string,
+  options?: { platform?: "web" | "mobile" },
 ): Promise<ActionResult<AcceptResult>> {
   try {
     const user = await requireUser()
@@ -344,14 +345,19 @@ export async function acceptQuote(
       return { ok: true, data: { paymentConfigured: false } }
     }
 
+    const isMobile = options?.platform === "mobile"
     const checkout = await createCheckoutSession({
       paymentId,
       amount: Number(q.depositRequired),
       currency: q.currency,
       description: `عربون — عرض ${q.quoteNumber}`,
       customerEmail: user.email,
-      successUrl: `${appUrl()}/dashboard/cases/${q.caseId}?deposit=1`,
-      cancelUrl: `${appUrl()}/dashboard/cases/${q.caseId}?deposit_canceled=1`,
+      successUrl: isMobile
+        ? `${appUrl()}/api/payments/return?platform=mobile&status=success&caseId=${q.caseId}&quoteId=${quoteId}`
+        : `${appUrl()}/dashboard/cases/${q.caseId}?deposit=1`,
+      cancelUrl: isMobile
+        ? `${appUrl()}/api/payments/return?platform=mobile&status=canceled&caseId=${q.caseId}&quoteId=${quoteId}`
+        : `${appUrl()}/dashboard/cases/${q.caseId}?deposit_canceled=1`,
     })
     await db
       .update(payment)

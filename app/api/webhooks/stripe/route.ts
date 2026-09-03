@@ -14,6 +14,9 @@ import {
   invoice,
   userRole,
   role,
+  doctorProfile,
+  doctorProcedure,
+  consent,
 } from "@/lib/db/schema"
 import { ROLES } from "@/lib/rbac"
 import { canTransition, type CaseStatus } from "@/lib/domain/case-state-machine"
@@ -308,12 +311,80 @@ async function applyPaymentSucceeded(
           { action: "appointment.confirm", actorUserId: pay.payerUserId, entityType: "appointment", entityId: appt.id },
           tx,
         )
-        if (appt.caseId) {
+        let confirmedCaseId = appt.caseId
+        if (!confirmedCaseId) {
+          const apptFull = (
+            await tx
+              .select({ doctorId: appointment.doctorId, patientUserId: appointment.patientUserId })
+              .from(appointment)
+              .where(eq(appointment.id, appt.id))
+              .limit(1)
+          )[0]
+          if (apptFull) {
+            // Only the doctor's own assigned procedure — never an arbitrary
+            // catalog fallback, which would tag the case with a procedure
+            // the doctor doesn't even offer.
+            const docProc = (
+              await tx
+                .select({ procedureId: doctorProcedure.procedureId })
+                .from(doctorProcedure)
+                .where(eq(doctorProcedure.doctorId, apptFull.doctorId))
+                .limit(1)
+            )[0]
+            const procId = docProc?.procedureId
+            if (procId) {
+              const docInfo = (
+                await tx
+                  .select({ centerId: doctorProfile.centerId, name: doctorProfile.name, userId: doctorProfile.userId })
+                  .from(doctorProfile)
+                  .where(eq(doctorProfile.id, apptFull.doctorId))
+                  .limit(1)
+              )[0]
+              const caseRef = `CASE-${crypto.randomUUID().replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase()}`
+              const newCase = await tx
+                .insert(aestheticCase)
+                .values({
+                  reference: caseRef,
+                  patientUserId: apptFull.patientUserId,
+                  procedureId: procId,
+                  doctorId: apptFull.doctorId,
+                  centerId: docInfo?.centerId ?? null,
+                  status: "CONSULTATION_BOOKED",
+                  goal: `استشارة مع ${docInfo?.name ?? "الطبيب"}`,
+                  createdBy: pay.payerUserId,
+                })
+                .returning({ id: aestheticCase.id })
+              confirmedCaseId = newCase[0].id
+
+              await tx.insert(caseStatusHistory).values({
+                caseId: confirmedCaseId,
+                toStatus: "CONSULTATION_BOOKED",
+                changedBy: pay.payerUserId,
+                note: "تم الدفع وتأكيد حجز الاستشارة تلقائيًا",
+              })
+
+              await tx
+                .update(appointment)
+                .set({ caseId: confirmedCaseId })
+                .where(eq(appointment.id, appt.id))
+
+              if (docInfo?.userId) {
+                await tx.insert(consent).values({
+                  caseId: confirmedCaseId,
+                  patientUserId: apptFull.patientUserId,
+                  granteeUserId: docInfo.userId,
+                  purpose: "consultation_review",
+                  status: "GRANTED",
+                })
+              }
+            }
+          }
+        } else {
           const caseRow = (
             await tx
               .select({ status: aestheticCase.status })
               .from(aestheticCase)
-              .where(eq(aestheticCase.id, appt.caseId))
+              .where(eq(aestheticCase.id, confirmedCaseId))
               .limit(1)
           )[0]
           if (
@@ -323,9 +394,9 @@ async function applyPaymentSucceeded(
             await tx
               .update(aestheticCase)
               .set({ status: "CONSULTATION_BOOKED" })
-              .where(eq(aestheticCase.id, appt.caseId))
+              .where(eq(aestheticCase.id, confirmedCaseId))
             await tx.insert(caseStatusHistory).values({
-              caseId: appt.caseId,
+              caseId: confirmedCaseId,
               fromStatus: caseRow.status,
               toStatus: "CONSULTATION_BOOKED",
               note: "تم تأكيد حجز الاستشارة",
@@ -342,8 +413,8 @@ async function applyPaymentSucceeded(
           userId: pay.payerUserId,
           type: "appointment.confirmed",
           title: "تم تأكيد موعد استشارتك",
-          caseId: appt.caseId ?? undefined,
-          href: appt.caseId ? `/dashboard/cases/${appt.caseId}` : "/dashboard/appointments",
+          caseId: confirmedCaseId ?? undefined,
+          href: confirmedCaseId ? `/dashboard/cases/${confirmedCaseId}` : "/dashboard/appointments",
         })
         referralTarget.value = { refereeUserId: pay.payerUserId, appointmentId: appt.id }
       } else {

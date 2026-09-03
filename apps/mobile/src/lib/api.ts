@@ -168,7 +168,9 @@ export type DoctorCaseItem = {
   reference: string
   status: string
   procedureName: string
-  patientName: string
+  /** Who this case is with, from the viewer's side — the patient's name for
+   *  a doctor viewer, the doctor's name for a patient viewer. */
+  counterpartName: string
   consentActive: boolean
 }
 

@@ -36,6 +36,7 @@ type FinalPaymentResult = { paymentConfigured: boolean; checkoutUrl?: string; am
  */
 export async function createFinalPayment(
   caseId: string,
+  options?: { platform?: "web" | "mobile" },
 ): Promise<ActionResult<FinalPaymentResult>> {
   try {
     const user = await requireUser()
@@ -109,14 +110,19 @@ export async function createFinalPayment(
       return { ok: true, data: { paymentConfigured: false, amount } }
     }
 
+    const isMobile = options?.platform === "mobile"
     const checkout = await createCheckoutSession({
       paymentId,
       amount: remaining,
       currency: inv.currency,
       description: `سداد المتبقي — فاتورة ${inv.invoiceNumber}`,
       customerEmail: user.email,
-      successUrl: `${appUrl()}/dashboard/cases/${caseId}?final_payment=1`,
-      cancelUrl: `${appUrl()}/dashboard/cases/${caseId}?final_payment_canceled=1`,
+      successUrl: isMobile
+        ? `${appUrl()}/api/payments/return?platform=mobile&status=success&caseId=${caseId}&invoiceId=${inv.id}`
+        : `${appUrl()}/dashboard/cases/${caseId}?final_payment=1`,
+      cancelUrl: isMobile
+        ? `${appUrl()}/api/payments/return?platform=mobile&status=canceled&caseId=${caseId}&invoiceId=${inv.id}`
+        : `${appUrl()}/dashboard/cases/${caseId}?final_payment_canceled=1`,
     })
     await db.update(payment).set({ status: "PENDING", providerSessionId: checkout.id }).where(eq(payment.id, paymentId))
 

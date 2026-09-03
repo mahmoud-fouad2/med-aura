@@ -1,6 +1,6 @@
 "use server"
 
-import { eq } from "drizzle-orm"
+import { and, count, eq, gt } from "drizzle-orm"
 import { db } from "@/lib/db"
 import {
   doctorProfile,
@@ -8,13 +8,17 @@ import {
   appointmentStatusHistory,
   payment,
   promoCodeRedemption,
+  aestheticCase,
+  caseStatusHistory,
+  consent,
+  doctorProcedure,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { getAvailableSlots, PAYMENT_HOLD_MS } from "@/lib/data/availability"
 import { writeAudit, requestMeta } from "@/lib/audit"
-import { AppError, toSafeError, validation, conflict, notConfigured } from "@/lib/errors"
-import { appUrl } from "@/lib/env"
+import { AppError, toSafeError, validation, conflict, notConfigured, forbidden } from "@/lib/errors"
+import { appUrl, isEmailConfigured } from "@/lib/env"
 import { isStripeConfigured, createCheckoutSession } from "@/lib/payments/stripe"
 import { resolvePromoCode } from "@/lib/promo"
 import type { ActionResult } from "@/lib/actions/provider"
@@ -49,6 +53,9 @@ export async function bookConsultation(input: {
   try {
     const user = await requireUser()
     await requirePermission(user.id, PERMISSIONS.APPOINTMENT_BOOK)
+    if (isEmailConfigured() && process.env.NODE_ENV === "production" && !user.emailVerified) {
+      throw forbidden("يرجى تأكيد بريدك الإلكتروني أولًا للمتابعة مع تأكيد الحجز.")
+    }
     if (!isStripeConfigured()) {
       throw notConfigured("بوابة الدفع غير مفعّلة حاليًا، ولم يتم حجز الموعد.")
     }
@@ -59,6 +66,7 @@ export async function bookConsultation(input: {
       await db
         .select({
           id: doctorProfile.id,
+          userId: doctorProfile.userId,
           name: doctorProfile.name,
           centerId: doctorProfile.centerId,
           fee: doctorProfile.consultationFee,
@@ -97,11 +105,74 @@ export async function bookConsultation(input: {
           : null
         const chargedAmount = promo ? Number(promo.finalAmount) : listAmount
 
+        // Cap concurrent unpaid bookings per patient to prevent slot starvation / reservation denial of service
+        const MAX_PENDING_APPOINTMENTS_PER_PATIENT = 3
+        const [pendingCount] = await tx
+          .select({ count: count() })
+          .from(appointment)
+          .where(
+            and(
+              eq(appointment.patientUserId, user.id),
+              eq(appointment.status, "PENDING_PAYMENT"),
+              gt(appointment.paymentExpiresAt, new Date()),
+            ),
+          )
+        if ((pendingCount?.count ?? 0) >= MAX_PENDING_APPOINTMENTS_PER_PATIENT) {
+          throw conflict("لديك مواعيد قيد انتظار الدفع بالفعل. أكمل دفعها أو انتظر حتى انتهاء مهلتها قبل حجز موعد جديد.")
+        }
+
+        let resolvedCaseId = input.caseId ?? null
+        if (!resolvedCaseId) {
+          // Only the doctor's own assigned procedure — never an arbitrary
+          // catalog fallback, which would tag the case with a procedure the
+          // doctor doesn't even offer.
+          const docProc = (
+            await tx
+              .select({ procedureId: doctorProcedure.procedureId })
+              .from(doctorProcedure)
+              .where(eq(doctorProcedure.doctorId, doc.id))
+              .limit(1)
+          )[0]
+          const procId = docProc?.procedureId
+          if (procId) {
+            const caseRef = `CASE-${crypto.randomUUID().replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase()}`
+            const newCase = await tx
+              .insert(aestheticCase)
+              .values({
+                reference: caseRef,
+                patientUserId: user.id,
+                procedureId: procId,
+                doctorId: doc.id,
+                centerId: doc.centerId,
+                status: "SHARED_WITH_PROVIDER",
+                goal: `استشارة مع ${doc.name}`,
+                createdBy: user.id,
+              })
+              .returning({ id: aestheticCase.id })
+            resolvedCaseId = newCase[0].id
+
+            await tx.insert(caseStatusHistory).values({
+              caseId: resolvedCaseId,
+              toStatus: "SHARED_WITH_PROVIDER",
+              changedBy: user.id,
+              note: "إنشاء تلقائي مع حجز الاستشارة",
+            })
+
+            await tx.insert(consent).values({
+              caseId: resolvedCaseId,
+              patientUserId: user.id,
+              granteeUserId: doc.userId,
+              purpose: "consultation_review",
+              status: "GRANTED",
+            })
+          }
+        }
+
         const appt = await tx
           .insert(appointment)
           .values({
             reference: apptRef,
-            caseId: input.caseId ?? null,
+            caseId: resolvedCaseId,
             patientUserId: user.id,
             doctorId: doc.id,
             centerId: doc.centerId,
@@ -192,11 +263,11 @@ export async function bookConsultation(input: {
         customerEmail: user.email,
         successUrl:
           input.platform === "mobile"
-            ? "medaura://booking-payment?status=success"
+            ? `${appUrl()}/api/payments/return?platform=mobile&status=success&appointmentId=${appointmentId}`
             : `${appUrl()}/dashboard/appointments?booked=1`,
         cancelUrl:
           input.platform === "mobile"
-            ? "medaura://booking-payment?status=canceled"
+            ? `${appUrl()}/api/payments/return?platform=mobile&status=canceled&appointmentId=${appointmentId}`
             : `${appUrl()}/dashboard/appointments?canceled=1`,
         expiresAt: paymentExpiresAt,
       })

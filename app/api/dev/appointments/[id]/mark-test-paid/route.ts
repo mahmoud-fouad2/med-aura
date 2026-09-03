@@ -5,6 +5,8 @@ import {
   appointment,
   appointmentStatusHistory,
   payment,
+  aestheticCase,
+  caseStatusHistory,
 } from "@/lib/db/schema"
 import { getCurrentUser } from "@/lib/session"
 import { hasPermission, PERMISSIONS } from "@/lib/rbac"
@@ -48,7 +50,7 @@ export async function POST(
     const result = await db.transaction(async (tx) => {
       const appt = (
         await tx
-          .select({ id: appointment.id, status: appointment.status })
+          .select({ id: appointment.id, status: appointment.status, caseId: appointment.caseId })
           .from(appointment)
           .where(eq(appointment.id, id))
           .limit(1)
@@ -85,6 +87,19 @@ export async function POST(
         toStatus: "CONFIRMED",
         note: "تأكيد اختباري (أداة QA)",
       })
+
+      if (appt.caseId) {
+        await tx
+          .update(aestheticCase)
+          .set({ status: "CONSULTATION_BOOKED" })
+          .where(eq(aestheticCase.id, appt.caseId))
+        await tx.insert(caseStatusHistory).values({
+          caseId: appt.caseId,
+          toStatus: "CONSULTATION_BOOKED",
+          changedBy: user.id,
+          note: "تأكيد اختباري (أداة QA)",
+        })
+      }
       return { ok: true as const }
     })
 

@@ -57,19 +57,23 @@ const demoDoctorPhotos: Record<string, string> = {
 export const PUBLIC_MEDIA = {
   home: "/hero-medaura-consultation.webp",
   centers: "/demo-services/aesthetic-clinic-lounge.png",
-  destinations: "/demo-services/service-body-contouring.png",
+  destinations: versioned("/destinations/hero.jpg"),
   faq: "/demo-services/service-skin-nonsurgical.png",
   howItWorks: "/demo-services/service-online-consultation.png",
   onlineConsultation: "/demo-services/service-online-consultation.png",
 } as const
 
 const destinationImages: Record<string, string> = {
-  SA: PUBLIC_MEDIA.centers,
-  AE: "/demo-services/service-skin-nonsurgical.png",
-  TR: "/demo-services/service-hair-restoration.png",
-  EG: "/demo-services/service-dental-smile.png",
-  JO: "/demo-services/service-face-neck.png",
-  QA: "/demo-services/service-body-contouring.png",
+  SA: versioned("/destinations/sa.jpg"),
+  AE: versioned("/destinations/ae.jpg"),
+  KW: versioned("/destinations/kw.jpg"),
+  TR: versioned("/destinations/tr.jpg"),
+  EG: versioned("/destinations/eg.jpg"),
+  QA: versioned("/destinations/qa.jpg"),
+  JO: versioned("/destinations/jo.jpg"),
+  BH: versioned("/destinations/bh.jpg"),
+  OM: versioned("/destinations/om.jpg"),
+  LB: versioned("/destinations/lb.jpg"),
 }
 
 export function destinationImage(code?: string | null): string {

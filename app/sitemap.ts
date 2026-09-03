@@ -5,7 +5,7 @@ import { db, isDbConfigured } from "@/lib/db"
 import { center, doctorProfile, procedure } from "@/lib/db/schema"
 import { publicCenterConditions, publicDoctorConditions } from "@/lib/data/public-visibility"
 import { listDestinations } from "@/lib/data/destinations"
-import { BLOG_SLUGS } from "@/lib/content/blog"
+import { listPublishedArticles } from "@/lib/data/articles"
 
 const CONTENT_UPDATED_AT = new Date("2026-09-01T00:00:00.000Z")
 
@@ -21,7 +21,6 @@ const PUBLIC_ROUTES = [
   { path: "/how-it-works", priority: 0.7, changeFrequency: "monthly" as const },
   { path: "/trust-and-safety", priority: 0.7, changeFrequency: "monthly" as const },
   { path: "/blog", priority: 0.7, changeFrequency: "weekly" as const },
-  ...BLOG_SLUGS.map((slug) => ({ path: `/blog/${slug}`, priority: 0.65, changeFrequency: "monthly" as const })),
   { path: "/about", priority: 0.55, changeFrequency: "monthly" as const },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" as const },
   { path: "/faq", priority: 0.65, changeFrequency: "monthly" as const },
@@ -36,7 +35,7 @@ const PUBLIC_ROUTES = [
 
 async function entityRoutes(): Promise<{ path: string; lastModified: Date }[]> {
   if (!isDbConfigured) return []
-  const [doctors, centers, procedures, destinations] = await Promise.all([
+  const [doctors, centers, procedures, destinations, { articles }] = await Promise.all([
     db
       .select({ slug: doctorProfile.slug, updatedAt: doctorProfile.updatedAt })
       .from(doctorProfile)
@@ -50,6 +49,7 @@ async function entityRoutes(): Promise<{ path: string; lastModified: Date }[]> {
       .from(procedure)
       .where(eq(procedure.visible, true)),
     listDestinations(),
+    listPublishedArticles({ limit: 1000 }),
   ])
   return [
     ...doctors.map((row) => ({ path: `/doctors/${row.slug}`, lastModified: row.updatedAt })),
@@ -58,6 +58,7 @@ async function entityRoutes(): Promise<{ path: string; lastModified: Date }[]> {
     ...destinations
       .filter((row) => row.approvedDoctors + row.approvedCenters > 0)
       .map((row) => ({ path: `/destinations/${row.code.toLowerCase()}`, lastModified: CONTENT_UPDATED_AT })),
+    ...articles.map((row) => ({ path: `/blog/${row.slug}`, lastModified: row.updatedAt })),
   ]
 }
 

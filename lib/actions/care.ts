@@ -11,6 +11,8 @@ import {
   appointmentStatusHistory,
   doctorProfile,
   consultationOutcome,
+  doctorProcedure,
+  consent,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { writeAudit, requestMeta } from "@/lib/audit"
@@ -65,13 +67,72 @@ export async function completeConsultation(
     await assertCaseDoctor(user.id, appt.doctorId)
     if (appt.status !== "CONFIRMED")
       throw conflict("لا يمكن إكمال استشارة غير مؤكدة.")
-    if (!appt.caseId) throw validation("هذه الاستشارة غير مرتبطة بحالة.")
+
+    let activeCaseId = appt.caseId
+    if (!activeCaseId) {
+      // Only the doctor's own assigned procedure — never an arbitrary
+      // catalog fallback, which would tag the case with a procedure the
+      // doctor doesn't even offer.
+      const docProc = (
+        await db
+          .select({ procedureId: doctorProcedure.procedureId })
+          .from(doctorProcedure)
+          .where(eq(doctorProcedure.doctorId, appt.doctorId))
+          .limit(1)
+      )[0]
+      const procId = docProc?.procedureId
+      if (!procId) throw validation("تعذر العثور على إجراء مناسب لربط الحالة.")
+
+      const docInfo = (
+        await db
+          .select({ centerId: doctorProfile.centerId, name: doctorProfile.name })
+          .from(doctorProfile)
+          .where(eq(doctorProfile.id, appt.doctorId))
+          .limit(1)
+      )[0]
+
+      const ref = `CASE-${crypto.randomUUID().replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase()}`
+      const newCase = await db
+        .insert(aestheticCase)
+        .values({
+          reference: ref,
+          patientUserId: appt.patientUserId,
+          procedureId: procId,
+          doctorId: appt.doctorId,
+          centerId: docInfo?.centerId ?? null,
+          status: "CONSULTATION_BOOKED",
+          goal: `استشارة مع ${docInfo?.name ?? "الطبيب"}`,
+          createdBy: user.id,
+        })
+        .returning({ id: aestheticCase.id })
+      activeCaseId = newCase[0].id
+
+      await db.insert(caseStatusHistory).values({
+        caseId: activeCaseId,
+        toStatus: "CONSULTATION_BOOKED",
+        changedBy: user.id,
+        note: "ربط تلقائي من موعد الاستشارة",
+      })
+
+      await db
+        .update(appointment)
+        .set({ caseId: activeCaseId })
+        .where(eq(appointment.id, appt.id))
+
+      await db.insert(consent).values({
+        caseId: activeCaseId,
+        patientUserId: appt.patientUserId,
+        granteeUserId: user.id,
+        purpose: "consultation_review",
+        status: "GRANTED",
+      })
+    }
 
     const caseRow = (
       await db
         .select({ id: aestheticCase.id, status: aestheticCase.status })
         .from(aestheticCase)
-        .where(eq(aestheticCase.id, appt.caseId))
+        .where(eq(aestheticCase.id, activeCaseId))
         .limit(1)
     )[0]
     if (!caseRow) throw new AppError("NOT_FOUND")
@@ -82,7 +143,7 @@ export async function completeConsultation(
     await db.transaction(async (tx) => {
       await tx
         .update(appointment)
-        .set({ status: "COMPLETED" })
+        .set({ status: "COMPLETED", caseId: activeCaseId })
         .where(eq(appointment.id, appointmentId))
       await tx.insert(appointmentStatusHistory).values({
         appointmentId,
@@ -117,11 +178,11 @@ export async function completeConsultation(
       type: "consultation.completed",
       title: "اكتملت استشارتك",
       body: "اكتملت استشارتك. سيقوم الطبيب بتسجيل نتيجة الاستشارة قريبًا.",
-      caseId: appt.caseId,
-      href: `/dashboard/cases/${appt.caseId}`,
+      caseId: activeCaseId,
+      href: `/dashboard/cases/${activeCaseId}`,
     })
 
-    revalidatePath(`/dashboard/cases/${appt.caseId}`)
+    revalidatePath(`/dashboard/cases/${activeCaseId}`)
     return { ok: true }
   } catch (err) {
     const safe = toSafeError(err)

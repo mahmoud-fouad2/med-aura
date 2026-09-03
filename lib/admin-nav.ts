@@ -79,6 +79,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     title: "المحتوى والإعداد",
     items: [
+      { href: "/admin/articles", label: "المقالات والمدونة", icon: "BookOpen", anyOf: [P.CATALOG_MANAGE] },
       { href: "/admin/procedures", label: "المحتوى والإجراءات", icon: "Sparkles", anyOf: [P.CATALOG_MANAGE] },
       { href: "/admin/before-after", label: "قبل وبعد — المراجعة", icon: "ImageIcon", anyOf: [P.BEFORE_AFTER_MODERATE] },
       { href: "/admin/reviews", label: "مراجعة التقييمات", icon: "MessageSquareText", anyOf: [P.BEFORE_AFTER_MODERATE] },
