@@ -71,6 +71,7 @@ export function ApplicationReview({
                 ? "سبب الرفض (يظهر لمقدّم الطلب)"
                 : "التعديلات المطلوبة (تظهر لمقدّم الطلب ليعدّل ويعيد الإرسال)"
             }
+            aria-label={mode === "reject" ? "سبب الرفض" : "التعديلات المطلوبة"}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}

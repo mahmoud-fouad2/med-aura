@@ -323,10 +323,10 @@ function ImageSlot({
               type="button"
               onClick={() => void handleRemove()}
               disabled={disabled}
-              className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+              className="absolute -end-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
               aria-label={`حذف ${label}`}
             >
-              <X className="size-3" />
+              <X className="size-3.5" />
             </button>
           )}
         </div>
@@ -723,10 +723,10 @@ function ProcedureImageUploader({
                 type="button"
                 onClick={() => void handleGalleryRemove(g.key)}
                 disabled={galleryBusy}
-                className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
+                className="absolute -end-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full bg-destructive text-white shadow-sm"
                 aria-label="حذف صورة من المعرض"
               >
-                <X className="size-3" />
+                <X className="size-3.5" />
               </button>
             </div>
           ))}

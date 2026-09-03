@@ -178,12 +178,13 @@ function MessageDetail({
 
         {replying && (
           <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
-            <p className="text-xs font-medium text-foreground">الرد إلى {message.email}</p>
+            <p id={`reply-to-${message.id}`} className="text-xs font-medium text-foreground">الرد إلى {message.email}</p>
             <Textarea
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
               rows={4}
               placeholder="اكتب ردك هنا…"
+              aria-labelledby={`reply-to-${message.id}`}
               autoFocus
             />
             {replyError && <p className="text-xs text-destructive">{replyError}</p>}

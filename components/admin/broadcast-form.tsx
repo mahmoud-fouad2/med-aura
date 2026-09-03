@@ -41,18 +41,18 @@ export function BroadcastForm() {
 
   return (
     <Card className="max-w-xl space-y-5 p-6">
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">العنوان</label>
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium text-foreground">العنوان</span>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="مثال: عرض خاص هذا الأسبوع"
           maxLength={120}
         />
-      </div>
+      </label>
 
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">نص الرسالة</label>
+      <label className="block space-y-1.5">
+        <span className="text-sm font-medium text-foreground">نص الرسالة</span>
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -60,7 +60,7 @@ export function BroadcastForm() {
           placeholder="اكتب نص الإشعار الذي سيصل للأعضاء…"
           maxLength={500}
         />
-      </div>
+      </label>
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-foreground">الفئة المستهدفة</label>

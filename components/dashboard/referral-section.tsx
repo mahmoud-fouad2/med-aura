@@ -83,6 +83,7 @@ export function ReferralSection({ data }: { data: MyReferralData }) {
               readOnly
               dir="ltr"
               value={data.shareUrl}
+              aria-label="رابط الدعوة"
               className="h-10 flex-1 truncate rounded-lg border border-input bg-muted/40 px-3 text-xs text-muted-foreground"
               onFocus={(e) => e.currentTarget.select()}
             />

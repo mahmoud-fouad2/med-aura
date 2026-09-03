@@ -444,7 +444,12 @@ function CenterDoctorsTab({ centerId }: { centerId: string }) {
               {!d.published && <Badge variant="outline">مخفي</Badge>}
             </div>
           </div>
-          <Link href={`/doctors/${d.slug}`} target="_blank" className="shrink-0 text-xs font-medium text-primary hover:underline">
+          <Link
+            href={`/doctors/${d.slug}`}
+            target="_blank"
+            aria-label={`فتح الملف العام لـ${d.name} في تبويب جديد`}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-muted"
+          >
             <ExternalLink className="size-4" />
           </Link>
         </li>

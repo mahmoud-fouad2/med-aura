@@ -44,7 +44,7 @@ export function ReviewModeration({ rows }: { rows: PendingReview[] }) {
             <span className="inline-flex items-center gap-1 text-sm font-bold tabular-nums"><Star className="size-4 fill-current text-gold" /> {row.overallRating}/5</span>
           </div>
           <p className="rounded-md bg-muted/35 px-4 py-3 text-sm leading-relaxed">{row.comment}</p>
-          <Textarea rows={2} value={reasons[row.id] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="سبب الإخفاء أو الرفض (يوصى به عند عدم النشر)" />
+          <Textarea rows={2} value={reasons[row.id] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="سبب الإخفاء أو الرفض (يوصى به عند عدم النشر)" aria-label="سبب الإخفاء أو الرفض" />
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={busyId === row.id} onClick={() => decide(row.id, "publish")}><Check className="size-4" /> نشر</Button>
             <Button size="sm" variant="outline" disabled={busyId === row.id} onClick={() => decide(row.id, "hide")}><EyeOff className="size-4" /> إخفاء</Button>

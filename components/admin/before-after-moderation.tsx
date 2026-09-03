@@ -79,6 +79,7 @@ export function ModerationActions({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="سبب الرفض…"
+            aria-label="سبب الرفض"
             className="h-8 min-w-[220px] flex-1 rounded-md border border-input bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
           />
           <Button

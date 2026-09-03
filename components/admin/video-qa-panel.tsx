@@ -100,6 +100,7 @@ export function VideoQaPanel({
           <Input
             type="email"
             placeholder="test-patient@example.com"
+            aria-label="البريد الإلكتروني للحساب المراد تحويله إلى حساب اختبار"
             value={markEmail}
             onChange={(e) => setMarkEmail(e.target.value)}
           />
@@ -188,6 +189,7 @@ export function VideoQaPanel({
           <Input
             type="email"
             placeholder="test-doctor@example.com"
+            aria-label="البريد الإلكتروني للحساب المراد تحويله إلى حساب اختبار"
             value={markEmail}
             onChange={(e) => setMarkEmail(e.target.value)}
           />

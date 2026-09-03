@@ -66,6 +66,7 @@ export default async function AdminPatientsPage({
               name="q"
               defaultValue={q ?? ""}
               placeholder="ابحث بالاسم أو البريد الإلكتروني…"
+              aria-label="ابحث بالاسم أو البريد الإلكتروني"
               className="h-9 ps-9"
             />
           </div>

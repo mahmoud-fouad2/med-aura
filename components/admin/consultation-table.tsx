@@ -18,6 +18,7 @@ import {
 import { StatusBadge, type StatusTone } from "@/components/admin/status-badge"
 import { ManualPaymentDialog } from "@/components/admin/manual-payment-dialog"
 import { CancelManualPaymentDialog } from "@/components/admin/cancel-manual-payment-dialog"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   appointmentStatusAr,
   appointmentTypeAr,
@@ -73,25 +74,19 @@ export function ConsultationTable({
   const [selected, setSelected] = useState<ConsultationRow | null>(null)
   const [markingNoShow, setMarkingNoShow] = useState(false)
 
-  async function onMarkNoShow(row: ConsultationRow) {
-    if (
-      markingNoShow ||
-      !window.confirm(
-        `تسجيل عدم حضور المريض للموعد ${row.reference}؟ سيُبلّغ المريض وسيتمكن من إعادة جدولته.`,
-      )
-    ) {
-      return
-    }
+  async function onMarkNoShow(row: ConsultationRow): Promise<boolean> {
+    if (markingNoShow) return false
     setMarkingNoShow(true)
     const result = await markAppointmentNoShow(row.id)
     setMarkingNoShow(false)
     if (!result.ok) {
       toast.error(result.error)
-      return
+      return false
     }
     toast.success("تم تسجيل عدم حضور المريض.")
     setSelected({ ...row, status: "NO_SHOW", canMarkNoShow: false })
     router.refresh()
+    return true
   }
 
   return (
@@ -173,15 +168,18 @@ export function ConsultationTable({
 
               <SheetFooter>
                 {selected.canMarkNoShow ? (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full"
-                    loading={markingNoShow}
-                    onClick={() => void onMarkNoShow(selected)}
-                  >
-                    <UserX className="size-4" /> تسجيل عدم الحضور
-                  </Button>
+                  <ConfirmDialog
+                    trigger={
+                      <Button variant="destructive" size="sm" className="w-full" loading={markingNoShow}>
+                        <UserX className="size-4" /> تسجيل عدم الحضور
+                      </Button>
+                    }
+                    title="تسجيل عدم الحضور"
+                    description={`تسجيل عدم حضور المريض للموعد ${selected.reference}؟ سيُبلّغ المريض وسيتمكن من إعادة جدولته.`}
+                    confirmLabel="تسجيل عدم الحضور"
+                    tone="destructive"
+                    onConfirm={() => onMarkNoShow(selected)}
+                  />
                 ) : null}
                 {selected.paymentStatus === "PAID" && selected.paymentId ? (
                   <Button
