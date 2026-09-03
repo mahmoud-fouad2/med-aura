@@ -46,7 +46,7 @@ test("a visitor can register a patient account (real DB write)", async ({ page }
   // Step 2: the full profile form
   await page.getByLabel("الاسم الكامل").fill("مريض اختبار")
   await page.getByLabel("البريد الإلكتروني").fill(email)
-  await page.getByLabel("كلمة المرور").fill("E2ePassw0rd!")
+  await page.getByLabel("كلمة المرور", { exact: true }).fill("E2ePassw0rd!")
   await page.getByLabel("رقم الجوال").fill("+966501234567")
   await page.getByLabel(/دولة الإقامة/).selectOption("SA")
   await page.getByRole("checkbox").check()
