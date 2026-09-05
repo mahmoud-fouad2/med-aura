@@ -12,6 +12,7 @@ import {
   EyeOff,
   Save,
   Users as UsersIcon,
+  BadgeCheck,
 } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import {
@@ -36,6 +37,7 @@ import { CountrySelectField } from "@/components/admin/country-select-field"
 import {
   updateCenterAction,
   setCenterStatusAction,
+  setCenterVerifiedAction,
   setCenterPublishedAction,
   getCenterForEditAction,
   getCenterDoctorsAction,
@@ -112,6 +114,7 @@ function CenterDetailDrawer({ center }: { center: AdminCenterRow }) {
   const router = useRouter()
   const [statusPending, startStatus] = useTransition()
   const [publishPending, startPublish] = useTransition()
+  const [verifyPending, startVerify] = useTransition()
 
   function onSetStatus(status: "approved" | "suspended") {
     startStatus(async () => {
@@ -130,6 +133,18 @@ function CenterDetailDrawer({ center }: { center: AdminCenterRow }) {
       const res = await setCenterPublishedAction({ centerId: center.id, published: !center.published })
       if (res.ok) {
         toast.success(center.published ? "تم إخفاء المركز." : "تم إظهار المركز.")
+        router.refresh()
+      } else {
+        toast.error(res.error)
+      }
+    })
+  }
+
+  function onToggleVerified() {
+    startVerify(async () => {
+      const res = await setCenterVerifiedAction({ centerId: center.id, verified: !center.verified })
+      if (res.ok) {
+        toast.success(center.verified ? "تم إلغاء توثيق المركز." : "تم توثيق المركز بنجاح.")
         router.refresh()
       } else {
         toast.error(res.error)
@@ -169,6 +184,30 @@ function CenterDetailDrawer({ center }: { center: AdminCenterRow }) {
               <Row label="الموقع" value={`${center.city ? `${center.city}، ` : ""}${countryNameAr(center.country)}`} />
               <Row label="عدد الأطباء" value={center.doctorCount.toLocaleString("ar-SA-u-nu-latn")} />
               <Row label="تاريخ الإنشاء" value={dfMedium(center.createdAt)} />
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">التحقق والتوثيق</p>
+                {center.verified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+                    <BadgeCheck className="size-3" /> موثَّق
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    غير موثَّق
+                  </span>
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant={center.verified ? "ghost" : "outline"}
+                loading={verifyPending}
+                onClick={onToggleVerified}
+              >
+                <BadgeCheck className="size-4" />
+                {center.verified ? "إلغاء التوثيق" : "توثيق المركز الآن"}
+              </Button>
             </div>
 
             <div className="space-y-2 rounded-lg border border-border/60 p-3">

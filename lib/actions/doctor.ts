@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { AppError, toSafeError, validation } from "@/lib/errors"
+import { encryptString, last4 } from "@/lib/crypto"
 import type { ActionResult } from "@/lib/actions/provider"
 import { isIanaTimezone } from "@/lib/geo"
 import {
@@ -206,6 +207,141 @@ export async function setDoctorPublishedAction(input: unknown): Promise<ActionRe
       entityType: "doctor_profile",
       entityId: doctorId,
       metadata: { published },
+      ...meta,
+    })
+
+    revalidatePath("/admin/doctors")
+    revalidatePath("/doctors")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const setDoctorVerifiedSchema = z.object({
+  doctorId: z.string().min(1),
+  verified: z.boolean(),
+})
+
+export async function setDoctorVerifiedAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.PROVIDER_REVIEW)
+
+    const parsed = setDoctorVerifiedSchema.safeParse(input)
+    if (!parsed.success) throw validation("بيانات غير صحيحة")
+    const { doctorId, verified } = parsed.data
+
+    const existing = (
+      await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.id, doctorId)).limit(1)
+    )[0]
+    if (!existing) throw new AppError("NOT_FOUND")
+
+    await db
+      .update(doctorProfile)
+      .set({
+        verified,
+        ...(verified ? {} : { published: false }),
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(doctorProfile.id, doctorId))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "doctor.verified.update",
+      actorUserId: user.id,
+      entityType: "doctor_profile",
+      entityId: doctorId,
+      metadata: { verified },
+      ...meta,
+    })
+
+    revalidatePath("/admin/doctors")
+    revalidatePath("/doctors")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+const upsertDoctorLicenseSchema = z.object({
+  doctorId: z.string().min(1),
+  licenseNumber: z.string().trim().min(3, "رقم الترخيص مطلوب"),
+  issuingAuthority: z.string().trim().min(2, "جهة إصدار الترخيص مطلوبة"),
+  expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاريخ الانتهاء غير صحيح (YYYY-MM-DD)"),
+  issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاريخ الإصدار غير صحيح").optional().or(z.literal("").transform(() => undefined)),
+  status: z.enum(["VALID", "PENDING", "EXPIRED", "REVOKED"]).default("VALID"),
+})
+
+export async function upsertDoctorLicenseAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.PROVIDER_REVIEW)
+
+    const parsed = upsertDoctorLicenseSchema.safeParse(input)
+    if (!parsed.success) throw validation(parsed.error.issues[0]?.message ?? "بيانات الترخيص غير صحيحة")
+    const data = parsed.data
+
+    const doc = (
+      await db.select({ id: doctorProfile.id }).from(doctorProfile).where(eq(doctorProfile.id, data.doctorId)).limit(1)
+    )[0]
+    if (!doc) throw new AppError("NOT_FOUND")
+
+    const existingLicense = (
+      await db.select({ id: doctorLicense.id }).from(doctorLicense).where(eq(doctorLicense.doctorId, data.doctorId)).limit(1)
+    )[0]
+
+    const encNumber = encryptString(data.licenseNumber)
+    const l4 = last4(data.licenseNumber)
+    const today = new Date().toISOString().slice(0, 10)
+    const isValid = data.status === "VALID" && data.expiryDate >= today
+
+    await db.transaction(async (tx) => {
+      if (existingLicense) {
+        await tx
+          .update(doctorLicense)
+          .set({
+            numberEncrypted: encNumber,
+            numberLast4: l4,
+            issuingAuthority: data.issuingAuthority,
+            issueDate: data.issueDate ?? null,
+            expiryDate: data.expiryDate,
+            status: data.status,
+            lastVerifiedAt: data.status === "VALID" ? new Date() : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(doctorLicense.id, existingLicense.id))
+      } else {
+        await tx.insert(doctorLicense).values({
+          doctorId: data.doctorId,
+          numberEncrypted: encNumber,
+          numberLast4: l4,
+          issuingAuthority: data.issuingAuthority,
+          issueDate: data.issueDate ?? null,
+          expiryDate: data.expiryDate,
+          status: data.status,
+          lastVerifiedAt: data.status === "VALID" ? new Date() : null,
+        })
+      }
+
+      if (isValid) {
+        await tx
+          .update(doctorProfile)
+          .set({ verified: true, updatedBy: user.id, updatedAt: new Date() })
+          .where(eq(doctorProfile.id, data.doctorId))
+      }
+    })
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "doctor.license.update",
+      actorUserId: user.id,
+      entityType: "doctor_profile",
+      entityId: data.doctorId,
+      metadata: { status: data.status, expiryDate: data.expiryDate, issuingAuthority: data.issuingAuthority },
       ...meta,
     })
 

@@ -411,6 +411,12 @@ async function applyPaymentSucceeded(
             )
           }
         }
+        if (confirmedCaseId && !pay.caseId) {
+          await tx
+            .update(payment)
+            .set({ caseId: confirmedCaseId })
+            .where(eq(payment.id, paymentId))
+        }
         post.push({
           userId: pay.payerUserId,
           type: "appointment.confirmed",

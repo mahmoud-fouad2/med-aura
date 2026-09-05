@@ -213,7 +213,7 @@ export async function bookConsultation(input: {
             currency,
             payerUserId: user.id,
             appointmentId: aId,
-            caseId: input.caseId ?? null,
+            caseId: resolvedCaseId,
             provider: "stripe",
           })
           .returning({ id: payment.id })

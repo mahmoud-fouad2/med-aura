@@ -144,6 +144,54 @@ export async function setCenterStatusAction(input: unknown): Promise<ActionResul
   }
 }
 
+const setCenterVerifiedSchema = z.object({
+  centerId: z.string().min(1),
+  verified: z.boolean(),
+})
+
+export async function setCenterVerifiedAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.PROVIDER_REVIEW)
+
+    const parsed = setCenterVerifiedSchema.safeParse(input)
+    if (!parsed.success) throw validation("بيانات غير صحيحة")
+    const { centerId, verified } = parsed.data
+
+    const existing = (
+      await db.select({ id: center.id, status: center.status }).from(center).where(eq(center.id, centerId)).limit(1)
+    )[0]
+    if (!existing) throw new AppError("NOT_FOUND")
+
+    await db
+      .update(center)
+      .set({
+        verified,
+        ...(verified ? {} : { published: false }),
+        updatedBy: user.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(center.id, centerId))
+
+    const meta = await requestMeta()
+    await writeAudit({
+      action: "center.verified.update",
+      actorUserId: user.id,
+      entityType: "center",
+      entityId: centerId,
+      metadata: { verified },
+      ...meta,
+    })
+
+    revalidatePath("/admin/centers")
+    revalidatePath("/centers")
+    return { ok: true }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
 const setPublishedSchema = z.object({ centerId: z.string().min(1), published: z.boolean() })
 
 export async function setCenterPublishedAction(input: unknown): Promise<ActionResult> {

@@ -30,6 +30,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Field } from "@/components/ui/field"
 import { FormSection } from "@/components/ui/form-section"
@@ -39,7 +48,9 @@ import { TimezoneCombobox } from "@/components/admin/timezone-combobox"
 import {
   updateDoctorAction,
   setDoctorStatusAction,
+  setDoctorVerifiedAction,
   setDoctorPublishedAction,
+  upsertDoctorLicenseAction,
   toggleDoctorProcedureAction,
   getDoctorForEditAction,
   getDoctorProceduresAction,
@@ -115,6 +126,7 @@ function DoctorDetailDrawer({ doctor, centers }: { doctor: AdminDoctorRow; cente
   const router = useRouter()
   const [statusPending, startStatus] = useTransition()
   const [publishPending, startPublish] = useTransition()
+  const [verifyPending, startVerify] = useTransition()
 
   function onSetStatus(status: "approved" | "suspended") {
     startStatus(async () => {
@@ -133,6 +145,18 @@ function DoctorDetailDrawer({ doctor, centers }: { doctor: AdminDoctorRow; cente
       const res = await setDoctorPublishedAction({ doctorId: doctor.id, published: !doctor.published })
       if (res.ok) {
         toast.success(doctor.published ? "تم إخفاء الطبيب." : "تم إظهار الطبيب.")
+        router.refresh()
+      } else {
+        toast.error(res.error)
+      }
+    })
+  }
+
+  function onToggleVerified() {
+    startVerify(async () => {
+      const res = await setDoctorVerifiedAction({ doctorId: doctor.id, verified: !doctor.verified })
+      if (res.ok) {
+        toast.success(doctor.verified ? "تم إلغاء توثيق الطبيب." : "تم توثيق الطبيب بنجاح.")
         router.refresh()
       } else {
         toast.error(res.error)
@@ -173,6 +197,30 @@ function DoctorDetailDrawer({ doctor, centers }: { doctor: AdminDoctorRow; cente
               <Row label="الموقع" value={`${doctor.city ? `${doctor.city}، ` : ""}${countryNameAr(doctor.country)}`} />
               <Row label="سنوات الخبرة" value={`${doctor.yearsExperience.toLocaleString("ar-SA-u-nu-latn")} سنة`} />
               <Row label="تاريخ الانضمام" value={dfMedium(doctor.createdAt)} />
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">التحقق والتوثيق</p>
+                {doctor.verified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+                    <BadgeCheck className="size-3" /> موثَّق
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    غير موثَّق
+                  </span>
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant={doctor.verified ? "ghost" : "outline"}
+                loading={verifyPending}
+                onClick={onToggleVerified}
+              >
+                <BadgeCheck className="size-4" />
+                {doctor.verified ? "إلغاء توثيق الطبيب" : "توثيق الطبيب الآن"}
+              </Button>
             </div>
 
             <div className="space-y-2 rounded-lg border border-border/60 p-3">
@@ -257,20 +305,146 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
+function DoctorLicenseDialog({
+  doctorId,
+  license,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  doctorId: string
+  license: DoctorLicenseInfo | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSaved: () => void
+}) {
+  type LicenseStatus = "VALID" | "PENDING" | "EXPIRED" | "REVOKED"
+  const resolveStatus = (s?: string): LicenseStatus =>
+    s === "PENDING" || s === "EXPIRED" || s === "REVOKED" ? s : "VALID"
+
+  const [licenseNumber, setLicenseNumber] = useState("")
+  const [issuingAuthority, setIssuingAuthority] = useState(license?.issuingAuthority ?? "الهيئة السعودية للتخصصات الصحية")
+  const [expiryDate, setExpiryDate] = useState(license?.expiryDate ?? "")
+  const [status, setStatus] = useState<LicenseStatus>(resolveStatus(license?.status))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setLicenseNumber("")
+      setIssuingAuthority(license?.issuingAuthority ?? "الهيئة السعودية للتخصصات الصحية")
+      setExpiryDate(license?.expiryDate ?? "")
+      setStatus(resolveStatus(license?.status))
+      setError(null)
+    }
+  }, [open, license])
+
+  async function onSave(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setBusy(true)
+    const res = await upsertDoctorLicenseAction({
+      doctorId,
+      licenseNumber,
+      issuingAuthority,
+      expiryDate,
+      status,
+    })
+    setBusy(false)
+    if (res.ok) {
+      toast.success("تم تحديث بيانات الترخيص واعتماده بنجاح.")
+      onSaved()
+      onOpenChange(false)
+    } else {
+      setError(res.error)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>إدارة الترخيص الطبي</DialogTitle>
+          <DialogDescription>
+            أدخل بيانات الترخيص الطبي المعتمد للطبيب. يتم تشفير رقم الترخيص بالكامل عند التخزين.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSave}>
+          <DialogBody className="space-y-3">
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <Field label="رقم الترخيص الطبي">
+              <Input
+                required
+                dir="ltr"
+                placeholder="مثال: SCFHS-12345678"
+                value={licenseNumber}
+                onChange={(e) => setLicenseNumber(e.target.value)}
+              />
+            </Field>
+            <Field label="جهة إصدار الترخيص">
+              <Input
+                required
+                value={issuingAuthority}
+                onChange={(e) => setIssuingAuthority(e.target.value)}
+              />
+            </Field>
+            <Field label="تاريخ الانتهاء">
+              <Input
+                required
+                type="date"
+                dir="ltr"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
+            </Field>
+            <Field label="حالة الترخيص">
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-primary"
+                value={status}
+                onChange={(e) => setStatus(resolveStatus(e.target.value))}
+              >
+                <option value="VALID">ساري وصالح (VALID)</option>
+                <option value="PENDING">قيد المراجعة (PENDING)</option>
+                <option value="EXPIRED">منتهي الصلاحية (EXPIRED)</option>
+                <option value="REVOKED">مسحوب / ملغى (REVOKED)</option>
+              </select>
+            </Field>
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              إلغاء
+            </Button>
+            <Button type="submit" loading={busy}>
+              حفظ واعتماد الترخيص
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 /** License + availability — both read-only here by design; the doctor manages
  *  their own availability at /dashboard/doctor/availability (this stays a
  *  support/diagnostic view for admins, not a second place to edit it). */
 function DoctorOverviewExtras({ doctorId }: { doctorId: string }) {
+  const router = useRouter()
   const [data, setData] = useState<{ license: DoctorLicenseInfo | null; availability: AvailabilityRuleRow[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [licenseDialogOpen, setLicenseDialogOpen] = useState(false)
 
-  useEffect(() => {
-    setData(null)
-    setError(null)
+  const reload = () => {
     getDoctorOverviewExtrasAction(doctorId).then((res) => {
       if (res.status === "error") setError(res.message)
       else setData({ license: res.license, availability: res.availability })
     })
+    router.refresh()
+  }
+
+  useEffect(() => {
+    setData(null)
+    setError(null)
+    reload()
   }, [doctorId])
 
   if (error) return <p className="text-sm text-destructive">{error}</p>
@@ -284,10 +458,20 @@ function DoctorOverviewExtras({ doctorId }: { doctorId: string }) {
 
   return (
     <>
-      <div className="space-y-1.5 rounded-lg border border-border/60 p-3 text-sm">
-        <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <BadgeCheck className="size-3.5" /> الترخيص
-        </p>
+      <div className="space-y-2 rounded-lg border border-border/60 p-3 text-sm">
+        <div className="flex items-center justify-between">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <BadgeCheck className="size-3.5" /> الترخيص
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={() => setLicenseDialogOpen(true)}
+          >
+            {data.license ? "تعديل الترخيص" : "إضافة ترخيص"}
+          </Button>
+        </div>
         {data.license ? (
           <>
             <Row label="الحالة" value={licenseStatusAr(data.license.status)} />
@@ -299,6 +483,14 @@ function DoctorOverviewExtras({ doctorId }: { doctorId: string }) {
           <p className="text-xs text-muted-foreground">لا يوجد ترخيص مسجَّل.</p>
         )}
       </div>
+
+      <DoctorLicenseDialog
+        doctorId={doctorId}
+        license={data.license}
+        open={licenseDialogOpen}
+        onOpenChange={setLicenseDialogOpen}
+        onSaved={reload}
+      />
 
       <div className="space-y-1.5 rounded-lg border border-border/60 p-3 text-sm">
         <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">

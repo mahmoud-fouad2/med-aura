@@ -1,5 +1,6 @@
 import { z } from "zod"
 import {
+  cancelAppointment,
   markAppointmentNoShow,
   rescheduleMissedAppointment,
 } from "@/lib/actions/appointments"
@@ -9,6 +10,10 @@ export const dynamic = "force-dynamic"
 
 const BodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("mark_no_show") }),
+  z.object({
+    action: z.literal("cancel"),
+    reason: z.string().trim().max(500).optional(),
+  }),
   z.object({
     action: z.literal("reschedule_after_no_show"),
     startsAt: z.string().datetime(),
@@ -28,10 +33,12 @@ export async function PATCH(
   const result =
     parsed.data.action === "mark_no_show"
       ? await markAppointmentNoShow(id)
-      : await rescheduleMissedAppointment({
-          appointmentId: id,
-          startsAt: parsed.data.startsAt,
-        })
+      : parsed.data.action === "cancel"
+        ? await cancelAppointment({ appointmentId: id, reason: parsed.data.reason })
+        : await rescheduleMissedAppointment({
+            appointmentId: id,
+            startsAt: parsed.data.startsAt,
+          })
   if (!result.ok) {
     const status =
       result.code === "FORBIDDEN"
