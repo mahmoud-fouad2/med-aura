@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { CalendarPlus, Sparkles, ChevronLeft } from "lucide-react"
+import { CalendarPlus, Sparkles, ChevronLeft, CheckCircle2, Info } from "lucide-react"
 import { getCurrentUser } from "@/lib/session"
 import { getCaseDetailForUser } from "@/lib/data/cases"
 import {
@@ -45,10 +45,18 @@ export const dynamic = "force-dynamic"
 
 export default async function CaseDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{
+    deposit?: string
+    deposit_canceled?: string
+    paid?: string
+    canceled?: string
+  }>
 }) {
   const { id } = await params
+  const { deposit, deposit_canceled, paid, canceled } = (await searchParams) ?? {}
   const user = (await getCurrentUser())!
   const c = await getCaseDetailForUser(user.id, id)
   if (!c) notFound()
@@ -151,6 +159,51 @@ export default async function CaseDetailPage({
         </span>
       </nav>
 
+      {deposit && (
+        <div className="flex items-start gap-3 rounded-xl border border-success/30 bg-success/8 p-4 text-sm">
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
+          <div>
+            <p className="font-medium text-foreground">تم استلام دفعة العربون بنجاح</p>
+            <p className="mt-0.5 text-muted-foreground">
+              سيتم تأكيد حجز الإجراء الطبي وتحديث الحالة تلقائيًا فور وصول تأكيد بوابة الدفع.
+            </p>
+          </div>
+        </div>
+      )}
+      {deposit_canceled && (
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <Info className="mt-0.5 size-5 shrink-0" />
+          <div>
+            <p className="font-medium text-foreground">تم إلغاء عملية دفع العربون</p>
+            <p className="mt-0.5">
+              لم يتم خصم أي مبلغ. يمكنك إعادة محاولة دفع العربون في أي وقت من بطاقة عرض السعر أدناه.
+            </p>
+          </div>
+        </div>
+      )}
+      {paid && (
+        <div className="flex items-start gap-3 rounded-xl border border-success/30 bg-success/8 p-4 text-sm">
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
+          <div>
+            <p className="font-medium text-foreground">تم سداد الرصيد المتبقي بنجاح</p>
+            <p className="mt-0.5 text-muted-foreground">
+              تم تحديث الفاتورة والحالة. شكرًا لثقتك بـ Med Aura.
+            </p>
+          </div>
+        </div>
+      )}
+      {canceled && (
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <Info className="mt-0.5 size-5 shrink-0" />
+          <div>
+            <p className="font-medium text-foreground">تم إلغاء عملية الدفع</p>
+            <p className="mt-0.5">
+              لم يتم خصم أي مبلغ. يمكنك سداد الرصيد في أي وقت من تبويب المالية.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Editorial header card */}
       <div className="relative isolate overflow-hidden rounded-2xl border border-border/70 bg-card p-6 shadow-[0_1px_2px_rgba(20,20,60,0.04),0_4px_16px_-8px_rgba(20,20,60,0.08)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
@@ -247,7 +300,13 @@ export default async function CaseDetailPage({
 
           {showPatientCare && (
             <Card className="p-6">
-              <PatientCarePanel plan={plan} quote={quote} readOnly={!c.isOwner} />
+              <PatientCarePanel
+                plan={plan}
+                quote={quote}
+                caseId={c.id}
+                caseStatus={c.status}
+                readOnly={!c.isOwner}
+              />
             </Card>
           )}
 

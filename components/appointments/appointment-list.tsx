@@ -22,6 +22,7 @@ import { isVideoConfigured } from "@/lib/env"
 import { videoJoinWindow } from "@/lib/video"
 
 import { AddToCalendarDropdown } from "@/components/calendar/add-to-calendar-dropdown"
+import { CancelAppointmentButton } from "@/components/appointments/cancel-appointment-button"
 
 const typeIcon: Record<string, LucideIcon> = {
   VIDEO_CONSULTATION: Video,
@@ -31,7 +32,7 @@ const typeIcon: Record<string, LucideIcon> = {
   FOLLOW_UP: Stethoscope,
 }
 
-const JOINABLE = new Set(["CONFIRMED", "CHECKED_IN", "IN_PROGRESS"])
+const JOINABLE = new Set(["CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "RESCHEDULED"])
 
 /**
  * The consultation entry shows only when it can actually lead somewhere:
@@ -56,7 +57,12 @@ function statusTone(status: string): {
 } {
   if (status === "COMPLETED")
     return { bg: "bg-success/10", text: "text-success" }
-  if (status === "CONFIRMED" || status === "CHECKED_IN" || status === "IN_PROGRESS")
+  if (
+    status === "CONFIRMED" ||
+    status === "CHECKED_IN" ||
+    status === "IN_PROGRESS" ||
+    status === "RESCHEDULED"
+  )
     return { bg: "bg-primary/10", text: "text-primary" }
   if (status.startsWith("CANCELLED") || status === "NO_SHOW")
     return { bg: "bg-destructive/10", text: "text-destructive" }
@@ -202,20 +208,34 @@ export function AppointmentList({
                       {entry === "open" ? "دخول الاستشارة" : "استشارة عن بُعد"}
                     </Link>
                   )}
-                  {!isPast && (a.status === "CONFIRMED" || a.status === "CHECKED_IN" || a.status === "PENDING_PAYMENT") && (
-                    <div className="mt-1">
-                      <AddToCalendarDropdown
-                        event={{
-                          title: `${appointmentTypeAr(a.type)} مع ${a.counterpartName}`,
-                          description: `موعد ${appointmentTypeAr(a.type)} عبر منصة Med Aura.\nالمرجع: ${a.reference}`,
-                          location: a.type === "VIDEO_CONSULTATION" ? "عيادة Med Aura الافتراضية" : "المركز الطبي المعتمد",
-                          startTime: new Date(a.startsAt),
-                          endTime: new Date(a.endsAt),
-                          url: a.type === "VIDEO_CONSULTATION" ? `https://medauraworld.com/consultation/${a.id}/video` : undefined,
-                        }}
-                      />
-                    </div>
-                  )}
+                  {!isPast &&
+                    (a.status === "CONFIRMED" ||
+                      a.status === "CHECKED_IN" ||
+                      a.status === "PENDING_PAYMENT" ||
+                      a.status === "RESCHEDULED") && (
+                      <div className="mt-1 flex flex-wrap items-center justify-end gap-1.5">
+                        <AddToCalendarDropdown
+                          event={{
+                            title: `${appointmentTypeAr(a.type)} مع ${a.counterpartName}`,
+                            description: `موعد ${appointmentTypeAr(a.type)} عبر منصة Med Aura.\nالمرجع: ${a.reference}`,
+                            location:
+                              a.type === "VIDEO_CONSULTATION"
+                                ? "عيادة Med Aura الافتراضية"
+                                : "المركز الطبي المعتمد",
+                            startTime: new Date(a.startsAt),
+                            endTime: new Date(a.endsAt),
+                            url:
+                              a.type === "VIDEO_CONSULTATION"
+                                ? `https://medauraworld.com/consultation/${a.id}/video`
+                                : undefined,
+                          }}
+                        />
+                        <CancelAppointmentButton
+                          appointmentId={a.id}
+                          reference={a.reference}
+                        />
+                      </div>
+                    )}
                 </div>
               </div>
             </Card>

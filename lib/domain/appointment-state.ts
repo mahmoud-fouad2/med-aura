@@ -14,3 +14,21 @@ export function canMarkAppointmentNoShow(input: {
 export function canRescheduleMissedAppointment(status: string): boolean {
   return status === "NO_SHOW"
 }
+
+const CANCELLABLE_STATUSES = new Set([
+  "PENDING_PAYMENT",
+  "PENDING_PROVIDER_CONFIRMATION",
+  "CONFIRMED",
+  "RESCHEDULED",
+])
+
+export function canCancelAppointment(input: {
+  status: string
+  startsAt: Date
+  now?: Date
+}): boolean {
+  return (
+    CANCELLABLE_STATUSES.has(input.status) &&
+    input.startsAt.getTime() > (input.now ?? new Date()).getTime()
+  )
+}

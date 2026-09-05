@@ -65,7 +65,8 @@ export async function completeConsultation(
     )[0]
     if (!appt) throw new AppError("NOT_FOUND")
     await assertCaseDoctor(user.id, appt.doctorId)
-    if (appt.status !== "CONFIRMED")
+    const completableStatuses = ["CONFIRMED", "RESCHEDULED", "CHECKED_IN", "IN_PROGRESS"]
+    if (!completableStatuses.includes(appt.status))
       throw conflict("لا يمكن إكمال استشارة غير مؤكدة.")
 
     let activeCaseId = appt.caseId

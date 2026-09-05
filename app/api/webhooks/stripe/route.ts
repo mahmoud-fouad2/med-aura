@@ -112,6 +112,8 @@ export async function POST(req: Request) {
       await applyPaymentSucceeded(parsed.paymentId, parsed.providerIntentId)
     } else if (parsed.kind === "payment_failed" && parsed.paymentId) {
       await applyPaymentFailed(parsed.paymentId, parsed.reason)
+    } else if (parsed.kind === "session_expired" && parsed.paymentId) {
+      await applySessionExpired(parsed.paymentId)
     } else if (parsed.kind === "dispute_opened") {
       await applyDisputeOpened(parsed.providerIntentId, parsed.reason, parsed.amount, parsed.currency)
     } else if (parsed.kind === "dispute_closed") {
@@ -617,6 +619,39 @@ async function applyPaymentFailed(
       },
       tx,
     )
+  })
+}
+
+async function applySessionExpired(paymentId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const pay = (
+      await tx
+        .select({ status: payment.status })
+        .from(payment)
+        .where(eq(payment.id, paymentId))
+        .limit(1)
+    )[0]
+    if (!pay) return
+
+    if (["PAID", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"].includes(pay.status)) {
+      return
+    }
+
+    if (["CREATED", "PENDING"].includes(pay.status)) {
+      await tx
+        .update(payment)
+        .set({ status: "CANCELLED", failureReason: "Checkout session expired" })
+        .where(eq(payment.id, paymentId))
+      await writeAudit(
+        {
+          action: "payment.session_expired",
+          entityType: "payment",
+          entityId: paymentId,
+          metadata: { previousStatus: pay.status },
+        },
+        tx,
+      )
+    }
   })
 }
 

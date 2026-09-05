@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowLeft, BadgeCheck, Quote, Star } from "lucide-react"
-import { Stagger, StaggerItem } from "@/components/motion"
+import { TestimonialsSlider } from "@/components/landing/testimonials-slider"
 import { PersonAvatar } from "@/components/ui/person-avatar"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { query } from "@/lib/db/query"
@@ -81,7 +81,7 @@ function ReviewCard({ review, locale }: { review: FeaturedReview; locale: Locale
 }
 
 export async function FeaturedReviews() {
-  const [res, { locale }] = await Promise.all([query(() => getFeaturedReviewSummary(3)), getI18n()])
+  const [res, { locale }] = await Promise.all([query(() => getFeaturedReviewSummary(6)), getI18n()])
 
   if (res.status !== "ok" || res.data.reviews.length === 0) return null
 
@@ -100,10 +100,10 @@ export async function FeaturedReviews() {
           <SectionHeading
             align="start"
             eyebrow={isAr ? "آراء وتجارب المراجعين" : "Verified experiences"}
-            title={isAr ? "قصص نجاح وتجارب تجميلية ملهمة" : "Real experiences. Greater confidence."}
+            title={isAr ? "تجارب تساعدك على الاختيار" : "Real experiences. Greater confidence."}
             subtitle={
               isAr
-                ? "تجارب حقيقية وتقييمات صادقة من مراجعين أتمّوا استشاراتهم ورحلتهم التجميلية مع نخبة أطباء Med Aura."
+                ? "تقييمات من مرضى أتمّوا استشاراتهم عبر Med Aura."
                 : "Reviews from patients who completed consultations through Med Aura."
             }
           />
@@ -121,13 +121,13 @@ export async function FeaturedReviews() {
           </div>
         </div>
 
-        <Stagger className="mt-9 grid snap-x snap-mandatory auto-cols-[88%] grid-flow-col gap-4 overflow-x-auto pb-3 sm:auto-cols-[48%] lg:grid-flow-row lg:grid-cols-3 lg:overflow-visible lg:pb-0">
+        <TestimonialsSlider locale={locale}>
           {reviews.map((review) => (
-            <StaggerItem key={review.id} className="h-full">
+            <div key={review.id} className="h-full min-w-0">
               <ReviewCard review={review} locale={locale} />
-            </StaggerItem>
+            </div>
           ))}
-        </Stagger>
+        </TestimonialsSlider>
 
         <div className="mt-5 flex justify-end">
           <Link

@@ -85,7 +85,7 @@ describe("video access — appointment shape", () => {
   })
 
   it("rejects unconfirmed appointments", () => {
-    for (const status of ["PENDING_PAYMENT", "PENDING_PROVIDER_CONFIRMATION", "RESCHEDULED"]) {
+    for (const status of ["PENDING_PAYMENT", "PENDING_PROVIDER_CONFIRMATION"]) {
       const d = decide({ appointment: { status } })
       expect(d.allowed).toBe(false)
       if (!d.allowed) expect(d.reason).toBe("not_confirmed")
@@ -106,8 +106,8 @@ describe("video access — appointment shape", () => {
     if (!d.allowed) expect(d.reason).toBe("expired")
   })
 
-  it("allows checked-in and in-progress appointments", () => {
-    for (const status of ["CHECKED_IN", "IN_PROGRESS"]) {
+  it("allows checked-in, in-progress, and rescheduled appointments", () => {
+    for (const status of ["CHECKED_IN", "IN_PROGRESS", "RESCHEDULED"]) {
       expect(decide({ appointment: { status } }).allowed).toBe(true)
     }
   })

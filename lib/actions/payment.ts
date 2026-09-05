@@ -12,6 +12,7 @@ import {
   appointmentStatusHistory,
   doctorProfile,
   refundRequest,
+  quote,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, hasRole, PERMISSIONS, ROLES } from "@/lib/rbac"
@@ -26,6 +27,122 @@ import type { ActionResult } from "@/lib/actions/provider"
 
 function ref(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase()}`
+}
+
+export type DepositPaymentResult = { paymentConfigured: boolean; checkoutUrl?: string; amount: string }
+
+/**
+ * Patient pays or retries paying the deposit for an accepted quote on their case.
+ * Handles previous cancelled/stale checkout attempts gracefully.
+ */
+export async function createDepositPayment(
+  caseId: string,
+  options?: { platform?: "web" | "mobile" },
+): Promise<ActionResult<DepositPaymentResult>> {
+  try {
+    const user = await requireUser()
+    await requirePermission(user.id, PERMISSIONS.PAYMENT_CREATE)
+
+    const c = (
+      await db
+        .select({ id: aestheticCase.id, patientUserId: aestheticCase.patientUserId, status: aestheticCase.status })
+        .from(aestheticCase)
+        .where(eq(aestheticCase.id, caseId))
+        .limit(1)
+    )[0]
+    if (!c) throw new AppError("NOT_FOUND")
+    if (c.patientUserId !== user.id) throw forbidden()
+
+    if (c.status !== "QUOTE_ACCEPTED") {
+      throw conflict("لا يمكن دفع العربون في هذه المرحلة من الحالة.")
+    }
+
+    const acceptedQuote = (
+      await db
+        .select()
+        .from(quote)
+        .where(and(eq(quote.caseId, caseId), eq(quote.status, "ACCEPTED")))
+        .orderBy(desc(quote.createdAt))
+        .limit(1)
+    )[0]
+    if (!acceptedQuote) throw conflict("لا يوجد عرض سعر مقبول لهذه الحالة.")
+
+    const depositAmount = Number(acceptedQuote.depositRequired)
+    if (depositAmount <= 0) throw conflict("لا يوجد عربون مطلوب لهذا العرض.")
+
+    // Cancel any previous unfulfilled deposit attempts so a fresh checkout session can proceed
+    const existingAttempts = await db
+      .select({ id: payment.id, status: payment.status })
+      .from(payment)
+      .where(and(eq(payment.caseId, caseId), eq(payment.purpose, "DEPOSIT")))
+
+    for (const att of existingAttempts) {
+      if (att.status === "PAID") throw conflict("تم دفع العربون بالفعل.")
+      if (["CREATED", "PENDING"].includes(att.status)) {
+        await db
+          .update(payment)
+          .set({ status: "CANCELLED", failureReason: "Superseded by new deposit checkout attempt" })
+          .where(eq(payment.id, att.id))
+      }
+    }
+
+    const meta = await requestMeta()
+    const amountStr = depositAmount.toFixed(2)
+
+    const paymentId = await db.transaction(async (tx) => {
+      const pay = await tx
+        .insert(payment)
+        .values({
+          reference: ref("PAY"),
+          purpose: "DEPOSIT",
+          status: "CREATED",
+          amount: amountStr,
+          currency: acceptedQuote.currency,
+          payerUserId: user.id,
+          caseId,
+          provider: "stripe",
+        })
+        .returning({ id: payment.id })
+      await writeAudit(
+        {
+          action: "quote.deposit.create",
+          actorUserId: user.id,
+          entityType: "quote",
+          entityId: acceptedQuote.id,
+          metadata: { amount: amountStr, caseId },
+          ...meta,
+        },
+        tx,
+      )
+      return pay[0].id
+    })
+
+    if (!isStripeConfigured()) {
+      return { ok: true, data: { paymentConfigured: false, amount: amountStr } }
+    }
+
+    const isMobile = options?.platform === "mobile"
+    const checkout = await createCheckoutSession({
+      paymentId,
+      amount: depositAmount,
+      currency: acceptedQuote.currency,
+      description: `عربون — عرض ${acceptedQuote.quoteNumber}`,
+      customerEmail: user.email,
+      successUrl: isMobile
+        ? `${appUrl()}/api/payments/return?platform=mobile&status=success&caseId=${caseId}&quoteId=${acceptedQuote.id}`
+        : `${appUrl()}/dashboard/cases/${caseId}?deposit=1`,
+      cancelUrl: isMobile
+        ? `${appUrl()}/api/payments/return?platform=mobile&status=canceled&caseId=${caseId}&quoteId=${acceptedQuote.id}`
+        : `${appUrl()}/dashboard/cases/${caseId}?deposit_canceled=1`,
+    })
+
+    await db.update(payment).set({ status: "PENDING", providerSessionId: checkout.id }).where(eq(payment.id, paymentId))
+
+    return { ok: true, data: { paymentConfigured: true, checkoutUrl: checkout.url, amount: amountStr } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
 }
 
 type FinalPaymentResult = { paymentConfigured: boolean; checkoutUrl?: string; amount: string }
@@ -66,18 +183,23 @@ export async function createFinalPayment(
     if (!["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(inv.status))
       throw conflict("لا يمكن سداد هذه الفاتورة في حالتها الحالية.")
 
-    // one pending final-payment attempt at a time
+    // Cancel any stale/uncompleted attempts so the user is not permanently deadlocked
     const pendingExisting = (
       await db
-        .select({ id: payment.id })
+        .select({ id: payment.id, status: payment.status, createdAt: payment.createdAt })
         .from(payment)
-        .where(eq(payment.caseId, caseId))
+        .where(and(eq(payment.caseId, caseId), eq(payment.purpose, "FINAL_PAYMENT")))
         .orderBy(desc(payment.createdAt))
         .limit(1)
     )[0]
-    if (pendingExisting) {
-      const pRow = (await db.select().from(payment).where(eq(payment.id, pendingExisting.id)).limit(1))[0]
-      if (pRow?.purpose === "FINAL_PAYMENT" && ["CREATED", "PENDING"].includes(pRow.status)) {
+    if (pendingExisting && ["CREATED", "PENDING"].includes(pendingExisting.status)) {
+      const isStale = !isStripeConfigured() || Date.now() - new Date(pendingExisting.createdAt).getTime() > 15 * 60_000
+      if (isStale) {
+        await db
+          .update(payment)
+          .set({ status: "CANCELLED", failureReason: "Stale final payment session superseded" })
+          .where(eq(payment.id, pendingExisting.id))
+      } else {
         throw conflict("توجد محاولة دفع سابقة قيد المعالجة. انتظر قليلًا أو أعد المحاولة لاحقًا.")
       }
     }

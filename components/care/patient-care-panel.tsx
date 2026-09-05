@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { FileText, CheckCircle2, Info } from "lucide-react"
+import { FileText, CheckCircle2, Info, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MobileDataCard } from "@/components/ui/mobile-data-card"
 import { acceptQuote, markQuoteViewed } from "@/lib/actions/quote"
+import { createDepositPayment } from "@/lib/actions/payment"
 import { currencyAr } from "@/lib/status-labels"
 import type { CarePlan, CareQuote } from "@/lib/data/care"
 
@@ -28,17 +29,28 @@ const CAT_LABELS: Record<string, string> = {
 export function PatientCarePanel({
   plan,
   quote,
+  caseId,
+  caseStatus,
   readOnly = false,
 }: {
   plan: CarePlan | null
   quote: CareQuote | null
+  caseId?: string
+  caseStatus?: string
   /** Staff/admin viewing on behalf of oversight, not the patient — no accept/pay actions. */
   readOnly?: boolean
 }) {
   return (
     <div className="space-y-6">
       {plan && plan.status === "PUBLISHED" && <PlanView plan={plan} />}
-      {quote && <QuoteView quote={quote} readOnly={readOnly} />}
+      {quote && (
+        <QuoteView
+          quote={quote}
+          caseId={caseId}
+          caseStatus={caseStatus}
+          readOnly={readOnly}
+        />
+      )}
     </div>
   )
 }
@@ -75,12 +87,27 @@ function PlanView({ plan }: { plan: CarePlan }) {
   )
 }
 
-function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean }) {
+function QuoteView({
+  quote,
+  caseId,
+  caseStatus,
+  readOnly,
+}: {
+  quote: CareQuote
+  caseId?: string
+  caseStatus?: string
+  readOnly: boolean
+}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingNotice, setPendingNotice] = useState(false)
 
   const canAccept = !readOnly && (quote.status === "SENT" || quote.status === "VIEWED")
+  const canPayDeposit =
+    !readOnly &&
+    quote.status === "ACCEPTED" &&
+    caseStatus === "QUOTE_ACCEPTED" &&
+    Boolean(caseId)
 
   useEffect(() => {
     if (!readOnly && quote.status === "SENT") void markQuoteViewed(quote.id)
@@ -97,6 +124,24 @@ function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean })
     }
     if (res.data!.paymentConfigured && res.data!.checkoutUrl) {
       window.location.href = res.data!.checkoutUrl
+      return
+    }
+    setBusy(false)
+    setPendingNotice(true)
+  }
+
+  async function onPayDeposit() {
+    if (!caseId) return
+    setBusy(true)
+    setError(null)
+    const res = await createDepositPayment(caseId)
+    if (!res.ok) {
+      setBusy(false)
+      setError(res.error)
+      return
+    }
+    if (res.data?.paymentConfigured && res.data?.checkoutUrl) {
+      window.location.href = res.data.checkoutUrl
       return
     }
     setBusy(false)
@@ -174,15 +219,31 @@ function QuoteView({ quote, readOnly }: { quote: CareQuote; readOnly: boolean })
       {pendingNotice ? (
         <div className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-sm text-muted-foreground">
           <Info className="mt-0.5 size-4" />
-          تم قبول العرض. سيتم تأكيد العربون تلقائيًا فور إتمام عملية الدفع.
+          تم تسجيل طلب الدفع. سيتم تأكيد العربون وتحديث حالة الحالة فور إتمام العملية.
         </div>
       ) : canAccept ? (
         <Button disabled={busy} onClick={onAccept}>
           <CheckCircle2 className="size-4" />
           {busy ? "جارٍ المتابعة…" : "قبول العرض ودفع العربون"}
         </Button>
+      ) : canPayDeposit ? (
+        <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">العربون المطلوب:</span>
+            <span className="font-bold text-foreground">
+              {money(quote.depositRequired)} {currencyAr(quote.currency)}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            تم قبول عرض السعر. يرجى سداد العربون لتأكيد حجز الإجراء والبدء في الإجراءات الطبية.
+          </p>
+          <Button disabled={busy} onClick={onPayDeposit}>
+            <CreditCard className="size-4" />
+            {busy ? "جارٍ التوجيه للدفع…" : "دفع العربون الآن"}
+          </Button>
+        </div>
       ) : quote.status === "ACCEPTED" ? (
-        <p className="text-sm text-success">تم قبول العرض. تابع خطوات الدفع والاعتماد.</p>
+        <p className="text-sm text-success">تم قبول العرض ودفع العربون بنجاح.</p>
       ) : readOnly && (quote.status === "SENT" || quote.status === "VIEWED") ? (
         <p className="text-sm text-muted-foreground">بانتظار قبول المريض للعرض.</p>
       ) : null}

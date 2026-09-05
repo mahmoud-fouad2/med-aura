@@ -1,12 +1,13 @@
 "use server"
 
-import { eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import {
   appointment,
   appointmentStatusHistory,
   doctorProfile,
+  payment,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { getAvailableSlots } from "@/lib/data/availability"
@@ -15,6 +16,7 @@ import { writeAudit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { AppError, conflict, forbidden, toSafeError } from "@/lib/errors"
 import {
+  canCancelAppointment,
   canMarkAppointmentNoShow,
   canRescheduleMissedAppointment,
 } from "@/lib/domain/appointment-state"
@@ -84,7 +86,7 @@ export async function markAppointmentNoShow(
       type: "appointment.no_show",
       title: "تم تسجيل عدم حضور الموعد",
       body: "يمكنك اختيار موعد بديل من تفاصيل الموعد دون إنشاء دفعة جديدة.",
-      href: `/appointment/${row.id}`,
+      href: "/dashboard/appointments",
     })
     revalidatePath("/admin/consultations")
     revalidatePath("/dashboard/appointments")
@@ -164,8 +166,102 @@ export async function rescheduleMissedAppointment(input: {
       type: "appointment.rescheduled",
       title: "أعاد المريض جدولة الموعد",
       body: `تم اختيار موعد جديد للحجز ${row.reference}.`,
-      href: `/appointment/${row.id}`,
+      href: "/dashboard/appointments",
     })
+    revalidatePath("/admin/consultations")
+    revalidatePath("/dashboard/appointments")
+    return { ok: true, data: { appointmentId: row.id } }
+  } catch (err) {
+    const safe = toSafeError(err)
+    return { ok: false, error: safe.userMessage, code: safe.code }
+  }
+}
+
+export async function cancelAppointment(input: {
+  appointmentId: string
+  reason?: string
+}): Promise<ActionResult<{ appointmentId: string }>> {
+  try {
+    const user = await requireUser()
+    const row = await getAppointmentForTransition(input.appointmentId)
+    if (!row) throw new AppError("NOT_FOUND")
+
+    const isPatient = row.patientUserId === user.id
+    const isDoctor = row.doctorUserId === user.id
+    const canCancelAny = await hasPermission(user.id, PERMISSIONS.APPOINTMENT_CANCEL)
+
+    if (!isPatient && !isDoctor && !canCancelAny) throw forbidden()
+
+    if (!canCancelAppointment({ status: row.status, startsAt: row.startsAt })) {
+      throw conflict("لا يمكن إلغاء هذا الموعد في حالته أو توقيته الحالي.")
+    }
+
+    const toStatus = isPatient ? "CANCELLED_BY_PATIENT" : "CANCELLED_BY_PROVIDER"
+    const reasonText =
+      input.reason?.trim() ||
+      (isPatient ? "إلغاء من قبل المريض" : "إلغاء من قبل الطبيب أو المركز")
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(appointment)
+        .set({ status: toStatus })
+        .where(eq(appointment.id, row.id))
+
+      await tx.insert(appointmentStatusHistory).values({
+        appointmentId: row.id,
+        fromStatus: row.status,
+        toStatus,
+        changedBy: user.id,
+        note: reasonText,
+      })
+
+      // Cancel any unfulfilled payments associated with this appointment
+      await tx
+        .update(payment)
+        .set({
+          status: "CANCELLED",
+          failureReason: `Appointment was cancelled (${toStatus})`,
+        })
+        .where(
+          and(
+            eq(payment.appointmentId, row.id),
+            inArray(payment.status, ["CREATED", "PENDING"]),
+          ),
+        )
+
+      await writeAudit(
+        {
+          action: isPatient
+            ? "appointment.cancel_by_patient"
+            : "appointment.cancel_by_provider",
+          actorUserId: user.id,
+          entityType: "appointment",
+          entityId: row.id,
+          metadata: {
+            reference: row.reference,
+            fromStatus: row.status,
+            toStatus,
+            reason: reasonText,
+          },
+        },
+        tx,
+      )
+    })
+
+    const notifyTargetUserId = isPatient ? row.doctorUserId : row.patientUserId
+    const notifyTitle = isPatient
+      ? "تم إلغاء الموعد من قبل المريض"
+      : "تم إلغاء الموعد من قبل الطبيب"
+    const notifyBody = `تم إلغاء الموعد ${row.reference}. سبب الإلغاء: ${reasonText}`
+
+    await notify({
+      userId: notifyTargetUserId,
+      type: "appointment.cancelled",
+      title: notifyTitle,
+      body: notifyBody,
+      href: "/dashboard/appointments",
+    })
+
     revalidatePath("/admin/consultations")
     revalidatePath("/dashboard/appointments")
     return { ok: true, data: { appointmentId: row.id } }

@@ -35,7 +35,12 @@ export type VideoAccessDecision =
   | { allowed: true; role: VideoRole; joinFrom: Date; joinUntil: Date }
   | { allowed: false; reason: VideoDenyReason; joinFrom?: Date; joinUntil?: Date }
 
-const JOINABLE_STATUSES = new Set(["CONFIRMED", "CHECKED_IN", "IN_PROGRESS"])
+const JOINABLE_STATUSES = new Set([
+  "CONFIRMED",
+  "CHECKED_IN",
+  "IN_PROGRESS",
+  "RESCHEDULED",
+])
 const DEAD_STATUSES = new Set([
   "CANCELLED_BY_PATIENT",
   "CANCELLED_BY_PROVIDER",

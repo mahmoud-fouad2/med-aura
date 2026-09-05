@@ -105,6 +105,13 @@ export type ParsedWebhook =
       outcome: string
       raw: unknown
     }
+  | {
+      kind: "session_expired"
+      eventId: string
+      type: string
+      paymentId: string | null
+      raw: unknown
+    }
   | { kind: "ignored"; eventId: string; type: string; raw: unknown }
 
 function disputeIntentId(d: Stripe.Dispute): string | null {
@@ -140,6 +147,17 @@ export function constructWebhookEvent(
       }
     }
     return { kind: "ignored", eventId: event.id, type: event.type, raw: event }
+  }
+
+  if (event.type === "checkout.session.expired") {
+    const s = event.data.object as Stripe.Checkout.Session
+    return {
+      kind: "session_expired",
+      eventId: event.id,
+      type: event.type,
+      paymentId: s.client_reference_id ?? (s.metadata?.paymentId ?? null),
+      raw: event,
+    }
   }
 
   // Chargebacks. Without these the platform never learns a customer disputed

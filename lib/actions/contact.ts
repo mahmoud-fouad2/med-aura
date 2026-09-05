@@ -6,6 +6,7 @@ import { contactMessage } from "@/lib/db/schema"
 import { verifyRecaptcha } from "@/lib/security/recaptcha"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { toSafeError, validation } from "@/lib/errors"
+import { consumeRateLimit } from "@/lib/rate-limit"
 import type { ActionResult } from "@/lib/actions/provider"
 
 const schema = z.object({
@@ -21,6 +22,18 @@ export async function submitContactMessage(
   input: unknown,
 ): Promise<ActionResult> {
   try {
+    const meta = await requestMeta()
+    const rateLimitKey = `contact:${meta.ip ?? "unknown"}`
+    const rateLimit = await consumeRateLimit(rateLimitKey, {
+      limit: 5,
+      windowMs: 60_000,
+    })
+    if (!rateLimit.ok) {
+      throw validation(
+        `تم إرسال عدد كبير من الرسائل. يرجى الانتظار ${rateLimit.retryAfterSeconds} ثانية قبل المحاولة مجددًا.`,
+      )
+    }
+
     const parsed = schema.safeParse(input)
     if (!parsed.success) {
       throw validation(parsed.error.issues[0]?.message ?? "بيانات غير صحيحة")
@@ -43,7 +56,6 @@ export async function submitContactMessage(
       })
       .returning({ id: contactMessage.id })
 
-    const meta = await requestMeta()
     await writeAudit({
       action: "contact.submit",
       entityType: "contact_message",
