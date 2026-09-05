@@ -288,7 +288,7 @@ describe.skipIf(!HAS_DB)("Medical Document Access & Post-Consent Upload Grants (
 
     const startsAt = "2032-07-15T09:00:00.000Z"
     vi.spyOn(availabilityModule, "getAvailableSlots").mockResolvedValueOnce([
-      { startsAt, endsAt: "2032-07-15T09:30:00.000Z", type: "VIDEO_CONSULTATION" },
+      { startsAt, endsAt: "2032-07-15T09:30:00.000Z", label: "test slot" },
     ])
 
     const bookRes = await bookConsultation({
@@ -298,7 +298,7 @@ describe.skipIf(!HAS_DB)("Medical Document Access & Post-Consent Upload Grants (
       type: "VIDEO_CONSULTATION",
     })
     expect(bookRes.ok).toBe(true)
-    if (bookRes.ok) {
+    if (bookRes.ok && bookRes.data) {
       createdApptIds.push(bookRes.data.appointmentId)
     }
 

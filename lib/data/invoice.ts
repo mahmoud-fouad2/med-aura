@@ -9,7 +9,12 @@ import {
   center,
   aestheticCase,
   procedure as procedureT,
+  refundRequest,
+  creditNote,
 } from "@/lib/db/schema"
+
+const caseDoctorProfile = alias(doctorProfile, "case_doctor_profile")
+const caseCenter = alias(center, "case_center")
 
 /**
  * One payment IS one receipt/invoice — the schema's `invoice` table is an
@@ -39,6 +44,11 @@ export type PaymentReceiptData = {
   doctorName: string | null
   centerName: string | null
   serviceNameEn: string | null
+  serviceNameAr?: string | null
+  caseReference?: string | null
+  refundedAmount?: string | null
+  creditNoteNumber?: string | null
+  refundedAt?: Date | null
 }
 
 export async function getPaymentReceiptData(
@@ -61,17 +71,32 @@ export async function getPaymentReceiptData(
       appointmentReference: appointment.reference,
       appointmentType: appointment.type,
       appointmentStartsAt: appointment.startsAt,
-      doctorName: doctorProfile.name,
-      centerName: center.name,
+      doctorName: sql<string | null>`coalesce(${doctorProfile.name}, ${caseDoctorProfile.name})`,
+      centerName: sql<string | null>`coalesce(${center.name}, ${caseCenter.name})`,
       serviceNameEn: procedureT.nameEn,
+      serviceNameAr: procedureT.nameAr,
+      caseReference: aestheticCase.reference,
+      refundedAmount: refundRequest.amount,
+      creditNoteNumber: creditNote.creditNoteNumber,
+      refundedAt: refundRequest.processedAt,
     })
     .from(payment)
     .innerJoin(userT, eq(payment.payerUserId, userT.id))
     .leftJoin(appointment, eq(payment.appointmentId, appointment.id))
     .leftJoin(doctorProfile, eq(appointment.doctorId, doctorProfile.id))
     .leftJoin(center, eq(appointment.centerId, center.id))
-    .leftJoin(aestheticCase, eq(appointment.caseId, aestheticCase.id))
+    .leftJoin(
+      aestheticCase,
+      sql`${aestheticCase.id} = coalesce(${payment.caseId}, ${appointment.caseId})`,
+    )
     .leftJoin(procedureT, eq(aestheticCase.procedureId, procedureT.id))
+    .leftJoin(caseDoctorProfile, eq(aestheticCase.doctorId, caseDoctorProfile.id))
+    .leftJoin(caseCenter, eq(aestheticCase.centerId, caseCenter.id))
+    .leftJoin(
+      refundRequest,
+      sql`${refundRequest.paymentId} = ${payment.id} and ${refundRequest.status} = 'PROCESSED'`,
+    )
+    .leftJoin(creditNote, eq(refundRequest.creditNoteId, creditNote.id))
     .where(eq(payment.id, paymentId))
     .limit(1)
 
@@ -96,9 +121,6 @@ export type MyPaymentRow = {
   serviceNameEn: string | null
   serviceNameAr: string | null
 }
-
-const caseDoctorProfile = alias(doctorProfile, "case_doctor_profile")
-const caseCenter = alias(center, "case_center")
 
 /**
  * A user's own payment history (patient billing — never exposed to a

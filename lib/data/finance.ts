@@ -5,6 +5,7 @@ import {
   paymentWebhookEvent,
   invoice,
   refundRequest,
+  creditNote,
   aestheticCase,
   procedure as procedureT,
   user as userT,
@@ -131,6 +132,8 @@ export type FinanceRefundRow = {
   caseId: string
   invoiceNumber: string
   currency: string
+  creditNoteNumber: string | null
+  paymentId: string | null
   createdAt: Date
 }
 export async function listRefundRequestsFinance(limit = 60): Promise<FinanceRefundRow[]> {
@@ -145,11 +148,14 @@ export async function listRefundRequestsFinance(limit = 60): Promise<FinanceRefu
       caseId: refundRequest.caseId,
       invoiceNumber: invoice.invoiceNumber,
       currency: invoice.currency,
+      creditNoteNumber: creditNote.creditNoteNumber,
+      paymentId: refundRequest.paymentId,
       createdAt: refundRequest.createdAt,
     })
     .from(refundRequest)
     .innerJoin(userT, eq(refundRequest.requestedByUserId, userT.id))
     .innerJoin(invoice, eq(refundRequest.invoiceId, invoice.id))
+    .leftJoin(creditNote, eq(refundRequest.creditNoteId, creditNote.id))
     .orderBy(desc(refundRequest.createdAt))
     .limit(limit)
 }

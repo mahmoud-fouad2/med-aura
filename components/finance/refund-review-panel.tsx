@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Undo2 } from "lucide-react"
+import { Undo2, Download } from "lucide-react"
 import { reviewRefundRequest, providerConfirmRefund, processRefund } from "@/lib/actions/refund"
 import { currencyAr, refundStatusAr } from "@/lib/status-labels"
 import type { FinanceRefundRow } from "@/lib/data/finance"
@@ -85,6 +85,27 @@ function RefundCard({ refund }: { refund: FinanceRefundRow }) {
           <Button size="sm" disabled={busy} onClick={() => run(() => processRefund(refund.id))}>
             معالجة الاسترجاع
           </Button>
+        </div>
+      )}
+      {refund.status === "PROCESSED" && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+          {refund.creditNoteNumber ? (
+            <span className="font-mono">
+              إشعار دائن: <strong className="text-foreground">{refund.creditNoteNumber}</strong>
+            </span>
+          ) : (
+            <span>تمت معالجة الاسترجاع</span>
+          )}
+          {refund.paymentId ? (
+            <a
+              href={`/api/invoices/payment/${refund.paymentId}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+            >
+              <Download className="size-3.5" /> تنزيل إيصال المعاملة
+            </a>
+          ) : null}
         </div>
       )}
     </Card>

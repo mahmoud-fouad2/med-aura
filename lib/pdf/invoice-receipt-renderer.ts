@@ -208,11 +208,15 @@ export function renderInvoiceReceipt(data: PaymentReceiptData): Promise<Buffer> 
     if (data.centerName) field(doc, "Center", data.centerName, MARGIN + columnWidth + columnGap, 194, columnWidth)
     if (data.appointmentReference) {
       field(doc, "Appointment reference", data.appointmentReference, MARGIN + columnWidth + columnGap, 242, columnWidth)
+    } else if (data.caseReference) {
+      field(doc, "Case reference", data.caseReference, MARGIN + columnWidth + columnGap, 242, columnWidth)
     }
 
     const tableTop = 294
     const serviceLabel =
-      data.serviceNameEn ??
+      (data.serviceNameEn
+        ? data.serviceNameEn + (data.serviceNameAr ? ` / ${data.serviceNameAr}` : "")
+        : null) ??
       (data.appointmentType ? APPOINTMENT_TYPE_LABEL[data.appointmentType] : null) ??
       PURPOSE_LABEL[data.purpose] ??
       data.purpose
@@ -227,26 +231,62 @@ export function renderInvoiceReceipt(data: PaymentReceiptData): Promise<Buffer> 
       align: "right",
     })
 
-    const totalsTop = 426
-    const totalsWidth = 232
+    const isRefunded = Boolean(data.refundedAmount && Number(data.refundedAmount) > 0)
+    const refundAmt = isRefunded ? Number(data.refundedAmount) : 0
+    const netAmount = Math.max(0, Number(data.amount) - refundAmt).toFixed(2)
+
+    const totalsTop = 416
+    const totalsWidth = 248
     const totalsX = PAGE_WIDTH - MARGIN - totalsWidth
     text(doc, "Payment method", totalsX, totalsTop, 112, { size: 9, color: MUTED })
-    text(doc, PROVIDER_LABEL[data.provider] ?? data.provider, totalsX + 112, totalsTop, 120, { size: 9, align: "right" })
-    text(doc, "Payment date", totalsX, totalsTop + 24, 112, { size: 9, color: MUTED })
-    text(doc, formatDate(data.paidAt), totalsX + 112, totalsTop + 24, 120, { size: 9, align: "right" })
-    doc.moveTo(totalsX, totalsTop + 50).lineTo(totalsX + totalsWidth, totalsTop + 50).lineWidth(1).strokeColor(BORDER).stroke()
-    text(doc, "TOTAL", totalsX, totalsTop + 63, 112, { size: 12, bold: true })
-    text(doc, formatMoney(data.amount, data.currency), totalsX + 102, totalsTop + 60, 130, {
-      size: 13,
-      bold: true,
-      color: PRIMARY,
-      align: "right",
-    })
+    text(doc, PROVIDER_LABEL[data.provider] ?? data.provider, totalsX + 112, totalsTop, 136, { size: 9, align: "right" })
+    text(doc, "Payment date", totalsX, totalsTop + 20, 112, { size: 9, color: MUTED })
+    text(doc, formatDate(data.paidAt), totalsX + 112, totalsTop + 20, 136, { size: 9, align: "right" })
 
-    const statusColor = data.status === "PAID" ? "#1E7B34" : "#A15C00"
-    const statusBackground = data.status === "PAID" ? "#E6F4EA" : "#FDF1E4"
-    doc.roundedRect(MARGIN, 522, 92, 24, 12).fill(statusBackground)
-    text(doc, data.status.toUpperCase(), MARGIN, 529, 92, { size: 8, bold: true, color: statusColor, align: "center" })
+    if (isRefunded) {
+      text(doc, "Original gross", totalsX, totalsTop + 40, 112, { size: 9, color: MUTED })
+      text(doc, formatMoney(data.amount, data.currency), totalsX + 112, totalsTop + 40, 136, { size: 9, align: "right" })
+      text(doc, `Refund (${data.creditNoteNumber ?? "Credit Note"})`, totalsX, totalsTop + 58, 140, { size: 8, color: "#B91C1C" })
+      text(doc, `-${formatMoney(data.refundedAmount!, data.currency)}`, totalsX + 112, totalsTop + 58, 136, { size: 8.5, color: "#B91C1C", align: "right" })
+
+      doc.moveTo(totalsX, totalsTop + 78).lineTo(totalsX + totalsWidth, totalsTop + 78).lineWidth(1).strokeColor(BORDER).stroke()
+      text(doc, "NET PAID", totalsX, totalsTop + 88, 112, { size: 12, bold: true })
+      text(doc, formatMoney(netAmount, data.currency), totalsX + 102, totalsTop + 86, 146, {
+        size: 13,
+        bold: true,
+        color: PRIMARY,
+        align: "right",
+      })
+    } else {
+      doc.moveTo(totalsX, totalsTop + 48).lineTo(totalsX + totalsWidth, totalsTop + 48).lineWidth(1).strokeColor(BORDER).stroke()
+      text(doc, "TOTAL", totalsX, totalsTop + 60, 112, { size: 12, bold: true })
+      text(doc, formatMoney(data.amount, data.currency), totalsX + 102, totalsTop + 58, 146, {
+        size: 13,
+        bold: true,
+        color: PRIMARY,
+        align: "right",
+      })
+    }
+
+    const statusColor =
+      data.status === "PAID"
+        ? "#1E7B34"
+        : data.status === "PARTIALLY_REFUNDED"
+          ? "#B45309"
+          : data.status === "REFUNDED"
+            ? "#B91C1C"
+            : "#A15C00"
+    const statusBackground =
+      data.status === "PAID"
+        ? "#E6F4EA"
+        : data.status === "PARTIALLY_REFUNDED"
+          ? "#FEF3C7"
+          : data.status === "REFUNDED"
+            ? "#FEE2E2"
+            : "#FDF1E4"
+    const pillTop = isRefunded ? 550 : 522
+    doc.roundedRect(MARGIN, pillTop, 130, 24, 12).fill(statusBackground)
+    text(doc, data.status.replace(/_/g, " ").toUpperCase(), MARGIN, pillTop + 7, 130, { size: 8, bold: true, color: statusColor, align: "center" })
 
     doc.moveTo(MARGIN, PAGE_HEIGHT - 86).lineTo(PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 86).lineWidth(1).strokeColor(BORDER).stroke()
     text(
@@ -258,6 +298,16 @@ export function renderInvoiceReceipt(data: PaymentReceiptData): Promise<Buffer> 
       { size: 8, color: MUTED },
     )
     text(doc, `Reference: ${data.reference}`, MARGIN, PAGE_HEIGHT - 54, CONTENT_WIDTH, { size: 8, color: MUTED })
+    if (data.creditNoteNumber) {
+      text(
+        doc,
+        `Credit Note: ${data.creditNoteNumber} (issued ${formatDate(data.refundedAt ?? null)})`,
+        MARGIN,
+        PAGE_HEIGHT - 40,
+        CONTENT_WIDTH,
+        { size: 8, color: MUTED },
+      )
+    }
 
     doc.end()
   })

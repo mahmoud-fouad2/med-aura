@@ -388,7 +388,12 @@ export async function getInvoiceForCase(caseId: string): Promise<InvoiceView | n
   const latestPayment = await db
     .select({ id: payment.id })
     .from(payment)
-    .where(and(eq(payment.caseId, caseId), eq(payment.status, "PAID")))
+    .where(
+      and(
+        eq(payment.caseId, caseId),
+        inArray(payment.status, ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"]),
+      ),
+    )
     .orderBy(desc(payment.paidAt))
     .limit(1)
 
