@@ -1,6 +1,6 @@
 # Med Aura — Production Readiness Master Audit
 
-_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 55 suites / 239 passed_
+_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 56 suites / 241 passed_
 
 This document is the persistent source of truth across all sessions. It tracks every identified finding, its severity, current behavior, root cause, impact, proposed fix, test verification, and status.
 
@@ -272,9 +272,44 @@ This document is the persistent source of truth across all sessions. It tracks e
 
 ---
 
+### [P1] Finding 13: Broken Case Deposit & Final Payment Receipts, Post-Refund Download Lockout, and Credit Note Transparency
+- **Area**: Financial Operations, Invoicing & Patient Billing
+- **Feature/Workflow**: Case Payments (Deposit & Final Balance) → PDF Receipt Generation → Refund Processing & Credit Notes
+- **Severity**: P1
+- **Current Behavior**:
+  1. In `lib/data/invoice.ts:getPaymentReceiptData`, the query joined doctor, clinic/center, and procedure only through `appointment` (`leftJoin(appointment, ...)`). For case deposits (`CASE_DEPOSIT`) and final procedure payments (`CASE_FINAL_PAYMENT`), `payment.appointmentId` is null. Consequently, the downloaded receipt showed blank doctor, blank clinic, and generic status codes with no procedure name.
+  2. In `lib/data/care.ts:getInvoiceForCase`, `latestPaymentId` was queried with `eq(payment.status, "PAID")`. Whenever a refund or partial refund occurred, `payment.status` transitioned to `"PARTIALLY_REFUNDED"` or `"REFUNDED"`, which caused `latestPaymentId` to become null and permanently removed the "تنزيل الفاتورة" (Download Invoice) button from the patient's case dashboard.
+  3. In `lib/pdf/invoice-receipt-renderer.ts`, the receipt rendered the original gross amount as total with no disclosure of the refunded amount, net paid amount, refund date, or issued credit note reference (`creditNoteNumber`).
+  4. In `lib/data/finance.ts:listRefundRequestsFinance`, the `creditNote` join was omitted, preventing finance officers from seeing the issued `creditNoteNumber` on the refund review board.
+- **Expected Behavior**:
+  - Deposit and final procedure payment receipts properly resolve doctor name, clinic name, case reference, and Arabic/English procedure name.
+  - After a refund or partial refund, patients can still download their updated receipt.
+  - The receipt PDF renders gross amount, refund deduction, credit note number, and net paid total with clear status badge and footer disclosure.
+  - The finance refund board displays the issued credit note number and a link to download the receipt.
+- **Root Cause**:
+  - `getPaymentReceiptData` assumed all payments originated from appointments and omitted joins to `payment.caseId` and `creditNote`.
+  - `getInvoiceForCase` strictly excluded `PARTIALLY_REFUNDED` and `REFUNDED` statuses from `latestPaymentId`.
+  - PDF receipt generator lacked refund line item calculation and credit note footer.
+- **User Impact**: Patients paying thousands of dollars for cosmetic surgery deposits received empty/incomplete receipts, and were locked out of accessing their receipts after any refund.
+- **Business Impact**: Severe financial disputes, chargebacks, tax non-compliance, and customer distrust.
+- **Security Impact**: None.
+- **Data Integrity Impact**: Incomplete billing records presented to customers and finance auditors.
+- **Performance Impact**: None.
+- **Resolution**:
+  - In `lib/data/invoice.ts:getPaymentReceiptData`, joined `aestheticCase` via `coalesce(payment.caseId, appointment.caseId)`, joined doctor/center from appointment and case via aliases, joined `procedureT` for service name, and joined `refundRequest`/`creditNote` for refund information.
+  - In `lib/data/care.ts:getInvoiceForCase`, updated `latestPayment` filter to `inArray(payment.status, ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"])`.
+  - In `lib/pdf/invoice-receipt-renderer.ts`, rendered case reference, bilingual service name, refund deduction breakdown, net paid amount, and credit note issuance note.
+  - In `lib/data/finance.ts:listRefundRequestsFinance`, joined `creditNote` to expose `creditNoteNumber` and `paymentId`.
+  - In `components/finance/refund-review-panel.tsx`, rendered `creditNoteNumber` and download receipt button on processed refunds.
+  - Created automated test `test/financial-receipt-credit-note.test.ts`.
+- **Files Involved**: `lib/data/invoice.ts`, `lib/pdf/invoice-receipt-renderer.ts`, `lib/data/care.ts`, `lib/data/finance.ts`, `components/finance/refund-review-panel.tsx`, `test/financial-receipt-credit-note.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/financial-receipt-credit-note.test.ts` passed)
+
+---
+
 ## Verification Summary
 - **Typecheck**: `corepack pnpm typecheck` (`tsc --noEmit`) → 0 errors.
-- **Automated Tests**: `corepack pnpm test` → 55 test suites, 239/239 tests passed against connected live database.
+- **Automated Tests**: `corepack pnpm test` → 56 test suites, 241/241 tests passed against connected live database.
 - **Production Build**: `corepack pnpm build` (Next.js 16.2.11 Turbopack) → 0 errors, all static & dynamic routes compiled, standalone bundle prepared.
 
 
