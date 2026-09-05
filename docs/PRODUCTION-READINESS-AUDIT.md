@@ -1,6 +1,6 @@
 # Med Aura — Production Readiness Master Audit
 
-_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 51 suites / 230 passed_
+_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 54 suites / 237 passed_
 
 This document is the persistent source of truth across all sessions. It tracks every identified finding, its severity, current behavior, root cause, impact, proposed fix, test verification, and status.
 
@@ -165,7 +165,86 @@ This document is the persistent source of truth across all sessions. It tracks e
 
 ---
 
+### [P1] Finding 8: Disconnected `payment.caseId` on Direct Consultation Bookings
+- **Area**: Billing & Care Journey
+- **Feature/Workflow**: Direct Doctor Consultation Booking & Case Linking
+- **Severity**: P1
+- **Current Behavior**: In `lib/actions/booking.ts:L216`, `bookConsultation` automatically created or resolved an `aestheticCase` (`resolvedCaseId`), but inserted the `payment` row with `caseId: input.caseId ?? null`, leaving `payment.caseId` permanently null for direct bookings. Furthermore, Stripe webhook consultation confirmation did not backfill `payment.caseId`.
+- **Expected Behavior**: The payment row must immediately link to `resolvedCaseId`. Additionally, Stripe webhook confirmation must backfill `payment.caseId = confirmedCaseId` if missing, ensuring financial reporting and case ledgers remain completely unified.
+- **Root Cause**: Input argument fallback took precedence over the internally resolved/created case ID.
+- **User Impact**: Case history in dashboard/mobile could not correlate consultation fee payments to the generated case.
+- **Business Impact**: Fragmented revenue ledger; impossible to accurately compute procedure/case lifetime value.
+- **Security Impact**: None.
+- **Data Integrity Impact**: Disconnected payment records and broken financial audit trail per case.
+- **Performance Impact**: None.
+- **Resolution**: Fixed `caseId: resolvedCaseId` in `lib/actions/booking.ts:L216`; added fallback backfill in `app/api/webhooks/stripe/route.ts:L414`; created test `test/booking-case-link.test.ts`.
+- **Files Involved**: `lib/actions/booking.ts`, `app/api/webhooks/stripe/route.ts`, `test/booking-case-link.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/booking-case-link.test.ts` passed)
+
+---
+
+### [P2] Finding 9: Mobile API Missing Pre-Appointment Cancellation Endpoint
+- **Area**: Mobile API & Scheduling
+- **Feature/Workflow**: Mobile App Appointment Management
+- **Severity**: P2
+- **Current Behavior**: Mobile endpoint `app/api/mobile/v1/appointments/[id]/route.ts` only supported `{ action: "mark_no_show" }` and `{ action: "reschedule_after_no_show" }`. Patients on mobile had no ability to cancel upcoming appointments ahead of time.
+- **Expected Behavior**: Mobile API supports `{ action: "cancel", reason?: string }` via `cancelAppointment()`.
+- **Root Cause**: Missing route handler union branch and schema case in mobile API.
+- **User Impact**: Mobile patients could not cancel appointments if schedules changed.
+- **Business Impact**: Doctor slot lockup and unnecessary no-shows from mobile patients.
+- **Security Impact**: Enforces ownership check (bystanders receive 403 Forbidden).
+- **Data Integrity Impact**: Appointments remained booked until missed after the fact.
+- **Performance Impact**: None.
+- **Resolution**: Added `{ action: "cancel", reason?: string }` to `BodySchema` in `app/api/mobile/v1/appointments/[id]/route.ts` wired to `cancelAppointment({ appointmentId: id, reason })`. Created test `test/mobile-appointment-cancel.test.ts`.
+- **Files Involved**: `app/api/mobile/v1/appointments/[id]/route.ts`, `test/mobile-appointment-cancel.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/mobile-appointment-cancel.test.ts` passed)
+
+---
+
+### [P1] Finding 10: Missing Admin Doctor License Management & Verification Action
+- **Area**: Compliance, Provider Onboarding & Public Search
+- **Feature/Workflow**: Admin Doctor Verification & License Management
+- **Severity**: P1
+- **Current Behavior**: The `doctorLicense` table and public doctor query `publicDoctorConditions()` strictly required doctors to have a valid, unexpired license (`status == "VALID"` and `expiryDate >= today`) and `verified == true` to appear in public search and be bookable. However, there was no server action or UI interface for admins to create, edit, or verify a doctor's license. As a result, onboarded doctors could never be verified or published from the admin panel.
+- **Expected Behavior**: Admins with `PROVIDER_REVIEW` permission can view, create, and update doctor licenses with AES-256 encrypted license numbers, last-4 digit storage, expiry validation, and status toggles. Valid licenses auto-verify the doctor profile, and admins can toggle verification status directly.
+- **Root Cause**: Missing server actions (`upsertDoctorLicenseAction`, `setDoctorVerifiedAction`) and admin UI dialog.
+- **User Impact**: Patients could not discover or book newly onboarded doctors.
+- **Business Impact**: Partner clinics and doctors could not go live after onboarding, stalling commercial launch.
+- **Security Impact**: License numbers must remain encrypted with AES-256-GCM at rest; audit logs must capture all license modifications.
+- **Data Integrity Impact**: Doctor profiles remained unverified and unpublishable.
+- **Performance Impact**: None.
+- **Resolution**:
+  - Implemented `upsertDoctorLicenseAction` and `setDoctorVerifiedAction` in `lib/actions/doctor.ts` with AES-256 encryption (`encryptString`), RBAC permission checks (`PROVIDER_REVIEW`), audit logging (`doctor.license.update`, `doctor.verified.update`), and cache revalidation.
+  - Added `DoctorLicenseDialog` and verification status toggle in `components/admin/doctor-table.tsx`.
+  - Created test `test/provider-verification.test.ts`.
+- **Files Involved**: `lib/actions/doctor.ts`, `components/admin/doctor-table.tsx`, `test/provider-verification.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/provider-verification.test.ts` passed)
+
+---
+
+### [P1] Finding 11: Center Verification Deadlock Blocking Clinic Publishing
+- **Area**: Provider Operations & Directory
+- **Feature/Workflow**: Admin Center Verification
+- **Severity**: P1
+- **Current Behavior**: Centers required `status == "approved"`, `verified == true`, and `published == true` to be visible to the public (`publicCenterConditions()`). Furthermore, doctors affiliated with a center required that center to be public. However, the admin center management interface (`components/admin/center-table.tsx`) only offered status approval ("approved" / "suspended"), with no action or toggle to set `center.verified = true`. This created a deadlock where clinics remained unverified and all their affiliated doctors remained hidden from public search.
+- **Expected Behavior**: Admins can toggle `verified` on medical centers. Un-verifying a center automatically unpublishes it to prevent exposing unverified clinics.
+- **Root Cause**: Missing `setCenterVerifiedAction` and missing verification controls in `center-table.tsx`.
+- **User Impact**: Patients cannot view accredited partner centers or book their doctors.
+- **Business Impact**: Complete blockage of clinic network launches (e.g. Rejuvera clinic with 8 doctors).
+- **Security Impact**: Un-verifying cascades to unpublishing to protect patients from unauthorized centers.
+- **Data Integrity Impact**: Clinics were deadlocked in an unverified state.
+- **Performance Impact**: None.
+- **Resolution**:
+  - Implemented `setCenterVerifiedAction({ centerId, verified })` in `lib/actions/center.ts` with audit logging (`center.verified.update`).
+  - Added verification badge and toggle in `components/admin/center-table.tsx`.
+  - Created test `test/provider-verification.test.ts`.
+- **Files Involved**: `lib/actions/center.ts`, `components/admin/center-table.tsx`, `test/provider-verification.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/provider-verification.test.ts` passed)
+
+---
+
 ## Verification Summary
 - **Typecheck**: `corepack pnpm typecheck` (`tsc --noEmit`) → 0 errors.
-- **Automated Tests**: `corepack pnpm test` → 51 test suites, 230/230 tests passed against connected live database.
+- **Automated Tests**: `corepack pnpm test` → 54 test suites, 237/237 tests passed against connected live database.
 - **Production Build**: `corepack pnpm build` (Next.js 16.2.11 Turbopack) → 0 errors, all static & dynamic routes compiled, standalone bundle prepared.
+

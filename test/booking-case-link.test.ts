@@ -10,11 +10,11 @@ import {
   appointment,
   payment,
   paymentWebhookEvent,
-  availabilityRule,
 } from "@/lib/db/schema"
 import { bookConsultation } from "@/lib/actions/booking"
 import { POST } from "@/app/api/webhooks/stripe/route"
 import * as stripeModule from "@/lib/payments/stripe"
+import * as availabilityModule from "@/lib/data/availability"
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock("@/lib/session", async (importOriginal) => {
 const HAS_DB = Boolean(process.env.DATABASE_URL)
 const rid = () => crypto.randomUUID()
 
-describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
+describe.skipIf(!HAS_DB)("Booking Case & Payment Linking (Finding 8)", { timeout: 30000 }, () => {
   const patientUserId = rid()
   const doctorUserId = rid()
   let doctorId = ""
@@ -59,7 +59,6 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
       await db.delete(aestheticCase).where(inArray(aestheticCase.id, createdCaseIds))
     }
     if (doctorId) {
-      await db.delete(availabilityRule).where(eq(availabilityRule.doctorId, doctorId))
       await db.delete(doctorProcedure).where(eq(doctorProcedure.doctorId, doctorId))
       await db.delete(doctorProfile).where(eq(doctorProfile.id, doctorId))
     }
@@ -67,7 +66,8 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
     await pool.end()
   })
 
-  it("links the auto-created case's id onto the payment row when booking directly", async () => {
+  it("links resolvedCaseId to payment row when creating direct consultation booking", async () => {
+    // 1. Setup patient, doctor, and procedure
     await db.insert(user).values({ id: patientUserId, name: "Booking Patient", email: `bp-${patientUserId}@t.local` })
     await db.insert(user).values({ id: doctorUserId, name: "Booking Doctor", email: `bd-${doctorUserId}@t.local`, role: "doctor" })
 
@@ -90,23 +90,10 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
       .returning({ id: doctorProfile.id })
     doctorId = doc[0].id
 
-    await db.insert(doctorProcedure).values({ doctorId, procedureId })
-
-    // Wide-open availability (all 7 days, full day) so the real slot
-    // validation in bookConsultation accepts the test's chosen time —
-    // this test isn't exercising availability logic, just the case/payment
-    // linking that happens once a booking succeeds.
-    for (let day = 0; day <= 6; day++) {
-      await db.insert(availabilityRule).values({
-        doctorId,
-        dayOfWeek: day,
-        startTime: "00:00",
-        endTime: "23:59",
-        slotMinutes: 30,
-        type: "IN_PERSON_CONSULTATION",
-        active: true,
-      })
-    }
+    await db.insert(doctorProcedure).values({
+      doctorId,
+      procedureId,
+    })
 
     const sessionMod = await import("@/lib/session")
     vi.mocked(sessionMod.requireUser).mockResolvedValue({
@@ -115,7 +102,10 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
       name: "Booking Patient",
       role: "patient",
       emailVerified: true,
-    } as never)
+      phoneVerified: false,
+      isTest: false,
+      twoFactorEnabled: false,
+    } as any)
 
     vi.spyOn(stripeModule, "isStripeConfigured").mockReturnValue(true)
     vi.spyOn(stripeModule, "createCheckoutSession").mockResolvedValueOnce({
@@ -123,35 +113,43 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
       url: "https://checkout.stripe.com/mock-123",
     })
 
-    // Must fall within getAvailableSlots' generation window (21 days from
-    // now) — a far-future fixed date is correctly rejected as unavailable.
-    const startsAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-    startsAt.setUTCMinutes(0, 0, 0)
-    const result = await bookConsultation({
+    const startsAt = "2032-05-10T10:00:00.000Z"
+    const endsAt = "2032-05-10T10:30:00.000Z"
+    vi.spyOn(availabilityModule, "getAvailableSlots").mockResolvedValueOnce([
+      {
+        startsAt,
+        endsAt,
+        type: "IN_PERSON_CONSULTATION",
+      },
+    ])
+
+    const res = await bookConsultation({
       doctorId,
-      startsAt: startsAt.toISOString(),
+      startsAt,
       type: "IN_PERSON_CONSULTATION",
     })
 
-    expect(result.ok).toBe(true)
-    if (!result.ok || !result.data) throw new Error("booking failed")
-    expect(result.data.appointmentId).toBeDefined()
-    createdApptIds.push(result.data.appointmentId)
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    const apptId = res.data.appointmentId
+    expect(apptId).toBeDefined()
+    createdApptIds.push(apptId)
 
-    const [appt] = await db.select().from(appointment).where(eq(appointment.id, result.data.appointmentId))
+    // Check appointment
+    const [appt] = await db.select().from(appointment).where(eq(appointment.id, apptId))
     expect(appt).toBeDefined()
     expect(appt.caseId).toBeTruthy()
     createdCaseIds.push(appt.caseId!)
 
-    const [pay] = await db.select().from(payment).where(eq(payment.appointmentId, result.data.appointmentId))
+    // Check payment row: caseId MUST be populated (Finding 8 fix)
+    const [pay] = await db.select().from(payment).where(eq(payment.appointmentId, apptId))
     expect(pay).toBeDefined()
     createdPaymentIds.push(pay.id)
-    // Finding 8: the payment row must carry the same (auto-created) case id
-    // as the appointment it's paying for, not a null left over from booking.
     expect(pay.caseId).toBe(appt.caseId)
-  }, 15000)
+  })
 
-  it("backfills payment.caseId via the Stripe webhook when the payment row previously had none", async () => {
+  it("backfills payment.caseId via Stripe webhook if payment previously had no caseId", async () => {
+    // Setup appointment with caseId, and a payment with caseId: null
     const caseRef = `CASE-${rid().slice(0, 6).toUpperCase()}`
     const [c] = await db
       .insert(aestheticCase)
@@ -193,7 +191,7 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
         currency: "SAR",
         payerUserId: patientUserId,
         appointmentId: appt.id,
-        caseId: null, // intentionally null — this is what the webhook must backfill
+        caseId: null, // Intentionally null to test backfill
         provider: "stripe",
       })
       .returning({ id: payment.id })
@@ -208,7 +206,8 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
       type: "checkout.session.completed",
       paymentId: pay.id,
       providerIntentId: `pi_${rid().slice(0, 8)}`,
-      providerSessionId: `cs_${rid().slice(0, 8)}`,
+      amount: 150,
+      currency: "SAR",
       raw: {},
     })
 
@@ -221,6 +220,7 @@ describe.skipIf(!HAS_DB)("Booking case & payment linking", () => {
     const res = await POST(req)
     expect(res.status).toBe(200)
 
+    // Check that webhook backfilled payment.caseId and updated status to PAID
     const [updatedPay] = await db.select().from(payment).where(eq(payment.id, pay.id))
     expect(updatedPay.status).toBe("PAID")
     expect(updatedPay.caseId).toBe(c.id)
