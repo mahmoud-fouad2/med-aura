@@ -359,9 +359,42 @@ This document is the persistent source of truth across all sessions. It tracks e
 
 ---
 
+### [P1] Finding 16: Stripe Webhook Replay/Dispute Verification & Google Play Mandatory Account Deletion Policy
+- **Area**: Payment Webhook Resilience & App Store Compliance
+- **Feature/Workflow**: Stripe Webhooks (Signatures, Idempotency Lease, Replay, Disputes) → Google Play Store Policy Compliance (Account Deletion in-app and web URL)
+- **Severity**: P1 (Launch Blocker for Google Play Store approval)
+- **Current Behavior**:
+  1. Stripe webhook handler had only a single test covering `checkout.session.expired`. Missing end-to-end automated tests verifying signature rejection, concurrent replay idempotency, and dispute opening/closure workflows.
+  2. Google Play Store enforces an explicit policy requiring all apps that allow account creation to provide both an in-app account deletion mechanism and an external web URL for account and data deletion requests. The app lacked an in-app button and a dedicated `/delete-account` compliance page, which triggers automatic rejection by Google Play app review teams.
+- **Expected Behavior**:
+  - Webhook route rejects invalid/missing signatures with 400, returns `{ received: true, duplicate: true }` on duplicate deliveries without side effects, and safely transitions payment states during disputes (`DISPUTED` on opened dispute, restored to `PAID` on won dispute).
+  - Web platform provides a dedicated, accessible `/delete-account` route outlining deletion procedures, immediate deleted data, legally retained medical/tax records, and contact channels.
+  - Mobile profile interface provides an explicit "Delete account & data / طلب حذف الحساب والبيانات" option linking directly to the deletion procedure.
+- **Root Cause**: Omission of dedicated account deletion compliance route and UI entry points required by Google Play Store policies updated in 2024.
+- **User Impact**: Patients seeking to exercise their privacy rights can now do so transparently. Prevents rejection during Google Play App Review.
+- **Business Impact**: Avoids Google Play app suspension, ensures international data privacy compliance (GDPR / Saudi PDPL), and guarantees financial dispute handling resilience.
+- **Security Impact**: Tightens data privacy compliance and webhook spoofing protection.
+- **Data Integrity Impact**: Guarantees zero duplicate processing of Stripe events.
+- **Performance Impact**: None.
+- **Resolution**:
+  - Expanded `test/stripe-webhook.test.ts` to test invalid signature rejection, duplicate/replay event handling, and full dispute lifecycle against the live database.
+  - Created `app/delete-account/page.tsx` adhering to Google Play Console Data Safety requirements.
+  - Added bilingual `deleteAccount` / `deleteAccountHint` strings in `apps/mobile/src/lib/i18n.tsx`.
+  - Added dedicated "طلب حذف الحساب والبيانات" row in `apps/mobile/src/app/(tabs)/profile.tsx`.
+  - Generated pixel-perfect Google Play Store assets: 512x512 PNG app icon and 1024x500 PNG feature graphic in `apps/mobile/assets/play-store/`.
+- **Files Involved**: `test/stripe-webhook.test.ts`, `app/delete-account/page.tsx`, `apps/mobile/src/lib/i18n.tsx`, `apps/mobile/src/app/(tabs)/profile.tsx`, `apps/mobile/assets/play-store/*`.
+- **Status**: `RESOLVED` (Verified: `test/stripe-webhook.test.ts` 4/4 passed, mobile typecheck and tests passed)
+
+---
+
 ## Verification Summary
-- **Typecheck**: `corepack pnpm typecheck` (`tsc --noEmit`) → 0 errors.
-- **Automated Tests**: `corepack pnpm test` → 57 test suites, 244/244 tests passed against connected live database.
-- **Production Build**: `corepack pnpm build` (Next.js 16.2.11 Turbopack) → 0 errors, all static & dynamic routes compiled, standalone bundle prepared.
+- **Typecheck**:
+  - Web: `corepack pnpm typecheck` (`tsc --noEmit`) → 0 errors.
+  - Mobile: `corepack pnpm --dir apps/mobile typecheck` (`tsc --noEmit`) → 0 errors.
+- **Automated Tests**:
+  - Web: `corepack pnpm test` → 57 test suites, 247/247 tests passed against connected live Neon PostgreSQL database.
+  - Mobile: `corepack pnpm --dir apps/mobile test` → 7 test suites, 30/30 tests passed.
+- **Production Build**: `corepack pnpm build` (Next.js 16.2.11 Turbopack) → 0 errors, all 110+ static & dynamic routes compiled, standalone bundle prepared.
+
 
 

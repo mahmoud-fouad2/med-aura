@@ -115,6 +115,7 @@ describe.skipIf(!HAS_DB)("Stripe Webhook Session Expired Handling", () => {
       type: "payment_intent.succeeded",
       paymentId: "mock_payment_id",
       providerIntentId: "pi_mock",
+      providerSessionId: null,
       raw: {},
     })
 

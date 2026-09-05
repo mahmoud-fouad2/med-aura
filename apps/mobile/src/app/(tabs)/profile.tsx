@@ -306,6 +306,13 @@ export default function Profile() {
         />
         <Divider />
         <Row
+          icon="trash-outline"
+          label={t.profile.deleteAccount}
+          hint={t.profile.deleteAccountHint}
+          onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/delete-account`)}
+        />
+        <Divider />
+        <Row
           icon="information-circle-outline"
           label={t.profile.about}
           value={`${t.profile.version} ${version}`}
