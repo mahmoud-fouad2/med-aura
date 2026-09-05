@@ -1,26 +1,29 @@
 # Deploying Med Aura to Render
 
 All commands below are derived from the current `package.json` and were run in
-this repo. The package manager is **pnpm** — the repo commits `pnpm-lock.yaml`
-and `package.json` sets `"packageManager": "pnpm@9.15.0"`. There is no
-`package-lock.json`/`yarn.lock`. `npm run <script>` also works locally because it
-just runs the same scripts, but **installs must use pnpm** to honor the lockfile.
+this repo. The web package manager is **pnpm** — the repo commits
+`pnpm-lock.yaml` and `package.json` sets `"packageManager": "pnpm@9.15.0"`.
+The mobile app has its own `apps/mobile/package-lock.json` for Expo/Android CI;
+Render installs the root web app with pnpm. `npm run <script>` also works
+locally because it just runs the same scripts, but **installs must use pnpm** to
+honor the root lockfile.
 
 ## Service type
 
 Create a **Web Service** from the repo.
 
-| Setting | Value |
-|---|---|
-| Root Directory | `.` (repo root — `package.json` and `next.config.mjs` live here) |
-| Runtime | Node |
-| Node version | `24` (pinned via `.node-version`; matches CI in `.github/workflows/ci.yml`) |
-| Build Command | `corepack enable && pnpm install --frozen-lockfile && pnpm run build` |
-| Pre-Deploy Command | `pnpm run db:migrate` (paid plans only — see below) |
-| Start Command | `pnpm run start` |
-| Health Check Path | `/api/health` |
+| Setting            | Value                                                                       |
+| ------------------ | --------------------------------------------------------------------------- |
+| Root Directory     | `.` (repo root — `package.json` and `next.config.mjs` live here)            |
+| Runtime            | Node                                                                        |
+| Node version       | `24` (pinned via `.node-version`; matches CI in `.github/workflows/ci.yml`) |
+| Build Command      | `corepack enable && pnpm install --frozen-lockfile && pnpm run build`       |
+| Pre-Deploy Command | `pnpm run db:migrate` (paid plans only — see below)                         |
+| Start Command      | `pnpm run start`                                                            |
+| Health Check Path  | `/api/health`                                                               |
 
 Notes:
+
 - `pnpm run build` → `next build`. **Tested in this repo: exit 0** (all routes
   compiled, incl. `/api/health`, `/api/readiness`).
 - `pnpm run start` runs the generated standalone server with `.env.local`
@@ -30,7 +33,7 @@ Notes:
 - `pnpm install --frozen-lockfile` is the required install for the committed
   `pnpm-lock.yaml`; CI and the final local release gate both run it.
 - `db:migrate` (`tsx scripts/migrate.ts`) requires `DATABASE_URL`. The current
-  journal defines 36 migrations (`0000` through `0035`). CI applies all of them
+  journal defines 37 migrations (`0000` through `0036`). CI applies all of them
   to a clean PostgreSQL service before tests and the production build.
 - **Migrations apply automatically at server boot** (`instrumentation.ts`):
   Render's free tier has no Pre-Deploy Command field, so the server itself
@@ -61,7 +64,9 @@ incident.
 
 1. Create a Render PostgreSQL instance; copy its **Internal** connection string
    into `DATABASE_URL`.
-2. Migrations run automatically via the Pre-Deploy Command (`pnpm run db:migrate`).
+2. Migrations run automatically at web-server boot. On paid plans, add the
+   optional Pre-Deploy Command `pnpm run db:migrate` to apply them before the
+   new instance serves traffic.
 3. Seed reference/catalog data once (roles, permissions, geography, procedures,
    FAQs) — safe in production:
    ```

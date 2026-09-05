@@ -164,7 +164,7 @@ export async function setCenterPublishedAction(input: unknown): Promise<ActionRe
     )[0]
     if (!existing) throw new AppError("NOT_FOUND")
     if (published && existing.status !== "approved") {
-      throw new AppError("CONFLICT", { userMessage: "لا يمكن إظهار مركز غير معتمد." })
+      throw new AppError("CONFLICT", { userMessage: "لا يمكن إظهار مركز غير معتمد. اعتمد المركز أولاً من قسم «حالة الاعتماد»." })
     }
     if (published && !existing.verified) {
       throw new AppError("CONFLICT", { userMessage: "أكمل التحقق من بيانات المركز قبل نشره." })

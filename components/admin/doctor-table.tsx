@@ -189,7 +189,7 @@ function DoctorDetailDrawer({ doctor, centers }: { doctor: AdminDoctorRow; cente
               </Button>
               {!doctor.published && (doctor.status !== "approved" || !doctor.verified) && (
                 <p className="text-[11px] text-muted-foreground">
-                  يلزم اعتماد الملف والتحقق منه قبل الإظهار، ثم يتحقق النظام من صلاحية الترخيص.
+                  يلزم اعتماد ملف الطبيب وإكمال التحقق من بياناته وترخيصه قبل الإظهار.
                 </p>
               )}
             </div>

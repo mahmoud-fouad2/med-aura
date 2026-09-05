@@ -12,7 +12,9 @@ import {
   Sparkles,
 } from "lucide-react"
 import { getCurrentUser, requirePermissionPage } from "@/lib/session"
-import { resolveUserCenterIds, PERMISSIONS } from "@/lib/rbac"
+import { resolveUserCenterIds, PERMISSIONS, hasRole, ROLES } from "@/lib/rbac"
+import { db } from "@/lib/db"
+import { center } from "@/lib/db/schema"
 import { getMyCenterAction } from "@/lib/actions/center"
 import { getPublicUrl } from "@/lib/storage/r2"
 import { getI18n } from "@/lib/i18n"
@@ -62,7 +64,14 @@ const OPEN_SAFETY = new Set([
 export default async function CenterDashboardPage() {
   await requirePermissionPage(PERMISSIONS.CENTER_DASHBOARD_ACCESS)
   const user = (await getCurrentUser())!
-  const centerIds = await resolveUserCenterIds(user.id)
+  const isSuperAdmin = await hasRole(user.id, ROLES.SUPER_ADMIN)
+  let centerIds = await resolveUserCenterIds(user.id)
+
+  // Super admin with no explicit center link → fetch all centers so they can browse any one
+  if (centerIds.length === 0 && isSuperAdmin) {
+    const allCenters = await db.select({ id: center.id }).from(center).limit(50)
+    centerIds = allCenters.map((c) => c.id)
+  }
 
   if (centerIds.length === 0) {
     return (

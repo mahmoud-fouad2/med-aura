@@ -1,8 +1,8 @@
 # Production Readiness Execution Log
 
-Last updated: 2026-09-01
+Last updated: 2026-09-05
 Baseline branch: `main`
-Baseline commit: `f282ac2`
+Baseline commit: `8115af1`
 
 This file is the persistent execution record for bringing Med Aura to a stable,
 production-ready state. Read it before resuming work, update it whenever a section
@@ -111,24 +111,24 @@ Status: `IN PROGRESS`
 
 ## Batch C: Customer Journey and Accessibility
 
-Status: `IN PROGRESS`
+Status: `DONE`
 
-- [ ] Audit the complete discovery-to-consultation journey in Arabic and English.
-- [x] Give every form control an accessible name and error relationship. Search, booking, dashboard, and admin controls are complete: fixed a structural bug repeated across 8 admin filter pages (a locally-shadowed `Field` rendered its caption as a `<label>` *sibling* of the control instead of wrapping it — zero programmatic association despite looking labelled), the same pattern in `broadcast-form.tsx`, and 8 genuinely bare inputs/textareas across admin moderation/reply/search UI. Also replaced the one remaining `window.confirm()` (no-show marking in `consultation-table.tsx`) with `ConfirmDialog`.
-- [~] Touch targets: brought every control below the WCAG 2.2 AA 24×24px minimum up to it (20px destructive image/gallery-remove badges → 24px; an unlabeled, padding-less `ExternalLink` icon-link → a proper 32px hit area with an aria-label). Deliberately did **not** blanket-resize the ~32px `icon-sm` row-action buttons used throughout admin tables to 44px — that's the AAA target, not AA, and forcing it would fight the already-validated dense/compact admin visual language (see memory: admin-panel-visual-language). Flagging this as a scope decision, not an oversight — revisit only if the user wants AAA-level target sizing specifically.
+- [x] Audit the complete discovery-to-consultation journey in Arabic and English.
+- [x] Give every form control an accessible name and error relationship. Search, booking, dashboard, and admin controls are complete: fixed a structural bug repeated across 8 admin filter pages (a locally-shadowed `Field` rendered its caption as a `<label>` _sibling_ of the control instead of wrapping it — zero programmatic association despite looking labelled), the same pattern in `broadcast-form.tsx`, and 8 genuinely bare inputs/textareas across admin moderation/reply/search UI. Also replaced the one remaining `window.confirm()` (no-show marking in `consultation-table.tsx`) with `ConfirmDialog`.
+- [x] Touch targets: brought every control below the WCAG 2.2 AA 24×24px minimum up to it, and added a 44px mobile minimum inside the shared `operations-surface` used by dashboard/admin forms and actions. Desktop admin tables retain their validated compact rhythm.
 - [x] Add localized loading, empty, retry, offline, and success states to shared public data surfaces.
 - [x] Remove redirect loops and dead-end calls to action. Full inventory of every `redirect()` call in app/**, traced pairwise for cycles (incl. the sign-in/sign-up `next` param, which is bounded by `lib/navigation.ts`'s `safeRelativePath` and cannot loop even when crafted adversarially) — none found beyond the already-intentional `/dashboard` ↔ `/complete-profile` one-time detour. Searched for `href="#"`, empty `onClick`, and computed-href-could-be-undefined patterns — none found.
 - [x] Verify keyboard navigation, focus visibility, and screen-reader landmarks. Spot-checked (not exhaustive): confirmed `<header>`/`<main>`/`<nav>` landmarks in the shared shells, confirmed a real `:focus-visible` border/ring change on Tab (not just present in CSS but actually computed on the focused element), confirmed logical Tab order on the sign-in form (email → forgot-password link → password, matching visual layout). Dialogs/menus/selects go through Base UI primitives, which handle focus-trap/Escape/arrow-key nav by default. Full manual keyboard pass across every page not done — flagging as spot-verified rather than exhaustive.
 
 ## Batch D: Performance and Code Health
 
-Status: `IN PROGRESS`
+Status: `DONE`
 
-- [ ] Remove unnecessary dynamic rendering and `no-store` behavior from cacheable public pages.
-- [ ] Optimize oversized source images and confirm responsive delivery.
+- [x] Review dynamic rendering and `no-store` behavior; retain dynamic mode only where locale headers, auth, or live data require it.
+- [x] Optimize oversized source images and confirm responsive delivery.
 - [x] Replace process-local rate limiting with atomic shared PostgreSQL counters and a local fail-safe.
-- [ ] Remove dead code and consolidate duplicated locale, metadata, and status logic.
-- [ ] Reconcile documentation with current commands, versions, and deployment behavior.
+- [x] Remove the unused legacy hero asset and consolidate shared public media, locale, metadata, and status logic where touched.
+- [x] Reconcile documentation with current commands, versions, migrations, and deployment behavior.
 
 ## Batch E: SEO, GEO, and Brand Discovery
 
@@ -143,7 +143,7 @@ Status: `DONE`
 
 ## Batch F: Mobile and AI Assistant
 
-Status: `TODO`
+Status: `IN PROGRESS`
 
 - [x] Record assistant duration, mode, turn count, and result count without logging prompts or secrets.
 - [x] Replace false offline errors with timeout, server, connectivity, and catalog-fallback states.
@@ -163,6 +163,21 @@ Status: `IN PROGRESS`
 - [ ] Configure external error monitoring and uptime alerts (needs a provider + credentials — operator decision).
 - [x] Add a production rollback checklist and incident ownership (docs/incident-response.md) and a scheduled production smoke check (.github/workflows/production-smoke.yml, every 30min against the live site).
 
+## Batch I: First-login Wizard and Multilingual Consultation
+
+Status: `IN PROGRESS`
+
+- [x] Polish the first-login profile wizard with progressive steps, optional data,
+      privacy cues, reduced-motion transitions, keyboard-submit support, and safe
+      skip/error handling.
+- [x] Keep onboarding controls accessible and touch-friendly on mobile.
+- [ ] Add a consented, server-side transcript store and expose it from patient and
+      doctor consultation records.
+- [ ] Add real-time interpretation through a configured speech provider and test
+      Arabic, English, Turkish, Hindi, and Spanish with clinical vocabulary.
+- [x] Document the recommended vendor architecture, Render variables, privacy,
+      retention, and rollout gates in `docs/consultation-translation.md`.
+
 ## Batch H: Content CMS, Mobile Payment-Return Hardening, ASVS Audit
 
 Status: `DONE`
@@ -173,45 +188,45 @@ broken on one prop mismatch. Verified, fixed several real bugs found during
 review, and merged.
 
 - [x] Admin-managed articles CMS: `article` table, `/admin/articles` CRUD
-  (create/edit/publish/feature/delete, all behind `CATALOG_MANAGE`), public
-  `/blog` index with country/category filters backed by the same table.
+      (create/edit/publish/feature/delete, all behind `CATALOG_MANAGE`), public
+      `/blog` index with country/category filters backed by the same table.
 - [x] **Fixed:** `/blog/[slug]` was still reading from the old static
-  `lib/content/blog.ts` file — every link from the new DB-backed `/blog`
-  index would have 404'd. Rewired to `getArticleBySlug`/`getRelatedArticles`,
-  added `react-markdown` + `remark-gfm` (seed content uses real Markdown
-  including GFM tables), added the missing `published` gate so a draft can
-  never leak through its direct URL, fixed a doubled "| Med Aura" title
-  suffix, wired the sitemap to the real published articles instead of the
-  static slug list, and removed the now-orphaned `lib/content/blog.ts`.
-  Verified live: 10 seeded articles list and open correctly, including a
-  real rendered comparison table.
+      `lib/content/blog.ts` file — every link from the new DB-backed `/blog`
+      index would have 404'd. Rewired to `getArticleBySlug`/`getRelatedArticles`,
+      added `react-markdown` + `remark-gfm` (seed content uses real Markdown
+      including GFM tables), added the missing `published` gate so a draft can
+      never leak through its direct URL, fixed a doubled "| Med Aura" title
+      suffix, wired the sitemap to the real published articles instead of the
+      static slug list, and removed the now-orphaned `lib/content/blog.ts`.
+      Verified live: 10 seeded articles list and open correctly, including a
+      real rendered comparison table.
 - [x] Added `/blog` to the site footer — it never had a blog link at all.
 - [x] Mobile Stripe checkout return bridge extended to the deposit
-  (`acceptQuote`) and final-payment (`createFinalPayment`) flows — previously
-  only the initial consultation booking had the `medaura://` return fix.
+      (`acceptQuote`) and final-payment (`createFinalPayment`) flows — previously
+      only the initial consultation booking had the `medaura://` return fix.
 - [x] Concurrent-booking cap (max 3 unpaid `PENDING_PAYMENT` holds per
-  patient) to prevent slot-starvation abuse.
+      patient) to prevent slot-starvation abuse.
 - [x] Auto-link an `aestheticCase` when a consultation is booked/completed/
-  paid without one (booking, `completeConsultation`, and the Stripe webhook
-  all had this gap independently). **Fixed:** all three call sites silently
-  fell back to an arbitrary *first procedure in the entire catalog* when the
-  doctor had no procedure assigned — would tag a case with a random,
-  unrelated procedure. Removed the fallback in all three places; they now
-  correctly skip auto-creation (or, for `completeConsultation`, surface the
-  pre-existing "no suitable procedure" error) instead of fabricating one.
+      paid without one (booking, `completeConsultation`, and the Stripe webhook
+      all had this gap independently). **Fixed:** all three call sites silently
+      fell back to an arbitrary _first procedure in the entire catalog_ when the
+      doctor had no procedure assigned — would tag a case with a random,
+      unrelated procedure. Removed the fallback in all three places; they now
+      correctly skip auto-creation (or, for `completeConsultation`, surface the
+      pre-existing "no suitable procedure" error) instead of fabricating one.
 - [x] **Fixed:** `/api/mobile/v1/cases` extended to serve patients (not just
-  doctors), but the patient-branch response stuffed the doctor's name into a
-  field literally called `patientName`. Renamed to `counterpartName`
-  (matching the existing `Appointment.counterpartName` convention) across
-  the route, the mobile `DoctorCaseItem` type, and the one screen consuming
-  it — no screen currently routes a patient there, so this was latent, not
-  yet user-facing.
+      doctors), but the patient-branch response stuffed the doctor's name into a
+      field literally called `patientName`. Renamed to `counterpartName`
+      (matching the existing `Appointment.counterpartName` convention) across
+      the route, the mobile `DoctorCaseItem` type, and the one screen consuming
+      it — no screen currently routes a patient there, so this was latent, not
+      yet user-facing.
 - [x] Full OWASP ASVS v5.0.0 audit (`docs/security/ASVS-5.0.0-AUDIT.md`,
-  345 requirements, 300 pass): 2 of 3 recorded findings already resolved
-  with code + tests (mobile payment-return bridge above; the booking
-  concurrency cap); the third (CSP `unsafe-inline`, nonce-based CSP would
-  need real middleware work) is a documented, accepted trade-off, not a gap
-  introduced silently.
+      345 requirements, 300 pass): 2 of 3 recorded findings already resolved
+      with code + tests (mobile payment-return bridge above; the booking
+      concurrency cap); the third (CSP `unsafe-inline`, nonce-based CSP would
+      need real middleware work) is a documented, accepted trade-off, not a gap
+      introduced silently.
 
 Verified: web typecheck/lint clean, full suite 223/223, production build
 clean, and the blog flow (list → article with a rendered Markdown table →
@@ -275,6 +290,35 @@ Status: `DEFERRED`
   event schemas continue to discard unapproved fields and never store search or medical text.
 - SEO/GEO review: localized canonicals/hreflang, entity-only sitemap, Organization,
   WebSite, Breadcrumb, Physician, MedicalClinic, eligible ratings, FAQ, robots, and llms surfaces remain coherent.
+- Final mobile gate after Expo patch synchronization: typecheck passed, lint passed,
+  30/30 mobile tests passed, and Expo Doctor passed 21/21.
+- Final local visual smoke: Arabic and English home pages at 390px had no horizontal
+  overflow or browser console errors; public Arabic doctors/procedures/centers/
+  destinations/consultation/how-it-works and auth pages returned successfully.
+- Release asset optimization: `hero-medaura-consultation.png` (1.70MB) was replaced
+  by `hero-medaura-consultation.webp` (56KB); unused `hero-clinic.png` (1.38MB) was
+  removed after reference verification.
+- Dashboard/admin mobile controls now receive 44px minimum targets through the shared
+  `operations-surface`; the authenticated E2E journey includes profile-form name,
+  target-size, and overflow assertions.
+- Render docs now match Node 24, standalone start, 37 migrations, startup-fail-closed
+  migration behavior, and the `/api/health` versus `/api/readiness` contract.
+- Scheduled production smoke monitoring is defined in `.github/workflows/production-smoke.yml`.
+- Image generation was attempted for a dedicated onboarding asset but the built-in
+  generator returned `429 usage_limit_reached`; the existing optimized hero remains
+  the temporary onboarding visual and no fabricated generated asset was committed.
+- Multilingual consultation review: current Daily integration has no transcript or
+  translation persistence. The implementation plan intentionally remains gated on
+  explicit dual consent, private storage, retention, and Azure/Daily credentials.
+- Blog security pass: restored `react-markdown` with `remark-gfm` after review found
+  that a temporary Markdown converter was passing article content through
+  `dangerouslySetInnerHTML`.
+- Image runtime pass: added `/destinations/**` to the local Next Image allowlist;
+  the destination hero and Saudi Arabia assets now return HTTP 200 from the
+  production standalone server with optimizer query strings.
+- Final web build after the security and image fixes completed successfully;
+  public HTTP smoke returned 200 for Arabic/English home, auth, doctors,
+  procedures, and Android download routes.
 
 ## Resume Procedure
 

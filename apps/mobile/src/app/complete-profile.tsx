@@ -135,6 +135,18 @@ function ContactStep({ onDone }: { onDone: () => void }) {
   return (
     <Animated.View entering={FadeIn.duration(300)}>
       <View style={{ alignItems: "center", gap: spacing.xs, marginBottom: spacing.xl }}>
+        <View
+          style={{
+            borderRadius: radius.full,
+            backgroundColor: colors.primarySoft,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.xs,
+          }}
+        >
+          <AppText variant="caption" weight="semibold" color={colors.primary}>
+            {locale === "ar" ? "خطوة أخيرة، والاختيارات لك" : "One last step, your choice"}
+          </AppText>
+        </View>
         <AppText variant="hero" weight="heavy" style={{ textAlign: "center" }}>
           {t.auth.completeProfileTitle}
         </AppText>
@@ -164,6 +176,9 @@ function ContactStep({ onDone }: { onDone: () => void }) {
         {error ? <FormError message={error} /> : null}
 
         <Button label={t.auth.continue} onPress={() => void submit()} loading={loading} />
+        <AppText variant="caption" color={colors.textMuted} style={{ textAlign: "center" }}>
+          {locale === "ar" ? "بياناتك خاصة ويمكنك تعديلها لاحقًا." : "Your details stay private and can be edited later."}
+        </AppText>
       </Card>
     </Animated.View>
   )
@@ -208,7 +223,21 @@ function AboutStep() {
   const skip = async () => {
     if (loading) return
     setLoading(true)
-    await api.skipProfileWizard().catch(() => undefined)
+    setError(null)
+    try {
+      await api.skipProfileWizard()
+    } catch (err) {
+      setLoading(false)
+      setError(localizedApiError(err, locale, {
+        fallback: t.auth.genericError,
+        offline: t.common.offline,
+        timeout: t.common.timeout,
+        validation: t.auth.profileValidationError,
+        conflict: t.auth.profileConflictError,
+        rateLimited: t.common.rateLimited,
+      }))
+      return
+    }
     router.replace("/(tabs)")
   }
 
@@ -278,11 +307,14 @@ function AboutStep() {
         {error ? <FormError message={error} /> : null}
 
         <Button label={t.editProfile.finishWizard} onPress={() => void finish()} loading={loading} />
-        <Pressable onPress={() => void skip()} disabled={loading} hitSlop={8} style={{ alignSelf: "center" }}>
+        <Pressable onPress={() => void skip()} disabled={loading} hitSlop={8} style={{ alignSelf: "center", minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.sm }}>
           <AppText variant="sub" weight="medium" color={colors.textMuted}>
             {t.editProfile.skipWizard}
           </AppText>
         </Pressable>
+        <AppText variant="caption" color={colors.textMuted} style={{ textAlign: "center" }}>
+          {locale === "ar" ? "معلومات اختيارية يمكنك تحديثها من ملفك." : "Optional details you can update from your profile."}
+        </AppText>
       </Card>
     </Animated.View>
   )

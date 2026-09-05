@@ -85,6 +85,7 @@ const nextConfig = {
     // still allowlisted, and the query never changes which file is read.
     localPatterns: [
       { pathname: "/**", search: "" },
+      { pathname: "/destinations/**" },
       { pathname: "/demo-services/**" },
       { pathname: "/service-images/**" },
     ],
@@ -117,9 +118,7 @@ const nextConfig = {
     minimumCacheTTL: 604800,
   },
   async headers() {
-    return [
-      { source: "/:path*", headers: securityHeaders },
-    ]
+    return [{ source: "/:path*", headers: securityHeaders }]
   },
 }
 

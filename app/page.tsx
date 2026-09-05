@@ -7,6 +7,8 @@ import { FeaturedReviews } from "@/components/landing/featured-reviews"
 import { TrustBand } from "@/components/landing/trust-band"
 import { BeforeAfterShowcase } from "@/components/landing/before-after-showcase"
 import { CtaFooter } from "@/components/landing/cta-footer"
+import { FeaturedArticles } from "@/components/landing/featured-articles"
+import { TestimonialsSlider } from "@/components/landing/testimonials-slider"
 import { getI18n } from "@/lib/i18n"
 import { SearchIntentContent } from "@/components/landing/search-intent-content"
 import { jsonLdScript, organizationJsonLd, websiteJsonLd } from "@/lib/seo"
@@ -30,7 +32,10 @@ export default async function HomePage() {
         <PopularProcedures locale={locale} />
         <FeaturedDoctors />
         <SearchIntentContent locale={locale} />
+        {/* Customer testimonials slider — multi-dialect, multi-language */}
+        <TestimonialsSlider locale={locale} />
         <FeaturedReviews />
+        <FeaturedArticles />
         <TrustBand locale={locale} />
         <BeforeAfterShowcase />
         <CtaFooter />

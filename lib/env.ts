@@ -55,8 +55,8 @@ const schema = z.object({
   VIDEO_JOIN_WINDOW_AFTER_MINUTES: z.coerce.number().int().min(0).max(240).optional(),
 
   // Google Gemini — powers the in-app AI concierge (app/api/mobile/v1/
-  // assistant). Unset → the assistant returns an honest "not available yet"
-  // state instead of a broken chat.
+  // assistant). Unset → the route uses the real-catalog fallback and keeps
+  // doctor recommendations grounded instead of showing a dead chat.
   GEMINI_API_KEY: z.string().optional(),
 
   // reCAPTCHA. Server-side verification is wired into the contact action; the

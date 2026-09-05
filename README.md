@@ -16,7 +16,7 @@ Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind v4 + shad
 
 ## المتطلبات
 
-- Node 20+ (تم التطوير على Node 24)
+- Node 24 (مُثبت في `.node-version` ومتوافق مع CI)
 - PostgreSQL 14+
 - pnpm 9 (`corepack enable` أو `npx pnpm@9`)
 

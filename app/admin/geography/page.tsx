@@ -19,7 +19,7 @@ import { CountryFlag } from "@/components/ui/country-flag"
 import { MobileDataCard } from "@/components/ui/mobile-data-card"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "الدول والمدن" }
+export const metadata = { title: "وجهات السفر والدول والمدن" }
 
 export default async function AdminGeographyPage() {
   await requirePermissionPage(PERMISSIONS.CATALOG_MANAGE)
@@ -35,8 +35,8 @@ export default async function AdminGeographyPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="المحتوى والإعداد"
-        title="الدول والمدن"
-        description="الوجهات المتاحة على المنصة — أضف، عدّل، فعّل أو عطّل، مع حماية تلقائية من حذف دولة مرتبطة ببيانات."
+        title="وجهات السفر والدول والمدن"
+        description="هنا تُضاف وتُعدَّل وجهات السياحة العلاجية التي تظهر في صفحة /destinations — كل دولة نشطة تُنشئ بطاقة وجهة آلياً. أضف دولة ثم فعّلها لتظهر في الواجهة."
         stats={
           countries.length > 0
             ? [

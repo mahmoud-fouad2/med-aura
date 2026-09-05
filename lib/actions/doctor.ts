@@ -170,7 +170,7 @@ export async function setDoctorPublishedAction(input: unknown): Promise<ActionRe
     )[0]
     if (!existing) throw new AppError("NOT_FOUND")
     if (published && existing.status !== "approved") {
-      throw new AppError("CONFLICT", { userMessage: "لا يمكن إظهار طبيب غير معتمد." })
+      throw new AppError("CONFLICT", { userMessage: "لا يمكن إظهار طبيب غير معتمد. اعتمد الطبيب أولاً من قسم «حالة الاعتماد»." })
     }
     if (published && !existing.verified) {
       throw new AppError("CONFLICT", { userMessage: "أكمل التحقق من ملف الطبيب قبل نشره." })
