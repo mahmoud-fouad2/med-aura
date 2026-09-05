@@ -1,6 +1,6 @@
 # Med Aura — Production Readiness Master Audit
 
-_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 54 suites / 237 passed_
+_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 55 suites / 239 passed_
 
 This document is the persistent source of truth across all sessions. It tracks every identified finding, its severity, current behavior, root cause, impact, proposed fix, test verification, and status.
 
@@ -243,8 +243,38 @@ This document is the persistent source of truth across all sessions. It tracks e
 
 ---
 
+### [P1] Finding 12: Broken Medical Document Access for Doctors on Post-Consent Uploads & Direct Bookings
+- **Area**: Medical Privacy & Telehealth / Care Journey
+- **Feature/Workflow**: Patient Document Sharing & Doctor Medical Record Review
+- **Severity**: P1
+- **Current Behavior**:
+  1. In `app/api/uploads/finalize/route.ts`, when a patient uploaded a document to their case, `finalized` was set to `true`, but no `documentAccessGrant` rows were created for existing active consents on that case.
+  2. In `lib/actions/booking.ts:L161`, when direct booking created a consultation consent on `resolvedCaseId`, it did not backfill `documentAccessGrant` for existing case documents.
+  3. In `lib/rbac.ts:canViewDocument`, access strictly required an existing `documentAccessGrant` row; it did not evaluate active case-level consent when a specific grant row was absent.
+  4. As a result, any document uploaded after consent creation, or any document existing before direct booking consent, was completely inaccessible to the doctor (`403 Forbidden` on `/api/documents/[id]`). Doctors could not view patient photos, lab reports, or past medical records.
+- **Expected Behavior**:
+  - `finalize` automatically creates `documentAccessGrant` for any active `consent` on the case.
+  - Direct booking consent creation links existing finalized documents.
+  - `canViewDocument` validates case-level active consent as a fallback (provided the document has not been explicitly revoked), ensuring doctors always have access to patient medical photos/reports for active cases.
+- **Root Cause**: Missing grant propagation in upload finalize and direct booking actions, combined with lack of case-level consent fallback in `canViewDocument`.
+- **User Impact**: Doctors could not open clinical photos or medical reports; clinical consultation blocked.
+- **Business Impact**: Telehealth consultation quality crippled; inability to conduct proper medical evaluations.
+- **Security Impact**: Access remains strictly scoped to authorized doctors with active, non-revoked patient consent. Revoking consent immediately cuts off access across all layers.
+- **Data Integrity Impact**: Disconnected document access state across care journey.
+- **Performance Impact**: None.
+- **Resolution**:
+  - In `app/api/uploads/finalize/route.ts`, added automatic insertion of `documentAccessGrant` for all active non-expired consents on `doc.caseId`.
+  - In `lib/actions/booking.ts`, ensured `consent` is created for both new and existing cases and backfilled `documentAccessGrant` for all existing finalized documents on `resolvedCaseId`.
+  - In `lib/rbac.ts:canViewDocument`, selected `caseId` and implemented active case consent fallback with check for explicit revocations.
+  - Created test `test/document-access.test.ts`.
+- **Files Involved**: `app/api/uploads/finalize/route.ts`, `lib/actions/booking.ts`, `lib/rbac.ts`, `test/document-access.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/document-access.test.ts` passed)
+
+---
+
 ## Verification Summary
 - **Typecheck**: `corepack pnpm typecheck` (`tsc --noEmit`) → 0 errors.
-- **Automated Tests**: `corepack pnpm test` → 54 test suites, 237/237 tests passed against connected live database.
+- **Automated Tests**: `corepack pnpm test` → 55 test suites, 239/239 tests passed against connected live database.
 - **Production Build**: `corepack pnpm build` (Next.js 16.2.11 Turbopack) → 0 errors, all static & dynamic routes compiled, standalone bundle prepared.
+
 
