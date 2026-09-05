@@ -19,6 +19,8 @@ const schema = z.object({
 
   // Core
   DATABASE_URL: z.string().min(1).optional(),
+  DB_POOL_MAX: z.coerce.number().int().min(1).max(100).optional(),
+  DB_CONNECTION_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).optional(),
   BETTER_AUTH_SECRET: z.string().min(16).optional(),
   BETTER_AUTH_URL: z.string().optional(),
   APP_URL: z.string().optional(),

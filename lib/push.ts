@@ -25,8 +25,12 @@ export async function sendPushToUser(
     if (tokens.length === 0) return
 
     const messages: ExpoPushMessage[] = []
+    const staleTokens: string[] = []
     for (const { token } of tokens) {
-      if (!Expo.isExpoPushToken(token)) continue
+      if (!Expo.isExpoPushToken(token)) {
+        staleTokens.push(token)
+        continue
+      }
       messages.push({
         to: token,
         title: input.title,
@@ -35,18 +39,24 @@ export async function sendPushToUser(
         sound: "default",
       })
     }
-    if (messages.length === 0) return
+    if (messages.length === 0) {
+      if (staleTokens.length > 0) {
+        await db.delete(pushToken).where(inArray(pushToken.token, staleTokens))
+      }
+      return
+    }
 
     const chunks = expo.chunkPushNotifications(messages)
-    const staleTokens: string[] = []
     for (const chunk of chunks) {
       const receipts = await expo.sendPushNotificationsAsync(chunk)
       receipts.forEach((receipt, i) => {
         if (
           receipt.status === "error" &&
-          receipt.details?.error === "DeviceNotRegistered"
+          (receipt.details?.error === "DeviceNotRegistered" ||
+            receipt.details?.error === "InvalidCredentials")
         ) {
-          staleTokens.push(chunk[i].to as string)
+          const target = chunk[i]?.to
+          if (typeof target === "string") staleTokens.push(target)
         }
       })
     }

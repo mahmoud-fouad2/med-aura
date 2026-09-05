@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { and, eq } from "drizzle-orm"
+import { Expo } from "expo-server-sdk"
 import { db } from "@/lib/db"
 import { pushToken } from "@/lib/db/schema"
 import { jsonError, jsonOk, requireMobileUser, jsonServerError } from "@/lib/mobile-api"
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
   const parsed = RegisterSchema.safeParse(body)
   if (!parsed.success) return jsonError("رمز غير صالح.", 400)
   const { token, platform } = parsed.data
+
+  if (!Expo.isExpoPushToken(token)) {
+    return jsonError("رمز إشعار Expo غير صالح.", 400)
+  }
 
   try {
     const existing = await db

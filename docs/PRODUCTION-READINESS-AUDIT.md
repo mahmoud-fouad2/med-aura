@@ -1,6 +1,6 @@
 # Med Aura — Production Readiness Master Audit
 
-_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 56 suites / 241 passed_
+_Last Updated: 2026-09-05 · Baseline Branch: `main` · Test Suite: 57 suites / 244 passed_
 
 This document is the persistent source of truth across all sessions. It tracks every identified finding, its severity, current behavior, root cause, impact, proposed fix, test verification, and status.
 
@@ -307,9 +307,61 @@ This document is the persistent source of truth across all sessions. It tracks e
 
 ---
 
+### [P2] Finding 14: Push Token Format Ingestion & Stale Device Token Accumulation
+- **Area**: Mobile Push Notifications & Device Lifecycle
+- **Feature/Workflow**: Device Registration → Push Notification Delivery → Stale Token Pruning
+- **Severity**: P2
+- **Current Behavior**:
+  1. `app/api/mobile/v1/push-tokens/route.ts` only validated `z.string().min(10)`. Non-Expo token strings were accepted and stored in the database.
+  2. In `lib/push.ts:sendPushToUser()`, encountering an invalid token skipped it (`continue`) without purging it, allowing malformed tokens to accumulate permanently.
+  3. Delivery errors only checked for `DeviceNotRegistered` and ignored `InvalidCredentials`.
+- **Expected Behavior**:
+  - `POST /api/mobile/v1/push-tokens` validates token format with `Expo.isExpoPushToken(token)` and rejects non-Expo tokens with `400 Bad Request`.
+  - `sendPushToUser` purges malformed tokens immediately and treats `InvalidCredentials` as an eviction signal.
+- **Root Cause**: Missing token format check on API registration and lack of cleanup on invalid format detection.
+- **User Impact**: Potential notification delivery failures on reinstalled devices; waste of network roundtrips.
+- **Business Impact**: Reduced patient engagement and missed appointment reminder push notifications.
+- **Security Impact**: Prevents database pollution with arbitrary strings on public endpoints.
+- **Data Integrity Impact**: Keeps device registry sanitized and up-to-date.
+- **Performance Impact**: Eliminates useless network payloads to invalid push endpoints.
+- **Resolution**:
+  - In `app/api/mobile/v1/push-tokens/route.ts`, added `Expo.isExpoPushToken(token)` validation before DB lookup or upsert.
+  - In `lib/push.ts`, added immediate eviction of malformed tokens and eviction on `InvalidCredentials` error receipts.
+  - Created automated test `test/push-tokens-and-pool.test.ts`.
+- **Files Involved**: `app/api/mobile/v1/push-tokens/route.ts`, `lib/push.ts`, `test/push-tokens-and-pool.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/push-tokens-and-pool.test.ts` passed)
+
+---
+
+### [P1] Finding 15: Database Connection Pool Indefinite Timeout & Thread Pool Starvation Vulnerability
+- **Area**: Database Infrastructure & Connection Pooling
+- **Feature/Workflow**: PostgreSQL Pool Lifecycle & High Concurrency Handling
+- **Severity**: P1
+- **Current Behavior**:
+  - `lib/db/index.ts` instantiated `new Pool({ connectionString: process.env.DATABASE_URL, max: 10, idleTimeoutMillis: 30_000 })` without `connectionTimeoutMillis`.
+  - The default in `node-postgres` is `0` (wait forever). Under traffic spikes or slow queries, waiting requests queued indefinitely, holding HTTP connections open until reverse-proxy timeouts (504 Gateway Timeout) crashed user sessions.
+  - Pool size was hardcoded to 10 and not configurable via environment variables.
+- **Expected Behavior**:
+  - Pool fails fast with a clean error after 10 seconds (`connectionTimeoutMillis: 10_000`) instead of hanging indefinitely, allowing callers to retry gracefully.
+  - Pool max size is dynamically configurable via `DB_POOL_MAX` (defaulting safely to 15 for Neon launch tiers).
+- **Root Cause**: Omission of `connectionTimeoutMillis` in `node-postgres` Pool configuration.
+- **User Impact**: Infinite spinning loaders during traffic bursts; HTTP 504 Gateway Timeouts on Render/Cloudflare.
+- **Business Impact**: Severe commercial launch risk during marketing ad campaigns when concurrent users spike.
+- **Security Impact**: Protects against connection starvation denial of service.
+- **Data Integrity Impact**: None.
+- **Performance Impact**: Prevents cascading latency spirals across the server cluster.
+- **Resolution**:
+  - In `lib/db/index.ts`, configured `connectionTimeoutMillis: 10_000` and `max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : 15`.
+  - Added `DB_POOL_MAX` and `DB_CONNECTION_TIMEOUT_MS` to `lib/env.ts`.
+  - Created automated concurrency test in `test/push-tokens-and-pool.test.ts`.
+- **Files Involved**: `lib/db/index.ts`, `lib/env.ts`, `test/push-tokens-and-pool.test.ts`.
+- **Status**: `RESOLVED` (Verified: `test/push-tokens-and-pool.test.ts` passed)
+
+---
+
 ## Verification Summary
 - **Typecheck**: `corepack pnpm typecheck` (`tsc --noEmit`) → 0 errors.
-- **Automated Tests**: `corepack pnpm test` → 56 test suites, 241/241 tests passed against connected live database.
+- **Automated Tests**: `corepack pnpm test` → 57 test suites, 244/244 tests passed against connected live database.
 - **Production Build**: `corepack pnpm build` (Next.js 16.2.11 Turbopack) → 0 errors, all static & dynamic routes compiled, standalone bundle prepared.
 
 

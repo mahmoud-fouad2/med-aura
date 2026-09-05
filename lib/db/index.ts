@@ -13,8 +13,11 @@ export const pool =
   globalForDb.__medAuraPool ??
   new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 10,
+    max: process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : 15,
     idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT_MS
+      ? Number(process.env.DB_CONNECTION_TIMEOUT_MS)
+      : 10_000,
   })
 
 if (process.env.NODE_ENV !== "production") {
