@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { and, eq, gt, isNull, or } from "drizzle-orm"
 import { getCurrentUser } from "@/lib/session"
 import { db } from "@/lib/db"
-import { medicalDocument } from "@/lib/db/schema"
+import { medicalDocument, consent, documentAccessGrant } from "@/lib/db/schema"
 import { deleteObject, inspectObject } from "@/lib/storage/r2"
 import { writeAudit, requestMeta } from "@/lib/audit"
 import { hasValidFileSignature } from "@/lib/uploads"
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
       .select({
         id: medicalDocument.id,
         ownerUserId: medicalDocument.ownerUserId,
+        caseId: medicalDocument.caseId,
         objectKey: medicalDocument.objectKey,
         contentType: medicalDocument.contentType,
         sizeBytes: medicalDocument.sizeBytes,
@@ -65,13 +66,48 @@ export async function POST(req: Request) {
       .update(medicalDocument)
       .set({ finalized: true })
       .where(eq(medicalDocument.id, doc.id))
-    await writeAudit({
-      action: "medical_document.upload",
-      actorUserId: user.id,
-      entityType: "medical_document",
-      entityId: doc.id,
-      ...meta,
-    }, tx)
+
+    // Ensure any doctor/provider with an active consent on this case receives an access grant
+    if (doc.caseId) {
+      const activeConsents = await tx
+        .select({ id: consent.id, granteeUserId: consent.granteeUserId })
+        .from(consent)
+        .where(
+          and(
+            eq(consent.caseId, doc.caseId),
+            eq(consent.status, "GRANTED"),
+            or(isNull(consent.expiresAt), gt(consent.expiresAt, new Date())),
+          ),
+        )
+
+      const existingGrants = await tx
+        .select({ consentId: documentAccessGrant.consentId })
+        .from(documentAccessGrant)
+        .where(eq(documentAccessGrant.documentId, doc.id))
+      const grantedConsentIds = new Set(existingGrants.map((g) => g.consentId))
+
+      for (const c of activeConsents) {
+        if (!grantedConsentIds.has(c.id)) {
+          await tx.insert(documentAccessGrant).values({
+            documentId: doc.id,
+            consentId: c.id,
+            granteeUserId: c.granteeUserId,
+            grantedBy: user.id,
+          })
+        }
+      }
+    }
+
+    await writeAudit(
+      {
+        action: "medical_document.upload",
+        actorUserId: user.id,
+        entityType: "medical_document",
+        entityId: doc.id,
+        ...meta,
+      },
+      tx,
+    )
   })
 
   return NextResponse.json({ ok: true })

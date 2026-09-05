@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, gt } from "drizzle-orm"
+import { and, eq, isNull, isNotNull, or, gt } from "drizzle-orm"
 import { db } from "./db"
 import {
   userRole,
@@ -356,7 +356,10 @@ export async function canViewDocument(
   documentId: string,
 ): Promise<boolean> {
   const docRows = await db
-    .select({ ownerUserId: medicalDocument.ownerUserId })
+    .select({
+      ownerUserId: medicalDocument.ownerUserId,
+      caseId: medicalDocument.caseId,
+    })
     .from(medicalDocument)
     .where(eq(medicalDocument.id, documentId))
     .limit(1)
@@ -365,6 +368,7 @@ export async function canViewDocument(
   if (doc.ownerUserId === userId) return true
   if (await hasPermission(userId, PERMISSIONS.DOCUMENT_READ_ANY)) return true
 
+  // 1. Direct active access grant tied to an active, unexpired consent
   const granted = await db
     .select({ id: documentAccessGrant.id })
     .from(documentAccessGrant)
@@ -379,7 +383,40 @@ export async function canViewDocument(
       ),
     )
     .limit(1)
-  return granted.length > 0
+  if (granted.length > 0) return true
+
+  // 2. Case-level active consent fallback (unless this specific document was explicitly revoked)
+  if (doc.caseId) {
+    const explicitlyRevoked = await db
+      .select({ id: documentAccessGrant.id })
+      .from(documentAccessGrant)
+      .where(
+        and(
+          eq(documentAccessGrant.documentId, documentId),
+          eq(documentAccessGrant.granteeUserId, userId),
+          isNotNull(documentAccessGrant.revokedAt),
+        ),
+      )
+      .limit(1)
+
+    if (explicitlyRevoked.length === 0) {
+      const activeConsent = await db
+        .select({ id: consent.id })
+        .from(consent)
+        .where(
+          and(
+            eq(consent.caseId, doc.caseId),
+            eq(consent.granteeUserId, userId),
+            eq(consent.status, "GRANTED"),
+            or(isNull(consent.expiresAt), gt(consent.expiresAt, new Date())),
+          ),
+        )
+        .limit(1)
+      if (activeConsent.length > 0) return true
+    }
+  }
+
+  return false
 }
 
 /**

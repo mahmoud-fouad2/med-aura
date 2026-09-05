@@ -1,6 +1,6 @@
 "use server"
 
-import { and, count, eq, gt } from "drizzle-orm"
+import { and, count, eq, gt, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import {
   doctorProfile,
@@ -12,6 +12,8 @@ import {
   caseStatusHistory,
   consent,
   doctorProcedure,
+  medicalDocument,
+  documentAccessGrant,
 } from "@/lib/db/schema"
 import { requireUser } from "@/lib/session"
 import { requirePermission, PERMISSIONS } from "@/lib/rbac"
@@ -157,14 +159,71 @@ export async function bookConsultation(input: {
               changedBy: user.id,
               note: "إنشاء تلقائي مع حجز الاستشارة",
             })
+          }
+        }
 
-            await tx.insert(consent).values({
-              caseId: resolvedCaseId,
-              patientUserId: user.id,
-              granteeUserId: doc.userId,
-              purpose: "consultation_review",
-              status: "GRANTED",
-            })
+        if (resolvedCaseId) {
+          const existingConsent = (
+            await tx
+              .select({ id: consent.id })
+              .from(consent)
+              .where(
+                and(
+                  eq(consent.caseId, resolvedCaseId),
+                  eq(consent.granteeUserId, doc.userId),
+                  eq(consent.status, "GRANTED"),
+                ),
+              )
+              .limit(1)
+          )[0]
+
+          let consentId = existingConsent?.id
+          if (!consentId) {
+            const [createdConsent] = await tx
+              .insert(consent)
+              .values({
+                caseId: resolvedCaseId,
+                patientUserId: user.id,
+                granteeUserId: doc.userId,
+                purpose: "consultation_review",
+                status: "GRANTED",
+              })
+              .returning({ id: consent.id })
+            consentId = createdConsent.id
+          }
+
+          // Ensure doctor has access to all finalized documents of this case
+          const docs = await tx
+            .select({ id: medicalDocument.id })
+            .from(medicalDocument)
+            .where(
+              and(
+                eq(medicalDocument.caseId, resolvedCaseId),
+                eq(medicalDocument.finalized, true),
+                isNull(medicalDocument.deletedAt),
+              ),
+            )
+
+          const existingGrants = await tx
+            .select({ documentId: documentAccessGrant.documentId })
+            .from(documentAccessGrant)
+            .where(
+              and(
+                eq(documentAccessGrant.consentId, consentId),
+                eq(documentAccessGrant.granteeUserId, doc.userId),
+              ),
+            )
+          const grantedIds = new Set(existingGrants.map((g) => g.documentId))
+
+          for (const d of docs) {
+            if (!grantedIds.has(d.id)) {
+              await tx.insert(documentAccessGrant).values({
+                documentId: d.id,
+                consentId,
+                granteeUserId: doc.userId,
+                grantedBy: user.id,
+              })
+            }
           }
         }
 

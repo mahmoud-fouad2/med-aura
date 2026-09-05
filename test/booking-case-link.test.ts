@@ -119,7 +119,7 @@ describe.skipIf(!HAS_DB)("Booking Case & Payment Linking (Finding 8)", { timeout
       {
         startsAt,
         endsAt,
-        type: "IN_PERSON_CONSULTATION",
+        label: "test slot",
       },
     ])
 
@@ -130,7 +130,7 @@ describe.skipIf(!HAS_DB)("Booking Case & Payment Linking (Finding 8)", { timeout
     })
 
     expect(res.ok).toBe(true)
-    if (!res.ok) return
+    if (!res.ok || !res.data) throw new Error("booking failed")
     const apptId = res.data.appointmentId
     expect(apptId).toBeDefined()
     createdApptIds.push(apptId)
@@ -206,8 +206,7 @@ describe.skipIf(!HAS_DB)("Booking Case & Payment Linking (Finding 8)", { timeout
       type: "checkout.session.completed",
       paymentId: pay.id,
       providerIntentId: `pi_${rid().slice(0, 8)}`,
-      amount: 150,
-      currency: "SAR",
+      providerSessionId: `cs_${rid().slice(0, 8)}`,
       raw: {},
     })
 
